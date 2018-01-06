@@ -1,0 +1,115 @@
+{
+	"DJI_v2.csv": {
+		"drop": ["vol_numBids", "vol_numAsks"],
+		"rename": {
+			"etf_news_Ver": "etf_news_ver",
+			"etf_social_Ver": "etf_social_ver",
+			"etf_news_social_Ver": "etf_news_social_ver"
+		}
+	},
+	"DJI_v3.csv": {
+		"drop": ["vol_numBids", "vol_numAsks"],
+		"rename": {
+			"mkt_news_Ver": "mkt_news_ver",
+			"mkt_social_Ver": "mkt_social_ver",
+			"mkt_news_social_Ver": "mkt_news_social_ver",
+			"etf_news_Ver": "etf_news_ver",
+			"etf_social_Ver": "etf_social_ver",
+			"etf_news_social_Ver": "etf_news_social_ver"
+		}
+	},
+	"GLD_v2.csv": {
+		"drop": ["vol_numBids", "vol_numAsks"],
+		"rename": {
+			"VWAP": "pba_vwap",
+			"enm_news_Ver": "enm_news_ver",
+			"enm_social_Ver": "enm_social_ver",
+			"enm_news_social_Ver": "enm_news_social_ver"
+		}
+	},
+	"GLD_v3.csv": {
+		"drop": ["vol_numBids", "vol_numAsks"],
+		"rename": {
+			"VWAP": "pba_vwap",
+			"enm_news_Ver": "enm_news_ver",
+			"enm_social_Ver": "enm_social_ver",
+			"enm_news_social_Ver": "enm_news_social_ver"
+		}
+	},
+	"NDX_v2.csv": {
+		"drop": ["pba_numBids", "pba_numAsks", "vol_numBids", "vol_numAsks"],
+		"rename": {
+			"etf_news_Ver": "etf_news_ver",
+			"etf_social_Ver": "etf_social_ver",
+			"etf_news_social_Ver": "etf_news_social_ver"
+		}
+	},
+	"NDX_v3.csv": {
+		"drop": ["pba_numBids", "pba_numAsks", "vol_numBids", "vol_numAsks"],
+		"rename": {
+			"mkt_news_Ver": "mkt_news_ver",
+			"mkt_social_Ver": "mkt_social_ver",
+			"mkt_news_social_Ver": "mkt_news_social_ver",
+			"etf_news_Ver": "etf_news_ver",
+			"etf_social_Ver": "etf_social_ver",
+			"etf_news_social_Ver": "etf_news_social_ver"
+		}
+	},
+	"RUT_v2.csv": {
+		"drop": ["pba_volume", "pba_numBids", "pba_numAsks", "vol_numBids", "vol_numAsks"],
+		"rename": {
+			"etf_news_Ver": "etf_news_ver",
+			"etf_social_Ver": "etf_social_ver",
+			"etf_news_social_Ver": "etf_news_social_ver"
+		}
+	},
+	"RUT_v3.csv": {
+		"drop": ["pba_volume", "pba_numBids", "pba_numAsks", "vol_numBids", "vol_numAsks"],
+		"rename": {
+			"mkt_news_Ver": "mkt_news_ver",
+			"mkt_social_Ver": "mkt_social_ver",
+			"mkt_news_social_Ver": "mkt_news_social_ver",
+			"etf_news_Ver": "etf_news_ver",
+			"etf_social_Ver": "etf_social_ver",
+			"etf_news_social_Ver": "etf_news_social_ver"
+		}
+	},
+	"SPX_v2.csv": {
+		"drop": ["pba_volume", "vol_numBids", "vol_numAsks"],
+		"rename": {
+			"etf_news_Ver": "etf_news_ver",
+			"etf_social_Ver": "etf_social_ver",
+			"etf_news_social_Ver": "etf_news_social_ver"
+		}
+	},
+	"SPX_v3.csv": {
+		"drop": ["pba_volume", "vol_numBids", "vol_numAsks"],
+		"rename": {
+			"mkt_news_Ver": "mkt_news_ver",
+			"mkt_social_Ver": "mkt_social_ver",
+			"mkt_news_social_Ver": "mkt_news_social_ver",
+			"etf_news_Ver": "etf_news_ver",
+			"etf_social_Ver": "etf_social_ver",
+			"etf_news_social_Ver": "etf_news_social_ver"
+		}
+	},
+	"USO_v2.csv": {
+		"drop": ["vol_numBids", "vol_numAsks"],
+		"rename": {
+			"VWAP": "pba_vwap",
+			"enm_news_Ver": "enm_news_ver",
+			"enm_social_Ver": "enm_social_ver",
+			"enm_news_social_Ver": "enm_news_social_ver"
+		}
+	},
+	"USO_v3.csv": {
+		"drop": ["vol_numBids", "vol_numAsks"],
+		"rename": {
+			"VWAP": "pba_vwap",
+			"enm_news_Ver": "enm_news_ver",
+			"enm_social_Ver": "enm_social_ver",
+			"enm_news_social_Ver": "enm_news_social_ver"
+		}
+	}
+}
+

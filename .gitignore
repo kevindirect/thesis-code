@@ -1,0 +1,32 @@
+# all data
+*.csv
+
+# data dirs
+/raw/*.csv
+/raw/*.ipynb
+/raw/clean/*
+/raw/cot/*
+/raw/dirty/*
+/raw/price/*
+/raw/trmiv2/*
+/raw/trmiv3/*
+/raw/vol/*
+
+/combinate/*.csv
+/combinate/*.ipynb
+/combinate/meta/*
+/combinate/pricevol/*
+/combinate/trmi/*
+
+# other dirs
+/other_creds/*
+/other_nbs/*
+/other_py/*
+/other_sync/*
+
+# byte-compiled / optimized / DLL files
+__pycache__/
+
+# jupyter notebook
+.ipynb_checkpoints
+
