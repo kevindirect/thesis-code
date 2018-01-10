@@ -27,7 +27,7 @@ def main(argv):
 	per = 'hourly'   			# daily, hourly, or minutely
 	pathsfile = 'paths.json'
 	keep_ns = False
-	startend = {'start': '1998-01-01', 'end':'2018-01-07'}
+	startend = {'start': '1998-01-01', 'end':'2018-01-10'}
 
 	try:
 		opts, args = getopt.getopt(argv,'hp:kt', ['help', 'pathsfile=', 'keep_ns', 'test'])
@@ -46,12 +46,12 @@ def main(argv):
 		elif opt in ('-t', '--test'):
 			startend = {'start': '2015-08-01', 'end':'2015-08-03'}
 
-	# paths.json tells script what to pull from the api and where to put it
+	# pathsfile tells script what to pull from the api and where to put it
 	if (path.isfile(pfx +pathsfile)):
 		with open(pfx +pathsfile) as json_data:
 			trmi_paths = json.load(json_data)['trmi']
 	else:
-		print(pathsfile, ' must be present in the current directory')
+		print(pathsfile, 'must be present in the current directory')
 		sys.exit(2)
 
 	dropfirst = ['id', 'Date', 'Asset']
@@ -73,22 +73,21 @@ def main(argv):
 				merged = merged.merge(news_social, on=join_cols, suffixes=('', '_NS'))
 
 			# Rename systemVersion and prefix all data columns with group name
-			merged.rename(columns={'systemVersion_N': 'n_ver', 'systemVersion_S': 's_ver', 'systemVersion': 'ver'}, inplace=True)
+			merged.rename(columns={'systemVersion_N': 'ver_N', 'systemVersion_S': 'ver_S', 'systemVersion': 'ver'}, inplace=True)
+
+			# Simple cleaning of system version to make formatting consistent
+			merged['ver_N'] = merged['ver_N'].str.replace('MP:', '', case=False)
+			merged['ver_S'] = merged['ver_S'].str.replace('MP:', '', case=False)
+			if (keep_ns):
+				merged['ver'] = merged['ver'].str.replace('MP:', '', case=False)
+
+			# Prefix all data columns with group name
 			merged.columns = merged.columns.map(lambda s: str(group[-3:] +'_' +s) if s not in join_cols else s)
 
 			for asset in assets:
 				print('\t' +asset, end='')
 				asset_df = merged.loc[merged['assetCode'] == asset]
-
-				date_col = asset_df['windowTimestamp'].map(lambda w: w[:10])
 				asset_df.insert(0, 'id', asset_df['windowTimestamp'].map(lambda w: w[:16]))
-				asset_df.insert(1, 'date', date_col)
-				asset_df.insert(2, 'hour', asset_df['windowTimestamp'].map(lambda w: int(w[11:13])))
-				asset_df.insert(3, 'dow', date_col.map(lambda w: datetime.datetime.strptime(w, '%Y-%m-%d').weekday()))
-				asset_df.insert(4, 'day', asset_df['windowTimestamp'].map(lambda w: int(w[8:10])))
-				asset_df.insert(5, 'month', asset_df['windowTimestamp'].map(lambda w: int(w[5:7])))
-				asset_df.insert(6, 'year', asset_df['windowTimestamp'].map(lambda w: int(w[:4])))
-
 				asset_df = asset_df.drop(join_cols, axis=1)
 				asset_df = asset_df.set_index('id', drop=True).sort_index()
 				asset_df.to_csv(dir_path +sep +asset +'.csv')

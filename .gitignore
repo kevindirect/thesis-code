@@ -1,17 +1,16 @@
-# all data
+# data
 *.csv
+
+# TRMI API info
+/trmi.json
 
 # data dirs
 /raw/*.csv
 /raw/*.ipynb
-/raw/clean/*
 /raw/cot/*
-/raw/dirty/*
 /raw/price/*
-/raw/trmiv2/*
-/raw/trmiv3/*
+/raw/trmi/*
 /raw/vol/*
-
 /combinate/*.csv
 /combinate/*.ipynb
 /combinate/meta/*
