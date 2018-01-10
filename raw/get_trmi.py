@@ -5,8 +5,8 @@ import pandas as pd
 import datetime
 import sys
 import getopt
-from os import getcwd, sep, path, makedirs, pardir
 import json
+from os import getcwd, sep, path, makedirs, pardir
 sys.path.insert(0, path.abspath(pardir))
 from common import makedir_if_not_exists
 
@@ -27,7 +27,7 @@ def main(argv):
 	per = 'hourly'   			# daily, hourly, or minutely
 	pathsfile = 'paths.json'
 	keep_ns = False
-	startend = {'start': '1998-01-01', 'end':'2018-01-10'}
+	startend = {'start': '1996-01-01', 'end':'2018-01-10'}
 
 	try:
 		opts, args = getopt.getopt(argv,'hp:kt', ['help', 'pathsfile=', 'keep_ns', 'test'])
