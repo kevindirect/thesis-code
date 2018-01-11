@@ -84,8 +84,11 @@ def main(argv):
 			# Remove redundant system version columns
 			if (merged['ver_N'].equals(merged['ver_S'])):
 				merged = merged.drop('ver_S', axis=1, errors='ignore')
-				if (keep_ns and merged['ver_N'].equals(merged['ver'])):
-					merged = merged.drop('ver', axis=1, errors='ignore')
+				if (keep_ns):
+					if (merged['ver_N'].equals(merged['ver'])):
+						merged = merged.drop('ver', axis=1, errors='ignore')
+						merged.rename(columns={'ver_N': 'ver'}, inplace=True)
+				else:
 					merged.rename(columns={'ver_N': 'ver'}, inplace=True)
 
 			# Last step before splitting: prefix all data columns with last three letters of group name
