@@ -72,7 +72,7 @@ def main(argv):
 				news_social = df.loc[df['dataType'] == 'News_Social'].drop('dataType', axis=1)
 				merged = merged.merge(news_social, on=join_cols, suffixes=('', '_NS'))
 
-			# Rename systemVersion and prefix all data columns with group name
+			# Shorten systemVersion column names
 			merged.rename(columns={'systemVersion_N': 'ver_N', 'systemVersion_S': 'ver_S', 'systemVersion': 'ver'}, inplace=True)
 
 			# Simple cleaning of system version to make formatting consistent
@@ -81,7 +81,14 @@ def main(argv):
 			if (keep_ns):
 				merged['ver'] = merged['ver'].str.replace('MP:', '', case=False)
 
-			# Prefix all data columns with group name
+			# Remove redundant system version columns
+			if (merged['ver_N'].equals(merged['ver_S'])):
+				merged = merged.drop('ver_S', axis=1, errors='ignore')
+				if (keep_ns and merged['ver_N'].equals(merged['ver'])):
+					merged = merged.drop('ver', axis=1, errors='ignore')
+					merged.rename(columns={'ver_N': 'ver'}, inplace=True)
+
+			# Last step before splitting: prefix all data columns with last three letters of group name
 			merged.columns = merged.columns.map(lambda s: str(group[-3:] +'_' +s) if s not in join_cols else s)
 
 			for asset in assets:
