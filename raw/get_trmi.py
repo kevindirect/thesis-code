@@ -91,8 +91,8 @@ def main(argv):
 				else:
 					merged.rename(columns={'ver_N': 'ver'}, inplace=True)
 
-			# Last step before splitting: prefix all data columns with last three letters of group name
-			merged.columns = merged.columns.map(lambda s: str(group[-3:] +'_' +s) if s not in join_cols else s)
+			# Last step before splitting: prefix all data columns with last three letters of group name and trmi version
+			merged.columns = merged.columns.map(lambda s: str(group[-3:] +'_' +ver +'_' +s) if s not in join_cols else s)
 
 			for asset in assets:
 				print('\t' +asset, end='')
