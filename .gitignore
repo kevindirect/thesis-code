@@ -11,11 +11,7 @@
 /raw/price/*
 /raw/trmi/*
 /raw/vol/*
-/combinate/*.csv
-/combinate/*.ipynb
-/combinate/meta/*
-/combinate/pricevol/*
-/combinate/trmi/*
+/data/*.csv
 
 # other dirs
 /other_creds/*
