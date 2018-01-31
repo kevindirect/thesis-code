@@ -74,7 +74,7 @@ def main(argv):
 		asset_df.insert(0, 'id', datehourmin_col)
 
 		unchanged = [col for col in asset_df.columns if(len(asset_df[col].value_counts())<=1)]
-		print('\tdropping', len(unchanged), 'unchanging columns', end='...')
+		print('\tdropping', len(unchanged), 'unchanging columns', end='...', flush=True)
 		asset_df = asset_df.drop(unchanged, axis=1, errors='ignore')
 		print('done')
 		asset_df.drop(['#RIC', 'Date[G]', 'Time[G]'], axis=1, errors='ignore', inplace=True)
@@ -87,7 +87,7 @@ def main(argv):
 			clean_instr = vol_clean
 
 		if (clean_instr is not None):
-			print('\tcleaning ' +name, end='...')
+			print('\tcleaning ' +name, end='...', flush=True)
 			asset_df = clean_cols(asset_df, clean_instr)
 			asset_df = clean_cols(asset_df, clean_instr[name])
 			print('done')

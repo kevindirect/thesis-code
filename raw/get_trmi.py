@@ -95,13 +95,13 @@ def main(argv):
 			merged.columns = merged.columns.map(lambda s: str(group[-3:] +'_' +ver +'_' +s) if s not in join_cols else s)
 
 			for asset in assets:
-				print('\t' +asset, end='')
+				print('\t' +asset, end='...', flush=True)
 				asset_df = merged.loc[merged['assetCode'] == asset]
 				asset_df.insert(0, 'id', asset_df['windowTimestamp'].map(lambda w: w[:16]))
 				asset_df = asset_df.drop(join_cols, axis=1)
 				asset_df = asset_df.set_index('id', drop=True).sort_index()
 				asset_df.to_csv(dir_path +sep +asset +'.csv')
-				print('...done')
+				print('done')
 			print()
 
 def make_csv_group_request_url(group, assets, version, period, times, api_url, api_key):
