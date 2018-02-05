@@ -1,0 +1,41 @@
+{
+	"price": {
+		"filter": {
+			"null": [["pba_open", "pba_high", "pba_low", "pba_close"]],
+			"zero": [["pba_open", "pba_high", "pba_low", "pba_close"]],
+			"same": [["pba_open", "pba_high", "pba_low", "pba_close"]]
+		},
+		"DJI": {
+		},
+		"SPX": {
+		},
+		"NDX": {
+		},
+		"RUT": {
+		}, 
+		"USO": {
+		},
+		"GLD": {
+		}
+	},
+	"vol": {
+		"filter": {
+			"null": [["vol_open", "vol_high", "vol_low", "vol_close"]],
+			"zero": [["vol_open", "vol_high", "vol_low", "vol_close"]],
+			"same": [["vol_open", "vol_high", "vol_low", "vol_close"]]
+		},
+		"VXD": {
+		},
+		"VIX": {
+		},
+		"VXN": {
+		},
+		"RVX": {
+		},
+		"OVX": {
+		},
+		"GVZ": {
+		}
+	},
+	"trmi": {}
+}
