@@ -2,14 +2,12 @@
 
 import pandas as pd
 import numpy as np
-import re
 import sys
 import getopt
 from os import getcwd, sep, path, makedirs, pardir
 import json
 sys.path.insert(0, path.abspath(pardir))
 from common import makedir_if_not_exists
-from filter_rows import *
 from add_columns import make_time_cols, make_label_cols
 
 
