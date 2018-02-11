@@ -62,12 +62,10 @@ def main(argv):
 				trmi_list_path = raw_data_dir +'trmi' +sep +trmi_ver +sep +trmi_cat +sep
 				for trmi_sent in trmi_list:
 					sent = pd.read_csv(trmi_list_path +trmi_sent +'.csv', index_col=0)
-					joined = joined.merge(sent, how='outer', left_index=True, right_index=True, sort=True)
+					joined = joined.merge(sent, how='right', left_index=True, right_index=True, sort=True)
 
-		# TODO - Row cleaning here
-
-		joined = joined.merge(make_time_cols(joined), how='outer', left_index=True, right_index=True, sort=True)
-		joined = joined.merge(make_label_cols(joined), how='outer', left_index=True, right_index=True, sort=True)
+		joined = joined.merge(make_time_cols(joined), how='inner', left_index=True, right_index=True, sort=True)
+		joined = joined.merge(make_label_cols(joined), how='inner', left_index=True, right_index=True, sort=True)
 
 		for split_group, split_list in splits.items():
 			equity_dir = pfx +split_group +sep +equity +sep
@@ -79,10 +77,10 @@ def main(argv):
 				split_columns.extend(qualifier['exact'])
 				split_columns.extend([col for col in joined.columns if col.startswith(tuple(qualifier['startswith']))])
 				split_columns.extend([col for col in joined.columns if col.endswith(tuple(qualifier['endswith']))])
-				split_columns.extend([col for col in joined.columns if (any(re.match(rgx, col) for rgx in qualifier['regex']))])
+				split_columns.extend([col for col in joined.columns if any(re.match(rgx, col) for rgx in qualifier['regex'])])
 				if (qualifier['exclude']):
 					split_columns = [col for col in split_columns if col not in qualifier['exclude']]
-				joined[split_columns].to_csv(equity_dir +split +'.csv')
+				joined[split_columns].dropna(axis=0, how='all').to_csv(equity_dir +split +'.csv')
 				print('done')
 		print()
 				

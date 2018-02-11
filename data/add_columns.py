@@ -21,28 +21,38 @@ def make_label_cols(df):
 
 	# Make price label columns
 	label_cols['ret_simple_oc'] = (df['pba_close'] / df['pba_open']) - 1
+	label_cols['ret_simple_oc2'] = (df['pba_close'].shift(periods=-1) / df['pba_open']) - 1
 	label_cols['ret_simple_oa'] = (df['pba_avgPrice'] / df['pba_open']) - 1
-	label_cols['ret_simple_oo'] = df['pba_open'].pct_change()
-	label_cols['ret_simple_cc'] = df['pba_close'].pct_change()
-	label_cols['ret_simple_aa'] = df['pba_avgPrice'].pct_change()
+	label_cols['ret_simple_oa2'] = (df['pba_avgPrice'].shift(periods=-1) / df['pba_open']) - 1
+	label_cols['ret_simple_oo'] = df['pba_open'].pct_change().dropna().shift(periods=-1)
+	label_cols['ret_simple_cc'] = df['pba_close'].pct_change().dropna().shift(periods=-1)     # full access
+	label_cols['ret_simple_aa'] = df['pba_avgPrice'].pct_change().dropna().shift(periods=-1)  # full access
 	label_cols['ret_simple_hl'] = (df['pba_high'] / df['pba_low']) - 1
+
 	label_cols['ret_dir_oc'] = np.sign(label_cols['ret_simple_oc'])
+	label_cols['ret_dir_oc2'] = np.sign(label_cols['ret_simple_oc2'])
 	label_cols['ret_dir_oa'] = np.sign(label_cols['ret_simple_oa'])
+	label_cols['ret_dir_oa2'] = np.sign(label_cols['ret_simple_oa2'])
 	label_cols['ret_dir_oo'] = np.sign(label_cols['ret_simple_oo'])
-	label_cols['ret_dir_cc'] = np.sign(label_cols['ret_simple_cc'])
-	label_cols['ret_dir_aa'] = np.sign(label_cols['ret_simple_aa'])
+	label_cols['ret_dir_cc'] = np.sign(label_cols['ret_simple_cc']) # full access
+	label_cols['ret_dir_aa'] = np.sign(label_cols['ret_simple_aa']) # full access
 
 	# Make volatility label columns
 	label_cols['ret_vol_simple_oc'] = (df['vol_close'] / df['vol_open']) - 1
+	label_cols['ret_vol_simple_oc2'] = (df['vol_close'].shift(periods=-1) / df['vol_open']) - 1
 	label_cols['ret_vol_simple_oa'] = (df['vol_avgPrice'] / df['vol_open']) - 1
-	label_cols['ret_vol_simple_oo'] = df['vol_open'].pct_change()
-	label_cols['ret_vol_simple_cc'] = df['vol_close'].pct_change()
-	label_cols['ret_vol_simple_aa'] = df['vol_avgPrice'].pct_change()
+	label_cols['ret_vol_simple_oa2'] = (df['vol_avgPrice'].shift(periods=-1) / df['vol_open']) - 1
+	label_cols['ret_vol_simple_oo'] = df['vol_open'].pct_change().dropna().shift(periods=-1)
+	label_cols['ret_vol_simple_cc'] = df['vol_close'].pct_change().dropna().shift(periods=-1)     # full access
+	label_cols['ret_vol_simple_aa'] = df['vol_avgPrice'].pct_change().dropna().shift(periods=-1)  # full access
 	label_cols['ret_vol_simple_hl'] = (df['vol_high'] / df['vol_low']) - 1
+
 	label_cols['ret_vol_dir_oc'] = np.sign(label_cols['ret_vol_simple_oc'])
+	label_cols['ret_vol_dir_oc2'] = np.sign(label_cols['ret_vol_simple_oc2'])
 	label_cols['ret_vol_dir_oa'] = np.sign(label_cols['ret_vol_simple_oa'])
+	label_cols['ret_vol_dir_oa2'] = np.sign(label_cols['ret_vol_simple_oa2'])
 	label_cols['ret_vol_dir_oo'] = np.sign(label_cols['ret_vol_simple_oo'])
-	label_cols['ret_vol_dir_cc'] = np.sign(label_cols['ret_vol_simple_cc'])
-	label_cols['ret_vol_dir_aa'] = np.sign(label_cols['ret_vol_simple_aa'])
+	label_cols['ret_vol_dir_cc'] = np.sign(label_cols['ret_vol_simple_cc']) # full access
+	label_cols['ret_vol_dir_aa'] = np.sign(label_cols['ret_vol_simple_aa']) # full access
 
 	return label_cols
