@@ -12,6 +12,7 @@
 /raw/trmi/*
 /raw/vol/*
 /data/*.csv
+/data/hourly/*
 
 # other dirs
 /other_creds/*
