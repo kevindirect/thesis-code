@@ -17,7 +17,7 @@ def main(argv):
 	pfx = getcwd() +sep
 	raw_data_dir = path.abspath(pardir) +sep +'raw' +sep
 	joinfile = 'join.json'
-	splitfile = 'split.json'
+	splitfile = 'split_mdl.json'
 
 	try:
 		opts, args = getopt.getopt(argv, 'hj:s:', ['help', 'joinfile=', 'splitfile='])
@@ -69,7 +69,7 @@ def main(argv):
 			equity_dir = pfx +split_group +sep +equity +sep
 			makedir_if_not_exists(equity_dir)
 
-			for split, qualifiers in split_list.items():
+			for split, qualifiers in split_list['#ASSET'].items():
 				print('\t' +split, end='...', flush=True)
 				split_columns = get_subset(joined.columns, qualifiers)
 				joined[split_columns].dropna(axis=0, how='all').to_csv(equity_dir +split +'.csv')
