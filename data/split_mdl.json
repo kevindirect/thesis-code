@@ -1,6 +1,6 @@
 {
 	"hourly_mdl": {
-		"#ASSET" : {
+		"#ASSET": {
 			"meta": {
 				"exact": ["date", "hour", "day", "month", "year"],
 				"startswith": [],

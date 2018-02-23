@@ -1,6 +1,6 @@
 {
 	"hourly_mocl": {
-		"#ASSET" : {
+		"#ASSET": {
 			"meta": {
 				"exact": ["date", "hour", "day", "month", "year"],
 				"startswith": [],
@@ -45,7 +45,7 @@
 	},
 
 	"hourly_mdl": {
-		"#ASSET" : {
+		"#ASSET": {
 			"meta": {
 				"exact": ["date", "hour", "day", "month", "year"],
 				"startswith": [],
