@@ -1,0 +1,38 @@
+{
+	"hourly_mocl": {
+		"#ASSET": {
+			"label": {
+				"TO_OPEN": {
+					"label_group": "catch_all",
+					"column_access": ["meta", "open"]
+				},
+				"TO_CLOSE": {
+					"label_group": {
+						"exact": [],
+						"startswith": [],
+						"endswith": ["simple_cc", "simple_aa", "dir_cc", "dir_aa"],
+						"regex": [],
+						"exclude": null
+					},
+					"column_access": ["meta", "open", "close"]
+				}
+			}
+		}
+	},
+	"hourly_mdl": {
+		"#ASSET": {
+			"label": {
+				"ALL_DATA": {
+					"label_group": {
+						"exact": [],
+						"startswith": [],
+						"endswith": ["simple_cc", "simple_aa", "dir_cc", "dir_aa"],
+						"regex": [],
+						"exclude": null
+					},
+					"column_access": ["meta", "data"]
+				}
+			}
+		}
+	}
+}
