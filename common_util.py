@@ -1,6 +1,7 @@
 # Kevin Patel
 
 from os import path, makedirs
+import pandas as pd
 
 makedir_if_not_exists = lambda dir_path: makedirs(dir_path) if not path.exists(dir_path) else None
 
@@ -12,6 +13,8 @@ left_join = lambda a,b: a.join(b, how='left', sort=True)
 right_join = lambda a,b: a.join(b, how='right', sort=True)
 inner_join = lambda a,b: a.join(b, how='inner', sort=True)
 outer_join = lambda a,b: a.join(b, how='outer', sort=True)
+
+load_csv = lambda path: pd.read_csv(path, index_col=0)
 
 # Selects a subset of str_list as dictated by qualifier_dict
 # returns the subset that satisfies:
