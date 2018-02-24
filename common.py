@@ -7,6 +7,12 @@ makedir_if_not_exists = lambda dir_path: makedirs(dir_path) if not path.exists(d
 month_num = {'JAN': '01', 'FEB': '02', 'MAR': '03', 'APR': '04', 'MAY': '05', 'JUN': '06',
 			'JUL': '07', 'AUG': '08', 'SEP': '09', 'OCT': '10', 'NOV': '11', 'DEC': '12'}
 
+# Join shortcut lambdas
+left_join = lambda a,b: a.join(b, how='left', sort=True)
+right_join = lambda a,b: a.join(b, how='right', sort=True)
+inner_join = lambda a,b: a.join(b, how='inner', sort=True)
+outer_join = lambda a,b: a.join(b, how='outer', sort=True)
+
 # Selects a subset of str_list as dictated by qualifier_dict
 # returns the subset that satisfies:
 # IN(QUALIFIER_1 OR QUALIFIER_2 OR ... OR QUALIFIER_N-1) AND NOT IN(EXCLUDE_1 OR EXCLUDE_2 OR ... OR EXCLUDE_N-1)

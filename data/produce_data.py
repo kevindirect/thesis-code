@@ -8,7 +8,7 @@ from os import getcwd, sep, path, makedirs, pardir
 import json
 from functools import reduce
 sys.path.insert(0, path.abspath(pardir))
-from common import makedir_if_not_exists, get_subset
+from common import makedir_if_not_exists, right_join, inner_join, outer_join, get_subset
 from add_columns import make_time_cols, make_label_cols
 
 
@@ -54,16 +54,16 @@ def main(argv):
 		print('processing', equity)
 		price = pd.read_csv(raw_data_dir +'price' +sep +file_list['price'] +'.csv', index_col=0)
 		vol = pd.read_csv(raw_data_dir +'vol' +sep +file_list['vol'] +'.csv', index_col=0)
-		joined = price.join(vol, how='outer', sort=True)
+		joined = outer_join(price, vol)
 
 		for trmi_ver, trmi_ver_groups in file_list['trmi'].items():
 			for trmi_cat, trmi_list in trmi_ver_groups.items():
 				trmi_list_path = raw_data_dir +'trmi' +sep +trmi_ver +sep +trmi_cat +sep
 				sents = [pd.read_csv(trmi_list_path +sent +'.csv', index_col=0) for sent in trmi_list]
-				joined = reduce(lambda a,b: a.join(b, how='right', sort=True), [joined] + sents)
+				joined = reduce(right_join, [joined] + sents)
 
-		joined = joined.join(make_time_cols(joined), how='inner', sort=True)
-		joined = joined.join(make_label_cols(joined), how='inner', sort=True)
+		joined = inner_join(joined, make_time_cols(joined))
+		joined = inner_join(joined, make_label_cols(joined))
 
 		for split_group, split_list in splits.items():
 			print('\tsplit', split_group)
