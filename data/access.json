@@ -3,7 +3,19 @@
 		"#ASSET": {
 			"label": {
 				"TO_OPEN": {
-					"label_group": "catch_all",
+					"label_group": {
+						"exact": [],
+						"startswith": ["ret"],
+						"endswith": [],
+						"regex": [],
+						"exclude": {
+							"exact": [],
+							"startswith": [],
+							"endswith": ["simple_cc", "simple_aa", "dir_cc", "dir_aa"],
+							"regex": [],
+							"exclude": null
+						}
+					},
 					"column_access": ["meta", "open"]
 				},
 				"TO_CLOSE": {

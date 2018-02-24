@@ -53,62 +53,30 @@ class DataGenerator:
 
 			for equity in asset_list:
 				equity_dir = split_group_dir +equity +sep
+
 				for label_name, access_levels in split_group['#ASSET'].items():
 					label_df = load_csv(equity_dir +label_name +'.csv')
-					all_labels_used = []
-					catch_all_labgroup = None
 
-					for level_name, access_level in access_levels.items():
-						assert(all((colgroup in self.splits[split_group_name]['#ASSET']) for colgroup in access_level['column_access']))
-						if (isinstance(access_level['label_group'], str)):
-							# Special label groups
-							if (access_level['label_group'] == 'catch_all'):
-								catch_all_labgroup = level_name
-							continue
-						labgroup_qual = access_level['label_group']
-						labgroup_cols = get_subset(label_df.columns, labgroup_qual)
-						all_labels_used.extend(labgroup_cols)
+					for access_level_name, access_level in access_levels.items():
+						assert(all((split in self.splits[split_group_name]['#ASSET']) for split in access_level['column_access']))
+						labgroup_cols = get_subset(label_df.columns, access_level['label_group'])
+						df_paths = [str(equity_dir +split +'.csv') for split in access_level['column_access']]
+						access_df = reduce(inner_join, map(load_csv, df_paths))
 
-						colgroups = access_level['column_access']
-						colgroups_df = reduce(inner_join, map(lambda a: load_csv(equity_dir +a +'.csv'), colgroups))
-
-						yield (split_group_name, equity, level_name, colgroups_df, label_df[labgroup_cols])
-
-					# Special label groups are yielded at the end:
-					if (isinstance(catch_all_labgroup, str)):
-						level_name = catch_all_labgroup
-						access_level = access_levels[level_name]
-						assert(all((colgroup in self.splits[split_group_name]['#ASSET']) for colgroup in access_level['column_access']))
-
-						labgroup_qual = {
-							"exact": [],
-							"startswith": [],
-							"endswith": [],
-							"regex": [],
-							"exclude": {
-								"exact": all_labels_used,
-								"startswith": [],
-								"endswith": [],
-								"regex": [],
-								"exclude": None
-							}
-						}
-						labgroup_cols = get_subset(label_df.columns, labgroup_qual)
-
-						colgroups = access_level['column_access']
-						colgroups_df = reduce(inner_join, map(lambda a: load_csv(equity_dir +a +'.csv'), colgroups))
-
-						yield (split_group_name, equity, level_name, colgroups_df, label_df[labgroup_cols])
+						yield (split_group_name, equity, access_level_name, access_df, label_df[labgroup_cols])
 
 
 def main(argv):
 	dg = DataGenerator()
 	dg.access.pop('hourly_mdl', None)
+	# dg.access['hourly_mocl']['#ASSET']['label'].pop('TO_CLOSE', None)
 
 	for tup in dg.get_generator():
 		print('split group', tup[0])
 		print('equity', tup[1])
 		print('access level', tup[2])
+		print(tup[3].head())
+		print(tup[4].head())
 
 if __name__ == '__main__':
 	main(sys.argv[1:])
