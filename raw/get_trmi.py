@@ -8,7 +8,7 @@ import getopt
 import json
 from os import getcwd, sep, path, makedirs, pardir
 sys.path.insert(0, path.abspath(pardir))
-from common import makedir_if_not_exists
+from common_util import makedir_if_not_exists
 
 def main(argv):
 	usage = lambda: print('get_trmi.py [-p <pathsfile> -k -t]')

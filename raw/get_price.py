@@ -7,7 +7,7 @@ import getopt
 import json
 from os import getcwd, sep, path, makedirs, pardir
 sys.path.insert(0, path.abspath(pardir))
-from common import makedir_if_not_exists, month_num
+from common_util import makedir_if_not_exists, month_num
 
 def main(argv):
 	usage = lambda: print('get_price.py [-f <filename> -p <pathsfile> -c <columnsfile> -r <rowsfile>]')
