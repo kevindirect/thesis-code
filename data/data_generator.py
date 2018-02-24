@@ -15,10 +15,10 @@ class DataGenerator:
 	pfx = getcwd() +sep
 
 	def __init__(self, joinfile='join.json', splitfile='split.json', accessfile='access.json'):
-		# joinfile enumerates the available equities to run on
+		# joinfile enumerates the available assets to run on
 		if (path.isfile(DataGenerator.pfx +joinfile)):
 			with open(DataGenerator.pfx +joinfile) as json_data:
-				self.equities = list(json.load(json_data).keys())
+				self.assets = list(json.load(json_data).keys())
 		else:
 			print(joinfile, 'must be present in the following directory:', DataGenerator.pfx)
 			sys.exit(2)
@@ -42,28 +42,32 @@ class DataGenerator:
 
 	def get_generator(self, asset_list=None, access_dict=None):
 		if (asset_list is None):
-			asset_list = self.equities
+			asset_list = self.assets
 		if (access_dict is None):
 			access_dict = self.access
-		assert(all((asset in self.equities) for asset in asset_list))
+		assert(all((asset in self.assets) for asset in asset_list))
 		assert(all((split_group in self.splits.keys()) for split_group in access_dict.keys()))
 
 		for split_group_name, split_group in access_dict.items():
 			split_group_dir = DataGenerator.pfx +split_group_name +sep
 
-			for equity in asset_list:
-				equity_dir = split_group_dir +equity +sep
+			for asset in asset_list:
+				asset_dir = split_group_dir +asset +sep
+				label_access_levels = split_group['#ASSET']
 
-				for label_name, access_levels in split_group['#ASSET'].items():
-					label_df = load_csv(equity_dir +label_name +'.csv')
+				for label_name, access_levels in label_access_levels.items():
+					all_splits = [al['data_access'] for al in access_levels.values()]
+					split_set = list(dict.fromkeys(reduce(lambda a,b: a+b, all_splits)))
+					assert(all((split in self.splits[split_group_name]['#ASSET']) for split in split_set))
+					split_dfs = {split: load_csv(asset_dir +split +'.csv') for split in split_set}
+					label_df = load_csv(asset_dir +label_name +'.csv')
 
 					for access_level_name, access_level in access_levels.items():
-						assert(all((split in self.splits[split_group_name]['#ASSET']) for split in access_level['column_access']))
 						labgroup_cols = get_subset(label_df.columns, access_level['label_group'])
-						df_paths = [str(equity_dir +split +'.csv') for split in access_level['column_access']]
-						access_df = reduce(inner_join, map(load_csv, df_paths))
+						access_dfs = [split_dfs[split] for split in access_level['data_access']]
+						access_df = reduce(inner_join, access_dfs)
 
-						yield (split_group_name, equity, access_level_name, access_df, label_df[labgroup_cols])
+						yield (split_group_name, asset, access_level_name, access_df, label_df[labgroup_cols])
 
 
 def main(argv):
@@ -73,7 +77,7 @@ def main(argv):
 
 	for tup in dg.get_generator():
 		print('split group', tup[0])
-		print('equity', tup[1])
+		print('asset', tup[1])
 		print('access level', tup[2])
 		print(tup[3].head())
 		print(tup[4].head())

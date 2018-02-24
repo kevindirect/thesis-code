@@ -16,7 +16,7 @@
 							"exclude": null
 						}
 					},
-					"column_access": ["meta", "open"]
+					"data_access": ["meta", "open"]
 				},
 				"TO_CLOSE": {
 					"label_group": {
@@ -26,7 +26,7 @@
 						"regex": [],
 						"exclude": null
 					},
-					"column_access": ["meta", "open", "close"]
+					"data_access": ["meta", "open", "close"]
 				}
 			}
 		}
@@ -42,7 +42,7 @@
 						"regex": [],
 						"exclude": null
 					},
-					"column_access": ["meta", "data"]
+					"data_access": ["meta", "data"]
 				}
 			}
 		}
