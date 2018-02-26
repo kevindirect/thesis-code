@@ -4,9 +4,9 @@ import sys
 import getopt
 from os import sep
 from functools import reduce
-from common import load_json, load_csv, makedir_if_not_exists, right_join, inner_join, outer_join, get_subset
-from common import RAW_DIR, DATA_DIR, default_joinfile, default_splitfile
-from add_columns import make_time_cols, make_label_cols
+from common_util import RAW_DIR, DATA_DIR, load_json, load_csv, makedir_if_not_exists, right_join, inner_join, outer_join, get_subset
+from data.common import default_joinfile, default_splitfile
+from data.add_columns import make_time_cols, make_label_cols
 
 
 def produce_data(argv):

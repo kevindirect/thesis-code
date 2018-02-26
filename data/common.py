@@ -4,14 +4,9 @@
 import sys
 from os.path import dirname, realpath
 
-sys.path.insert(0, dirname(dirname(realpath(sys.argv[0]))))
-
-from common_util import *
+sys.path.insert(0, dirname(dirname(dirname(realpath(sys.argv[0])))))
 
 # ********** SPECIFIC TO THIS CRUNCH PACKAGE **********
-# PACKAGE CONSTANTS
-
-
 # PACKAGE DEFAULTS
 default_joinfile = 'join.json'
 default_splitfile = 'split.json'

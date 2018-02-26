@@ -3,8 +3,9 @@
 import sys
 from os import sep
 from functools import reduce
-from common import load_json, load_csv, makedir_if_not_exists, inner_join, get_subset
-from common import DATA_DIR, default_joinfile, default_splitfile, default_accessfile
+from common_util import DATA_DIR, load_json, load_csv, makedir_if_not_exists, inner_join, get_subset
+from data.common import default_joinfile, default_splitfile, default_accessfile
+
 
 class DataGenerator:
 	def __init__(self, joinfile=default_joinfile, splitfile=default_splitfile, accessfile=default_accessfile):
