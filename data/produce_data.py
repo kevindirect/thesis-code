@@ -30,10 +30,10 @@ def produce_data(argv):
 			splitfile = arg
 
 	# joinfile tells script what files to join together
-	joins = load_json(joinfile)
+	joins = load_json(joinfile, dir_path=DATA_DIR)
 
 	# splitfile tells script what columns to split into separate frames
-	splits = load_json(splitfile)
+	splits = load_json(splitfile, dir_path=DATA_DIR)
 
 	for equity, file_list in joins.items():
 		print('processing', equity)

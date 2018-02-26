@@ -16,7 +16,7 @@ class DataGenerator:
 
 		# accessfile defines the group membership of each label group and the columns they can access
 		# It defines the default data that will be furnished by the generator
-		self.access = load_json(accessfile)
+		self.access = load_json(accessfile, dir_path=DATA_DIR)
 
 	def get_generator(self, asset_list=None, access_dict=None):
 		asset_list = self.assets if (asset_list is None) else asset_list
