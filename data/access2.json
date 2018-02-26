@@ -30,5 +30,21 @@
 				}
 			}
 		}
+	},
+	"hourly_mdl": {
+		"#ASSET": {
+			"label": {
+				"ALL_DATA": {
+					"label_group": {
+						"exact": [],
+						"startswith": [],
+						"endswith": ["simple_cc", "simple_aa", "dir_cc", "dir_aa"],
+						"regex": [],
+						"exclude": null
+					},
+					"data_access": ["meta", "data"]
+				}
+			}
+		}
 	}
 }

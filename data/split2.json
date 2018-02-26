@@ -42,5 +42,36 @@
 				"exclude": null
 			}
 		}
+	},
+	"hourly_mdl": {
+		"#ASSET": {
+			"meta": {
+				"exact": ["date", "hour", "day", "month", "year"],
+				"startswith": [],
+				"endswith": ["gmtOffset", "ver"],
+				"regex": [],
+				"exclude": null
+			},
+			"data": {
+				"exact": [],
+				"startswith": ["pba", "vol", "enm", "etf", "mkt"],
+				"endswith": [],
+				"regex": [],
+				"exclude": {
+					"exact": [],
+					"startswith": [],
+					"endswith": ["gmtOffset", "ver"],
+					"regex": [],
+					"exclude": null
+				}
+			},
+			"label": {
+				"exact": [],
+				"startswith": ["ret"],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			}
+		}
 	}
 }
