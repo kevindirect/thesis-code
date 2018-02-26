@@ -4,8 +4,8 @@
 import sys
 import getopt
 from os import sep
-from common import load_json, load_csv, makedir_if_not_exists
-from common import RAW_DIR, TRMI_CONFIG_FNAME, TRMI_CONFIG_DIR, default_pathsfile
+from common_util import RAW_DIR, load_json, load_csv, makedir_if_not_exists
+from raw.common import TRMI_CONFIG_FNAME, TRMI_CONFIG_DIR, default_pathsfile
 
 
 def get_trmi(argv):

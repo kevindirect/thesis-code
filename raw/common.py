@@ -4,11 +4,11 @@
 import sys
 from os.path import dirname, realpath
 
-sys.path.insert(0, dirname(dirname(realpath(sys.argv[0]))))
-
-from common_util import *
+sys.path.insert(0, dirname(dirname(dirname(realpath(sys.argv[0])))))
 
 # ********** SPECIFIC TO THIS CRUNCH PACKAGE **********
+from common_util import CRUNCH_DIR
+
 # PACKAGE CONSTANTS
 TRMI_CONFIG_FNAME = 'trmi.json'
 TRMI_CONFIG_DIR = CRUNCH_DIR
