@@ -46,19 +46,3 @@ class DataGenerator:
 
 						yield (split_group_name, asset, access_level_name, access_df, label_df[labgroup_cols])
 
-
-def main(argv):
-	dg = DataGenerator()
-	dg.access.pop('hourly_mdl', None)
-	# dg.access['hourly_mocl']['#ASSET']['label'].pop('TO_CLOSE', None)
-
-	for tup in dg.get_generator():
-		print('split group', tup[0])
-		print('asset', tup[1])
-		print('access level', tup[2])
-		print(tup[3].head())
-		print(tup[4].head())
-
-if __name__ == '__main__':
-	main(sys.argv[1:])
-
