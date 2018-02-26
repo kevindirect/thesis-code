@@ -5,14 +5,14 @@ import sys
 import getopt
 from os import sep
 from common import load_json, load_csv, makedir_if_not_exists
-from common import RAW_DIR, trmi_config_fname, trmi_config_dir, default_pathsfile
+from common import RAW_DIR, TRMI_CONFIG_FNAME, TRMI_CONFIG_DIR, default_pathsfile
 
 
 def get_trmi(argv):
 	usage = lambda: print('get_trmi.py [-p <pathsfile> -k -t]')
 
 	# trmi.json file contains api url and key
-	trmi = load_json(trmi_config_fname, dir_path=trmi_config_dir, cur_dir=False)
+	trmi = load_json(TRMI_CONFIG_FNAME, dir_path=TRMI_CONFIG_DIR, cur_dir=False)
 
 	# Default Parameters
 	per = 'hourly'   			# daily, hourly, or minutely
