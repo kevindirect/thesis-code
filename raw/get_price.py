@@ -6,7 +6,7 @@ from os import sep
 from common import get_script_dir, load_json, load_csv, makedir_if_not_exists, MONTH_NUM
 from common import default_pricefile, default_pathsfile, default_columnsfile, default_rowsfile
 
-def main(argv):
+def get_price(argv):
 	usage = lambda: print('get_price.py [-f <filename> -p <pathsfile> -c <columnsfile> -r <rowsfile>]')
 	pfx = get_script_dir()
 	pricefile = default_pricefile
@@ -136,4 +136,4 @@ def clean_rows(frame, clean_rows_instr):
 	return frame
 
 if __name__ == '__main__':
-	main(sys.argv[1:])
+	get_price(sys.argv[1:])
