@@ -1,10 +1,7 @@
 # Kevin Patel
 
-import pandas as pd
 import sys
-import getopt
-from os import sep, path
-import json
+from os import sep
 from functools import reduce
 from common import load_json, load_csv, makedir_if_not_exists, inner_join, get_subset
 from common import DATA_DIR, default_joinfile, default_splitfile, default_accessfile
