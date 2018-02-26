@@ -34,20 +34,20 @@ def get_price(argv):
 			rowsfile = arg
 
 	# load pricefile into a dataframe with a generated index
-	df = load_csv(pricefile, idx_0=False)
+	df = load_csv(pricefile, dir_path=RAW_DIR, idx_0=False)
 
 	# pathsfile tells script what to pull from the price csv file and where to put it
-	path_dict = load_json(pathsfile)
+	path_dict = load_json(pathsfile, dir_path=RAW_DIR)
 	price_path = path_dict['price']
 	vol_path = path_dict['vol']
 
 	# columnsfile contains processing directives for price and volatility dataframe columns
-	columns_dict = load_json(columnsfile)
+	columns_dict = load_json(columnsfile, dir_path=RAW_DIR)
 	price_clean_cols = columns_dict['price']
 	vol_clean_cols = columns_dict['vol']
 
 	# rowsfile contains processing directives for price and volatility dataframe rows
-	rows_dict = load_json(rowsfile)
+	rows_dict = load_json(rowsfile, dir_path=RAW_DIR)
 	price_clean_rows = rows_dict['price']
 	vol_clean_rows = rows_dict['vol']
 

@@ -38,7 +38,7 @@ def get_trmi(argv):
 			startend = {'start': '2015-08-01', 'end':'2015-08-03'}
 
 	# pathsfile tells script what to pull from the api and where to put it
-	trmi_paths = load_json(pathsfile)['trmi']
+	trmi_paths = load_json(pathsfile, dir_path=RAW_DIR)['trmi']
 
 	dropfirst = ['id', 'Date', 'Asset']
 	join_cols = ['assetCode', 'windowTimestamp']
