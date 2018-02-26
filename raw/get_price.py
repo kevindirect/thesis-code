@@ -4,11 +4,10 @@ import sys
 import getopt
 from os import sep
 from common import get_script_dir, load_json, load_csv, makedir_if_not_exists, MONTH_NUM
-from common import default_pricefile, default_pathsfile, default_columnsfile, default_rowsfile
+from common import RAW_DIR, default_pricefile, default_pathsfile, default_columnsfile, default_rowsfile
 
 def get_price(argv):
 	usage = lambda: print('get_price.py [-f <filename> -p <pathsfile> -c <columnsfile> -r <rowsfile>]')
-	pfx = get_script_dir()
 	pricefile = default_pricefile
 	pathsfile = default_pathsfile
 	columnsfile = default_columnsfile
@@ -51,8 +50,8 @@ def get_price(argv):
 	price_clean_rows = rows_dict['price']
 	vol_clean_rows = rows_dict['vol']
 
-	makedir_if_not_exists(pfx +'price')	
-	makedir_if_not_exists(pfx +'vol')
+	makedir_if_not_exists(RAW_DIR +'price')	
+	makedir_if_not_exists(RAW_DIR +'vol')
 
 	for asset_code in df['#RIC'].unique():
 		name = asset_code[-3:]
@@ -97,11 +96,11 @@ def get_price(argv):
 			print('done')
 
 		if (name in price_path):
-			asset_df.to_csv(pfx +'price' +sep +name +'.csv')
+			asset_df.to_csv(RAW_DIR +'price' +sep +name +'.csv')
 		elif (name in vol_path):
-			asset_df.to_csv(pfx +'vol' +sep +name +'.csv')
+			asset_df.to_csv(RAW_DIR +'vol' +sep +name +'.csv')
 		else:
-			asset_df.to_csv(pfx +name +'.csv')
+			asset_df.to_csv(RAW_DIR +name +'.csv')
 		print()
 
 
