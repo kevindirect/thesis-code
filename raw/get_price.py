@@ -1,21 +1,18 @@
 # Kevin Patel
 
-import pandas as pd
-import datetime
 import sys
 import getopt
-import json
-from os import getcwd, sep, path, makedirs, pardir
-sys.path.insert(0, path.abspath(pardir))
-from common_util import makedir_if_not_exists, month_num
+from os import sep
+from common import get_script_dir, load_json, load_csv, makedir_if_not_exists, MONTH_NUM
+from common import default_pricefile, default_pathsfile, default_columnsfile, default_rowsfile
 
 def main(argv):
 	usage = lambda: print('get_price.py [-f <filename> -p <pathsfile> -c <columnsfile> -r <rowsfile>]')
-	pfx = getcwd() +sep
-	pricefile = 'richard@marketpsychdata.com--N166567660.csv'
-	pathsfile = 'paths.json'
-	columnsfile = 'columns.json'
-	rowsfile = 'rows.json'
+	pfx = get_script_dir()
+	pricefile = default_pricefile
+	pathsfile = default_pathsfile
+	columnsfile = default_columnsfile
+	rowsfile = default_rowsfile
 
 	try:
 		opts, args = getopt.getopt(argv,'hf:p:c:r:',['help', 'filename=', 'pathsfile=', 'columnsfile=', 'rowsfile='])
@@ -36,41 +33,23 @@ def main(argv):
 		elif opt in ('-r', '--rowsfile'):
 			rowsfile = arg
 
-	if (path.isfile(pfx +pricefile)):
-		df = pd.read_csv(pfx +pricefile)
-	else:
-		print('default or alternate csv price file is required for this script to run')
-		sys.exit(2)
+	# load pricefile into a dataframe with a generated index
+	df = load_csv(pricefile, idx_0=False)
 
 	# pathsfile tells script what to pull from the price csv file and where to put it
-	if (path.isfile(pfx +pathsfile)):
-		with open(pfx +pathsfile) as json_data:
-			path_dict = json.load(json_data)
-			price_path = path_dict['price']
-			vol_path = path_dict['vol']
-	else:
-		print(pathsfile, 'must be present in the current directory')
-		sys.exit(2)
+	path_dict = load_json(pathsfile)
+	price_path = path_dict['price']
+	vol_path = path_dict['vol']
 
 	# columnsfile contains processing directives for price and volatility dataframe columns
-	if (path.isfile(pfx +columnsfile)):
-		with open(pfx +columnsfile) as json_data:
-			columns_dict = json.load(json_data)
-			price_clean_cols = columns_dict['price']
-			vol_clean_cols = columns_dict['vol']
-	else:
-		print(columnsfile, 'must be present in the current directory')
-		sys.exit(2)
+	columns_dict = load_json(columnsfile)
+	price_clean_cols = columns_dict['price']
+	vol_clean_cols = columns_dict['vol']
 
 	# rowsfile contains processing directives for price and volatility dataframe rows
-	if (path.isfile(pfx +rowsfile)):
-		with open(pfx +rowsfile) as json_data:
-			rows_dict = json.load(json_data)
-			price_clean_rows = rows_dict['price']
-			vol_clean_rows = rows_dict['vol']
-	else:
-		print(rowsfile, 'must be present in the current directory')
-		sys.exit(2)
+	rows_dict = load_json(rowsfile)
+	price_clean_rows = rows_dict['price']
+	vol_clean_rows = rows_dict['vol']
 
 	makedir_if_not_exists(pfx +'price')	
 	makedir_if_not_exists(pfx +'vol')
@@ -81,7 +60,7 @@ def main(argv):
 		asset_df = df.loc[df['#RIC'] == asset_code]
 
 		# Convert to all numeric date and reverse to match TRMI format
-		date_col = asset_df['Date[G]'].map(lambda w: (w[7:] + '-' + month_num[w[3:6]] + '-' + w[:2]))
+		date_col = asset_df['Date[G]'].map(lambda w: (w[7:] + '-' + MONTH_NUM[w[3:6]] + '-' + w[:2]))
 		hour_col = asset_df['Time[G]'].map(lambda w: int(w[:2]))
 		datehourmin_col = date_col.map(str) +' ' +hour_col.map(lambda h: str(h).zfill(2)) +':00'
 		asset_df.insert(0, 'id', datehourmin_col)

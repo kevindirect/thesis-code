@@ -2,30 +2,22 @@
 # TRMI api ver 1.1
 
 import pandas as pd
-import datetime
 import sys
 import getopt
-import json
-from os import getcwd, sep, path, makedirs, pardir
-sys.path.insert(0, path.abspath(pardir))
-from common_util import makedir_if_not_exists
+from os import sep
+from common import get_script_dir, load_json, makedir_if_not_exists
+from common import trmi_config_fname, trmi_config_dir, default_pathsfile
 
-def main(argv):
+def get_trmi(argv):
 	usage = lambda: print('get_trmi.py [-p <pathsfile> -k -t]')
-	pfx = getcwd() +sep
-	trmi_info_dir = path.abspath(pardir) +sep
+	pfx = get_script_dir()
 
 	# trmi.json file contains api url and key
-	if (path.isfile(trmi_info_dir +'trmi.json')):
-		with open(trmi_info_dir +'trmi.json') as json_data:
-			trmi = json.load(json_data)
-	else:
-		print('trmi.json must be present in the following directory:', trmi_info_dir)
-		sys.exit(2)
+	trmi = load_json(trmi_config_fname, dir_path=trmi_config_dir, cur_dir=False)
 
 	# Default Parameters
 	per = 'hourly'   			# daily, hourly, or minutely
-	pathsfile = 'paths.json'
+	pathsfile = default_pathsfile
 	keep_ns = False
 	startend = {'start': '1996-01-01', 'end':'2018-01-10'}
 
@@ -47,12 +39,7 @@ def main(argv):
 			startend = {'start': '2015-08-01', 'end':'2015-08-03'}
 
 	# pathsfile tells script what to pull from the api and where to put it
-	if (path.isfile(pfx +pathsfile)):
-		with open(pfx +pathsfile) as json_data:
-			trmi_paths = json.load(json_data)['trmi']
-	else:
-		print(pathsfile, 'must be present in the current directory')
-		sys.exit(2)
+	trmi_paths = load_json(pathsfile)['trmi']
 
 	dropfirst = ['id', 'Date', 'Asset']
 	join_cols = ['assetCode', 'windowTimestamp']
@@ -124,4 +111,4 @@ def make_csv_group_request_url(group, assets, version, period, times, api_url, a
 	return '/'.join(reqlist)
 
 if __name__ == '__main__':
-	main(sys.argv[1:])
+	get_trmi(sys.argv[1:])
