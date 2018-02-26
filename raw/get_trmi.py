@@ -5,8 +5,9 @@ import pandas as pd
 import sys
 import getopt
 from os import sep
-from common import get_script_dir, load_json, makedir_if_not_exists
+from common import load_json, makedir_if_not_exists
 from common import RAW_DIR, trmi_config_fname, trmi_config_dir, default_pathsfile
+
 
 def get_trmi(argv):
 	usage = lambda: print('get_trmi.py [-p <pathsfile> -k -t]')

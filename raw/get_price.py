@@ -3,8 +3,9 @@
 import sys
 import getopt
 from os import sep
-from common import get_script_dir, load_json, load_csv, makedir_if_not_exists, MONTH_NUM
+from common import load_json, load_csv, makedir_if_not_exists, MONTH_NUM
 from common import RAW_DIR, default_pricefile, default_pathsfile, default_columnsfile, default_rowsfile
+
 
 def get_price(argv):
 	usage = lambda: print('get_price.py [-f <filename> -p <pathsfile> -c <columnsfile> -r <rowsfile>]')
