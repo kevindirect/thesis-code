@@ -9,8 +9,8 @@ from data.common import default_joinfile, default_splitfile
 from data.add_columns import make_time_cols, make_label_cols
 
 
-def produce_data(argv):
-	usage = lambda: print('produce_data.py [-j <joinfile> -s <splitfile>]')
+def dump_data(argv):
+	usage = lambda: print('dump_data.py [-j <joinfile> -s <splitfile>]')
 	joinfile = default_joinfile
 	splitfile = default_splitfile
 
@@ -63,4 +63,4 @@ def produce_data(argv):
 		print()
 
 if __name__ == '__main__':
-	produce_data(sys.argv[1:])
+	dump_data(sys.argv[1:])
