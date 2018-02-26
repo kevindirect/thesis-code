@@ -11,8 +11,10 @@ from json import load
 MONTH_NUM = {'JAN': '01', 'FEB': '02', 'MAR': '03', 'APR': '04', 'MAY': '05', 'JUN': '06',
 			'JUL': '07', 'AUG': '08', 'SEP': '09', 'OCT': '10', 'NOV': '11', 'DEC': '12'}
 
-PROJECT_ROOT_DIR = dirname(dirname(realpath(sys.argv[0]))) +sep
-
+CRUNCH_DIR = dirname(dirname(realpath(sys.argv[0]))) +sep
+RAW_DIR = CRUNCH_DIR +'raw' +sep
+DATA_DIR = CRUNCH_DIR +'data' +sep
+EDA_DIR = CRUNCH_DIR +'eda' +sep
 
 # ********** OS AND IO UTILS **********
 get_script_dir = lambda: dirname(realpath(sys.argv[0])) +sep

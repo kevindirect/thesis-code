@@ -11,7 +11,7 @@ from common_util import *
 # ********** SPECIFIC TO THIS CRUNCH PACKAGE **********
 # PACKAGE CONSTANTS
 trmi_config_fname = 'trmi.json'
-trmi_config_dir = PROJECT_ROOT_DIR
+trmi_config_dir = CRUNCH_DIR
 
 # PACKAGE DEFAULTS
 default_pricefile = 'richard@marketpsychdata.com--N166567660.csv'
