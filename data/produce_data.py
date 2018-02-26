@@ -9,7 +9,7 @@ from common import RAW_DIR, DATA_DIR, default_joinfile, default_splitfile
 from add_columns import make_time_cols, make_label_cols
 
 
-def main(argv):
+def produce_data(argv):
 	usage = lambda: print('produce_data.py [-j <joinfile> -s <splitfile>]')
 	joinfile = default_joinfile
 	splitfile = default_splitfile
@@ -63,4 +63,4 @@ def main(argv):
 		print()
 
 if __name__ == '__main__':
-	main(sys.argv[1:])
+	produce_data(sys.argv[1:])
