@@ -12,7 +12,7 @@ def get_trmi(argv):
 	usage = lambda: print('get_trmi.py [-p <pathsfile> -k -t]')
 
 	# trmi.json file contains api url and key
-	trmi = load_json(TRMI_CONFIG_FNAME, dir_path=TRMI_CONFIG_DIR, cur_dir=False)
+	trmi = load_json(TRMI_CONFIG_FNAME, dir_path=TRMI_CONFIG_DIR)
 
 	# Default Parameters
 	per = 'hourly'   			# daily, hourly, or minutely

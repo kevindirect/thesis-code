@@ -22,17 +22,14 @@ get_script_dir = lambda: dirname(realpath(sys.argv[0])) +sep
 get_parent_dir = lambda: dirname(dirname(realpath(sys.argv[0]))) +sep
 makedir_if_not_exists = lambda dir_path: makedirs(dir_path) if not exists(dir_path) else None
 
-def load_json(fname, dir_path=get_script_dir(), cur_dir=True):
+def load_json(fname, dir_path=get_script_dir()):
 	full_path = dir_path +fname
 
 	if (isfile(full_path)):
 		with open(full_path) as json_data:
 			return load(json_data)
 	else:
-		if (cur_dir):
-			print(fname, 'must be present in the current directory')
-		else:
-			print(fname, 'must be present in the following directory:', dir_path)
+		print(fname, 'must be present in the following directory:', dir_path)
 		sys.exit(2)
 
 
@@ -42,7 +39,7 @@ right_join = lambda a,b: a.join(b, how='right', sort=True)
 inner_join = lambda a,b: a.join(b, how='inner', sort=True)
 outer_join = lambda a,b: a.join(b, how='outer', sort=True)
 
-def load_csv(fname, dir_path=get_script_dir(), cur_dir=True, idx_0=True, full_path_or_url=False):
+def load_csv(fname, dir_path=get_script_dir(), idx_0=True, full_path_or_url=False):
 	full_path = dir_path +fname
 
 	if (full_path_or_url):
@@ -52,10 +49,7 @@ def load_csv(fname, dir_path=get_script_dir(), cur_dir=True, idx_0=True, full_pa
 		if (isfile(full_path)):
 			return pd.read_csv(full_path, index_col=0) if idx_0 else pd.read_csv(full_path)
 		else:
-			if (cur_dir):
-				print(fname, 'must be present in the current directory')
-			else:
-				print(fname, 'must be present in the following directory:', dir_path)
+			print(fname, 'must be present in the following directory:', dir_path)
 			sys.exit(2)
 
 
