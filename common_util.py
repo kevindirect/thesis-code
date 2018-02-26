@@ -16,6 +16,7 @@ RAW_DIR = CRUNCH_DIR +'raw' +sep
 DATA_DIR = CRUNCH_DIR +'data' +sep
 EDA_DIR = CRUNCH_DIR +'eda' +sep
 
+
 # ********** OS AND IO UTILS **********
 get_script_dir = lambda: dirname(realpath(sys.argv[0])) +sep
 get_parent_dir = lambda: dirname(dirname(realpath(sys.argv[0]))) +sep
@@ -41,17 +42,21 @@ right_join = lambda a,b: a.join(b, how='right', sort=True)
 inner_join = lambda a,b: a.join(b, how='inner', sort=True)
 outer_join = lambda a,b: a.join(b, how='outer', sort=True)
 
-def load_csv(fname, dir_path=get_script_dir(), cur_dir=True, idx_0=True):
+def load_csv(fname, dir_path=get_script_dir(), cur_dir=True, idx_0=True, full_path_or_url=False):
 	full_path = dir_path +fname
 
-	if (isfile(full_path)):
-		return pd.read_csv(full_path, index_col=0) if idx_0 else pd.read_csv(full_path)
+	if (full_path_or_url):
+		# Also useful to load csv files form URLs
+		return pd.read_csv(fname, index_col=0) if idx_0 else pd.read_csv(fname)
 	else:
-		if (cur_dir):
-			print(fname, 'must be present in the current directory')
+		if (isfile(full_path)):
+			return pd.read_csv(full_path, index_col=0) if idx_0 else pd.read_csv(full_path)
 		else:
-			print(fname, 'must be present in the following directory:', dir_path)
-		sys.exit(2)
+			if (cur_dir):
+				print(fname, 'must be present in the current directory')
+			else:
+				print(fname, 'must be present in the following directory:', dir_path)
+			sys.exit(2)
 
 
 # ********** MISC UTILS **********
