@@ -3,8 +3,8 @@
 import sys
 import getopt
 from os import sep
-from common_util import RAW_DIR, load_json, load_csv, makedir_if_not_exists, MONTH_NUM
-from raw.common import default_pricefile, default_pathsfile, default_columnsfile, default_rowsfile
+from common_util import RAW_DIR, load_json, makedir_if_not_exists, MONTH_NUM
+from raw.common import default_pricefile, default_pathsfile, default_columnsfile, default_rowsfile, load_csv_no_idx
 
 
 def get_price(argv):
@@ -34,7 +34,7 @@ def get_price(argv):
 			rowsfile = arg
 
 	# load pricefile into a dataframe with a generated index
-	df = load_csv(pricefile, dir_path=RAW_DIR, idx_0=False)
+	df = load_csv_no_idx(pricefile, dir_path=RAW_DIR)
 
 	# pathsfile tells script what to pull from the price csv file and where to put it
 	path_dict = load_json(pathsfile, dir_path=RAW_DIR)
