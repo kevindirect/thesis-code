@@ -3,7 +3,7 @@
 import sys
 import getopt
 from os import sep
-from common_util import RAW_DIR, load_json, makedir_if_not_exists, MONTH_NUM
+from common_util import RAW_DIR, load_json, makedir_if_not_exists, dump_df
 from raw.common import default_pricefile, default_pathsfile, default_columnsfile, default_rowsfile, load_csv_no_idx
 
 
@@ -13,6 +13,9 @@ def get_price(argv):
 	pathsfile = default_pathsfile
 	columnsfile = default_columnsfile
 	rowsfile = default_rowsfile
+
+	MONTH_NUM = {'JAN': '01', 'FEB': '02', 'MAR': '03', 'APR': '04', 'MAY': '05', 'JUN': '06',
+				'JUL': '07', 'AUG': '08', 'SEP': '09', 'OCT': '10', 'NOV': '11', 'DEC': '12'}
 
 	try:
 		opts, args = getopt.getopt(argv,'hf:p:c:r:',['help', 'filename=', 'pathsfile=', 'columnsfile=', 'rowsfile='])
@@ -55,8 +58,8 @@ def get_price(argv):
 	makedir_if_not_exists(RAW_DIR +'vol')
 
 	for asset_code in df['#RIC'].unique():
-		name = asset_code[-3:]
-		print(name)
+		asset = asset_code[-3:]
+		print(asset)
 		asset_df = df.loc[df['#RIC'] == asset_code]
 
 		# Convert to all numeric date and reverse to match TRMI format
@@ -73,35 +76,33 @@ def get_price(argv):
 		asset_df = asset_df.set_index('id', drop=True).sort_index()
 
 		clean_cols_instr = None
-		if (name in price_clean_cols):
+		if (asset in price_clean_cols):
 			clean_cols_instr = price_clean_cols
-		elif (name in vol_clean_cols):
+		elif (asset in vol_clean_cols):
 			clean_cols_instr = vol_clean_cols
 
 		clean_rows_instr = None
-		if (name in price_clean_rows):
+		if (asset in price_clean_rows):
 			clean_rows_instr = price_clean_rows
-		elif (name in vol_clean_rows):
+		elif (asset in vol_clean_rows):
 			clean_rows_instr = vol_clean_rows
 
 		if (clean_cols_instr is not None):
-			print('\tprocessing ' +name +' columns', end='...', flush=True)
+			print('\tprocessing ' +asset +' columns', end='...', flush=True)
 			asset_df = clean_cols(asset_df, clean_cols_instr)
-			asset_df = clean_cols(asset_df, clean_cols_instr[name])
+			asset_df = clean_cols(asset_df, clean_cols_instr[asset])
 			print('done')
 
 		if (clean_rows_instr is not None):
-			print('\tprocessing ' +name +' rows', end='...', flush=True)
+			print('\tprocessing ' +asset +' rows', end='...', flush=True)
 			asset_df = clean_rows(asset_df, clean_rows_instr)
-			asset_df = clean_rows(asset_df, clean_rows_instr[name])
+			asset_df = clean_rows(asset_df, clean_rows_instr[asset])
 			print('done')
 
-		if (name in price_path):
-			asset_df.to_csv(RAW_DIR +'price' +sep +name +'.csv')
-		elif (name in vol_path):
-			asset_df.to_csv(RAW_DIR +'vol' +sep +name +'.csv')
-		else:
-			asset_df.to_csv(RAW_DIR +name +'.csv')
+		target_dir = RAW_DIR
+		target_dir += 'price' +sep if asset in price_path else ''
+		target_dir += 'vol' +sep if asset in vol_path else ''
+		dump_df(asset_df, asset, dir_path=target_dir)
 		print()
 
 

@@ -2,7 +2,7 @@
 
 import sys
 from os import sep, path, makedirs
-from os.path import dirname, realpath, exists, isfile
+from os.path import dirname, basename, realpath, exists, isfile
 import pandas as pd
 from json import load
 from functools import partial
@@ -18,7 +18,7 @@ DATA_DIR = CRUNCH_DIR +'data' +sep
 TRANSFORM_DIR = CRUNCH_DIR +'transform' +sep
 EDA_DIR = CRUNCH_DIR +'eda' +sep
 
-# Supported DataFrame Formats
+# Supported Pandas DF IO Formats
 FMT_EXTS = {
 	'csv': ('.csv',),
 	'feather': ('.feather',),
@@ -27,13 +27,10 @@ FMT_EXTS = {
 	'parquet': ('.parquet',)
 }
 
-# Default DataFrame IO format
+# Default Pandas DF IO format
 DF_DATA_FMT = 'parquet'
-assert(DF_DATA_FMT in FMT_EXTS)
 
-# ********** GLOBAL CONSTANTS **********
-MONTH_NUM = {'JAN': '01', 'FEB': '02', 'MAR': '03', 'APR': '04', 'MAY': '05', 'JUN': '06',
-			'JUL': '07', 'AUG': '08', 'SEP': '09', 'OCT': '10', 'NOV': '11', 'DEC': '12'}
+# ********** CONSTANTS **********
 
 
 # ********** FS AND GENERAL IO UTILS **********
@@ -127,15 +124,15 @@ def get_subset(str_list, qualifier_dict):
 # The following class was written by stackoverflow's user bburns.km
 # https://stackoverflow.com/questions/7370801/measure-time-elapsed-in-python/41408510#41408510
 class benchmark(object):
-    def __init__(self, msg, fmt="%0.3g"):
+	def __init__(self, msg, fmt="%0.3g"):
 		self.msg = msg
 		self.fmt = fmt
 
-    def __enter__(self):
+	def __enter__(self):
 		self.start = default_timer()
 		return self
 
-    def __exit__(self, *args):
+	def __exit__(self, *args):
 		t = default_timer() - self.start
 		print(("%s : " + self.fmt + " seconds") % (self.msg, t))
 		self.time = t

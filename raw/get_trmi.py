@@ -1,10 +1,9 @@
 # Kevin Patel
-# TRMI api ver 1.1
 
 import sys
 import getopt
 from os import sep
-from common_util import RAW_DIR, load_json, makedir_if_not_exists
+from common_util import RAW_DIR, load_json, makedir_if_not_exists, dump_df
 from raw.common import TRMI_CONFIG_FNAME, TRMI_CONFIG_DIR, default_pathsfile, load_csv_no_idx
 
 
@@ -18,6 +17,7 @@ def get_trmi(argv):
 	per = 'hourly'   			# daily, hourly, or minutely
 	pathsfile = default_pathsfile
 	keep_ns = False
+	is_test = False
 	startend = {'start': '1996-01-01', 'end':'2018-01-10'}
 
 	try:
@@ -35,6 +35,7 @@ def get_trmi(argv):
 		elif opt in ('-k', '--keep_ns'):
 			keep_ns = True
 		elif opt in ('-t', '--test'):
+			is_test = True
 			startend = {'start': '2015-08-01', 'end':'2015-08-03'}
 
 	# pathsfile tells script what to pull from the api and where to put it
@@ -47,8 +48,8 @@ def get_trmi(argv):
 			endpoint = make_csv_group_request_url(group, assets, ver, per, startend, trmi['api']['url'], trmi['api']['key'])
 			print(group, endpoint)
 			df = load_csv_no_idx(endpoint, local_csv=False)
-			dir_path = RAW_DIR +'trmi' +sep +ver +sep +group
-			makedir_if_not_exists(dir_path)
+			target_dir = RAW_DIR +'trmi' +sep +ver +sep +group +sep
+			makedir_if_not_exists(target_dir)
 
 			df = df.drop(dropfirst, axis=1, errors='ignore')
 			news = df.loc[df['dataType'] == 'News'].drop('dataType', axis=1)
@@ -86,13 +87,15 @@ def get_trmi(argv):
 				asset_df.insert(0, 'id', asset_df['windowTimestamp'].map(lambda w: w[:16]))
 				asset_df = asset_df.drop(join_cols, axis=1)
 				asset_df = asset_df.set_index('id', drop=True).sort_index()
-				asset_df.to_csv(dir_path +sep +asset +'.csv')
+				asset += '_test' if (is_test) else ''
+				dump_df(asset_df, asset, dir_path=target_dir)
 				print('done')
 			print()
 
+
 def make_csv_group_request_url(group, assets, version, period, times, api_url, api_key):
-	reqlist = []
-	params = []
+	"""TRMI API ver 1.1"""
+	reqlist, params = [], []
 
 	params.append(period +'?apikey=' +api_key)
 	params.append('assets=' +','.join(assets))
