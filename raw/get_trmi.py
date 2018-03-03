@@ -4,7 +4,8 @@
 import sys
 import getopt
 from os import sep
-from common_util import RAW_DIR, load_json, load_csv, makedir_if_not_exists
+import pandas as pd
+from common_util import RAW_DIR, load_json, makedir_if_not_exists
 from raw.common import TRMI_CONFIG_FNAME, TRMI_CONFIG_DIR, default_pathsfile
 
 
@@ -46,7 +47,7 @@ def get_trmi(argv):
 		for group, assets in groups.items():
 			endpoint = make_csv_group_request_url(group, assets, ver, per, startend, trmi['api']['url'], trmi['api']['key'])
 			print(group, endpoint)
-			df = load_csv(endpoint, idx_0=False, full_path_or_url=True)
+			df = pd.read_csv(endpoint)
 			dir_path = RAW_DIR +'trmi' +sep +ver +sep +group
 			makedir_if_not_exists(dir_path)
 
