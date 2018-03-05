@@ -1,5 +1,6 @@
 # data
 *.csv
+*.parquet
 
 # TRMI API info
 /trmi.json
@@ -12,7 +13,7 @@
 /raw/trmi/*
 /raw/vol/*
 /data/*.csv
-/data/hourly/*
+/data/*.parquet
 
 # other dirs
 /other_creds/*
