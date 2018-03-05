@@ -7,6 +7,8 @@ from os.path import dirname, realpath
 sys.path.insert(0, dirname(dirname(dirname(realpath(sys.argv[0])))))
 
 # ********** SPECIFIC TO THIS CRUNCH PACKAGE **********
+# DATA
+
 # PACKAGE DEFAULTS
 default_joinfile = 'join.json'
 default_splitfile = 'split.json'

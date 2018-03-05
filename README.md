@@ -21,8 +21,8 @@ Kevin Patel
 	1. raw: pull in raw data from disparate data sources and engage in some cleaning
 	2. data: attach raw data together 
 	3. transform: processing, feature engineering, and labelling
-	4. eda
-	5. model
+	4. eda: exploratorty data analysis
+	5. model: ML models
 	6. report
 
 ## DESIGN PHILOSOPHY ##

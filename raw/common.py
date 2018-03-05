@@ -7,7 +7,7 @@ from os.path import dirname, realpath
 sys.path.insert(0, dirname(dirname(dirname(realpath(sys.argv[0])))))
 
 # ********** SPECIFIC TO THIS CRUNCH PACKAGE **********
-# /raw/
+# RAW
 
 from os.path import basename, isfile
 import pandas as pd
