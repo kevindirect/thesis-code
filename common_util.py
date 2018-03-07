@@ -121,19 +121,20 @@ def equals_numexpr(key, val):
 	"""Return numexpr expression for 'key equals value'"""
 	return str(key +'==' +val)
 
-def int_numexpr(key, val): equals_numexpr
+# All of these have the same numexpr syntax hah
+int_numexpr = equals_numexpr
+float_numexpr = equals_numexpr
+str_numexpr = equals_numexpr
+list_numexpr = equals_numexpr
 
-def float_numexpr(key, val): equals_numexpr
-
-def str_numexpr(key, val): equals_numexpr
-
-def list_numexpr(key, val): equals_numexpr
-
-def tuple_numexpr(key, val, tup_len):
+def tuple_numexpr(key, val):
 	"""
 	Use a string key and tuple value to create a numexpr
 	string representing an inequality expression and return it.
 	"""
+	tup_len = len(val)
+	val = tuple(map(str, val))
+
 	if (tup_len == 2): 	# less than or greater than
 		return {
 			'lt': str(key +'<' + val[1]),
@@ -154,15 +155,15 @@ def to_numexpr(key, val):
 	"""
 	Parse a key, val pair into a numexpr string and return it.
 	Dispatcher function for build_query.
-	# TODO - add assert typechecks of val at some point
+	# FIXME lp - add type check assertions of val at some point
 	"""
 	return {
-		int: int_numexpr(key, str(val)),
-		float: float_numexpr(key, str(val)),
-		str: str_numexpr(key, val),
-		list: list_numexpr(key, str(val)),
-		tuple: tuple_numexpr(key, tuple(map(str, val)), len(val))
-	}.get(type(val), DEF_NUMEXPR)
+		int: partial(int_numexpr, key, str(val)),
+		float: partial(float_numexpr, key, str(val)),
+		str: partial(str_numexpr, key, val),
+		list: partial(list_numexpr, key, str(val)),
+		tuple: partial(tuple_numexpr, key, val)
+	}.get(type(val), DEF_NUMEXPR)()
 
 def build_query(search_dict, join_method=DEF_QUERY_JOIN):
 	"""
@@ -197,11 +198,14 @@ def build_query(search_dict, join_method=DEF_QUERY_JOIN):
 		None: subqueries
 	}.get(join_method)
 
-def search_df(df, search_dict):
-	"""Top level function to search for rows which match search_dict"""
-	assert((key in df.columns) for key in search_dict.keys())
-	return df.query(build_query(search_dict)).index
+def query_df(df, numexpr):
+	"""Return index of rows which match numexpr query"""
+	return df.query(numexpr).index
 
+def search_df(df, search_dict):
+	"""Return index of rows which match search_dict"""
+	assert((key in df.columns) for key in search_dict.keys())
+	return query_df(df, build_query(search_dict))
 
 """ Pandas DF Column Filter  """
 def get_subset(str_list, qualifier_dict):
