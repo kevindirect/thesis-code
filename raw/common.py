@@ -22,6 +22,7 @@ default_pricefile = 'richard@marketpsychdata.com--N166567660.csv'
 default_pathsfile = 'paths.json'
 default_columnsfile = 'columns.json'
 default_rowsfile = 'rows.json'
+default_joinsfile = 'joins.json'
 
 # PACKAGE UTIL FUNCTIONS
 def load_csv_no_idx(fname, dir_path=None, local_csv=True):

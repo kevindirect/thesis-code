@@ -5,7 +5,7 @@ Kevin Patel
 
 import sys
 from os import sep, path, makedirs
-from os.path import dirname, basename, realpath, exists, isfile
+from os.path import dirname, basename, realpath, exists, isfile, getsize
 import pandas as pd
 from pandas.api.types import is_numeric_dtype, is_string_dtype, is_list_like
 from json import load
@@ -38,7 +38,20 @@ DF_DATA_FMT = 'parquet'
 
 """ ********** GENERAL UTILS ********** """
 """Constants"""
+BYTES_PER_MEGABYTE = 10**6
 EMPTY_STR=''
+
+"""String"""
+"""
+Return string with escaped quotes enclosed around it.
+Useful for programs, commands, and engines with text interfaces that use
+enclosing quotes to recognize strings (like numexpr and sql).
+"""
+quote_it = lambda string: '\'' +string +'\''
+
+"""Datetime"""
+dt_now = lambda: datetime.now()
+str_now = lambda: dt_now().strftime('%Y-%m-%d %H:%M:%S')
 
 
 """ ********** FS AND GENERAL IO UTILS ********** """
@@ -53,7 +66,7 @@ def load_json(fname, dir_path=None):
 		with open(fpath) as json_data:
 			return load(json_data)
 	else:
-		raise FileNotFoundError(str(basename(fpath) +'must be in:' +dirname(fpath)))
+		raise FileNotFoundError(str(basename(fpath) +' must be in:' +dirname(fpath)))
 
 
 """ ********** PANDAS IO UTILS ********** """
@@ -83,7 +96,7 @@ def load_df(fname, dir_path=None, subset=None, data_format=DF_DATA_FMT):
 			print('error during load:', e)
 			sys.exit(2)
 	else:
-		raise FileNotFoundError(str(basename(fpath) +'must be in:' +dirname(fpath)))
+		raise FileNotFoundError(str(basename(fpath) +' must be in:' +dirname(fpath)))
 
 def dump_df(df, fname, dir_path=None, data_format=DF_DATA_FMT):
 	ext_tuple = FMT_EXTS[data_format]
@@ -99,19 +112,22 @@ def dump_df(df, fname, dir_path=None, data_format=DF_DATA_FMT):
 			'hdf_table': partial(df.to_hdf, fname, mode='w', format='table'),
 			'parquet': df.to_parquet
 		}.get(data_format)(fpath)
+		return getsize(fpath) // BYTES_PER_MEGABYTE
+
 	except Exception as e:
 		print('error during dump:', e)
 		sys.exit(2)
 
 
-""" ********** PANDAS UTILS ********** """
+""" ********** PANDAS GENERAL UTILS ********** """
 left_join = lambda a,b: a.join(b, how='left', sort=True)
 right_join = lambda a,b: a.join(b, how='right', sort=True)
 inner_join = lambda a,b: a.join(b, how='inner', sort=True)
 outer_join = lambda a,b: a.join(b, how='outer', sort=True)
 
 
-""" Pandas DF Row Search """
+""" ********** PANDAS SEARCH AND FILTERING UTILS ********** """
+""" DF Row Search """
 """Constants"""
 DEF_NUMEXPR = EMPTY_STR
 DEF_QUERY_JOIN = 'all'
@@ -160,7 +176,7 @@ def to_numexpr(key, val):
 	return {
 		int: partial(int_numexpr, key, str(val)),
 		float: partial(float_numexpr, key, str(val)),
-		str: partial(str_numexpr, key, val),
+		str: partial(str_numexpr, key, quote_it(str(val))),
 		list: partial(list_numexpr, key, str(val)),
 		tuple: partial(tuple_numexpr, key, val)
 	}.get(type(val), DEF_NUMEXPR)()
@@ -207,7 +223,7 @@ def search_df(df, search_dict):
 	assert((key in df.columns) for key in search_dict.keys())
 	return query_df(df, build_query(search_dict))
 
-""" Pandas DF Column Filter  """
+""" DF Column Filter  """
 def get_subset(str_list, qualifier_dict):
 	"""
 	Select a subset of str_list as dictated by qualifier_dict and return the subset, as list, that satisfies:
@@ -226,17 +242,14 @@ def get_subset(str_list, qualifier_dict):
 	return list(dict.fromkeys(selected)) # Remove dups (casting to dict keys retains order in Python 3.6+) and cast to list
 
 
-""" ********** MISC UTILS ********** """
-time_now = lambda: datetime.now().time()
-
-
 """ ********** PROFILING UTILS ********** """
 # The following class was written by stackoverflow's user bburns.km
 # https://stackoverflow.com/questions/7370801/measure-time-elapsed-in-python/41408510#41408510
 class benchmark(object):
-	def __init__(self, msg, fmt="%0.3g"):
+	def __init__(self, msg, fmt="%0.3g", suppress=False):
 		self.msg = msg
 		self.fmt = fmt
+		self.suppress = suppress
 
 	def __enter__(self):
 		self.start = default_timer()
@@ -244,5 +257,6 @@ class benchmark(object):
 
 	def __exit__(self, *args):
 		t = default_timer() - self.start
-		print(("%s : " + self.fmt + " seconds") % (self.msg, t))
+		if (not self.suppress):
+			print(("%s : " + self.fmt + " seconds") % (self.msg, t))
 		self.time = t
