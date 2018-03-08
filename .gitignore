@@ -21,6 +21,9 @@
 /other_py/*
 /other_sync/*
 
+# test files
+test.py
+
 # byte-compiled / optimized / DLL files
 __pycache__/
 
