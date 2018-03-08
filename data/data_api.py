@@ -7,6 +7,7 @@ import pandas as pd
 from pandas.util import hash_pandas_object
 from common_util import DATA_DIR, load_df, dump_df, makedir_if_not_exists, search_df, str_now, benchmark
 from data.common import DR_NAME, DR_FMT, DR_COLS, DR_IDS, DR_REQ, DR_STAGE, DR_META, DR_GEN
+from data.common import NAME_IDX, DIR_IDX
 
 
 class DataAPI:
@@ -81,8 +82,8 @@ class DataAPI:
 		"""Provide interface to get data"""
 		match_ids = search_df(cls.DataRecordAPI.DATA_RECORD, search_dict)
 
-		for entry in cls.DataRecordAPI.DATA_RECORD[match_ids]:
-			yield load_df(entry['id'], dir_path=entry['path'], subset=subset)
+		for entry in cls.DataRecordAPI.DATA_RECORD.loc[match_ids].itertuples():
+			yield load_df(entry[NAME_IDX], dir_path=entry[DIR_IDX], subset=subset)
 
 	@classmethod
 	def dump(cls, df, entry, save=False):
