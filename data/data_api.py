@@ -13,6 +13,8 @@ from data.common import NAME_IDX, DIR_IDX
 class DataAPI:
 	"""
 	The Global API used to load or dump dataframes.
+	XXX - move all dataframe logic to DataRecordAPI and have DataAPI use a generic
+		interface to manipulate the record.
 	"""
 	class DataRecordAPI:
 		"""
