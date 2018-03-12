@@ -171,7 +171,7 @@ def to_numexpr(key, val):
 	"""
 	Parse a key, val pair into a numexpr string and return it.
 	Dispatcher function for build_query.
-	# XXX lp - add type check assertions of val at some point
+	# XXX - add type check assertions of val at some point
 	"""
 	return {
 		int: partial(int_numexpr, key, str(val)),
