@@ -41,7 +41,9 @@ DF_DATA_FMT = 'parquet'
 """ ********** GENERAL UTILS ********** """
 """Constants"""
 BYTES_PER_MEGABYTE = 10**6
-EMPTY_STR=''
+EMPTY_STR = ''
+DT_FMT_YMD_HM = '%Y-%m-%d %H:%M'
+DT_FMT_YMD_HMS = '%Y-%m-%d %H:%M:%S'
 
 """String"""
 """
@@ -53,7 +55,7 @@ quote_it = lambda string: '\'' +string +'\''
 
 """Datetime"""
 dt_now = lambda: datetime.now()
-str_now = lambda: dt_now().strftime('%Y-%m-%d %H:%M:%S')
+str_now = lambda: dt_now().strftime(DT_FMT_YMD_HMS)
 
 
 """ ********** FS AND GENERAL IO UTILS ********** """
@@ -126,6 +128,14 @@ left_join = lambda a,b: a.join(b, how='left', sort=True)
 right_join = lambda a,b: a.join(b, how='right', sort=True)
 inner_join = lambda a,b: a.join(b, how='inner', sort=True)
 outer_join = lambda a,b: a.join(b, how='outer', sort=True)
+
+"""Datetime"""
+def series_to_dti(ser, fmt=DT_FMT_YMD_HM, utc=True, exact=True):
+	"""
+	Return object (str) dtyped series as DatetimeIndex dtyped series.
+	Sets the global project default for str -> DateTimeIndex conversion.
+	"""
+	return pd.to_datetime(ser, format=fmt, utc=utc, exact=exact)
 
 
 """ ********** PANDAS SEARCH AND FILTERING UTILS ********** """

@@ -4,7 +4,8 @@ import sys
 import getopt
 from os import sep
 from functools import reduce
-from common_util import RAW_DIR, load_json, load_df, right_join, outer_join
+
+from common_util import RAW_DIR, load_json, load_df, series_to_dti, right_join, outer_join
 from raw.common import default_joinsfile
 from data.data_api import DataAPI
 
@@ -50,6 +51,7 @@ def dump_raw(argv):
 			'raw_cat': cat_map(file_list['price'])
 		}
 		print('\tdumping', end='...', flush=True)
+		joined.index = series_to_dti(joined.index) # XXX - move index conversion to dti upstream
 		DataAPI.dump(joined, entry)
 		print('done')
 
