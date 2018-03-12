@@ -12,9 +12,9 @@ from data.common import NAME_IDX, DIR_IDX
 
 class DataAPI:
 	"""
-	The Global API used to load or dump dataframes.
-	XXX - move all dataframe logic to DataRecordAPI and have DataAPI use a generic
-		interface to manipulate the record.
+	The Global API used to load or dump dataframes. All real implementation is done in the inner class, the outer
+	class is just a generic interface. This is to make swapping out the backend easier (in the future I'll
+	convert the backend to a lightweight sql db)
 	"""
 	class DataRecordAPI:
 		"""
@@ -78,42 +78,59 @@ class DataAPI:
 			# 	path_dir += next_dir +sep
 			return path_dir
 
+		@classmethod
+		def matched(cls, search_dict):
+			"""Provide interface"""
+			match_ids = search_df(cls.DATA_RECORD, search_dict)
+			yield from cls.DATA_RECORD.loc[match_ids].itertuples()
+
+		@classmethod
+		def loader(cls, get_rec=False, **kwargs):
+
+			def load_rec(rec):
+				return rec, load_df(rec[NAME_IDX], dir_path=rec[DIR_IDX], **kwargs)
+
+			def load(rec):
+				return load_df(rec[NAME_IDX], dir_path=rec[DIR_IDX], **kwargs)
+			
+			return load_rec if (get_rec) else load
+
+		@classmethod
+		def dumper(cls, df, entry, save=False):
+			cls.assert_valid_entry(entry)
+
+			entry['id'], new_entry = cls.get_id(entry)
+			entry['name'] = cls.get_name(entry)
+			entry['dir'] = cls.get_path(entry)
+
+			makedir_if_not_exists(entry['dir'])
+			with benchmark('', suppress=True) as b:
+				entry['size'] = dump_df(df, entry['name'], dir_path=entry['dir'])
+			entry['dumptime'] = round(b.time, 2)
+			entry['hash'] = sum(hash_pandas_object(df))
+			addition = pd.DataFrame(columns=DR_COLS, index=[entry['id']])
+
+			if (new_entry):
+				entry['created'] = str_now()
+				addition.loc[entry['id']] = entry
+				cls.DATA_RECORD = pd.concat([cls.DATA_RECORD, addition], copy=False)
+			else:
+				entry['modified'] = str_now()
+				addition.loc[entry['id']] = entry
+				cls.DATA_RECORD.update(addition)
+
+			if (save):
+				cls.dump_record()
+
 
 	@classmethod
-	def generate(cls, search_dict, subset=None):
-		"""Provide interface to get data"""
-		match_ids = search_df(cls.DataRecordAPI.DATA_RECORD, search_dict)
-
-		for entry in cls.DataRecordAPI.DATA_RECORD.loc[match_ids].itertuples():
-			yield load_df(entry[NAME_IDX], dir_path=entry[DIR_IDX], subset=subset)
+	def generate(cls, search_dict, **kwargs):
+		"""Provide generator interface to get data"""
+		yield from map(cls.DataRecordAPI.loader(**kwargs), cls.DataRecordAPI.matched(search_dict))
 
 	@classmethod
-	def dump(cls, df, entry, save=False):
-		"""Provide interface to dump new data to /DATA/"""
-		cls.DataRecordAPI.assert_valid_entry(entry)
-
-		entry['id'], new_entry = cls.DataRecordAPI.get_id(entry)
-		entry['name'] = cls.DataRecordAPI.get_name(entry)
-		entry['dir'] = cls.DataRecordAPI.get_path(entry)
-
-		makedir_if_not_exists(entry['dir'])
-		with benchmark('', suppress=True) as b:
-			entry['size'] = dump_df(df, entry['name'], dir_path=entry['dir'])
-		entry['dumptime'] = round(b.time, 2)
-		entry['hash'] = sum(hash_pandas_object(df))
-		addition = pd.DataFrame(columns=DR_COLS, index=[entry['id']])
-
-		if (new_entry):
-			entry['created'] = str_now()
-			addition.loc[entry['id']] = entry
-			cls.DataRecordAPI.DATA_RECORD = pd.concat([cls.DataRecordAPI.DATA_RECORD, addition], copy=False)
-		else:
-			entry['modified'] = str_now()
-			addition.loc[entry['id']] = entry
-			cls.DataRecordAPI.DATA_RECORD.update(addition)
-
-		if (save):
-			cls.DataRecordAPI.dump_record()
+	def dump(cls, df, entry, **kwargs):
+		cls.DataRecordAPI.dumper(df, entry, **kwargs)
 	
 	@classmethod
 	def save(cls):
