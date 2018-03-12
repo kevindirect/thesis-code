@@ -13,6 +13,7 @@ from contextlib import contextmanager
 from timeit import default_timer
 import logging
 
+import numpy as np
 import pandas as pd
 from pandas.api.types import is_numeric_dtype, is_string_dtype, is_list_like
 
@@ -135,7 +136,9 @@ def series_to_dti(ser, fmt=DT_FMT_YMD_HM, utc=True, exact=True):
 	Return object (str) dtyped series as DatetimeIndex dtyped series.
 	Sets the global project default for str -> DateTimeIndex conversion.
 	"""
-	return pd.to_datetime(ser, format=fmt, utc=utc, exact=exact)
+	dti = pd.to_datetime(ser, format=fmt, utc=utc, exact=exact)
+	assert(np.all(dti.minute==0) and np.all(dti.second==0) and np.all(dti.microsecond==0) and np.all(dti.nanosecond==0))
+	return dti
 
 
 """ ********** PANDAS SEARCH AND FILTERING UTILS ********** """
