@@ -13,8 +13,10 @@ from data.common import NAME_IDX, DIR_IDX
 class DataAPI:
 	"""
 	The Global API used to load or dump dataframes. All real implementation is done in the inner class, the outer
-	class is just a generic interface. This is to make swapping out the backend easier (in the future I'll
-	convert the backend to a lightweight sql db)
+	class is just a generic interface. This is to make swapping out the backend easier
+	XXX:
+		- move DataRecordAPI to it's own class file, have DataAPI inherit from it
+		- implement a SQL backend for DataRecordAPI
 	"""
 	class DataRecordAPI:
 		"""
@@ -96,9 +98,10 @@ class DataAPI:
 			return load_rec if (get_rec) else load
 
 		@classmethod
-		def dumper(cls, df, entry, save=False):
-			cls.assert_valid_entry(entry)
-
+		def dump(cls, df, entry, update_record=False):
+			"""
+			XXX - break this down and make it more elegant
+			"""
 			entry['id'], new_entry = cls.get_id(entry)
 			entry['name'] = cls.get_name(entry)
 			entry['dir'] = cls.get_path(entry)
@@ -119,9 +122,15 @@ class DataAPI:
 				addition.loc[entry['id']] = entry
 				cls.DATA_RECORD.update(addition)
 
-			if (save):
+			if (update_record):
 				cls.dump_record()
 
+	@classmethod
+	def initialize(cls):
+		try:
+			cls.DataRecordAPI.reload_record()
+		except FileNotFoundError as e:
+			cls.DataRecordAPI.reset_record()
 
 	@classmethod
 	def generate(cls, search_dict, **kwargs):
@@ -130,15 +139,12 @@ class DataAPI:
 
 	@classmethod
 	def dump(cls, df, entry, **kwargs):
-		cls.DataRecordAPI.dumper(df, entry, **kwargs)
+		cls.DataRecordAPI.assert_valid_entry(entry)
+		cls.DataRecordAPI.dump(df, entry, **kwargs)
 	
 	@classmethod
-	def save(cls):
+	def update_record(cls):
 		cls.DataRecordAPI.dump_record()
 
 
-# Initialization
-try:
-	DataAPI.DataRecordAPI.reload_record()
-except FileNotFoundError as e:
-	DataAPI.DataRecordAPI.reset_record()
+DataAPI.initialize()

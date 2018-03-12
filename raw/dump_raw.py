@@ -53,7 +53,7 @@ def dump_raw(argv):
 		DataAPI.dump(joined, entry)
 		print('done')
 
-	DataAPI.save()
+	DataAPI.update_record()
 
 
 def cat_map(primary_target):
