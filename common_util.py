@@ -6,13 +6,15 @@ Kevin Patel
 import sys
 from os import sep, path, makedirs
 from os.path import dirname, basename, realpath, exists, isfile, getsize
-import pandas as pd
-from pandas.api.types import is_numeric_dtype, is_string_dtype, is_list_like
 from json import load
 from functools import partial
 from datetime import datetime
 from contextlib import contextmanager
 from timeit import default_timer
+import logging
+
+import pandas as pd
+from pandas.api.types import is_numeric_dtype, is_string_dtype, is_list_like
 
 
 """ ********** SYSTEM SETTINGS ********** """
@@ -93,7 +95,7 @@ def load_df(fname, dir_path=None, subset=None, data_format=DF_DATA_FMT):
 			return df.set_index('id') if data_format=='feather' else df
 
 		except Exception as e:
-			print('error during load:', e)
+			logging.error('error during load:', e)
 			sys.exit(2)
 	else:
 		raise FileNotFoundError(str(basename(fpath) +' must be in:' +dirname(fpath)))
@@ -115,7 +117,7 @@ def dump_df(df, fname, dir_path=None, data_format=DF_DATA_FMT):
 		return getsize(fpath) // BYTES_PER_MEGABYTE
 
 	except Exception as e:
-		print('error during dump:', e)
+		logging.error('error during dump:', e)
 		sys.exit(2)
 
 
@@ -258,5 +260,5 @@ class benchmark(object):
 	def __exit__(self, *args):
 		t = default_timer() - self.start
 		if (not self.suppress):
-			print(("%s : " + self.fmt + " seconds") % (self.msg, t))
+			logging.info(("%s : " + self.fmt + " seconds") % (self.msg, t))
 		self.time = t
