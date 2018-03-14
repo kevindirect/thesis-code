@@ -144,8 +144,8 @@ def series_to_dti(ser, fmt=DT_FMT_YMD_HM, utc=True, exact=True):
 """ ********** PANDAS SEARCH AND FILTERING UTILS ********** """
 """ DF Row Search """
 """Constants"""
-DEF_NUMEXPR = EMPTY_STR
-DEF_QUERY_JOIN = 'all'
+DEFAULT_NUMEXPR = EMPTY_STR
+DEFAULT_QUERY_JOIN = 'all'
 ALLOWED_TYPES = [int, float, str, tuple, list]
 
 def equals_numexpr(key, val):
@@ -172,7 +172,7 @@ def tuple_numexpr(key, val):
 			'lte': str(key +'<=' + val[1]),
 			'gt': str(key +'>' + val[1]),
 			'gte': str(key +'>=' + val[1])
-		}.get(val[0], DEF_NUMEXPR)
+		}.get(val[0], DEFAULT_NUMEXPR)
 
 	elif (tup_len == 3):	# in range or out of range
 		return {
@@ -180,7 +180,7 @@ def tuple_numexpr(key, val):
 			'ine':str(val[1] +'<=' +key +'<=' +val[2]),
 			'out': str(key +'<' +val[1] +' or ' +key +'>' +val[2]),
 			'oute': str(key +'>=' +val[1] +' or ' +key +'<=' +val[2]),
-		}.get(val[0], DEF_NUMEXPR)
+		}.get(val[0], DEFAULT_NUMEXPR)
 
 def to_numexpr(key, val):
 	"""
@@ -194,9 +194,9 @@ def to_numexpr(key, val):
 		str: partial(str_numexpr, key, quote_it(str(val))),
 		list: partial(list_numexpr, key, str(val)),
 		tuple: partial(tuple_numexpr, key, val)
-	}.get(type(val), DEF_NUMEXPR)()
+	}.get(type(val), DEFAULT_NUMEXPR)()
 
-def build_query(search_dict, join_method=DEF_QUERY_JOIN):
+def build_query(search_dict, join_method=DEFAULT_QUERY_JOIN):
 	"""
 	Return a numexpr query defined by search_dict.
 	The join_method param sets how terms will be interpreted as a
