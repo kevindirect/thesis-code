@@ -1,0 +1,46 @@
+{
+	"hourly_mocl": {
+		"#ASSET": {
+			"meta": {
+				"exact": ["date", "hour", "day", "month", "year"],
+				"startswith": [],
+				"endswith": ["gmtOffset", "ver"],
+				"regex": [],
+				"exclude": null
+			},
+			"open": {
+				"exact": ["pba_open", "pba_openBid", "pba_openAsk", "vol_open", "vol_openBid", "vol_openAsk"],
+				"startswith": ["enm", "etf", "mkt"],
+				"endswith": [],
+				"regex": [],
+				"exclude": {
+					"exact": [],
+					"startswith": [],
+					"endswith": ["ver"],
+					"regex": [],
+					"exclude": null
+				}
+			},
+			"close": {
+				"exact": [],
+				"startswith": ["pba", "vol"],
+				"endswith": [],
+				"regex": [],
+				"exclude": {
+					"exact": [],
+					"startswith": [],
+					"endswith": ["gmtOffset", "open", "openBid", "openAsk"],
+					"regex": [],
+					"exclude": null
+				}
+			},
+			"label": {
+				"exact": [],
+				"startswith": ["ret"],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			}
+		}
+	}
+}
