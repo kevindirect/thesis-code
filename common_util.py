@@ -74,7 +74,7 @@ def load_json(fname, dir_path=None):
 
 
 """ ********** PANDAS IO UTILS ********** """
-def load_df(fname, dir_path=None, subset=None, data_format=DF_DATA_FMT, dti_freq=None):
+def load_df(fname, dir_path=None, data_format=DF_DATA_FMT, subset=None, dti_freq=None):
 	"""
 	Read and return the df file in the given directory and
 	assume that the file has an index as the first column
