@@ -74,7 +74,7 @@ def load_json(fname, dir_path=None):
 
 
 """ ********** PANDAS IO UTILS ********** """
-def load_df(fname, dir_path=None, subset=None, data_format=DF_DATA_FMT):
+def load_df(fname, dir_path=None, subset=None, data_format=DF_DATA_FMT, dti_freq=None):
 	"""
 	Read and return the df file in the given directory and
 	assume that the file has an index as the first column
@@ -86,15 +86,21 @@ def load_df(fname, dir_path=None, subset=None, data_format=DF_DATA_FMT):
 
 	if (isfile(fpath)):
 		try:
-			load_fn = {
+			df = {
 				'csv': partial(pd.read_csv, index_col=0, usecols=subset),
 				'feather': partial(pd.read_feather),
 				'hdf_fixed': partial(pd.read_hdf, key=None, mode='r', columns=subset, format='fixed'),
 				'hdf_table': partial(pd.read_hdf, key=None, mode='r', columns=subset, format='table'),
 				'parquet': partial(pd.read_parquet, columns=subset)
-			}.get(data_format)
-			df = load_fn(fpath)
-			return df.set_index('id') if data_format=='feather' else df
+			}.get(data_format)(fpath)
+
+			if (data_format=='feather'):
+				df = df.set_index('id')
+
+			if (dti_freq is not None):
+				df.index.freq = pd.tseries.frequencies.to_offset(dti_freq)
+
+			return df
 
 		except Exception as e:
 			logging.error('error during load:', e)
