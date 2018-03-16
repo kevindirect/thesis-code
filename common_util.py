@@ -9,13 +9,11 @@ from os.path import dirname, basename, realpath, exists, isfile, getsize
 from json import load
 from functools import partial
 from datetime import datetime
-from contextlib import contextmanager
 from timeit import default_timer
 import logging
 
 import numpy as np
 import pandas as pd
-from pandas.api.types import is_numeric_dtype, is_string_dtype, is_list_like
 
 
 """ ********** SYSTEM SETTINGS ********** """
@@ -23,7 +21,7 @@ from pandas.api.types import is_numeric_dtype, is_string_dtype, is_list_like
 CRUNCH_DIR = dirname(dirname(realpath(sys.argv[0]))) +sep
 RAW_DIR = CRUNCH_DIR +'raw' +sep
 DATA_DIR = CRUNCH_DIR +'data' +sep
-TRANSFORM_DIR = CRUNCH_DIR +'transform' +sep
+RECON_DIR = CRUNCH_DIR +'recon' +sep
 EDA_DIR = CRUNCH_DIR +'eda' +sep
 
 """Supported Pandas DF IO Formats"""
@@ -43,6 +41,7 @@ DF_DATA_FMT = 'parquet'
 """Constants"""
 BYTES_PER_MEGABYTE = 10**6
 EMPTY_STR = ''
+DT_FREQ = 'H'
 DT_FMT_YMD_HM = '%Y-%m-%d %H:%M'
 DT_FMT_YMD_HMS = '%Y-%m-%d %H:%M:%S'
 
@@ -131,12 +130,13 @@ inner_join = lambda a,b: a.join(b, how='inner', sort=True)
 outer_join = lambda a,b: a.join(b, how='outer', sort=True)
 
 """Datetime"""
-def series_to_dti(ser, fmt=DT_FMT_YMD_HM, utc=True, exact=True):
+def series_to_dti(ser, fmt=DT_FMT_YMD_HM, utc=True, exact=True, freq=DT_FREQ):
 	"""
 	Return object (str) dtyped series as DatetimeIndex dtyped series.
 	Sets the global project default for str -> DateTimeIndex conversion.
 	"""
 	dti = pd.to_datetime(ser, format=fmt, utc=utc, exact=exact)
+	dti.freq = pd.tseries.frequencies.to_offset(freq)
 	assert(np.all(dti.minute==0) and np.all(dti.second==0) and np.all(dti.microsecond==0) and np.all(dti.nanosecond==0))
 	return dti
 

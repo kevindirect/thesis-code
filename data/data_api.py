@@ -7,7 +7,6 @@ import pandas as pd
 from pandas.util import hash_pandas_object
 from common_util import DATA_DIR, load_df, dump_df, makedir_if_not_exists, search_df, str_now, benchmark
 from data.common import DR_NAME, DR_FMT, DR_COLS, DR_IDS, DR_REQ, DR_STAGE, DR_META, DR_GEN
-from data.common import NAME_IDX, DIR_IDX
 
 
 class DataAPI:
@@ -107,7 +106,7 @@ class DataAPI:
 			"""Return a loader function that takes a record entry and returns something"""
 
 			def load_rec_df(rec):
-				return rec, load_df(rec[NAME_IDX], dir_path=rec[DIR_IDX], **kwargs)
+				return rec, load_df(rec.name, dir_path=rec.dir, **kwargs)
 			
 			return load_rec_df
 
