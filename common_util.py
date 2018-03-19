@@ -18,7 +18,7 @@ import pandas as pd
 
 """ ********** SYSTEM SETTINGS ********** """
 """Project Root and Subpackage paths"""
-CRUNCH_DIR = dirname(dirname(realpath(sys.argv[0]))) +sep
+CRUNCH_DIR = dirname(dirname(realpath(sys.argv[0]))) +sep # FIXME
 RAW_DIR = CRUNCH_DIR +'raw' +sep
 DATA_DIR = CRUNCH_DIR +'data' +sep
 RECON_DIR = CRUNCH_DIR +'recon' +sep

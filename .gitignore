@@ -23,6 +23,8 @@
 
 # test files
 test.py
+test.ipynb
+test.json
 
 # byte-compiled / optimized / DLL files
 __pycache__/
