@@ -3,8 +3,11 @@
 import sys
 from os import sep
 from os.path import isfile, getsize
+import logging
+
 import pandas as pd
 from pandas.util import hash_pandas_object
+
 from common_util import DATA_DIR, DT_FREQ, load_df, dump_df, makedir_if_not_exists, search_df, str_now, benchmark
 from data.common import DR_NAME, DR_FMT, DR_COLS, DR_IDS, DR_REQ, DR_STAGE, DR_META, DR_GEN
 
@@ -42,8 +45,8 @@ class DataAPI:
 			dump_df(cls.DATA_RECORD, DR_NAME, dir_path=DATA_DIR, data_format=DR_FMT)
 
 		@classmethod
-		def print_record(cls):
-			print(cls.DATA_RECORD)
+		def get_record_view(cls):
+			return cls.DATA_RECORD.loc[:, :]
 
 		@classmethod
 		def assert_valid_entry(cls, entry):
@@ -144,6 +147,12 @@ class DataAPI:
 			cls.DataRecordAPI.reload_record()
 		except FileNotFoundError as e:
 			cls.DataRecordAPI.reset_record()
+			logging.warning('DataAPI initialize: Data record not found, loading empty record')
+
+	
+	@classmethod
+	def print_record(cls):
+		print(cls.DataRecordAPI.get_record_view())
 
 	@classmethod
 	def generate(cls, search_dict, dti_freq=DT_FREQ, **kwargs):
