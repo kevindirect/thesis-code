@@ -10,10 +10,11 @@ sys.path.insert(0, dirname(dirname(dirname(realpath(sys.argv[0])))))
 # EDA
 
 # OTHER STAGE DEPENDENCIES
-dummy = 0
+
+
 # PACKAGE CONSTANTS
 
 
 # PACKAGE DEFAULTS
-
+dum = 0
 
