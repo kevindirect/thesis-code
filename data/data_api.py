@@ -25,11 +25,12 @@ class DataAPI:
 		Global storage structure for the storage of dataframe records dumped by other stages.
 		Currently only supports single threaded access.
 		
-			id: integer id
-			name: filename of df on disk
-			root: the root dependency of this df; for raw stage data this is a join group but for others it's a df name
-			basis: the direct dependency (parent) of this dataframe; for raw stage data root always equals basis
-			stage: the stage the data originated from
+		Entry:
+			id (int): integer id
+			name (str): filename of df on disk
+			root (str): the root dependency of this df; for raw stage data this is a join group but for others it's a df name
+			basis (str): the direct dependency (parent) of this dataframe; for raw stage data root always equals basis
+			stage (str): the stage the data originated from
 		"""
 		@classmethod
 		def reload_record(cls):
