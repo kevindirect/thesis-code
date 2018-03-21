@@ -70,13 +70,13 @@ def infoPurityGraphs(filedir, files):
 
 		for column in df:
 			if (column != 'label'):
-				pyplot.title(column)
-				pyplot.hist(ups[column].values, bins=numBins, alpha=0.3, label='up')
-				pyplot.hist(downs[column].values, bins=numBins, alpha=0.3, label='down')
-				pyplot.hist(sideways[column].values, bins=numBins, alpha=0.3, label='sideways')
-				pyplot.legend(loc='upper right')
+				plt.title(column)
+				plt.hist(ups[column].values, bins=numBins, alpha=0.3, label='up')
+				plt.hist(downs[column].values, bins=numBins, alpha=0.3, label='down')
+				plt.hist(sideways[column].values, bins=numBins, alpha=0.3, label='sideways')
+				plt.legend(loc='upper right')
 				pdf.savefig()
-				pyplot.cla()
+				plt.cla()
 		pdf.close()
 
 
@@ -184,7 +184,7 @@ def plot_df(df, title_str='plot', xlabel_str='xlab', ylabel_str='ylab'):
 	plt.title(title_str)
 	plt.xlabel(xlabel_str)
 	plt.ylabel(ylabel_str)
-	[plt.plot(df.index, df.loc[:, col_name], label=str(col_name)) for col_name in df.columns]
+	[plt.plot(df.index, df.loc[:, col_name], '^', label=str(col_name)) for col_name in df.columns]
 	plt.legend(loc='upper left')
 	plt.show()
 
