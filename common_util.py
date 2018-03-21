@@ -7,7 +7,7 @@ import sys
 from os import sep, path, makedirs
 from os.path import dirname, basename, realpath, exists, isfile, getsize
 from json import load
-from functools import partial
+from functools import reduce, partial
 from datetime import datetime
 from timeit import default_timer
 import logging
@@ -261,6 +261,19 @@ def get_subset(str_list, qualifier_dict):
 		selected = filter(exclude_fn, selected)
 
 	return list(dict.fromkeys(selected)) # Remove dups (casting to dict keys retains order in Python 3.6+) and cast to list
+
+def chained_filter(str_list, qualifier_dict_list):
+	"""
+	Return subset in str_list that satisfies the list of qualifier_dicts via the procedure of get_subset.
+
+	Args:
+		str_list (list(str)): list of strings (ex: a list of column names)
+		qualifier_dict_list (list(dict)): list of dictionaries representing a series of filters
+
+	Returns:
+		sublist of str_list
+	"""
+	return reduce(get_subset, qualifier_dict_list, str_list)
 
 
 """ ********** PROFILING UTILS ********** """
