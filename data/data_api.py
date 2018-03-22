@@ -52,6 +52,8 @@ class DataAPI:
 		@classmethod
 		def assert_valid_entry(cls, entry):
 			"""Assert whether or not entry is a validly formatted entry to the data record."""
+			# XXX - convert to set operations, easier to read and understand
+
 			# Required fields:
 			assert all((col in entry and entry[col] is not None) for col in DR_REQ), 'missing a required general rec entry field (DR_REQ)'
 			assert all((col in entry and entry[col] is not None) for col in DR_STAGE if col.startswith(entry['stage'])), 'missing a required stage rec entry field (DR_STAGE)'
