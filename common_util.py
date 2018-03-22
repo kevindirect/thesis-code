@@ -7,7 +7,7 @@ import sys
 from os import sep, path, makedirs
 from os.path import dirname, basename, realpath, exists, isfile, getsize
 from json import load
-from functools import reduce, partial
+from functools import reduce, partial, wraps
 from datetime import datetime
 from timeit import default_timer
 import logging
@@ -56,6 +56,34 @@ quote_it = lambda string: '\'' +string +'\''
 """Datetime"""
 dt_now = lambda: datetime.now()
 str_now = lambda: dt_now().strftime(DT_FMT_YMD_HMS)
+
+"""List"""
+def list_compare(master, other):
+	"""
+	Return describing relationship master and other.
+
+	Args:
+		master (list): 
+		other (list): 
+	
+	Return:
+		String describing relationship of lists
+	"""
+	master_set = set(master)
+	other_set = set(other)
+
+	if (master_set == other_set):
+		return 'equal'
+	elif (master_set > other_set):
+		return 'proper_superset'
+	elif (master_set < other_set):
+		return 'proper_subset'
+	elif (master_set & other_set == other_set):
+		return 'has_all'
+	elif (master_set & other_set < other_set):
+		return 'has_some'
+	elif (master_set.isdisjoint(other_set))
+		return 'disjoint'
 
 
 """ ********** FS AND GENERAL IO UTILS ********** """
@@ -145,6 +173,47 @@ def series_to_dti(ser, fmt=DT_FMT_YMD_HM, utc=True, exact=True, freq=DT_FREQ):
 	dti.freq = pd.tseries.frequencies.to_offset(freq)
 	assert(np.all(dti.minute==0) and np.all(dti.second==0) and np.all(dti.microsecond==0) and np.all(dti.nanosecond==0))
 	return dti
+
+"""Numpy"""
+def pd_to_np(fn):
+	"""
+	Return function with all pandas typed arguments converted to their numpy counterparts.
+	For use as a decorator.
+
+	Args:
+		fn (function): function to change the argument types of
+
+	Returns:
+		Functions with argument types casted
+	"""
+	def convert(obj):
+		"""
+		Return converted object
+		
+		Args:
+			obj (Any): object to cast
+
+		Returns:
+			Converted object according to this map:
+				pd.Series    -> np.array
+				pd.DataFrame -> np.matrix
+				Other -> other
+		"""
+		if (isinstance(obj, pd.Series)):
+			return obj.values
+		elif (isinstance(obj, pd.DataFrame)):
+			return obj.as_matrix
+		else:
+			obj
+
+	@wraps(fn)
+	def fn_numpy_args(*args, **kwargs):
+		args = tuple(map(convert, args))
+		kwargs = {key: convert(val) for key, val in kwargs.items()}
+
+		return fn(*args, **kwargs)
+
+	return fn_numpy_args
 
 
 """ ********** PANDAS SEARCH AND FILTERING UTILS ********** """
