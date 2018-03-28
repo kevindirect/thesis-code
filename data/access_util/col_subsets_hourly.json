@@ -60,7 +60,7 @@
 			}
 		},
 		"ohlc": {
-			"exact": ["pba_open", "pba_high", "pba_low", "pba_close"],
+			"exact": ["pba_open", "pba_high", "pba_low", "pba_close", "pba_avgPrice"],
 			"startswith": [],
 			"endswith": [],
 			"regex": [],
@@ -83,7 +83,7 @@
 			}
 		},
 		"ohlc": {
-			"exact": ["vol_open", "vol_high", "vol_low", "vol_close"],
+			"exact": ["vol_open", "vol_high", "vol_low", "vol_close", "vol_avgPrice"],
 			"startswith": [],
 			"endswith": [],
 			"regex": [],

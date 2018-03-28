@@ -82,7 +82,7 @@ def list_compare(master, other):
 		return 'has_all'
 	elif (master_set & other_set < other_set):
 		return 'has_some'
-	elif (master_set.isdisjoint(other_set))
+	elif (master_set.isdisjoint(other_set)):
 		return 'disjoint'
 
 
