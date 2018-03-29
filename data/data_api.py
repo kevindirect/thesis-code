@@ -8,7 +8,7 @@ import logging
 import pandas as pd
 from pandas.util import hash_pandas_object
 
-from common_util import DATA_DIR, DT_FREQ, load_df, dump_df, makedir_if_not_exists, search_df, str_now, benchmark
+from common_util import DATA_DIR, load_df, dump_df, makedir_if_not_exists, search_df, str_now, benchmark
 from data.common import DR_NAME, DR_FMT, DR_COLS, DR_IDS, DR_REQ, DR_STAGE, DR_META, DR_GEN
 
 
@@ -112,7 +112,7 @@ class DataAPI:
 			"""Return a loader function that takes a record entry and returns something"""
 
 			def load_rec_df(rec):
-				return rec, load_df(rec.name, dir_path=rec.dir, **kwargs)
+				return rec, load_df(rec.name, dir_path=rec.dir, dti_freq=rec.freq, **kwargs)
 			
 			return load_rec_df
 
@@ -158,9 +158,9 @@ class DataAPI:
 		print(cls.DataRecordAPI.get_record_view())
 
 	@classmethod
-	def generate(cls, search_dict, dti_freq=DT_FREQ, **kwargs):
+	def generate(cls, search_dict, **kwargs):
 		"""Provide generator interface to get data"""
-		yield from map(cls.DataRecordAPI.loader(dti_freq=dti_freq, **kwargs), cls.DataRecordAPI.matched(search_dict))
+		yield from map(cls.DataRecordAPI.loader(**kwargs), cls.DataRecordAPI.matched(search_dict))
 
 	@classmethod
 	def dump(cls, df, entry, **kwargs):

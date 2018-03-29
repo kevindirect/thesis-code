@@ -41,7 +41,8 @@ DF_DATA_FMT = 'parquet'
 """Constants"""
 BYTES_PER_MEGABYTE = 10**6
 EMPTY_STR = ''
-DT_FREQ = 'H'
+DT_HOURLY_FREQ = 'H'
+DT_DAILY_FREQ = 'd'
 DT_FMT_YMD_HM = '%Y-%m-%d %H:%M'
 DT_FMT_YMD_HMS = '%Y-%m-%d %H:%M:%S'
 
@@ -164,7 +165,7 @@ inner_join = lambda a,b: a.join(b, how='inner', sort=True)
 outer_join = lambda a,b: a.join(b, how='outer', sort=True)
 
 """Datetime"""
-def series_to_dti(ser, fmt=DT_FMT_YMD_HM, utc=True, exact=True, freq=DT_FREQ):
+def series_to_dti(ser, fmt=DT_FMT_YMD_HM, utc=True, exact=True, freq=DT_HOURLY_FREQ):
 	"""
 	Return object (str) dtyped series as DatetimeIndex dtyped series.
 	Sets the global project default for str -> DateTimeIndex conversion.
