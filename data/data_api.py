@@ -93,7 +93,7 @@ class DataAPI:
 		@classmethod
 		def get_path(cls, entry):
 			"""Return path of df on disk for given candidate entry"""
-			path_dir = DATA_DIR +entry['root'] +sep +entry['basis'] +sep
+			path_dir = DATA_DIR +sep.join([entry['root'], entry['basis'], entry['freq']]) +sep
 
 			sorted_ss = sorted(filter(lambda c: c.startswith(entry['stage']), DR_STAGE))
 			if (sorted_ss):
