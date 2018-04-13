@@ -1,14 +1,7 @@
 # Kevin Patel
 
-import sys
-import os
-import logging
-import numpy as np
-import pandas as pd
-import engarde.decorators as ed
-
-from common_util import load_df, dump_df, DATA_DIR
-from data.data_api import DataAPI
+from common_util import series_to_dti
+from mutate.common import dum
 
 
 def getTEvents(gRaw, h):
@@ -29,6 +22,6 @@ def getTEvents(gRaw, h):
 			sPos = 0
 			tEvents.append(i)
 
-	return pd.DatetimeIndex(tEvents)
+	return series_to_dti(tEvents)
 
 
