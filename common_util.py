@@ -22,7 +22,7 @@ CRUNCH_DIR = dirname(dirname(realpath(sys.argv[0]))) +sep # FIXME
 RAW_DIR = CRUNCH_DIR +'raw' +sep
 DATA_DIR = CRUNCH_DIR +'data' +sep
 RECON_DIR = CRUNCH_DIR +'recon' +sep
-EDA_DIR = CRUNCH_DIR +'eda' +sep
+MUTATE_DIR = CRUNCH_DIR +'mutate' +sep
 
 """Supported Pandas DF IO Formats"""
 FMT_EXTS = {
@@ -42,7 +42,8 @@ DF_DATA_FMT = 'parquet'
 BYTES_PER_MEGABYTE = 10**6
 EMPTY_STR = ''
 DT_HOURLY_FREQ = 'H'
-DT_DAILY_FREQ = 'd'
+DT_BIZ_DAILY_FREQ = 'B'
+DT_CAL_DAILY_FREQ = 'D'
 DT_FMT_YMD_HM = '%Y-%m-%d %H:%M'
 DT_FMT_YMD_HMS = '%Y-%m-%d %H:%M:%S'
 
