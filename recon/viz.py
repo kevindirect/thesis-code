@@ -11,7 +11,7 @@ from numba import jit, vectorize
 
 from common_util import search_df, get_subset, benchmark
 from data.data_api import DataAPI
-from eda.common import dum
+from recon.common import dum
 
 
 def plot_dist(col_name):
@@ -79,10 +79,70 @@ def infoPurityGraphs(filedir, files):
 				plt.cla()
 		pdf.close()
 
-
-
-
 def plot_feature(feature=None, label=None,
+                remove_nans=True, remove_zeros=True,                                           #pre-processing options
+                atomic_transform=lambda x:x, delta_transform=lambda x:x, combo='delta_atomic', #processing options
+                low_clip=-1.0, high_clip=1.0,
+                show_class='all'):                                                             #post-processing options
+
+    assert(feature and label)
+    #TODO - option for gradient coloring
+    colors = {1: "blue", 0: "white", -1: "red", -2: "black"}
+    output = pd.DataFrame({feature: data[feature], label: data[label], 'year': data['year']})
+
+    #Drop rows with no label
+    output.dropna(axis=0, subset=[label], inplace=True)
+
+    #Pre processing
+    output[feature].fillna(value=-2, axis=0, inplace=True,)
+    if (remove_nans):
+        output = output[output[feature] != -2]
+    if (remove_zeros):
+        output = output[output[feature] != 0]
+        
+    #TODO - upper and lower bound filtering (throw out middle)
+        #past_period - number of rows behind the "big moves" to keep in
+        #Need this for delta transforms
+    
+    if (combo == 'atomic'):
+        output[combo] = atomic_transform(output[feature])
+    elif (combo == 'delta'):
+        output[combo] = delta_transform(output[feature])
+    elif (combo == 'atomic_delta'):
+        output[combo] = atomic_transform(delta_transform(output[feature]))
+    elif (combo == 'delta_atomic'):
+        output[combo] = delta_transform(atomic_transform(output[feature]))
+    else:
+        output[combo] = output[feature]
+    low_clip = low_clip if low_clip > output[combo].min() else output[combo].min()
+    high_clip = high_clip if high_clip < output[combo].max() else output[combo].max()
+    output[combo] = np.clip(output[combo], low_clip, high_clip)
+
+    #Post processing
+    if (show_class != 'all'):
+        if (show_class == 'up'):
+            output = output[output[label] == 1]
+        elif (show_class == 'down'):
+            output = output[output[label] == -1]
+        elif (show_class == 'sideways'):
+            output = output[output[label] == 0]
+    
+    #TODO - add year specific removal option
+
+    data_space = np.linspace(0, len(output[combo])-1, num=len(output[combo]))
+    plt.figure(figsize=(25,10))
+    #plt.figure().tight_layout()
+    plt.title('Data Segmentation Graph')
+    plt.xlabel('Observation')
+    plt.ylabel('Feature Value')
+    plt.xlim([-100, 4100])
+    plt.grid(b=True, which='major', axis='y')
+    #textstr = '$\mu=%.2f$\n$\mathrm{median}=%.2f$\n$\sigma=%.2f$'%(mean, median, sdev)
+    plt.scatt
+
+
+
+def i_plot_feature(feature=None, label=None,
 				remove_zeros=True,																#pre-processing options
 				atomic_transform=lambda x:x, delta_transform=lambda x:x, combo='delta_atomic',  #processing options
 				low_clip=-1.0, high_clip=1.0,
