@@ -191,7 +191,7 @@ def get_missing_dt(ser, ref=DT_BIZ_DAILY_FREQ):
 
     return biz_days.difference(df_biz_days)
 
-def get_cust_biz(ser, ref=DT_BIZ_DAILY_FREQ):
+def get_custom_biz_freq(ser, ref=DT_BIZ_DAILY_FREQ):
 	"""
 	Return custom CustomBusinessDay or CustomBusinessHour based on missing periods in ser.
 	"""
