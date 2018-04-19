@@ -14,6 +14,7 @@ import logging
 
 import numpy as np
 import pandas as pd
+from pandas.tseries.offsets import CustomBusinessDay, CustomBusinessHour
 
 
 """ ********** SYSTEM SETTINGS ********** """
@@ -41,9 +42,11 @@ DF_DATA_FMT = 'parquet'
 """Constants"""
 BYTES_PER_MEGABYTE = 10**6
 EMPTY_STR = ''
+DT_DAILY_FREQ = 'D'
 DT_HOURLY_FREQ = 'H'
+DT_CAL_DAILY_FREQ = DT_DAILY_FREQ
 DT_BIZ_DAILY_FREQ = 'B'
-DT_CAL_DAILY_FREQ = 'D'
+DT_BIZ_HOURLY_FREQ = 'BH'
 DT_FMT_YMD_HM = '%Y-%m-%d %H:%M'
 DT_FMT_YMD_HMS = '%Y-%m-%d %H:%M:%S'
 
@@ -175,6 +178,29 @@ def series_to_dti(ser, fmt=DT_FMT_YMD_HM, utc=True, exact=True, freq=DT_HOURLY_F
 	dti.freq = pd.tseries.frequencies.to_offset(freq)
 	assert(np.all(dti.minute==0) and np.all(dti.second==0) and np.all(dti.microsecond==0) and np.all(dti.nanosecond==0))
 	return dti
+
+def get_missing_dt(ser, ref=DT_BIZ_DAILY_FREQ):
+	"""
+	Return the datetimes in ref that are missing from ser.
+	"""
+    biz_days = pd.date_range(ser.index.min(), ser.index.max(), freq=ref).date
+    df_biz_days = ser.resample(ref).mean().dropna().index.date
+
+    biz_days = pd.DatetimeIndex(biz_days)
+    df_biz_days = pd.DatetimeIndex(df_biz_days)
+
+    return biz_days.difference(df_biz_days)
+
+def get_cust_biz(ser, ref=DT_BIZ_DAILY_FREQ):
+	"""
+	Return custom CustomBusinessDay or CustomBusinessHour based on missing periods in ser.
+	"""
+	misses = get_missing_dt(ser, ref=ref)
+	if (ref == DT_BIZ_DAILY_FREQ):
+		return CustomBusinessDay(holidays=misses)
+	elif (ref == DT_BIZ_HOURLY_FREQ):
+		return CustomBusinessHour(holidays=misses)
+
 
 """Numpy"""
 def pd_to_np(fn):
