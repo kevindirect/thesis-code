@@ -20,28 +20,53 @@ from mutate.common import dum
 from mutate.ops import *
 
 
+"""
+THRESHOLD TYPE (Transform on price series to make it a stationary return series)
+	* spread: absolute value arithmetic spread (same as period 1 differencing)
+	* ansr: absolute value net simple return
+	* alog: absolute value log gross return
+	* frac: fractional differentiation
+
+TIME HORIZON (Allowable data window to make threshold from)
+	* FTH: Fixed Time Horizon - Uses the latest aggregation period
+	* VTH: Variable Time Horizon - Uses the latest aggregation period and previous periods
+
+THRESH TRANSFORMS (Types of transforms on return series to make a threshold)
+	* static: Uses all data starting from the time horizon to current
+	* moving: Uses all data starting from k periods to current
+		- rolling: simple aggregation
+		- ewm: exponentially weighted aggregation
+	* expanding: Uses all data to current
+
+"""
+
+
 # ********** THRESH TYPES **********
 _spread_thresh = lambda f, s: abs(f - s)			# spread: abs arithmetic spread -> |fast - slow|
 _ansr_thresh = lambda f, s: abs((f / s) - 1)		# ansr: abs net simple return 	-> |(fast / slow) - 1|
 _alog_thresh = lambda f, s: abs(np.log(f / s))		# alog: abs log gross return 	-> |ln(fast / slow)|
 
 
-# ********** THRESH SHIFTED ON AGG_FREQ **********
-def get_thresh_af(intraday_df, thresh_type='ansr', original_freq=DT_HOURLY_FREQ, agg_freq=DT_BIZ_DAILY_FREQ, pfx=''):
+# ********** FIXED TIME HORIZON **********
+def get_thresh_fth(intraday_df, thresh_type='ansr', shift=False, org_freq=DT_HOURLY_FREQ, agg_freq=DT_BIZ_DAILY_FREQ, shift_freq=DT_BIZ_DAILY_FREQ, pfx=''):
 	"""
-	Return thresh estimates based on pervious aggregation period, shifted on aggregation frequency.
-	
+	Return thresh estimates.
+
 	Args:
 		intraday_df (pd.DataFrame): intraday price dataframe with two columns (slow, fast)
 		thresh_type (String): threshold type
+		shift (boolean): whether or not to shift by 'shift_freq'
+		org_freq: freq of the original data
+		agg_freq: freq to use for groupby aggregation
+		shift_freq: freq to use for shift ∈ {org_freq, agg_freq}
+
 		pfx (String, optional): prefix to all column names
-		original_freq: freq of the original data
-		agg_freq: freq to use for groupby aggregation and shift
 	
 	Returns:
 		Return pd.DataFrame with derived columns
 	"""
-	_cname = lambda s: '_'.join([pfx, s, thresh_type])
+	th =  'fth'
+	_cname = lambda s: '_'.join([pfx, th, thresh_type, s])
 
 	if (thresh_type == 'spread'):
 		thresh_fun = _spread_thresh
@@ -54,170 +79,176 @@ def get_thresh_af(intraday_df, thresh_type='ansr', original_freq=DT_HOURLY_FREQ,
 	derived['slow'] = intraday_df.iloc[:, 0]
 	derived['fast'] = intraday_df.iloc[:, 1]
 	derived['thresh'] = thresh_fun(derived['fast'], derived['slow'])
+	orig_cols = list(derived.columns)
 	gb = derived.groupby(pd.Grouper(freq=agg_freq))
-	# roll = derived.rolling(agg_freq)
 
-	# FIXED WINDOW (CURRENT PERIOD ONLY)
-	# average
-	derived[_cname('avg')] = gb['thresh'].transform(pd.Series.mean).shift(freq=agg_freq)
+	if (shift_freq == agg_freq):
+		# static average
+		derived[_cname('savg')] = gb['thresh'].transform(pd.Series.mean)
 
-	# standard deviation
-	derived[_cname('std')] = gb['thresh'].transform(pd.Series.std).shift(freq=agg_freq)
+		# static standard deviation
+		derived[_cname('std')] = gb['thresh'].transform(pd.Series.std)
 
-	# median
-	derived[_cname('med')] = gb['thresh'].transform(pd.Series.median).shift(freq=agg_freq)
-	
-	# largest
-	derived[_cname('max')] = gb['thresh'].transform(pd.Series.max).shift(freq=agg_freq)
+		# exponentially weighted average
+		derived[_cname('eavg')] = gb['thresh'].transform(lambda s: s.ewm(span=len(s)).mean())
 
-	# smallest
-	derived[_cname('min')] = gb['thresh'].transform(pd.Series.min).shift(freq=agg_freq)
+		# exponentially weighted standard deviation
+		derived[_cname('estd')] = gb['thresh'].transform(lambda s: s.ewm(span=len(s)).std())
 
-	# second-to-last of previous day
-	derived[_cname('sec')] = gb['thresh'].transform(lambda x: x.iat[len(x)-2]).shift(freq=agg_freq)
-	
-	# final of previous day
-	derived[_cname('fin')] = gb['thresh'].transform(pd.Series.last, original_freq).shift(freq=agg_freq)
+		# static median
+		derived[_cname('smed')] = gb['thresh'].transform(pd.Series.median)
+		
+		# static largest
+		derived[_cname('smax')] = gb['thresh'].transform(pd.Series.max)
 
-	# whole of previous day
-	last_fast = gb['fast'].transform(pd.Series.last, original_freq)
-	first_slow = gb['slow'].transform(pd.Series.first, original_freq)
-	whole = thresh_fun(last_fast, first_slow)
-	derived[_cname('whl')] = whole.shift(freq=agg_freq)
+		# static smallest
+		derived[_cname('smin')] = gb['thresh'].transform(pd.Series.min)
 
+		# second-to-last of previous day
+		derived[_cname('ssec')] = gb['thresh'].transform(lambda x: x.iat[len(x)-2])
+		
+		# final of previous day
+		derived[_cname('sfin')] = gb['thresh'].transform(pd.Series.last, org_freq)
 
-	# # ROLLING (PAST INCLUDED) at agg_freq aggregation period
-	# # agg_freq moving average
-	# derived[_cname('afma')] = roll.mean()
+		# whole of previous day (can use this to create vth thresholds)
+		last_fast = gb['fast'].transform(pd.Series.last, org_freq)
+		first_slow = gb['slow'].transform(pd.Series.first, org_freq)
+		derived[_cname('swhl')] = thresh_fun(last_fast, first_slow)
 
-	# # agg_freq exponential moving average
-	# derived[_cname('afema')]
+	elif (shift_freq == org_freq):
 
-	# # agg_freq moving standard deviation
-	# derived[_cname('afmsd')] = roll.std()
+		# value of previous period
+		derived[_cname('prev')] = derived['thresh'] # final version will be shifted
 
-	# # agg_freq exponential moving standard deviation
-	# derived[_cname('afesd')]
+		# expanding average
+		derived[_cname('xavg')] = gb['thresh'].transform(lambda ser: ser.expanding().mean())
 
-	# # agg_freq moving median
-	# derived[_cname('afmed')] = roll.median()
+		# expanding median
+		derived[_cname('xmed')] = gb['thresh'].transform(lambda ser: ser.expanding().median())
 
-	# # agg_freq moving max
-	# derived[_cname('afmax')] = roll.max()
+		# expanding standard deviation
+		derived[_cname('xstd')] = gb['thresh'].transform(lambda ser: ser.expanding().std())
 
-	# # agg_freq moving min
-	# derived[_cname('afmin')] = roll.min()
+		# expanding max
+		derived[_cname('xmax')] = gb['thresh'].transform(lambda ser: ser.expanding().max())
+		
+		# expanding min
+		derived[_cname('xmin')] = gb['thresh'].transform(lambda ser: ser.expanding().min())
 
+	if (shift):
+		derived_cols = [col_name for col_name in derived.columns if (col_name not in orig_cols)]
+		for col_name in derived_cols:
+			derived[col_name] = derived[col_name].shift(freq=shift_freq, axis=0)
 
-	# # ROLLING (PAST INCLUDED) at original_freq aggregation period
-	# # original_freq moving average
-	# derived[_cname('ofma')]
-
-	# # original_freq exponential moving average
-	# derived[_cname('ofema')]
-
-	# # original_freq moving standard deviation
-	# derived[_cname('ofmsd')]
-
-	# # original_freq exponential moving standard deviation
-	# derived[_cname('ofesd')]
-
-	# # original_freq moving median
-	# derived[_cname('ofmed')]
-
-	# # original_freq moving max
-	# derived[_cname('ofmax')]
-
-	# # original_freq moving min
-	# derived[_cname('ofmin')]
-
-	
-	# Deal with days where previous day has less hours than current
-	derived = derived.groupby(pd.Grouper(freq=agg_freq)).fillna(method='ffill')
+		# For days where previous day has less hours than current
+		derived = derived.groupby(pd.Grouper(freq=agg_freq)).fillna(method='ffill')
 
 	return derived
 
 
-# ********** THRESH SHIFTED ON ORIGINAL_FREQ **********
-def get_thresh_of(intraday_df, thresh_type='ansr', original_freq=DT_HOURLY_FREQ, agg_freq=DT_BIZ_DAILY_FREQ, pfx=''):
-	"""
-	Return thresh estimates based on current aggregation period, shifted on original frequency.
+
+
+# ********** VARIABLE TIME HORIZON **********
+# TODO: a more sensible way to do this is to base it off the fth version:
+#			* shift_freq==agg_freq - > rolling/expanding/ewm on the same fth version 'swhl' column
+# 			* shift_freq==orig_freq -> rolling/expanding/ewm on the same fth version 'prev' column
+# 				(or take a weighted average of the vth(shift_freq==agg_freq) and intraday portions)
+
+# def get_thresh_vth(intraday_df, thresh_type='ansr', org_freq=DT_HOURLY_FREQ, agg_freq=DT_BIZ_DAILY_FREQ, shift_freq=DT_BIZ_DAILY_FREQ, per=None, pfx=''):
+# 	"""
+# 	Return thresh estimates.
+# 	Variable time horizon allows thresholds to go beyond the specified aggregation frequency.
+
+# 	Args:
+# 		intraday_df (pd.DataFrame): intraday price dataframe with two columns (slow, fast)
+# 		thresh_type (String): threshold type
+# 		org_freq: freq of the original data
+# 		agg_freq: freq to use for groupby aggregation
+# 		shift_freq: freq to use for shift ∈ {org_freq, agg_freq}
+# 		pfx (String, optional): prefix to all column names
 	
-	Args:
-		intraday_df (pd.DataFrame): intraday price dataframe with two columns (slow, fast)
-		thresh_type (String): threshold type
-		pfx (String, optional): prefix to all column names
-		original_freq: freq of the original data
-		agg_freq: freq to use for groupby and shift
+# 	Returns:
+# 		Return pd.DataFrame with derived columns
+# 	"""
+# 	time_hor = str(per)+str(shift_freq)
+# 	th =  'vth(' +time_hor +')'
+# 	_cname = lambda s: '_'.join([pfx, th, s, thresh_type])
+
+# 	if (thresh_type == 'spread'):
+# 		thresh_fun = _spread_thresh
+# 	elif (thresh_type == 'ansr'):
+# 		thresh_fun = _ansr_thresh
+# 	elif (thresh_type == 'alog'):
+# 		thresh_fun = _alog_thresh
+
+# 	derived = pd.DataFrame(index=intraday_df.index)
+# 	derived['slow'] = intraday_df.iloc[:, 0]
+# 	derived['fast'] = intraday_df.iloc[:, 1]
+# 	derived['thresh'] = thresh_fun(derived['fast'], derived['slow'])
+# 	gb = derived.groupby(pd.Grouper(freq=agg_freq))
+# 	roll = derived.rolling(time_hor) # Rolling object of size 'per' 'agg_freq's
+# 	expand = derived.expanding()
+
+# 	# ROLLING
+# 	# simple moving average
+# 	derived[_cname('s_ma')] = roll.mean().resample(DT_HOURLY_FREQ)
+
+# 	# simple moving standard deviation
+# 	derived[_cname('s_std')] = roll.std().resample(DT_HOURLY_FREQ)
+
+# 	# simple moving median
+# 	derived[_cname('s_med')] = roll.median().resample(DT_HOURLY_FREQ)
 	
-	Returns:
-		Return pd.DataFrame with derived columns
-	"""
-	_cname = lambda s: '_'.join([pfx, s, thresh_type])
+# 	# simple moving largest
+# 	derived[_cname('s_max')] = roll.max().resample(DT_HOURLY_FREQ)
 
-	if (thresh_type == 'spread'):
-		thresh_fun = _spread_thresh
-	elif (thesh_type == 'ansr'):
-		thresh_fun = _ansr_thresh
-	elif (thresh_type == 'log'):
-		thresh_fun = _log_thresh
+# 	# simple moving smallest
+# 	derived[_cname('s_min')] = roll.min().resample(DT_HOURLY_FREQ)
 
-	derived = pd.DataFrame(index=intraday_df.index)
-	derived['slow'] = intraday_df.iloc[:, 0]
-	derived['fast'] = intraday_df.iloc[:, 1]
-	derived['thresh'] = thresh_fun(derived['fast'], derived['slow'])
-	gb = derived.loc[:, 'thresh'].groupby(pd.Grouper(freq=agg_freq))
+# 	# EXPANDING
+# 	# expanding average
+# 	derived[_cname('x_ma')] = expand.mean().resample(DT_HOURLY_FREQ)
 
-	# FIXED WINDOW (CURRENT PERIOD ONLY)
-	# latest
-	derived[_cname('lst')] = gb['thresh'].transform(pd.Series.last, original_freq).shift(freq=original_freq)
+# 	# expanding standard deviation
+# 	derived[_cname('x_std')] = expand.std().resample(DT_HOURLY_FREQ)
 
-	# expanding average
-	derived[_cname('xma')] = gb['thresh'].transform(lambda ser: ser.expanding.mean())
-
-	# expanding standard deviation
-	derived[_cname('xsd')] = gb['thresh'].transform(lambda ser: ser.expanding.std())
-
-	# expanding max
-	derived[_cname('xmax')] = gb['thresh'].transform(lambda ser: ser.expanding.max())
+# 	# expanding median
+# 	derived[_cname('x_med')] = expand.median().resample(DT_HOURLY_FREQ)
 	
-	# expanding min
-	derived[_cname('xmin')] = gb['thresh'].transform(lambda ser: ser.expanding.min())
+# 	# expanding largest
+# 	derived[_cname('x_max')] = expand.max().resample(DT_HOURLY_FREQ)
 
-
-	# # exponential average
-	# derived[_cname('ema')]
-
-	# # exponential standard deviation
-	# derived[_cname('exesd')] = gb['thresh'].transform(pd.Series.std).shift(freq=agg_freq)
-
-
-	# # ROLLING (PAST INCLUDED) at original_freq aggregation period
-	# # original_freq moving average
-	# derived[_cname('ofma')]
-
-	# # original_freq exponential moving average
-	# derived[_cname('ofema')]
-
-	# # original_freq moving standard deviation
-	# derived[_cname('ofmsd')]
-
-	# # original_freq exponential moving standard deviation
-	# derived[_cname('ofesd')]
-
-	# # original_freq moving median
-	# derived[_cname('ofmed')]
-
-	# # original_freq moving max
-	# derived[_cname('ofmax')]
-
-	# # original_freq moving min
-	# derived[_cname('ofmin')]
-
-
+# 	# expanding smallest
+# 	derived[_cname('x_min')] = expand.min().resample(DT_HOURLY_FREQ)
 	
-	# Deal with days where previous day has less hours than current
-	# derived = derived.groupby(pd.Grouper(freq=agg_freq)).fillna(method='ffill')
+# 	if (shift_freq == agg_freq):
+# 		# # whole of previous day
+# 		# last_fast = gb['fast'].transform(pd.Series.last, org_freq)
+# 		# first_slow = gb['slow'].transform(pd.Series.first, org_freq)
+# 		# whole = thresh_fun(last_fast, first_slow)
+# 		# derived[_cname('whl')] = whole.shift(freq=shift_freq)
 
-	return derived
+# 		# # For days where previous day has less hours than current
+# 		# derived = derived.groupby(pd.Grouper(freq=agg_freq)).fillna(method='ffill')
 
+# 	elif (shift_freq == org_freq):
+# 		ew = derived.ewm(span=per)
+
+# 		# EXPONENTIAL
+# 		# simple moving average
+# 		derived[_cname('e_ma')] = ew.mean()
+
+# 		# simple moving standard deviation
+# 		derived[_cname('e_std')] = ew.std()
+
+# 		# median
+# 		derived[_cname('e_med')] = ew.med()
+		
+# 		# largest
+# 		derived[_cname('e_max')] = ew.max()
+
+# 		# smallest
+# 		derived[_cname('e_min')] = ew.min()
+
+
+# 	return derived
