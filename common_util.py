@@ -183,13 +183,13 @@ def get_missing_dt(ser, ref=DT_BIZ_DAILY_FREQ):
 	"""
 	Return the datetimes in ref that are missing from ser.
 	"""
-    biz_days = pd.date_range(ser.index.min(), ser.index.max(), freq=ref).date
-    df_biz_days = ser.resample(ref).mean().dropna().index.date
+	biz_days = pd.date_range(ser.index.min(), ser.index.max(), freq=ref).date
+	df_biz_days = ser.resample(ref).mean().dropna().index.date
 
-    biz_days = pd.DatetimeIndex(biz_days)
-    df_biz_days = pd.DatetimeIndex(df_biz_days)
+	biz_days = pd.DatetimeIndex(biz_days)
+	df_biz_days = pd.DatetimeIndex(df_biz_days)
 
-    return biz_days.difference(df_biz_days)
+	return biz_days.difference(df_biz_days)
 
 def get_custom_biz_freq(ser, ref=DT_BIZ_DAILY_FREQ):
 	"""
@@ -223,8 +223,8 @@ def pd_to_np(fn):
 
 		Returns:
 			Converted object according to this map:
-				pd.Series    -> np.array
-				pd.DataFrame -> np.matrix
+				pd.Series		-> np.array
+				pd.DataFrame 	-> np.matrix
 				Other -> other
 		"""
 		if (isinstance(obj, pd.Series)):
