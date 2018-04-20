@@ -19,12 +19,13 @@ from data.access_util import col_subsetters as cs
 from mutate.common import dum
 from mutate.ops import *
 
+# TODO: fracdiff, vth, single series thresholds
 
 """
 THRESHOLD TYPE (Transform on price series to make it a stationary return series)
-	* spread: absolute value arithmetic spread (same as period 1 differencing)
+	* spread: absolute value arithmetic spread (period 1 differencing)
 	* ansr: absolute value net simple return
-	* alog: absolute value log gross return
+	* log: log gross return
 	* frac: fractional differentiation
 
 TIME HORIZON (Allowable data window to make threshold from)
@@ -41,43 +42,46 @@ THRESH TRANSFORMS (Types of transforms on return series to make a threshold)
 """
 
 
-# ********** THRESH TYPES **********
+# ********** THRESHOLD TYPES **********
 _spread_thresh = lambda f, s: abs(f - s)			# spread: abs arithmetic spread -> |fast - slow|
 _ansr_thresh = lambda f, s: abs((f / s) - 1)		# ansr: abs net simple return 	-> |(fast / slow) - 1|
-_alog_thresh = lambda f, s: abs(np.log(f / s))		# alog: abs log gross return 	-> |ln(fast / slow)|
+_log_thresh = lambda f, s: np.log((f / s)+1)		# log: log gross return 		-> ln(fast / slow)
 
 
 # ********** FIXED TIME HORIZON **********
-def get_thresh_fth(intraday_df, thresh_type='ansr', shift=False, org_freq=DT_HOURLY_FREQ, agg_freq=DT_BIZ_DAILY_FREQ, shift_freq=DT_BIZ_DAILY_FREQ, pfx=''):
+def get_thresh_fth(intraday_df, thresh_type='ansr', shift=False, pfx='', org_freq=DT_HOURLY_FREQ, agg_freq=DT_BIZ_DAILY_FREQ, shift_freq=DT_BIZ_DAILY_FREQ):
 	"""
 	Return thresh estimates.
 
 	Args:
-		intraday_df (pd.DataFrame): intraday price dataframe with two columns (slow, fast)
+		intraday_df (pd.DataFrame): intraday price dataframe with two columns (fast, slow)
 		thresh_type (String): threshold type
 		shift (boolean): whether or not to shift by 'shift_freq'
+		pfx (String, optional): prefix to all column names
 		org_freq: freq of the original data
 		agg_freq: freq to use for groupby aggregation
 		shift_freq: freq to use for shift ∈ {org_freq, agg_freq}
-
-		pfx (String, optional): prefix to all column names
 	
 	Returns:
 		Return pd.DataFrame with derived columns
 	"""
 	th =  'fth'
+	if (shift_freq == agg_freq):
+		th = th +'-af'
+	elif (shift_freq == org_freq):
+		th = th +'-of'
 	_cname = lambda s: '_'.join([pfx, th, thresh_type, s])
 
 	if (thresh_type == 'spread'):
 		thresh_fun = _spread_thresh
 	elif (thresh_type == 'ansr'):
 		thresh_fun = _ansr_thresh
-	elif (thresh_type == 'alog'):
-		thresh_fun = _alog_thresh
+	elif (thresh_type == 'log'):
+		thresh_fun = _log_thresh
 
 	derived = pd.DataFrame(index=intraday_df.index)
-	derived['slow'] = intraday_df.iloc[:, 0]
-	derived['fast'] = intraday_df.iloc[:, 1]
+	derived['fast'] = intraday_df.iloc[:, 0]
+	derived['slow'] = intraday_df.iloc[:, 1]
 	derived['thresh'] = thresh_fun(derived['fast'], derived['slow'])
 	orig_cols = list(derived.columns)
 	gb = derived.groupby(pd.Grouper(freq=agg_freq))
@@ -178,8 +182,8 @@ def get_thresh_fth(intraday_df, thresh_type='ansr', shift=False, org_freq=DT_HOU
 # 		thresh_fun = _spread_thresh
 # 	elif (thresh_type == 'ansr'):
 # 		thresh_fun = _ansr_thresh
-# 	elif (thresh_type == 'alog'):
-# 		thresh_fun = _alog_thresh
+# 	elif (thresh_type == 'log'):
+# 		thresh_fun = _log_thresh
 
 # 	derived = pd.DataFrame(index=intraday_df.index)
 # 	derived['slow'] = intraday_df.iloc[:, 0]
