@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 
 from common_util import DATA_DIR, benchmark, inner_join
 from data.data_api import DataAPI
-from eda.common import dum
+from recon.common import dum
 
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
