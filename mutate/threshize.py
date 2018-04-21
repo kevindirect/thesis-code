@@ -159,4 +159,3 @@ def make_thresh_entry(desc, hist, base_rec):
 if __name__ == '__main__':
 	with benchmark('time to finish') as b:
 		threshize(sys.argv[1:])
-		logging.info(str(b))
