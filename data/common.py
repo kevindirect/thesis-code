@@ -27,4 +27,5 @@ ACCESS_UTIL_DIR = DATA_DIR +'access_util' +sep
 
 # PACKAGE DEFAULTS
 default_col_subsetsfile = 'col_subsets_hourly.json'
+default_col_thresh_subsetsfile = 'col_subsets_hourly_thresh.json'
 default_row_subsetsfile = 'row_subsets_hourly.json'

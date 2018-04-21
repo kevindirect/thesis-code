@@ -2,19 +2,24 @@
 
 import sys
 import os
+from collections import ChainMap
 import logging
 
 import numpy as np
 import pandas as pd
 
 from common_util import load_json
-from data.common import ACCESS_UTIL_DIR, default_col_subsetsfile
+from data.common import ACCESS_UTIL_DIR, default_col_subsetsfile, default_col_thresh_subsetsfile
 
 
-col_subsetsfile = default_col_subsetsfile
+base_col_subsetsfile = default_col_subsetsfile
+thresh_col_subsetsfile = default_col_thresh_subsetsfile
 
-col_subsetters = load_json(col_subsetsfile, dir_path=ACCESS_UTIL_DIR)
 
+base_col_subsetters = load_json(base_col_subsetsfile, dir_path=ACCESS_UTIL_DIR)
+thresh_col_subsetters = load_json(thresh_col_subsetsfile, dir_path=ACCESS_UTIL_DIR)
+
+col_subsetters = ChainMap(base_col_subsetters, thresh_col_subsetters)
 
 """
 	*********** COLUMN FILTERING ***********

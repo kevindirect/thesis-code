@@ -1,0 +1,35 @@
+{
+	"#fth": {
+		"af": {
+			"exact": [],
+			"startswith": ["fth_af"],
+			"endswith": ["gmtOffset", "ver"],
+			"regex": [],
+			"exclude": null
+		},
+		"of": {
+			"exact": [],
+			"startswith": ["fth_of"],
+			"endswith": ["gmtOffset", "ver"],
+			"regex": [],
+			"exclude": null
+		}
+	},
+
+	"#vth": {
+		"af": {
+			"exact": [],
+			"startswith": ["vth_af"],
+			"endswith": ["gmtOffset", "ver"],
+			"regex": [],
+			"exclude": null
+		},
+		"of": {
+			"exact": [],
+			"startswith": ["vth_of"],
+			"endswith": ["gmtOffset", "ver"],
+			"regex": [],
+			"exclude": null
+		}
+	}
+}
