@@ -2,6 +2,7 @@
 
 import sys
 import os
+from enum import Enum
 import logging
 
 import numpy as np
@@ -10,20 +11,21 @@ from sklearn.base import TransformerMixin, BaseEstimator, clone
 from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.preprocessing import Binarizer
 from sklearn.decomposition import PCA
-from numba import jit, vectorize
+from numba import jit, vectorize, float64
 # from dask import delayed, compute
 
-from common_util import DT_BIZ_DAILY_FREQ, DT_CAL_DAILY_FREQ, search_df, chained_filter
+from common_util import DT_BIZ_DAILY_FREQ, search_df, chained_filter
 from data.data_api import DataAPI
 from data.access_util import col_subsetters as cs
 from mutate.common import dum
-from mutate.ops import *
 
 
 UP = 1
 DOWN = -1
 SIDEWAYS = 0
+MarketDir = Enum('MarketDir', 'UP DOWN SIDEWAYS')
 
+# ********** FIXED TIME HORIZON **********
 def fth_thresh_label(ser, thresh=0.0, scalar=1.0):
 	"""
 	Return fixed time horizon label series thresholded by direction.
@@ -45,19 +47,92 @@ def fth_thresh_label(ser, thresh=0.0, scalar=1.0):
 
 	return new
 
-def intraday_triple_barrier():
+# ********** INTRADAY TRIPLE BARRIER **********
+@vectorize([float64(float64, float64, float64)], nopython=True)
+def thresh_break(start, end, thresh):
+	change = (end / start) - 1
+
+	return change if (change > thresh or change < -thresh) else 0
+
+def find_touch(group_df, per_shift=1):
 	"""
-	Return intraday triple barrier thresholded label series.
+	Return touch found
 
 	Args:
-		ser (pd.Series): series of changes to threshold
-		thresh (float or pd.Series, ℝ≥0): float or float series to threshold on
-		scalar (float, ℝ≥0): threshold multiplier
-
-	Returns:
-		pd.Series ∈ {-1, 0, 1}
+		group_df (pd.DataFrame): dataframe of aggregation period
+		per_shift (integer, ℤ): number to shift break period by
 	"""
+	group_df = group_df.dropna()
+	if (group_df.empty):
+		return np.NaN
 
+	start_arr = np.array(group_df.loc[:, 'start'].first(DT_HOURLY_FREQ))
+	end_arr = np.array(group_df['end'].values)
+	thresh_arr = np.array(group_df['thresh'].values)
+
+	stats = {
+		"dir": 0,
+		"mag": 0,
+		"brk": 0,
+		"day": end_arr.size
+	}
+
+	breaks = thresh_break(start_arr, end_arr, thresh_arr)
+	break_ids = np.flatnonzero(breaks)
+	
+	if (break_ids.size != 0):
+		# Change set to first threshold break
+		change = breaks[break_ids[0]]
+		stats['brk'] = break_ids[0] + per_shift
+	else:
+		# End of day change, no threshold
+		change = (end_arr[-1] / start_arr[0]) - 1
+
+	stats['dir'] = np.sign(change)
+	stats['mag'] = abs(change)
+
+	return stats['dir'], stats['mag'], stats['brk'], stats['day']
+
+def intraday_triple_barrier(intraday_df, thresh, scalar={'up': .55, 'down': .45}, agg_freq=DT_BIZ_DAILY_FREQ):
+	"""
+	Return intraday triple barrier label series.
+	
+	Args:
+		intraday_df (pd.DataFrame): intraday price dataframe
+		thresh (String): name of threshold column
+		scalar (dict(str: float), ℝ≥0): bull/bear thresh multipliers
+	
+	Returns:
+		Return pd.DataFrame with four columns:
+			- 'dir': price direction
+			- 'spd': change speed
+			- 'brk': period of break (zero if none)
+			- 'day': number of trading periods
+	"""
+	# DF Preprocessing
+	col_renames = {
+		intraday_df.columns[0]: "start",
+		thresh: "thresh"
+	}
+	num_cols = len(intraday_df.columns)
+	if (num_cols == 2):
+		intraday_df['end'] = intraday_df[intraday_df.columns[0]]
+	elif (num_cols > 2):
+		col_renames[intraday_df.columns[1]] = 'end'
+	intraday_df.rename(columns=col_renames, inplace=True)
+	
+	# Threshold scale
+	intraday_df['thresh'] = scalar * intraday_df['thresh']
+
+	# Apply
+	labels = intraday_df.groupby(pd.Grouper(freq=agg_freq)).apply(find_touch)
+	labels = labels.apply(pd.Series)
+	labels.columns=['dir','mag', 'brk', 'day']
+	return labels
+
+
+
+# ********** LOPEZ DE PRADO TRIPLE BARRIER **********
 
 def applyPtS1OnT1(close, events, ptS1, molecule):
 	"""
