@@ -11,13 +11,11 @@ from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.preprocessing import Binarizer
 from sklearn.decomposition import PCA
 from numba import jit, vectorize
-# from dask import delayed, compute
 
 from common_util import DT_HOURLY_FREQ, DT_BIZ_DAILY_FREQ, DT_CAL_DAILY_FREQ, search_df, chained_filter
 from data.data_api import DataAPI
 from data.access_util import col_subsetters as cs
 from mutate.common import dum
-from mutate.ops import *
 
 # TODO: fracdiff, vth, single series thresholds
 
@@ -49,7 +47,7 @@ _log_thresh = lambda f, s: np.log((f / s)+1)		# log: log gross return 		-> ln(fa
 
 
 # ********** FIXED TIME HORIZON **********
-def get_thresh_fth(intraday_df, thresh_type='ansr', shift=False, pfx='', org_freq=DT_HOURLY_FREQ, agg_freq=DT_BIZ_DAILY_FREQ, shift_freq=DT_BIZ_DAILY_FREQ):
+def get_thresh_fth(intraday_df, thresh_type='ansr', shift=False, src_data_pfx='', org_freq=DT_HOURLY_FREQ, agg_freq=DT_BIZ_DAILY_FREQ, shift_freq=DT_BIZ_DAILY_FREQ):
 	"""
 	Return thresh estimates.
 
@@ -57,7 +55,7 @@ def get_thresh_fth(intraday_df, thresh_type='ansr', shift=False, pfx='', org_fre
 		intraday_df (pd.DataFrame): intraday price dataframe with two columns (fast, slow)
 		thresh_type (String): threshold type
 		shift (boolean): whether or not to shift by 'shift_freq'
-		pfx (String, optional): prefix to all column names
+		src_data_pfx (String, optional): data source indentifiying string
 		org_freq: freq of the original data
 		agg_freq: freq to use for groupby aggregation
 		shift_freq: freq to use for shift ∈ {org_freq, agg_freq}
@@ -67,10 +65,10 @@ def get_thresh_fth(intraday_df, thresh_type='ansr', shift=False, pfx='', org_fre
 	"""
 	th =  'fth'
 	if (shift_freq == agg_freq):
-		th = th +'-af'
+		sf = 'af'
 	elif (shift_freq == org_freq):
-		th = th +'-of'
-	_cname = lambda s: '_'.join([pfx, th, thresh_type, s])
+		sf = 'of'
+	_cname = lambda sfx: '_'.join([th, sf, src_data_pfx, thresh_type, sfx])
 
 	if (thresh_type == 'spread'):
 		thresh_fun = _spread_thresh
@@ -158,7 +156,7 @@ def get_thresh_fth(intraday_df, thresh_type='ansr', shift=False, pfx='', org_fre
 # 			* shift_freq==orig_freq -> rolling/expanding/ewm on the same fth version 'prev' column
 # 				(or take a weighted average of the vth(shift_freq==agg_freq) and intraday portions)
 
-# def get_thresh_vth(intraday_df, thresh_type='ansr', org_freq=DT_HOURLY_FREQ, agg_freq=DT_BIZ_DAILY_FREQ, shift_freq=DT_BIZ_DAILY_FREQ, per=None, pfx=''):
+# def get_thresh_vth(intraday_df, thresh_type='ansr', org_freq=DT_HOURLY_FREQ, agg_freq=DT_BIZ_DAILY_FREQ, shift_freq=DT_BIZ_DAILY_FREQ, per=None, src_data_pfx=''):
 # 	"""
 # 	Return thresh estimates.
 # 	Variable time horizon allows thresholds to go beyond the specified aggregation frequency.
@@ -169,14 +167,14 @@ def get_thresh_fth(intraday_df, thresh_type='ansr', shift=False, pfx='', org_fre
 # 		org_freq: freq of the original data
 # 		agg_freq: freq to use for groupby aggregation
 # 		shift_freq: freq to use for shift ∈ {org_freq, agg_freq}
-# 		pfx (String, optional): prefix to all column names
+# 		src_data_pfx (String, optional): prefix to all column names
 	
 # 	Returns:
 # 		Return pd.DataFrame with derived columns
 # 	"""
 # 	time_hor = str(per)+str(shift_freq)
 # 	th =  'vth(' +time_hor +')'
-# 	_cname = lambda s: '_'.join([pfx, th, s, thresh_type])
+# 	_cname = lambda s: '_'.join([src_data_pfx, th, s, thresh_type])
 
 # 	if (thresh_type == 'spread'):
 # 		thresh_fun = _spread_thresh
