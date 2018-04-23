@@ -13,7 +13,7 @@ from common_util import DT_HOURLY_FREQ, get_custom_biz_freq, outer_join, right_j
 from data.data_api import DataAPI
 from data.access_util import col_subsetters as cs
 from mutate.common import dum
-from mutate.thresh import get_thresh_fth
+from mutate.thresh import THRESH_TYPES, get_thresh_fth
 
 
 def threshize(argv):
@@ -63,76 +63,24 @@ def threshize(argv):
 
 		# TODO - different files for different fs_pairs AND shift freqs may be a good idea
 
-		# price based
-		src = 'pba'
-		src_cols = chained_filter(df.columns, [cs['#'+src]['ohlc']])
-		src_df = df[src_cols]
-		logging.info(src)
-		src_fs_pairs = {key: ['_'.join([src, it]) for it in pair] for key, pair in fs_pairs.items()}
-		for key, fs_cols in src_fs_pairs.items():
-			fs = src_df.loc[:, fs_cols].dropna()
-			logging.info(fs_cols)
-			custom = get_custom_biz_freq(fs)
+		for src in ['pba', 'vol']:
+			logging.info(src)
+			src_fs_pairs = {key: ['_'.join([src, it]) for it in pair] for key, pair in fs_pairs.items()}
+			src_cols = chained_filter(df.columns, [cs['#'+src]['ohlc']])
+			src_df = df[src_cols]
 
-			t_type='spread'
-			logging.debug(t_type)
-			af = get_thresh_fth(fs, thresh_type=t_type, shift=False, src_data_pfx='_'.join([src, key]),
-				org_freq=DT_HOURLY_FREQ, agg_freq=custom, shift_freq=custom).drop(columns=['fast', 'slow', 'thresh'])
-			of = get_thresh_fth(fs, thresh_type=t_type, shift=False, src_data_pfx='_'.join([src, key]),
-				org_freq=DT_HOURLY_FREQ, agg_freq=custom, shift_freq=DT_HOURLY_FREQ).drop(columns=['fast', 'slow', 'thresh'])
-			thresh_df = outer_join(right_join(thresh_df, af), of)
+			for key, fs_cols in src_fs_pairs.items():
+				src_pfx = '_'.join([src, key])
+				logging.info(src_pfx)
 
-			t_type='ansr'
-			logging.debug(t_type)
-			af = get_thresh_fth(fs, thresh_type=t_type, shift=False, src_data_pfx='_'.join([src, key]),
-				org_freq=DT_HOURLY_FREQ, agg_freq=custom, shift_freq=custom).drop(columns=['fast', 'slow', 'thresh'])
-			of = get_thresh_fth(fs, thresh_type=t_type, shift=False, src_data_pfx='_'.join([src, key]),
-				org_freq=DT_HOURLY_FREQ, agg_freq=custom, shift_freq=DT_HOURLY_FREQ).drop(columns=['fast', 'slow', 'thresh'])
-			thresh_df = outer_join(outer_join(thresh_df, af), of)
+				fs = src_df.loc[:, fs_cols].dropna()
+				custom = get_custom_biz_freq(fs)
 
-			t_type='log'
-			logging.debug(t_type)
-			af = get_thresh_fth(fs, thresh_type=t_type, shift=False, src_data_pfx='_'.join([src, key]),
-				org_freq=DT_HOURLY_FREQ, agg_freq=custom, shift_freq=custom).drop(columns=['fast', 'slow', 'thresh'])
-			of = get_thresh_fth(fs, thresh_type=t_type, shift=False, src_data_pfx='_'.join([src, key]),
-				org_freq=DT_HOURLY_FREQ, agg_freq=custom, shift_freq=DT_HOURLY_FREQ).drop(columns=['fast', 'slow', 'thresh'])
-			thresh_df = outer_join(outer_join(thresh_df, af), of)
-
-		# vol based
-		src = 'vol'
-		src_cols = chained_filter(df.columns, [cs['#'+src]['ohlc']])
-		src_df = df[src_cols]
-		logging.info(src)
-		src_fs_pairs = {key: ['_'.join([src, it]) for it in pair] for key, pair in fs_pairs.items()}
-		for key, fs_cols in src_fs_pairs.items():
-			fs = src_df.loc[:, fs_cols].dropna()
-			logging.info(fs_cols)
-			custom = get_custom_biz_freq(fs)
-
-			t_type='spread'
-			logging.debug(t_type)
-			af = get_thresh_fth(fs, thresh_type=t_type, shift=False, src_data_pfx='_'.join([src, key]),
-				org_freq=DT_HOURLY_FREQ, agg_freq=custom, shift_freq=custom).drop(columns=['fast', 'slow', 'thresh'])
-			of = get_thresh_fth(fs, thresh_type=t_type, shift=False, src_data_pfx='_'.join([src, key]),
-				org_freq=DT_HOURLY_FREQ, agg_freq=custom, shift_freq=DT_HOURLY_FREQ).drop(columns=['fast', 'slow', 'thresh'])
-			thresh_df = outer_join(outer_join(thresh_df, af), of)
-
-			t_type='ansr'
-			logging.debug(t_type)
-			af = get_thresh_fth(fs, thresh_type=t_type, shift=False, src_data_pfx='_'.join([src, key]),
-				org_freq=DT_HOURLY_FREQ, agg_freq=custom, shift_freq=custom).drop(columns=['fast', 'slow', 'thresh'])
-			of = get_thresh_fth(fs, thresh_type=t_type, shift=False, src_data_pfx='_'.join([src, key]),
-				org_freq=DT_HOURLY_FREQ, agg_freq=custom, shift_freq=DT_HOURLY_FREQ).drop(columns=['fast', 'slow', 'thresh'])
-			thresh_df = outer_join(outer_join(thresh_df, af), of)
-
-			t_type='log'
-			logging.debug(t_type)
-			af = get_thresh_fth(fs, thresh_type=t_type, shift=False, src_data_pfx='_'.join([src, key]),
-				org_freq=DT_HOURLY_FREQ, agg_freq=custom, shift_freq=custom).drop(columns=['fast', 'slow', 'thresh'])
-			of = get_thresh_fth(fs, thresh_type=t_type, shift=False, src_data_pfx='_'.join([src, key]),
-				org_freq=DT_HOURLY_FREQ, agg_freq=custom, shift_freq=DT_HOURLY_FREQ).drop(columns=['fast', 'slow', 'thresh'])
-			thresh_df = outer_join(outer_join(thresh_df, af), of)
-
+				for t_type in THRESH_TYPES:
+					logging.debug(t_type)
+					af = get_thresh_fth(fs, thresh_type=t_type, src_data_pfx=src_pfx, org_freq=DT_HOURLY_FREQ, agg_freq=custom, shift_freq=custom)
+					of = get_thresh_fth(fs, thresh_type=t_type, src_data_pfx=src_pfx, org_freq=DT_HOURLY_FREQ, agg_freq=custom, shift_freq=DT_HOURLY_FREQ)
+					thresh_df = outer_join(outer_join(thresh_df, af), of)
 
 		# DUMP THRESHOLD DFs
 		entry = make_thresh_entry('fth thresh', 'raw->mutate_thresh', original)

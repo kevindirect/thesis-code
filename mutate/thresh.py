@@ -20,15 +20,16 @@ from mutate.common import dum
 # TODO: fracdiff, vth, single series thresholds
 
 """
+
+TIME HORIZON (Allowable data window to make threshold from)
+	* FTH: Fixed Time Horizon - Uses the latest aggregation period
+	* VTH: Variable Time Horizon - Uses the latest aggregation period and previous periods
+
 THRESHOLD TYPE (Transform on price series to make it a stationary return series)
 	* spread: arithmetic spread (period 1 differencing)
 	* return: net simple return
 	* logret: log gross return
 	* frac: fractional differentiation
-
-TIME HORIZON (Allowable data window to make threshold from)
-	* FTH: Fixed Time Horizon - Uses the latest aggregation period
-	* VTH: Variable Time Horizon - Uses the latest aggregation period and previous periods
 
 THRESH TRANSFORMS (Types of transforms on return series to make a threshold)
 	* static: Uses all data starting from the time horizon to current
@@ -44,10 +45,16 @@ THRESH TRANSFORMS (Types of transforms on return series to make a threshold)
 _spread_thresh = lambda f, s: f - s				# spread: arithmetic spread -> fast - slow
 _return_thresh = lambda f, s: f / s - 1			# return: net simple return -> fast / slow - 1
 _logret_thresh = lambda f, s: np.log(f / s)		# logret: log gross return 	-> ln(fast / slow)
+THRESH_FUN_MAP = {
+	"spread": _spread_thresh,
+	"return": _return_thresh,
+	"logret": _logret_thresh
+}
+THRESH_TYPES = list(THRESH_FUN_MAP.keys())
 
 
 # ********** FIXED TIME HORIZON **********
-def get_thresh_fth(intraday_df, thresh_type='return', shift=False, src_data_pfx='',
+def get_thresh_fth(intraday_df, thresh_type='return', src_data_pfx='', drop_the_base=True,
 	org_freq=DT_HOURLY_FREQ, agg_freq=DT_BIZ_DAILY_FREQ, shift_freq=DT_BIZ_DAILY_FREQ):
 	"""
 	Return thresh estimates.
@@ -65,22 +72,22 @@ def get_thresh_fth(intraday_df, thresh_type='return', shift=False, src_data_pfx=
 		Return pd.DataFrame with derived columns
 	"""
 	th =  'fth'
-	sf = 'af' if (shift_freq == agg_freq) else 'of'
-	_cname = lambda sfx: '_'.join([th, sf, src_data_pfx, thresh_type, sfx])
 
-	if (thresh_type == 'spread'):
-		thresh_fun = _spread_thresh
-	elif (thresh_type == 'return'):
-		thresh_fun = _return_thresh
-	elif (thresh_type == 'logret'):
-		thresh_fun = _logret_thresh
+	sf = {
+		agg_freq: 'af',
+		org_freq: 'of'
+	}.get(shift_freq)
+
+	thresh_fun = THRESH_FUN_MAP.get(thresh_type)
+
+	_cname = lambda sfx: '_'.join([th, sf, src_data_pfx, thresh_type, sfx])
 
 	derived = pd.DataFrame(index=intraday_df.index)
 	derived['fast'] = intraday_df.iloc[:, 0]
 	derived['slow'] = intraday_df.iloc[:, 1]
 	derived['thresh'] = thresh_fun(derived['fast'], derived['slow'])
 	derived['abs_thresh'] = abs(derived['thresh'])
-	# orig_cols = list(derived.columns)
+	base_cols = list(derived.columns)
 	gb = derived.groupby(pd.Grouper(freq=agg_freq))
 
 	if (shift_freq == agg_freq):
@@ -145,8 +152,8 @@ def get_thresh_fth(intraday_df, thresh_type='return', shift=False, src_data_pfx=
 
 	elif (shift_freq == org_freq):
 
-		# value of previous period
-		derived[_cname('actual')] = derived['thresh'] # final version will be shifted
+		# value of period
+		derived[_cname('xact')] = derived['thresh'] # final version will be shifted
 
 		# expanding average
 		derived[_cname('xavg')] = gb['thresh'].transform(lambda ser: ser.expanding().mean())
@@ -185,6 +192,9 @@ def get_thresh_fth(intraday_df, thresh_type='return', shift=False, src_data_pfx=
 
 	# 	# For days where previous day has less hours than current
 	# 	derived = derived.groupby(pd.Grouper(freq=agg_freq)).fillna(method='ffill')
+
+	if (drop_the_base):
+		derived.drop(base_cols, axis=1, inplace=True)
 
 	return derived
 
