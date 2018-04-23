@@ -10,9 +10,9 @@ from sklearn.base import TransformerMixin, BaseEstimator, clone
 from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.preprocessing import Binarizer
 from sklearn.decomposition import PCA
-from numba import jit, vectorize
+from numba import jit, vectorize, float64
 
-from common_util import DT_HOURLY_FREQ, DT_BIZ_DAILY_FREQ, DT_CAL_DAILY_FREQ, search_df, chained_filter
+from common_util import DT_HOURLY_FREQ, DT_BIZ_DAILY_FREQ, DT_CAL_DAILY_FREQ, search_df, pd_to_np, chained_filter
 from data.data_api import DataAPI
 from data.access_util import col_subsetters as cs
 from mutate.common import dum
@@ -42,9 +42,34 @@ THRESH TRANSFORMS (Types of transforms on return series to make a threshold)
 
 
 # ********** THRESHOLD TYPES **********
-_spread_thresh = lambda f, s: f - s				# spread: arithmetic spread -> fast - slow
-_return_thresh = lambda f, s: f / s - 1			# return: net simple return -> fast / slow - 1
-_logret_thresh = lambda f, s: np.log(f / s)		# logret: log gross return 	-> ln(fast / slow)
+# @pd_to_np
+# @vectorize([float64(float64, float64)], nopython=True)
+# def _spread_thresh(f, s):
+# 	"""
+# 	return arithmetic spread -> fast - slow
+# 	"""
+# 	return f - s
+
+# @pd_to_np
+# @vectorize([float64(float64, float64)], nopython=True)
+# def _return_thresh(f, s):
+# 	"""
+# 	return net simple return -> fast / slow - 1
+# 	"""
+# 	return (f / s) - 1
+
+# @pd_to_np
+# @vectorize([float64(float64, float64)], nopython=True)
+# def _logret_thresh(f, s):
+# 	"""
+# 	return log gross return -> ln(fast / slow)
+# 	"""
+# 	return np.log(f / s)
+
+_spread_thresh = lambda f, s: f - s
+_return_thresh = lambda f, s: (f / s) - 1
+_logret_thresh = lambda f, s: np.log(f / s)
+
 THRESH_FUN_MAP = {
 	"spread": _spread_thresh,
 	"return": _return_thresh,
@@ -169,6 +194,10 @@ def get_thresh_fth(intraday_df, thresh_type='return', src_data_pfx='', drop_the_
 		
 		# expanding min
 		derived[_cname('xmin')] = gb['thresh'].transform(lambda ser: ser.expanding().min())
+
+		# expanding whole of previous day
+		first_slow = gb['slow'].transform(pd.Series.first, org_freq)
+		derived[_cname('xwhole')] = thresh_fun(derived['fast'], first_slow)
 
 		# abs expanding average
 		derived[_cname('abs_xavg')] = gb['abs_thresh'].transform(lambda ser: ser.expanding().mean())
