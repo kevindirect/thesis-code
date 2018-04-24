@@ -14,7 +14,7 @@ from sklearn.decomposition import PCA
 from numba import jit, vectorize, float64
 # from dask import delayed, compute
 
-from common_util import DT_BIZ_DAILY_FREQ, search_df, chained_filter
+from common_util import DT_BIZ_DAILY_FREQ, inner_join, search_df, chained_filter
 from data.data_api import DataAPI
 from data.access_util import col_subsetters as cs
 from mutate.common import dum
@@ -48,54 +48,138 @@ def fth_thresh_label(ser, thresh=0.0, scalar=1.0):
 	return new
 
 # ********** INTRADAY TRIPLE BARRIER **********
-@vectorize([float64(float64, float64, float64)], nopython=True)
-def thresh_break(start, end, thresh):
-	change = (end / start) - 1
+# @vectorize([float64(float64, float64, float64)], nopython=True)
+# def thresh_break(start, end, thresh):
+# 	change = (end / start) - 1
 
-	return change if (change > thresh or change < -thresh) else 0
+# 	return change if (change > thresh or change < -thresh) else 0
 
-def find_touch(group_df, per_shift=1):
-	"""
-	Return touch found
+# def find_touch(group_df, per_shift=1):
+# 	"""
+# 	Return touch found
 
-	Args:
-		group_df (pd.DataFrame): dataframe of aggregation period
-		per_shift (integer, ℤ): number to shift break period by
-	"""
-	group_df = group_df.dropna()
+# 	Args:
+# 		group_df (pd.DataFrame): dataframe of aggregation period
+# 		per_shift (integer, ℤ): number to shift break period by
+# 	"""
+# 	group_df = group_df.dropna()
+# 	if (group_df.empty):
+# 		return np.NaN
+
+# 	start_arr = np.array(group_df.loc[:, 'start'].first(DT_HOURLY_FREQ))
+# 	end_arr = np.array(group_df['end'].values)
+# 	thresh_arr = np.array(group_df['thresh'].values)
+
+# 	stats = {
+# 		"dir": 0,
+# 		"mag": 0,
+# 		"brk": 0,
+# 		"day": end_arr.size
+# 	}
+
+# 	breaks = thresh_break(start_arr, end_arr, thresh_arr)
+# 	break_ids = np.flatnonzero(breaks)
+	
+# 	if (break_ids.size != 0):
+# 		# Change set to first threshold break
+# 		change = breaks[break_ids[0]]
+# 		stats['brk'] = break_ids[0] + per_shift
+# 	else:
+# 		# End of day change, no threshold
+# 		change = (end_arr[-1] / start_arr[0]) - 1
+
+# 	stats['dir'] = np.sign(change)
+# 	stats['mag'] = abs(change)
+
+# 	return stats['dir'], stats['mag'], stats['brk'], stats['day']
+
+# def intraday_triple_barrier(intraday_df, thresh, up_scalar=1.0, down_scalar=1.0, agg_freq=DT_BIZ_DAILY_FREQ):
+# 	"""
+# 	Return intraday triple barrier label series.
+	
+# 	Args:
+# 		intraday_df (pd.DataFrame): intraday price dataframe
+# 		thresh (String): name of threshold column
+# 		scalar (dict(str: float), ℝ≥0): bull/bear thresh multipliers
+	
+# 	Returns:
+# 		Return pd.DataFrame with four columns:
+# 			- 'dir': price direction
+# 			- 'spd': change speed
+# 			- 'brk': period of break (zero if none)
+# 			- 'day': number of trading periods
+# 	"""
+# 	# DF Preprocessing
+# 	col_renames = {
+# 		intraday_df.columns[0]: "start",
+# 		thresh: "thresh"
+# 	}
+# 	num_cols = len(intraday_df.columns)
+# 	if (num_cols == 2):
+# 		intraday_df['end'] = intraday_df[intraday_df.columns[0]]
+# 	elif (num_cols > 2):
+# 		col_renames[intraday_df.columns[1]] = 'end'
+# 	intraday_df.rename(columns=col_renames, inplace=True)
+	
+# 	# Threshold scale
+# 	intraday_df['thresh'] = scalar * intraday_df['thresh']
+
+# 	# Apply
+# 	labels = intraday_df.groupby(pd.Grouper(freq=agg_freq)).apply(find_touch)
+# 	labels = labels.apply(pd.Series)
+# 	labels.columns=['dir','mag', 'brk', 'day']
+# 	return labels
+
+
+@vectorize([float64(float64, float64, float64, float64)], nopython=True)
+def thresh_break(change, thresh, up_scalar, down_scalar):
+	up_thresh = up_scalar * thresh
+	down_thresh = down_scalar * thresh
+
+	return change if (change >= up_thresh or change <= -down_thresh) else 0
+
+
+def triple_barrier_label(group_df, shift_comp=1, up_scalar=1.0, down_scalar=1.0):
+	group_df = group_df.dropna() # don't perform inplace ops in a gb-apply function
 	if (group_df.empty):
-		return np.NaN
+		return None
 
-	start_arr = np.array(group_df.loc[:, 'start'].first(DT_HOURLY_FREQ))
-	end_arr = np.array(group_df['end'].values)
-	thresh_arr = np.array(group_df['thresh'].values)
+	ret_arr = np.array(group_df[group_df.columns[0]].values)
+	thresh_arr = np.array(group_df[group_df.columns[1]].values)
 
 	stats = {
 		"dir": 0,
 		"mag": 0,
 		"brk": 0,
-		"day": end_arr.size
+		"num": 0,
+		"nmb": 0,
+		"mon": 0,
+		"day": ret_arr.size
 	}
 
-	breaks = thresh_break(start_arr, end_arr, thresh_arr)
+	breaks = thresh_break(ret_arr, thresh_arr, up_scalar, down_scalar)
 	break_ids = np.flatnonzero(breaks)
 	
-	if (break_ids.size != 0):
+	if (break_ids.size > 0):
 		# Change set to first threshold break
 		change = breaks[break_ids[0]]
-		stats['brk'] = break_ids[0] + per_shift
+		stats['brk'] = break_ids[0] + shift_comp
 	else:
 		# End of day change, no threshold
-		change = (end_arr[-1] / start_arr[0]) - 1
+		change = ret_arr[-1]
 
 	stats['dir'] = np.sign(change)
 	stats['mag'] = abs(change)
+	stats['num'] = np.count_nonzero(np.sign(breaks) == np.sign(change))
+	stats['nmb'] = break_ids.size
+	stats['mon'] = np.all(np.diff(ret_arr) > 0)
 
-	return stats['dir'], stats['mag'], stats['brk'], stats['day']
+	return pd.DataFrame([stats], index=[int(group_df.index[-1].hour + shift_comp)])
 
-def intraday_triple_barrier(intraday_df, thresh, scalar={'up': .55, 'down': .45}, agg_freq=DT_BIZ_DAILY_FREQ):
+
+def intraday_triple_barrier(intraday_df, scalar=None, agg_freq=DT_BIZ_DAILY_FREQ):
 	"""
-	Return intraday triple barrier label series.
+	Return intraday triple barrier label stats.
 	
 	Args:
 		intraday_df (pd.DataFrame): intraday price dataframe
@@ -103,33 +187,18 @@ def intraday_triple_barrier(intraday_df, thresh, scalar={'up': .55, 'down': .45}
 		scalar (dict(str: float), ℝ≥0): bull/bear thresh multipliers
 	
 	Returns:
-		Return pd.DataFrame with four columns:
-			- 'dir': price direction
-			- 'spd': change speed
-			- 'brk': period of break (zero if none)
-			- 'day': number of trading periods
+		Return pd.DataFrame
 	"""
-	# DF Preprocessing
-	col_renames = {
-		intraday_df.columns[0]: "start",
-		thresh: "thresh"
-	}
-	num_cols = len(intraday_df.columns)
-	if (num_cols == 2):
-		intraday_df['end'] = intraday_df[intraday_df.columns[0]]
-	elif (num_cols > 2):
-		col_renames[intraday_df.columns[1]] = 'end'
-	intraday_df.rename(columns=col_renames, inplace=True)
-	
-	# Threshold scale
-	intraday_df['thresh'] = scalar * intraday_df['thresh']
+	if (scalar is not None):
+		scaled = scalar * intraday_df.iloc[:, 1]
+		intraday_df.iloc[:, 1] = scaled
 
-	# Apply
-	labels = intraday_df.groupby(pd.Grouper(freq=agg_freq)).apply(find_touch)
-	labels = labels.apply(pd.Series)
-	labels.columns=['dir','mag', 'brk', 'day']
-	return labels
+	label_df = intraday_df.groupby(pd.Grouper(freq=agg_freq)).apply(triple_barrier_label)
 
+	# Fix multi index: (date, hour) -> datetime
+	label_df.index = label_df.index.map(lambda x: x[0].replace(hour=x[1]))
+
+	return label_df
 
 
 # ********** LOPEZ DE PRADO TRIPLE BARRIER **********
