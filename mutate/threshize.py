@@ -92,6 +92,8 @@ def threshize(argv):
 
 
 def make_thresh_entry(desc, hist, base_rec):
+	prev_hist = '' if np.isnan(base_rec.hist) else str(base_rec.hist)
+
 	return {
 		'freq': base_rec.freq,
 		'root': base_rec.root,
@@ -99,7 +101,7 @@ def make_thresh_entry(desc, hist, base_rec):
 		'stage': 'mutate',
 		'mutate_type': 'thresh',
 		'raw_cat': base_rec.raw_cat,
-		'hist': '->'.join([str(base_rec.hist), hist]),
+		'hist': '->'.join([prev_hist, hist]),
 		'desc': desc
 	}
 
