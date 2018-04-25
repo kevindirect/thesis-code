@@ -98,14 +98,14 @@ def get_thresh_fth(intraday_df, thresh_type='return', src_data_pfx='', drop_the_
 	"""
 	time_hor =  'fth'
 
-	shift_freq = {
+	shift_code = {
 		agg_freq: 'af',
 		org_freq: 'of'
 	}.get(shift_freq)
 
 	thresh_fun = THRESH_FUN_MAP.get(thresh_type)
 
-	_cname = lambda sfx: '_'.join([src_data_pfx, thresh_type, time_hor, shift_freq, sfx])
+	_cname = lambda sfx: '_'.join([src_data_pfx, thresh_type, time_hor, shift_code, sfx])
 
 	derived = pd.DataFrame(index=intraday_df.index)
 	derived['fast'] = intraday_df.iloc[:, 0]
