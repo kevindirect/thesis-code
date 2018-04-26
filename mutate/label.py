@@ -139,7 +139,7 @@ def thresh_break(change, thresh, up_scalar, down_scalar):
 	return change if (change >= up_thresh or change <= -down_thresh) else 0
 
 
-def triple_barrier_label(group_df, shift_comp=1, up_scalar=1.0, down_scalar=1.0):
+def triple_barrier_label(group_df, up_scalar, down_scalar, shift_comp=1):
 	group_df = group_df.dropna() # don't perform inplace ops in a gb-apply function
 	if (group_df.empty):
 		return None
@@ -168,32 +168,29 @@ def triple_barrier_label(group_df, shift_comp=1, up_scalar=1.0, down_scalar=1.0)
 		# End of day change, no threshold
 		change = ret_arr[-1]
 
-	stats['dir'] = np.sign(change)
-	stats['mag'] = abs(change)
-	stats['num'] = np.count_nonzero(np.sign(breaks) == np.sign(change))
-	stats['nmb'] = break_ids.size
-	stats['mon'] = np.all(np.diff(ret_arr) > 0)
+	stats['dir'] = np.sign(change)										# change sign
+	stats['mag'] = abs(change)											# change magnitude
+	stats['nmb'] = np.count_nonzero(np.sign(breaks) == np.sign(change))	# number breaks in the labelled direction
+	stats['nmt'] = break_ids.size										# number of total breaks
 
-	return pd.DataFrame([stats], index=[int(group_df.index[-1].hour + shift_comp)])
+	# XXX - lmn: largest motonic subsequence
+	# XXX - smn: slope of largest monotonic subsequence
+
+	return pd.DataFrame([stats], index=[int(group_df.index[-1].hour)])
 
 
-def intraday_triple_barrier(intraday_df, scalar=None, agg_freq=DT_BIZ_DAILY_FREQ):
+def intraday_triple_barrier(intraday_df, up_scalar=1.0, down_scalar=1.0, agg_freq=DT_BIZ_DAILY_FREQ):
 	"""
 	Return intraday triple barrier label stats.
 	
 	Args:
 		intraday_df (pd.DataFrame): intraday price dataframe
 		thresh (String): name of threshold column
-		scalar (dict(str: float), ℝ≥0): bull/bear thresh multipliers
 	
 	Returns:
 		Return pd.DataFrame
 	"""
-	if (scalar is not None):
-		scaled = scalar * intraday_df.iloc[:, 1]
-		intraday_df.iloc[:, 1] = scaled
-
-	label_df = intraday_df.groupby(pd.Grouper(freq=agg_freq)).apply(triple_barrier_label)
+	label_df = intraday_df.groupby(pd.Grouper(freq=agg_freq)).apply(triple_barrier_label, up_scalar=up_scalar, down_scalar=down_scalar)
 
 	# Fix multi index: (date, hour) -> datetime
 	label_df.index = label_df.index.map(lambda x: x[0].replace(hour=x[1]))
