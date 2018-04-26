@@ -83,7 +83,7 @@ def threshize(argv):
 					thresh_df = outer_join(outer_join(thresh_df, af), of)
 
 		# DUMP THRESHOLD DFs
-		entry = make_thresh_entry('fth thresh', 'raw->mutate_thresh', original)
+		entry = make_thresh_entry('fth thresh', 'mutate_thresh', original)
 		print('\tdumping', end='...', flush=True)
 		DataAPI.dump(thresh_df, entry)
 		print('done')
