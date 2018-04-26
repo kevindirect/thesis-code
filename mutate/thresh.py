@@ -183,11 +183,11 @@ def get_thresh_fth(intraday_df, thresh_type='return', src_data_pfx='', drop_the_
 		# expanding average
 		derived[_cname('xavg')] = gb['thresh'].transform(lambda ser: ser.expanding().mean())
 
-		# expanding median
-		derived[_cname('xmed')] = gb['thresh'].transform(lambda ser: ser.expanding().median())
-
 		# expanding standard deviation
 		derived[_cname('xstd')] = gb['thresh'].transform(lambda ser: ser.expanding().std())
+
+		# expanding median
+		derived[_cname('xmed')] = gb['thresh'].transform(lambda ser: ser.expanding().median())
 
 		# expanding max
 		derived[_cname('xmax')] = gb['thresh'].transform(lambda ser: ser.expanding().max())
@@ -202,11 +202,11 @@ def get_thresh_fth(intraday_df, thresh_type='return', src_data_pfx='', drop_the_
 		# abs expanding average
 		derived[_cname('abs_xavg')] = gb['abs_thresh'].transform(lambda ser: ser.expanding().mean())
 
-		# abs expanding median
-		derived[_cname('abs_xmed')] = gb['abs_thresh'].transform(lambda ser: ser.expanding().median())
-
 		# abs expanding standard deviation
 		derived[_cname('abs_xstd')] = gb['abs_thresh'].transform(lambda ser: ser.expanding().std())
+
+		# abs expanding median
+		derived[_cname('abs_xmed')] = gb['abs_thresh'].transform(lambda ser: ser.expanding().median())
 
 		# abs expanding max
 		derived[_cname('abs_xmax')] = gb['abs_thresh'].transform(lambda ser: ser.expanding().max())
