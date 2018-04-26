@@ -105,6 +105,13 @@
 				"exclude": null
 			}
 		},
+		"buzz_filter": {
+			"exact": [],
+			"startswith": [],
+			"endswith": [],
+			"regex": ["(.*_(buzz|.+Buzz).*)"],
+			"exclude": null
+		},
 		"news_filter": {
 			"exact": [],
 			"startswith": [],
