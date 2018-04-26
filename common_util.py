@@ -7,6 +7,7 @@ import sys
 from os import sep, path, makedirs
 from os.path import dirname, basename, realpath, exists, isfile, getsize
 from json import load
+from itertools import chain
 from functools import reduce, partial, wraps
 from datetime import datetime
 from timeit import default_timer
@@ -63,6 +64,9 @@ dt_now = lambda: datetime.now()
 str_now = lambda: dt_now().strftime(DT_FMT_YMD_HMS)
 
 """List"""
+def flatten2D(list2D):
+	return list(chain(*list2D))
+
 def list_compare(master, other):
 	"""
 	Return describing relationship master and other.
