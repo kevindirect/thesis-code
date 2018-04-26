@@ -17,6 +17,8 @@ sys.path.insert(0, dirname(dirname(dirname(realpath(sys.argv[0])))))
 
 # PACKAGE DEFAULTS
 dum = 0
+default_threshfile = 'thresh.json'
+
 
 # PACKAGE UTIL FUNCTIONS
 count_nonnan = lambda df: len(df) - df.isnull().sum()

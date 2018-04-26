@@ -1,0 +1,16 @@
+{
+	"src": ["pba", "vol"],
+	"fast_slow": ["oc", "oa", "ac", "lh"],
+	"thresh_type": ["spread", "return", "logret"],
+	"time_hor": ["fth"],
+	"shift_code": ["af", "of"],
+	"all_trans": {
+		"af": ["avg", "std", "eavg", "estd", "med", "max", "min", "seclast", "last", "whole",
+				"abs_avg", "abs_std", "abs_eavg", "abs_estd", "abs_med", "abs_max", "abs_min", "abs_seclast", "abs_last"],
+		"of": ["xact", "xavg", "xstd", "xmed", "xmax", "xmin", "xwhole", "abs_xavg", "abs_xstd", "abs_xmed", "abs_xmax", "abs_xmin"]
+	},
+	"ret_trans": {
+		"af": ["whole"],
+		"of": ["xact", "xwhole"]
+	}
+}
