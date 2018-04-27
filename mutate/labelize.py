@@ -27,54 +27,95 @@ def labelize(argv):
 
 	thresh_info = load_json(threshfile, dir_path=MUTATE_DIR)
 
-	# search_terms = {
-	# 	'stage': 'mutate',
-	# 	'mutate_type': 'thresh',
-	# 	'raw_cat': 'us_equity_index'
-	# }
-	# thresh_dfs = {}
-	# for rec, thresh_df in DataAPI.generate(search_terms):
-	# 	thresh_dfs[rec.root] = thresh_df.loc[search_df(thresh_df, date_range)]
-	# logging.info('thresh data loaded')
+	search_terms = {
+		'stage': 'mutate',
+		'mutate_type': 'thresh',
+		'raw_cat': 'us_equity_index'
+	}
+	thresh_recs = {}
+	thresh_dfs = {}
+	for rec, thresh_df in DataAPI.generate(search_terms):
+		thresh_recs[rec.root] = rec
+		thresh_dfs[rec.root] = thresh_df.loc[search_df(thresh_df, date_range)]
+	logging.info('thresh data loaded')
 
 	ret_groups = get_ret_groups(thresh_info)
 
-	for ret_col in ret_groups:
-		print(ret_col)
-		print(len(ret_groups[ret_col]))
 
-		# intraday_triple_barrier(intraday_df, col_name, scalar={'up': .55, 'down': .45}, agg_freq=DT_BIZ_DAILY_FREQ):
-		# Return modifiers:
-		# 	- signed / absolute value
+	# ********** VARIABLE THRESHOLD **********
+	# Threshold Modifiers:
+	# shifted / unshifted
+	shiftedness = [True, False]
 
-		# Threshold modifiers:
-		# 	- shifted / unshifted
-		#	- up/down scalars
+	# Power of 2 Scaling
+	scale_pow_exp = 5
+	scalings = [(2**n,) for n in range(-scale_pow_exp, scale_pow_exp+1)]
 
-		# Other thresholds:
-		#	- Constant percent threshold
-
+	# Return Modifiers:
+	# signed / absolute value
+	signedness = [True, False]
 
 
-	# for name in price_dfs.keys():
-	# 	logging.info('asset:', name)
+	# ********** CONSTANT THRESHOLD **********
+	start = 10**-6
+	stop = 10**1
+	step = start / 2
+	const_threshes = np.arange(start, stop, step)
 
-		# Make dict of {return_series: [thresh_series, ...]}
+	for name in thresh_dfs:
+		logging.info('asset:', name)
+		thresh_df = thresh_dfs[name]
 
-			# Ennummerate all possible return series to threshold on
+		for ret_col in ret_groups:
+			logging.debug('ret_col:', ret_col)
+			labels = thresh_df.loc[:, [ret_col]].copy()
 
-			# For each return series determine all possible thresholds
+			logging.info('random variable threshes')
+			for thresh_id, thresh_col in enumerate(ret_groups[ret_col]):
+				logging.debug('thresh_col:', thresh_col +'id:', thresh_id)
+				ret_thresh_df = thresh_df.loc[:, [ret_col, thresh_col]]
 
-		# For each key in dict
+				for shf, scl, sgn in product(shiftedness, scalings, signedness):
+					ret_thresh_df = thresh_df.loc[:, [ret_col, thresh_col]]
+					shf_str = 'shf' if (shf) else 'uns'
+					sgn_str = 'sgn' if (sgn) else 'abs'
+					scl_str = '_'.join([str(sclr) for slcr in scl])
 
-			# New DF
+					if (shf): # Shifted
+						if ('_af_' in ret_col):
+							shift_freq = DT_BIZ_DAILY_FREQ,
+						elif ('_of_' in ret_col):
+							shift_freq = DT_HOURLY_FREQ
+						ret_thresh_df[thresh_col] = ret_thresh_df[thresh_col].shift(freq=shift_freq)
 
-			# compute labels and add as a column
+					if (sgn): # Unsigned
+						ret_thresh_df[thresh_col] = ret_thresh_df[thresh_col].abs()
 
-			# Dump DF
+					itb = intraday_triple_barrier(ret_thresh_df, scalar=scl)
+					col_prefix = '_'.join([ret_col, 'rvt', str(thresh_id), shf_str, sgn_str, scl_str])
+					labels = outer_join(labels, itb.add_prefix(col_prefix +'_'))
+
+			logging.info('constant percentage threshes')
+			for const_thresh in const_threshes:
+				logging.debug('pct:', str(const_thresh))
+				ret_thresh_df = thresh_df.loc[:, [ret_col]]
+				ct_col = '_'.join(['cpt', str(const_thresh)])
+				ret_thresh_df[ct_col] = const_thresh
+				itb = intraday_triple_barrier(ret_thresh_df, scalar=scl)
+				col_prefix = '_'.join([ret_col, ct_col])
+				labels = outer_join(labels, itb.add_prefix(col_prefix +'_'))
+
+			logging.info('dumping labels')
+			entry = make_label_entry(ret_col, 'mutate_label', thresh_recs[name])
+			DataAPI.dump(thresh_df, entry)
+			logging.info('done dumping labels')
+
+		DataAPI.update_record()
 
 
 def make_label_entry(desc, hist, base_rec):
+	prev_hist = '' if np.isnan(base_rec.hist) else str(base_rec.hist)
+
 	return {
 		'freq': base_rec.freq,
 		'root': base_rec.root,
@@ -82,7 +123,7 @@ def make_label_entry(desc, hist, base_rec):
 		'stage': 'mutate',
 		'mutate_type': 'label',
 		'raw_cat': base_rec.raw_cat,
-		'hist': '->'.join([str(base_rec.hist), hist]),
+		'hist': '->'.join([prev_hist, hist]),
 		'desc': desc
 	}
 
