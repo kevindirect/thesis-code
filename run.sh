@@ -1,6 +1,5 @@
 # Kevin Patel
-source activate root
-python3 -m raw.get_trmi -k
-python3 -m raw.get_price
-python3 -m raw.dump_raw
-source deactivate root
+
+echo 1000 > /proc/self/oom_score_adj;
+nice -n 12 "$@";
+
