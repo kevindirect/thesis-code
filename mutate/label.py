@@ -2,17 +2,11 @@
 
 import sys
 import os
-from enum import Enum
 import logging
 
 import numpy as np
 import pandas as pd
-from sklearn.base import TransformerMixin, BaseEstimator, clone
-from sklearn.pipeline import Pipeline, make_pipeline
-from sklearn.preprocessing import Binarizer
-from sklearn.decomposition import PCA
 from numba import jit, vectorize, float64
-# from dask import delayed, compute
 
 from common_util import DT_BIZ_DAILY_FREQ, inner_join, search_df, chained_filter
 from data.data_api import DataAPI
@@ -23,7 +17,6 @@ from mutate.common import dum
 UP = 1
 DOWN = -1
 SIDEWAYS = 0
-MarketDir = Enum('MarketDir', 'UP DOWN SIDEWAYS')
 
 # ********** FIXED TIME HORIZON **********
 def fth_thresh_label(ser, thresh=0.0, scalar=1.0):
