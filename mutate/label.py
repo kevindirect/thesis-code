@@ -145,8 +145,8 @@ def triple_barrier_label(group_df, up_scalar, down_scalar, shift_comp=1):
 		"mag": 0,
 		"brk": 0,
 		"nmb": 0,
-		"nmt": 0,
-		"day": ret_arr.size
+		"nmt": 0
+		# "day": ret_arr.size
 	}
 
 	breaks = thresh_break(ret_arr, thresh_arr, up_scalar, down_scalar)
@@ -171,26 +171,31 @@ def triple_barrier_label(group_df, up_scalar, down_scalar, shift_comp=1):
 	return pd.DataFrame([stats], index=[int(group_df.index[-1].hour)])
 
 
-def intraday_triple_barrier(intraday_df, scalar=(1,), agg_freq=DT_BIZ_DAILY_FREQ):
+def intraday_triple_barrier(intraday_df, scalar=(1.0, 1.0), agg_freq=DT_BIZ_DAILY_FREQ):
 	"""
 	Return intraday triple barrier label stats.
 	
 	Args:
 		intraday_df (pd.DataFrame): intraday price dataframe
-		thresh (String): name of threshold column
 		scalar (tuple(float, float)): determines the scale factor on the upper and lower barriers
 	
 	Returns:
 		Return pd.DataFrame
 	"""
-	scalar = (scalar[0], scalar[0]) if (len(scalar) == 1) else scalar
-
 	label_df = intraday_df.groupby(pd.Grouper(freq=agg_freq)).apply(triple_barrier_label, up_scalar=scalar[0], down_scalar=scalar[1])
 
 	# Fix multi index: (date, hour) -> datetime
 	label_df.index = label_df.index.map(lambda x: x[0].replace(hour=x[1]))
 
-	return label_df
+	# if (drop_the_base):
+	# 	label_df.drop(intraday_df.columns, axis=1, inplace=True)
+	# 	label_df = label_df[['dir', 'mag', 'brk', 'nmb', 'nmt']]
+
+	return label_df[['dir', 'mag', 'brk', 'nmb', 'nmt']]
+
+
+
+
 
 
 # ********** LOPEZ DE PRADO TRIPLE BARRIER **********

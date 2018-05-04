@@ -8,6 +8,7 @@ sys.path.insert(0, dirname(dirname(dirname(realpath(sys.argv[0])))))
 
 # ********** SPECIFIC TO THIS CRUNCH PACKAGE **********
 # MUTATE
+import pandas as pd
 
 # OTHER STAGE DEPENDENCIES
 
@@ -18,6 +19,7 @@ sys.path.insert(0, dirname(dirname(dirname(realpath(sys.argv[0])))))
 # PACKAGE DEFAULTS
 dum = 0
 default_threshfile = 'thresh.json'
+default_labelfile = 'label.json'
 
 
 # PACKAGE UTIL FUNCTIONS

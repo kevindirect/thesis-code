@@ -1,7 +1,7 @@
 {
 	"src": ["pba", "vol"],
-	"fast_slow": ["oc", "oa", "lh"],
-	"thresh_type": ["return"],
+	"fast_slow": ["oc", "oa", "ac", "lh"],
+	"thresh_type": ["spread", "return", "logret"],
 	"time_hor": ["fth"],
 	"shift_code": ["af", "of"],
 	"all_trans": {
