@@ -182,7 +182,7 @@ def intraday_triple_barrier(intraday_df, scalar=(1.0, 1.0), agg_freq=DT_BIZ_DAIL
 	Returns:
 		Return pd.DataFrame
 	"""
-	label_df = intraday_df.groupby(pd.Grouper(freq=agg_freq)).apply(triple_barrier_label, up_scalar=scalar[0], down_scalar=scalar[1])
+	label_df = intraday_df.groupby(pd.Grouper(freq=agg_freq)).apply(triple_barrier_label, up_scalar=abs(scalar[0]), down_scalar=abs(scalar[1]))
 
 	# Fix multi index: (date, hour) -> datetime
 	label_df.index = label_df.index.map(lambda x: x[0].replace(hour=x[1]))

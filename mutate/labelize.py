@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from dask import delayed, compute
 
-from common_util import MUTATE_DIR, DT_HOURLY_FREQ, load_json, get_custom_biz_freq, flatten2D, left_join, search_df, chained_filter, benchmark
+from common_util import MUTATE_DIR, DT_HOURLY_FREQ, DT_BIZ_DAILY_FREQ, load_json, get_custom_biz_freq, flatten2D, left_join, search_df, chained_filter, benchmark
 from data.data_api import DataAPI
 from data.access_util import col_subsetters as cs
 from mutate.common import dum, default_threshfile, default_labelfile
@@ -41,15 +41,24 @@ def labelize(argv):
 		thresh_dfs[rec.root] = thresh_df.loc[search_df(thresh_df, date_range)]
 	logging.info('thresh data loaded')
 
-	label_tups = {}
+	# label_tups = {}
+	# for root_name in thresh_recs:
+	# 	logging.info('asset: ' +str(root_name))
+	# 	rec_labs = make_labels(thresh_dfs[root_name], thresh_recs[root_name], ret_groups, label_info)
+
+	# 	logging.info('dumping labels...')
+	# 	for i, rec, lab_df in enumerate(rec_labs):
+	# 		logging.debug('dumping label df ' +str(i) +'...')
+	# 		DataAPI.dump(lab_df, rec)
+
+	# 	DataAPI.update_record()
+
 	for root_name in thresh_recs:
 		logging.info('asset: ' +str(root_name))
-		rec_labs = make_labels(thresh_dfs[root_name], thresh_recs[root_name], ret_groups, label_info)
 
-		logging.info('dumping labels...')
-		for i, rec, lab_df in enumerate(rec_labs):
-			logging.debug('dumping label df ' +str(i) +'...')
-			DataAPI.dump(lab_df, rec)
+		for entry, lab_df in gen_labels(thresh_dfs[root_name], thresh_recs[root_name], ret_groups, label_info):
+			logging.debug('dumping label df ' +str(entry['desc']) +'...')
+			DataAPI.dump(lab_df, entry)
 
 		DataAPI.update_record()
 
@@ -157,7 +166,7 @@ def gen_labels(base_df, base_rec, return_groups, label_info):
 	rec_lab_tups = []
 	for ret_col, sgn in product(return_groups.keys(), ret_mod['signedness']):
 		if (sgn and '_lh_' in ret_col):
-			continue	# lowhigh is inherently unsigned
+			continue	# lh is inherently unsigned
 
 		label_df_list = []
 
@@ -165,23 +174,27 @@ def gen_labels(base_df, base_rec, return_groups, label_info):
 		ret_designator = ret_col if (sgn) else str(ret_col +'_uns')
 		ret_df = base_df.loc[:, [ret_col]] if (sgn) else base_df.loc[:, [ret_col]].abs()
 		ret_df = ret_df.rename(columns={ret_col: ret_designator})
-		logging.debug('ret_col: ' +str(ret_designator))
+		logging.info('ret_col: ' +str(ret_designator))
 
 		# RANDOM VARIABLE THRESHOLD
-		for thresh_col, shf, scl in product(return_groups[ret_col], rvt['shiftedness'], rvt['scalings']):
+		for thresh_col in return_groups[ret_col]:
 			logging.debug('thresh_col: ' +str(thresh_col))
 			thresh_df = base_df.loc[:, [thresh_col]]
-			pfx = '_'.join([thresh_col, str(scl)]) +'_'
+			thresh_pfx = thresh_col +'_'
 
-			if (shf):
-				pfx += 'shf_'
-				procedure = list(filter(lambda item: item in ['af', 'of'], thresh_col.split('_')))[0]
-				ret_thresh_df = shift_time_series_df(procedure, thresh_df, thresh_col, ret_df)
-			else:
-				ret_thresh_df = left_join(ret_df, thresh_df)
+			for shf in rvt['shiftedness']:
+				if (shf):
+					pfx = thresh_pfx +'shf_'
+					procedure = list(filter(lambda item: item in ['af', 'of'], thresh_col.split('_')))[0]
+					ret_thresh_df = shift_time_series_df(procedure, thresh_df, thresh_col, ret_df)
+				else:
+					pfx = thresh_pfx
+					ret_thresh_df = left_join(ret_df, thresh_df)
 
-			itb = intraday_triple_barrier(ret_thresh_df, scalar=(scl, scl))
-			label_df_list.append(itb.add_prefix(pfx))
+				for scl in rvt['scalings']:
+					pfx_scl = pfx +str(scl)
+					itb = intraday_triple_barrier(ret_thresh_df, scalar=(scl, scl))
+					label_df_list.append(itb.add_prefix(pfx_scl))
 
 		# JOIN
 		entry = make_label_entry(ret_designator, 'mutate_label', base_rec)
@@ -210,7 +223,7 @@ def shift_time_series_df(shift_procedure, to_shift_df, shift_col_name, to_join_d
 def make_label_entry(desc, hist, base_rec):
 
 	return {
-		'freq': base_rec.freq,
+		'freq': DT_BIZ_DAILY_FREQ,
 		'root': base_rec.root,
 		'basis': base_rec.name,
 		'stage': 'mutate',

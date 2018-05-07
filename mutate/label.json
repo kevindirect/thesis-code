@@ -1,6 +1,6 @@
 {
 	"return_mod": {
-		"signedness": [true, false]
+		"signedness": [true]
 	},
 
 	"rvt": {
