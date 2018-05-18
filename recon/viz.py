@@ -80,65 +80,65 @@ def infoPurityGraphs(filedir, files):
 		pdf.close()
 
 def plot_feature(feature=None, label=None,
-                remove_nans=True, remove_zeros=True,                                           #pre-processing options
-                atomic_transform=lambda x:x, delta_transform=lambda x:x, combo='delta_atomic', #processing options
-                low_clip=-1.0, high_clip=1.0,
-                show_class='all'):                                                             #post-processing options
+				remove_nans=True, remove_zeros=True,											#pre-processing options
+				atomic_transform=lambda x:x, delta_transform=lambda x:x, combo='delta_atomic',	#processing options
+				low_clip=-1.0, high_clip=1.0,
+				show_class='all'):																#post-processing options
 
-    assert(feature and label)
-    #TODO - option for gradient coloring
-    colors = {1: "blue", 0: "white", -1: "red", -2: "black"}
-    output = pd.DataFrame({feature: data[feature], label: data[label], 'year': data['year']})
+	assert(feature and label)
+	#TODO - option for gradient coloring
+	colors = {1: "blue", 0: "white", -1: "red", -2: "black"}
+	output = pd.DataFrame({feature: data[feature], label: data[label], 'year': data['year']})
 
-    #Drop rows with no label
-    output.dropna(axis=0, subset=[label], inplace=True)
+	#Drop rows with no label
+	output.dropna(axis=0, subset=[label], inplace=True)
 
-    #Pre processing
-    output[feature].fillna(value=-2, axis=0, inplace=True,)
-    if (remove_nans):
-        output = output[output[feature] != -2]
-    if (remove_zeros):
-        output = output[output[feature] != 0]
-        
-    #TODO - upper and lower bound filtering (throw out middle)
-        #past_period - number of rows behind the "big moves" to keep in
-        #Need this for delta transforms
-    
-    if (combo == 'atomic'):
-        output[combo] = atomic_transform(output[feature])
-    elif (combo == 'delta'):
-        output[combo] = delta_transform(output[feature])
-    elif (combo == 'atomic_delta'):
-        output[combo] = atomic_transform(delta_transform(output[feature]))
-    elif (combo == 'delta_atomic'):
-        output[combo] = delta_transform(atomic_transform(output[feature]))
-    else:
-        output[combo] = output[feature]
-    low_clip = low_clip if low_clip > output[combo].min() else output[combo].min()
-    high_clip = high_clip if high_clip < output[combo].max() else output[combo].max()
-    output[combo] = np.clip(output[combo], low_clip, high_clip)
+	#Pre processing
+	output[feature].fillna(value=-2, axis=0, inplace=True,)
+	if (remove_nans):
+		output = output[output[feature] != -2]
+	if (remove_zeros):
+		output = output[output[feature] != 0]
+		
+	#TODO - upper and lower bound filtering (throw out middle)
+		#past_period - number of rows behind the "big moves" to keep in
+		#Need this for delta transforms
+	
+	if (combo == 'atomic'):
+		output[combo] = atomic_transform(output[feature])
+	elif (combo == 'delta'):
+		output[combo] = delta_transform(output[feature])
+	elif (combo == 'atomic_delta'):
+		output[combo] = atomic_transform(delta_transform(output[feature]))
+	elif (combo == 'delta_atomic'):
+		output[combo] = delta_transform(atomic_transform(output[feature]))
+	else:
+		output[combo] = output[feature]
+	low_clip = low_clip if low_clip > output[combo].min() else output[combo].min()
+	high_clip = high_clip if high_clip < output[combo].max() else output[combo].max()
+	output[combo] = np.clip(output[combo], low_clip, high_clip)
 
-    #Post processing
-    if (show_class != 'all'):
-        if (show_class == 'up'):
-            output = output[output[label] == 1]
-        elif (show_class == 'down'):
-            output = output[output[label] == -1]
-        elif (show_class == 'sideways'):
-            output = output[output[label] == 0]
-    
-    #TODO - add year specific removal option
+	#Post processing
+	if (show_class != 'all'):
+		if (show_class == 'up'):
+			output = output[output[label] == 1]
+		elif (show_class == 'down'):
+			output = output[output[label] == -1]
+		elif (show_class == 'sideways'):
+			output = output[output[label] == 0]
+	
+	#TODO - add year specific removal option
 
-    data_space = np.linspace(0, len(output[combo])-1, num=len(output[combo]))
-    plt.figure(figsize=(25,10))
-    #plt.figure().tight_layout()
-    plt.title('Data Segmentation Graph')
-    plt.xlabel('Observation')
-    plt.ylabel('Feature Value')
-    plt.xlim([-100, 4100])
-    plt.grid(b=True, which='major', axis='y')
-    #textstr = '$\mu=%.2f$\n$\mathrm{median}=%.2f$\n$\sigma=%.2f$'%(mean, median, sdev)
-    plt.scatt
+	data_space = np.linspace(0, len(output[combo])-1, num=len(output[combo]))
+	plt.figure(figsize=(25,10))
+	#plt.figure().tight_layout()
+	plt.title('Data Segmentation Graph')
+	plt.xlabel('Observation')
+	plt.ylabel('Feature Value')
+	plt.xlim([-100, 4100])
+	plt.grid(b=True, which='major', axis='y')
+	#textstr = '$\mu=%.2f$\n$\mathrm{median}=%.2f$\n$\sigma=%.2f$'%(mean, median, sdev)
+	plt.scatt
 
 
 
@@ -239,6 +239,12 @@ def plot_ser(ser, title_str='plot', xlabel_str='xlab', ylabel_str='ylab'):
 	plt.show()
 
 
+def plot_day_ser(ser, date=None):
+	if (date is None):
+		date = str(np.random.choice(ser.index))[:10]
+	plot_ser(ser[date], title_str=date, xlabel_str='hour', ylabel_str='value')
+
+
 def plot_df(df, title_str='plot', xlabel_str='xlab', ylabel_str='ylab'):
 	plt.figure(figsize=((25, 10)))
 	plt.title(title_str)
@@ -247,6 +253,13 @@ def plot_df(df, title_str='plot', xlabel_str='xlab', ylabel_str='ylab'):
 	[plt.plot(df.index, df.loc[:, col_name], '^', label=str(col_name)) for col_name in df.columns]
 	plt.legend(loc='upper left')
 	plt.show()
+
+
+def plot_day_df(df, date=None):
+	if (date is None):
+		date = str(np.random.choice(df.index))[:10]
+	plot_df(df[date], title_str=date, xlabel_str='hour', ylabel_str='value')
+
 
 #config options
 # atomic_fn_options = OrderedDict({'nothing': lambda x:x, 'round': lambda a: np.around(a, 2), 'log10':np.log10, 'sine':np.sin, 'sinh':np.sinh})
