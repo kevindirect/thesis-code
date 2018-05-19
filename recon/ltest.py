@@ -26,7 +26,7 @@ def test(argv):
 	dfs, recs = {}, {}
 	for rec, label_df in DataAPI.generate(search_terms):
 		recs[rec.desc] = rec
-		dfs[rec.desc] = df
+		dfs[rec.desc] = label_df
 	logging.info('labels loaded')
 	
 	print(dfs.keys())
