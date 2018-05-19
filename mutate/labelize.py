@@ -134,7 +134,7 @@ def make_labels(base_df, base_rec, return_groups, label_info):
 					ret_thresh_df = left_join(ret_df, thresh_df)
 
 				for scl in rvt['scalings']:
-					pfx_scl = pfx +str(scl)
+					pfx_scl = pfx +str(scl) +'_'
 					itb = intraday_triple_barrier(ret_thresh_df, scalar=(scl, scl))
 					label_df_list.append(itb.add_prefix(pfx_scl))
 
