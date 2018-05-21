@@ -117,7 +117,7 @@ def make_normalize_entry(desc, first_rec, *args):
 		'root': first_rec.root,
 		'basis': combined_basis,
 		'stage': 'mutate',
-		'mutate_type': 'mutate_normalize',
+		'mutate_type': 'normalize',
 		'raw_cat': first_rec.raw_cat,
 		'hist': '->'.join([combined_hist, 'mutate_normalize']),
 		'desc': desc
