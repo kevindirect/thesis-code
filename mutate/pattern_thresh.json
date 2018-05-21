@@ -1,0 +1,10 @@
+{
+	"src": ["pba", "vol"],
+	"fast_slow": ["oc", "oa", "lh"],
+	"thresh_type": ["spread", "return", "logret"],
+	"time_hor": ["fth"],
+	"shift_code": ["of"],
+	"pattern_trans": {
+		"of": ["xact", "xwhole", "xstd", "xavg", "xmed"]
+	}
+}

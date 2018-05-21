@@ -20,6 +20,7 @@ import pandas as pd
 dum = 0
 default_threshfile = 'thresh.json'
 default_labelfile = 'label.json'
+default_pattern_threshfile = 'pattern_thresh.json'
 
 
 # PACKAGE UTIL FUNCTIONS
