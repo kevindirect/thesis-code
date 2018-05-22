@@ -50,10 +50,10 @@ def fix_label_df_column_names(label_df):
 def pop_gen_keys(rec):
 	entry = rec._asdict()
 	allowed = ['freq', 'root', 'basis', 'stage', 'mutate_type', 'raw_cat', 'hist', 'desc']
+	to_remove = entry.keys() - set(allowed)
 
-	for key in entry.keys():
-		if (key not in allowed):
-			entry.pop(key, None)
+	for key in to_remove:
+		entry.pop(key, None)
 	return entry
 
 
