@@ -60,6 +60,7 @@ def threshize(argv):
 		# trmi_df = df[trmi_cols]
 
 		# TODO - different files for different fs_pairs AND shift freqs may be a good idea
+		# TODO - fix the aggregation (use B instead of custom)
 
 		for src in ['pba', 'vol']:
 			logging.info(src)

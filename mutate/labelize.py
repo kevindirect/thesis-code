@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from dask import delayed, compute
 
-from common_util import MUTATE_DIR, DT_HOURLY_FREQ, DT_BIZ_DAILY_FREQ, load_json, get_custom_biz_freq, flatten2D, left_join, search_df, chained_filter, benchmark
+from common_util import MUTATE_DIR, DT_HOURLY_FREQ, DT_BIZ_DAILY_FREQ, load_json, get_custom_biz_freq_ser, flatten2D, left_join, search_df, chained_filter, benchmark
 from data.data_api import DataAPI
 from data.access_util import col_subsetters as cs
 from mutate.common import dum, default_threshfile, default_labelfile
@@ -206,7 +206,7 @@ def shift_time_series_df(shift_procedure, to_shift_df, shift_col_name, to_join_d
 	"""
 	Return pd.DataFrame of threshold column shifted according to shift_procedure and joined with to_join_df.
 	"""
-	agg_freq = get_custom_biz_freq(to_shift_df[shift_col_name])
+	agg_freq = get_custom_biz_freq_ser(to_shift_df[shift_col_name])
 
 	if (shift_procedure == 'af'):		# Shift by aggregation frequency
 		shift_df = to_shift_df[[shift_col_name]].shift(periods=1, freq=agg_freq, axis=0)
