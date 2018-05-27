@@ -19,26 +19,28 @@ def normalize(argv):
 	logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 	pattern_threshfile = default_pattern_threshfile
 	pattern_info = load_json(pattern_threshfile, dir_path=MUTATE_DIR)
-	thresh_pba_vol_cols = get_thresh_pattern_series(pattern_info)
 
 	# Embargo 2018 data (final validation)
 	date_range = {
 		'id': ('lt', 2018)
 	}
 
-	# raw sourced price series
+	# raw sourced price and vol series
 	search_terms = {
 		'stage': 'raw',
 		'raw_cat': 'us_equity_index'
 	}
-	price_dfs, price_recs = {}, {}
-	for rec, price_df in DataAPI.generate(search_terms):
-		price_cols = chained_filter(price_df.columns, [cs['#pba']['ohlc']]) + chained_filter(price_df.columns, [cs['#vol']['ohlc']])
-		price_dfs[rec.root] = price_df.loc[search_df(price_df, date_range), price_cols]
-		price_recs[rec.root] = rec
-	logging.info('price data loaded')
+	raw_pba_dfs, raw_vol_dfs, raw_recs = {}, {}, {}
+	for rec, raw_df in DataAPI.generate(search_terms):
+		raw_pba_cols = chained_filter(raw_df.columns, [cs['#pba']['ohlc']])
+		raw_vol_cols = chained_filter(raw_df.columns, [cs['#vol']['ohlc']])
+		raw_pba_dfs[rec.root] = raw_df.loc[search_df(raw_df, date_range), raw_pba_cols]
+		raw_vol_dfs[rec.root] = raw_df.loc[search_df(raw_df, date_range), raw_vol_cols]
+		raw_recs[rec.root] = rec
+	logging.info('raw data loaded')
 
 	# mutate thresh sourced return series
+	thresh_pba_vol_cols = get_thresh_pattern_series(pattern_info)
 	search_terms = {
 		'stage': 'mutate',
 		'mutate_type': 'thresh',
@@ -50,27 +52,43 @@ def normalize(argv):
 		thresh_recs[rec.root] = rec
 	logging.info('thresh data loaded')
 
-	assert(price_recs.keys() == thresh_recs.keys())
+	assert(raw_recs.keys() == thresh_recs.keys())
 
-	for root_name in price_recs:
+	for root_name in raw_recs:
 		logging.info('asset: ' +str(root_name))
 
-		dzn_price = dayznorm(price_dfs[root_name])
-		dmx_price = dayminmaxnorm(price_dfs[root_name])
-		dzn_thresh = dayznorm(thresh_dfs[root_name])
-		dmx_thresh = dayminmaxnorm(thresh_dfs[root_name])
+		# PBA
+		raw_pba_dzn_df = dayznorm(raw_pba_dfs[root_name])
+		raw_pba_dzn_entry = make_norm_entry('raw_pba_dzn', 'mutate_normalize', raw_recs[root_name])
+		logging.debug('dumping raw_pba normalized df ' +str(raw_pba_entry['desc']) +'...')
+		DataAPI.dump(raw_pba_dzn_df, raw_pba_dzn_entry)
 
-		# Z Score Normalization
-		dzn_df = outer_join(dzn_price, dzn_thresh)
-		dzn_entry = make_normalize_entry('dzn_price_thresh', price_recs[root_name], thresh_recs[root_name])
-		logging.debug('dumping normalized df ' +str(dzn_entry['desc']) +'...')
-		DataAPI.dump(dzn_df, dzn_entry)
+		raw_pba_dmx_df = dayznorm(raw_pba_dfs[root_name])
+		raw_pba_dmx_entry = make_norm_entry('raw_pba_dmx', 'mutate_normalize', raw_recs[root_name])
+		logging.debug('dumping raw_pba normalized df ' +str(raw_pba_entry['desc']) +'...')
+		DataAPI.dump(raw_pba_dmx_df, raw_pba_dmx_entry)
 
-		# Min Max Normalization
-		dmx_df = outer_join(dmx_price, dmx_thresh)
-		dmx_entry = make_normalize_entry('dmx_price_thresh', price_recs[root_name], thresh_recs[root_name])
-		logging.debug('dumping normalized df ' +str(dmx_entry['desc']) +'...')
-		DataAPI.dump(dmx_df, dmx_entry)
+		# VOL
+		raw_vol_dzn_df = dayznorm(raw_vol_dfs[root_name])
+		raw_vol_dzn_entry = make_norm_entry('raw_vol_dzn', 'mutate_normalize', raw_recs[root_name])
+		logging.debug('dumping raw_vol normalized df ' +str(raw_vol_entry['desc']) +'...')
+		DataAPI.dump(raw_vol_dzn_df, raw_vol_dzn_entry)
+
+		raw_vol_dmx_df = dayznorm(raw_vol_dfs[root_name])
+		raw_vol_dmx_entry = make_norm_entry('raw_vol_dmx', 'mutate_normalize', raw_recs[root_name])
+		logging.debug('dumping raw_vol normalized df ' +str(raw_vol_entry['desc']) +'...')
+		DataAPI.dump(raw_vol_dmx_df, raw_vol_dmx_entry)
+
+		# THRESH
+		thresh_dzn_df = dayznorm(thresh_dfs[root_name])
+		thresh_dzn_entry = make_norm_entry('thresh_dzn', 'mutate_normalize', raw_recs[root_name])
+		logging.debug('dumping thresh normalized df ' +str(thresh_entry['desc']) +'...')
+		DataAPI.dump(thresh_dzn_df, thresh_dzn_entry)
+
+		thresh_dmx_df = dayznorm(thresh_dfs[root_name])
+		thresh_dmx_entry = make_norm_entry('thresh_dmx', 'mutate_normalize', raw_recs[root_name])
+		logging.debug('dumping thresh normalized df ' +str(thresh_entry['desc']) +'...')
+		DataAPI.dump(thresh_dmx_df, thresh_dmx_entry)
 
 		DataAPI.update_record()
 
@@ -100,6 +118,19 @@ def dayminmaxnorm(df):
 	cust = get_custom_biz_freq(df)
 	bipolar_mm_transform = lambda ser: 2 * ((ser-ser.min()) / (ser.max()-ser.min())) - 1
 	return df.groupby(pd.Grouper(freq=cust)).transform(bipolar_mm_transform)
+
+def make_norm_entry(desc, hist, base_rec):
+	return {
+		'freq': DT_BIZ_DAILY_FREQ,
+		'root': base_rec.root,
+		'basis': base_rec.name,
+		'stage': 'mutate',
+		'mutate_type': 'normalize',
+		'raw_cat': base_rec.raw_cat,
+		'hist': '->'.join([str(base_rec.hist), hist]),
+		'desc': desc
+	}
+
 
 def make_normalize_entry(desc, first_rec, *args):
 	assert(all(entry.root==first_rec.root for entry in args))
