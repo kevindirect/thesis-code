@@ -59,35 +59,35 @@ def normalize(argv):
 
 		# PBA
 		raw_pba_dzn_df = dayznorm(raw_pba_dfs[root_name])
-		raw_pba_dzn_entry = make_norm_entry('raw_pba_dzn', 'mutate_normalize', raw_recs[root_name])
-		logging.debug('dumping raw_pba normalized df ' +str(raw_pba_entry['desc']) +'...')
+		raw_pba_dzn_entry = make_normalize_entry('raw_pba_dzn', 'mutate_normalize', raw_recs[root_name])
+		logging.debug('dumping raw_pba normalized df ' +str(raw_pba_dzn_entry['desc']) +'...')
 		DataAPI.dump(raw_pba_dzn_df, raw_pba_dzn_entry)
 
 		raw_pba_dmx_df = dayznorm(raw_pba_dfs[root_name])
-		raw_pba_dmx_entry = make_norm_entry('raw_pba_dmx', 'mutate_normalize', raw_recs[root_name])
-		logging.debug('dumping raw_pba normalized df ' +str(raw_pba_entry['desc']) +'...')
+		raw_pba_dmx_entry = make_normalize_entry('raw_pba_dmx', 'mutate_normalize', raw_recs[root_name])
+		logging.debug('dumping raw_pba normalized df ' +str(raw_pba_dmx_entry['desc']) +'...')
 		DataAPI.dump(raw_pba_dmx_df, raw_pba_dmx_entry)
 
 		# VOL
 		raw_vol_dzn_df = dayznorm(raw_vol_dfs[root_name])
-		raw_vol_dzn_entry = make_norm_entry('raw_vol_dzn', 'mutate_normalize', raw_recs[root_name])
-		logging.debug('dumping raw_vol normalized df ' +str(raw_vol_entry['desc']) +'...')
+		raw_vol_dzn_entry = make_normalize_entry('raw_vol_dzn', 'mutate_normalize', raw_recs[root_name])
+		logging.debug('dumping raw_vol normalized df ' +str(raw_vol_dzn_entry['desc']) +'...')
 		DataAPI.dump(raw_vol_dzn_df, raw_vol_dzn_entry)
 
 		raw_vol_dmx_df = dayznorm(raw_vol_dfs[root_name])
-		raw_vol_dmx_entry = make_norm_entry('raw_vol_dmx', 'mutate_normalize', raw_recs[root_name])
-		logging.debug('dumping raw_vol normalized df ' +str(raw_vol_entry['desc']) +'...')
+		raw_vol_dmx_entry = make_normalize_entry('raw_vol_dmx', 'mutate_normalize', raw_recs[root_name])
+		logging.debug('dumping raw_vol normalized df ' +str(raw_vol_dmx_entry['desc']) +'...')
 		DataAPI.dump(raw_vol_dmx_df, raw_vol_dmx_entry)
 
 		# THRESH
 		thresh_dzn_df = dayznorm(thresh_dfs[root_name])
-		thresh_dzn_entry = make_norm_entry('thresh_dzn', 'mutate_normalize', raw_recs[root_name])
-		logging.debug('dumping thresh normalized df ' +str(thresh_entry['desc']) +'...')
+		thresh_dzn_entry = make_normalize_entry('thresh_dzn', 'mutate_normalize', thresh_recs[root_name])
+		logging.debug('dumping thresh normalized df ' +str(thresh_dzn_entry['desc']) +'...')
 		DataAPI.dump(thresh_dzn_df, thresh_dzn_entry)
 
 		thresh_dmx_df = dayznorm(thresh_dfs[root_name])
-		thresh_dmx_entry = make_norm_entry('thresh_dmx', 'mutate_normalize', raw_recs[root_name])
-		logging.debug('dumping thresh normalized df ' +str(thresh_entry['desc']) +'...')
+		thresh_dmx_entry = make_normalize_entry('thresh_dmx', 'mutate_normalize', thresh_recs[root_name])
+		logging.debug('dumping thresh normalized df ' +str(thresh_dmx_entry['desc']) +'...')
 		DataAPI.dump(thresh_dmx_df, thresh_dmx_entry)
 
 		DataAPI.update_record()
@@ -119,7 +119,7 @@ def dayminmaxnorm(df):
 	bipolar_mm_transform = lambda ser: 2 * ((ser-ser.min()) / (ser.max()-ser.min())) - 1
 	return df.groupby(pd.Grouper(freq=cust)).transform(bipolar_mm_transform)
 
-def make_norm_entry(desc, hist, base_rec):
+def make_normalize_entry(desc, hist, base_rec):
 	return {
 		'freq': DT_BIZ_DAILY_FREQ,
 		'root': base_rec.root,
@@ -131,28 +131,6 @@ def make_norm_entry(desc, hist, base_rec):
 		'desc': desc
 	}
 
-
-def make_normalize_entry(desc, first_rec, *args):
-	assert(all(entry.root==first_rec.root for entry in args))
-	assert(all(entry.raw_cat==first_rec.raw_cat for entry in args))
-
-	names = [rec.name for rec in args]
-	combined_basis = '(' +first_rec.name +', ' +', '.join(names) +')'
-
-	hist_mapper = lambda hist: '' if (not isinstance(hist, str)) else hist
-	hists = list(map(hist_mapper, [rec.hist for rec in args]))
-	combined_hist = '(' +hist_mapper(first_rec.hist) +', ' +', '.join(hists) +')'
-
-	return {
-		'freq': DT_BIZ_DAILY_FREQ,
-		'root': first_rec.root,
-		'basis': combined_basis,
-		'stage': 'mutate',
-		'mutate_type': 'normalize',
-		'raw_cat': first_rec.raw_cat,
-		'hist': '->'.join([combined_hist, 'mutate_normalize']),
-		'desc': desc
-	}
 
 if __name__ == '__main__':
 	with benchmark('time to finish') as b:
