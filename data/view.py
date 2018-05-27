@@ -7,7 +7,7 @@ import logging
 import numpy as np
 import pandas as pd
 
-from common_util import search_df, get_subset, benchmark
+from common_util import search_df, get_subset, cust_count, benchmark
 from data.common import dum
 from data.data_api import DataAPI
 from data.access_util import col_subsetters as cs
@@ -19,17 +19,22 @@ def view(argv):
 	# Stuff
 	search_terms = {
 		'stage': 'mutate',
-		'mutate_type': 'thresh',
+		'mutate_type': 'normalize',
 		'raw_cat': 'us_equity_index'
 	}
-	thresh_recs = {}
-	thresh_dfs = {}
-	for rec, thresh_df in DataAPI.generate(search_terms):
-		thresh_recs[rec.root] = rec
-		thresh_dfs[rec.root] = thresh_df.loc[search_df(thresh_df, date_range)]
+	recs = {}
+	dfs = {}
+	for rec, df in DataAPI.generate(search_terms):
+		recs[rec.root] = rec
+		dfs[rec.root] = df.loc[search_df(df, date_range)]
 	logging.info('thresh data loaded')
 
-	print(thresh_dfs[thresh_dfs.keys()[0]])
+	for key in recs.keys():
+		df = dfs[key]
+		pba_cust, pba_count_df = cust_count(df.loc[:, 'pba_avgPrice'])
+		vol_cust, vol_count_df = cust_count(df.loc[:, 'vol_avgPrice'])
+		print(pba_count_df.value_counts())
+		print(vol_count_df.value_counts())
 	
 
 
