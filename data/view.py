@@ -31,6 +31,7 @@ def view(argv):
 
 	for key in recs.keys():
 		df = dfs[key]
+		print(recs[key].desc)
 		pba_cust, pba_count_df = cust_count(df.loc[:, 'pba_avgPrice'])
 		vol_cust, vol_count_df = cust_count(df.loc[:, 'vol_avgPrice'])
 		print(pba_count_df.value_counts())
