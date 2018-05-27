@@ -26,7 +26,7 @@ def view(argv):
 	dfs = {}
 	for rec, df in DataAPI.generate(search_terms):
 		recs[rec.root] = rec
-		dfs[rec.root] = df.loc[search_df(df, date_range)]
+		dfs[rec.root] = df
 	logging.info('thresh data loaded')
 
 	for key in recs.keys():
