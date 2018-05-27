@@ -13,6 +13,7 @@ from os import sep
 from common_util import DATA_DIR
 
 # PACKAGE CONSTANTS
+dum=0
 DR_NAME = 'data_record'
 DR_FMT = 'csv'
 

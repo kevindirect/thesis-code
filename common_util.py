@@ -7,7 +7,7 @@ import sys
 from os import sep, path, makedirs
 from os.path import dirname, basename, realpath, exists, isfile, getsize
 from json import load
-from itertools import chain
+from itertools import chain, tee
 from functools import reduce, partial, wraps
 from datetime import datetime
 from timeit import default_timer
@@ -93,6 +93,17 @@ def list_compare(master, other):
 		return 'has_some'
 	elif (master_set.isdisjoint(other_set)):
 		return 'disjoint'
+
+def pairwise(iterable):
+	"""
+	Pairwise iterator (ie, size 2 sliding window).
+	Taken from itertools recipes (official docs): https://docs.python.org/3/library/itertools.html
+
+	"s -> (s0,s1), (s1,s2), (s2, s3), ..."
+	"""
+	a, b = tee(iterable)
+	next(b, None)
+	return zip(a, b)
 
 
 """ ********** FS AND GENERAL IO UTILS ********** """
@@ -197,6 +208,7 @@ def get_missing_dt(ser, ref=DT_BIZ_DAILY_FREQ):
 
 def get_custom_biz_freq(ser, ref=DT_BIZ_DAILY_FREQ):
 	"""
+	XXX DEPRECATED
 	Return custom CustomBusinessDay or CustomBusinessHour based on missing periods in ser.
 	"""
 	misses = get_missing_dt(ser, ref=ref)
@@ -205,6 +217,41 @@ def get_custom_biz_freq(ser, ref=DT_BIZ_DAILY_FREQ):
 	elif (ref == DT_BIZ_HOURLY_FREQ):
 		return CustomBusinessHour(holidays=misses)
 
+def get_custom_biz_freq_ser(ser, ref=DT_BIZ_DAILY_FREQ):
+	"""
+	Return custom CustomBusinessDay or CustomBusinessHour based on missing periods in ser.
+	"""
+	misses = get_missing_dt(ser, ref=ref)
+	if (ref == DT_BIZ_DAILY_FREQ):
+		return CustomBusinessDay(holidays=misses)
+	elif (ref == DT_BIZ_HOURLY_FREQ):
+		return CustomBusinessHour(holidays=misses)
+
+def get_custom_biz_freq_df(df, ref=DT_BIZ_DAILY_FREQ):
+	"""
+	Return custom CustomBusinessDay or CustomBusinessHour based on missing periods in each column of df
+	as a dictionary of frequencies.
+	"""
+	cust_freqs = {}
+	for column in df.columns:
+		cust_freqs[column] = get_custom_biz_freq(df[column])
+	return cust_freqs
+
+def dti_to_ymd(df):
+	"""
+	Return pd.Dataframe with DateTimeIndex index labels changed to Year-Month-Day format.
+	"""
+	df.index = df.index.strftime("%Y-%m-%d")
+	return df
+
+def cust_count(df):
+	"""
+	Return custom biz freq and a Dataframe of counts per aggregation period.
+	"""
+	cust = get_custom_biz_freq(df)
+	count_df = df.groupby(pd.Grouper(freq='B')).count()
+
+	return cust, dti_to_ymd(count_df)
 
 """Numpy"""
 def pd_to_np(fn):
