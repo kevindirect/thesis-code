@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import zscore
 
-from common_util import MUTATE_DIR, DT_HOURLY_FREQ, DT_BIZ_DAILY_FREQ, load_json, get_custom_biz_freq, outer_join, right_join, search_df, chained_filter, benchmark
+from common_util import MUTATE_DIR, DT_HOURLY_FREQ, DT_BIZ_DAILY_FREQ, load_json, is_empty_df, count_nn_df, get_custom_biz_freq, outer_join, right_join, search_df, chained_filter, benchmark
 from data.data_api import DataAPI
 from data.access_util import col_subsetters as cs
 from mutate.common import default_pattern_threshfile
@@ -34,8 +34,8 @@ def normalize(argv):
 	for rec, raw_df in DataAPI.generate(search_terms):
 		raw_pba_cols = chained_filter(raw_df.columns, [cs['#pba']['ohlc']])
 		raw_vol_cols = chained_filter(raw_df.columns, [cs['#vol']['ohlc']])
-		raw_pba_dfs[rec.root] = raw_df.loc[search_df(raw_df, date_range), raw_pba_cols]
-		raw_vol_dfs[rec.root] = raw_df.loc[search_df(raw_df, date_range), raw_vol_cols]
+		raw_pba_dfs[rec.root] = raw_df.loc[search_df(raw_df, date_range), raw_pba_cols].dropna(axis=0, how='all')
+		raw_vol_dfs[rec.root] = raw_df.loc[search_df(raw_df, date_range), raw_vol_cols].dropna(axis=0, how='all')
 		raw_recs[rec.root] = rec
 	logging.info('raw data loaded')
 
@@ -61,33 +61,39 @@ def normalize(argv):
 		raw_pba_dzn_df = dayznorm(raw_pba_dfs[root_name])
 		raw_pba_dzn_entry = make_normalize_entry('raw_pba_dzn', 'mutate_normalize', raw_recs[root_name])
 		logging.debug('dumping raw_pba normalized df ' +str(raw_pba_dzn_entry['desc']) +'...')
+		assert(not is_empty_df(raw_pba_dzn_df))
 		DataAPI.dump(raw_pba_dzn_df, raw_pba_dzn_entry)
 
-		raw_pba_dmx_df = dayznorm(raw_pba_dfs[root_name])
+		raw_pba_dmx_df = dayminmaxnorm(raw_pba_dfs[root_name])
 		raw_pba_dmx_entry = make_normalize_entry('raw_pba_dmx', 'mutate_normalize', raw_recs[root_name])
 		logging.debug('dumping raw_pba normalized df ' +str(raw_pba_dmx_entry['desc']) +'...')
+		assert(not is_empty_df(raw_pba_dmx_df))
 		DataAPI.dump(raw_pba_dmx_df, raw_pba_dmx_entry)
 
 		# VOL
 		raw_vol_dzn_df = dayznorm(raw_vol_dfs[root_name])
 		raw_vol_dzn_entry = make_normalize_entry('raw_vol_dzn', 'mutate_normalize', raw_recs[root_name])
 		logging.debug('dumping raw_vol normalized df ' +str(raw_vol_dzn_entry['desc']) +'...')
+		assert(not is_empty_df(raw_vol_dzn_df))
 		DataAPI.dump(raw_vol_dzn_df, raw_vol_dzn_entry)
 
-		raw_vol_dmx_df = dayznorm(raw_vol_dfs[root_name])
+		raw_vol_dmx_df = dayminmaxnorm(raw_vol_dfs[root_name])
 		raw_vol_dmx_entry = make_normalize_entry('raw_vol_dmx', 'mutate_normalize', raw_recs[root_name])
 		logging.debug('dumping raw_vol normalized df ' +str(raw_vol_dmx_entry['desc']) +'...')
+		assert(not is_empty_df(raw_vol_dmx_df))
 		DataAPI.dump(raw_vol_dmx_df, raw_vol_dmx_entry)
 
 		# THRESH
 		thresh_dzn_df = dayznorm(thresh_dfs[root_name])
 		thresh_dzn_entry = make_normalize_entry('thresh_dzn', 'mutate_normalize', thresh_recs[root_name])
 		logging.debug('dumping thresh normalized df ' +str(thresh_dzn_entry['desc']) +'...')
+		assert(not is_empty_df(thresh_dzn_df))
 		DataAPI.dump(thresh_dzn_df, thresh_dzn_entry)
 
-		thresh_dmx_df = dayznorm(thresh_dfs[root_name])
+		thresh_dmx_df = dayminmaxnorm(thresh_dfs[root_name])
 		thresh_dmx_entry = make_normalize_entry('thresh_dmx', 'mutate_normalize', thresh_recs[root_name])
 		logging.debug('dumping thresh normalized df ' +str(thresh_dmx_entry['desc']) +'...')
+		assert(not is_empty_df(thresh_dmx_df))
 		DataAPI.dump(thresh_dmx_df, thresh_dmx_entry)
 
 		DataAPI.update_record()
@@ -112,7 +118,7 @@ def get_thresh_pattern_series(pattern_info):
 
 def dayznorm(df):
 	cust = get_custom_biz_freq(df)
-	return df.groupby(pd.Grouper(freq=cust)).transform(zscore)
+	return df.groupby(pd.Grouper(freq=cust)).transform(lambda s: (s-s.mean())/s.std())
 
 def dayminmaxnorm(df):
 	cust = get_custom_biz_freq(df)
