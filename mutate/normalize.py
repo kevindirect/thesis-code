@@ -120,6 +120,8 @@ def dayminmaxnorm(df):
 	return df.groupby(pd.Grouper(freq=cust)).transform(bipolar_mm_transform)
 
 def make_normalize_entry(desc, hist, base_rec):
+	prev_hist = '' if isinstance(base_rec.hist, float) else str(base_rec.hist)
+
 	return {
 		'freq': DT_BIZ_DAILY_FREQ,
 		'root': base_rec.root,
@@ -127,7 +129,7 @@ def make_normalize_entry(desc, hist, base_rec):
 		'stage': 'mutate',
 		'mutate_type': 'normalize',
 		'raw_cat': base_rec.raw_cat,
-		'hist': '->'.join([str(base_rec.hist), hist]),
+		'hist': '->'.join([prev_hist, hist]),
 		'desc': desc
 	}
 
