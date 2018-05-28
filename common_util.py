@@ -301,11 +301,11 @@ count_nn_df = lambda df: len(df) - df.isnull().sum()
 count_nz_df = lambda df: df.apply(lambda ser: (ser.dropna(axis=0, how='any')!=0).sum())
 count_nn_nz_df = lambda df: pd.concat([count_nonnan(df), count_nonzero(df)], axis=1, names=['non_nan', 'non_zero'])
 
-def is_empty_df(df, count_nans=False, how='any'):
+def is_empty_df(df, count_nans=False, **kwargs):
 	if (count_nans):
 		return df.empty
 	else:
-		return df.dropna(how='how').empty
+		return df.dropna(**kwargs).empty
 
 
 """ ********** PANDAS SEARCH AND FILTERING UTILS ********** """
