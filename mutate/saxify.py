@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 from numba import jit, vectorize
 
-from common_util import DT_HOURLY_FREQ, DT_BIZ_DAILY_FREQ, get_custom_biz_freq, dti_to_ymd, outer_join, right_join, search_df, chained_filter, benchmark
+from common_util import DT_HOURLY_FREQ, DT_BIZ_DAILY_FREQ, get_custom_biz_freq, outer_join, right_join, search_df, chained_filter, benchmark
 from data.data_api import DataAPI
 from data.access_util import col_subsetters as cs
 from mutate.common import dum
@@ -41,7 +41,7 @@ def saxify(argv):
 		for norm_type in filter(lambda n: n[-3:]=='dzn', norm_dfs[root_name]):
 			logging.info('normalize type: ' +str(norm_type))
 			norm_df = norm_dfs[root_name][norm_type]
-			saxed_df = dti_to_ymd(sax_df(norm_df, num_sym, max_seg=max_seg))
+			saxed_df = sax_df(norm_df, num_sym, max_seg=max_seg)
 			desc = 'saxify' +'(' +str(num_sym) +',' +str(max_seg) +')'
 			sax_entry = make_sax_entry(desc, str('mutate_' +desc), norm_recs[root_name][norm_type])
 			DataAPI.dump(saxed_df, sax_entry)
