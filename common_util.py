@@ -242,7 +242,8 @@ def dti_to_ymd(df):
 	"""
 	Return pd.Dataframe with DateTimeIndex index labels changed to Year-Month-Day format.
 	"""
-	df.index = df.index.strftime("%Y-%m-%d")
+	df.index = df.index.strftime("%Y-%m-%d").rename('id')
+
 	return df
 
 def cust_count(df):
