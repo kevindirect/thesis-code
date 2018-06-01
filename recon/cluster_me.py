@@ -2,6 +2,7 @@
 
 import sys
 import os
+from collections import defaultdict
 import logging
 
 import numpy as np
