@@ -13,7 +13,7 @@ from sklearn.decomposition import PCA
 from numba import jit, vectorize, float64
 from scipy.stats import zscore
 
-from common_util import DT_HOURLY_FREQ, DT_BIZ_DAILY_FREQ, DT_CAL_DAILY_FREQ, search_df, cust_count, dti_to_ymd, chained_filter
+from common_util import DT_HOURLY_FREQ, DT_BIZ_DAILY_FREQ, DT_CAL_DAILY_FREQ, search_df, get_custom_biz_freq, dti_to_ymd, chained_filter
 from data.data_api import DataAPI
 from data.access_util import col_subsetters as cs
 from mutate.common import dum
@@ -41,7 +41,23 @@ gaussian_breakpoints = {
 	20: [-1.64, -1.28, -1.04, -0.84, -0.67, -0.52, -0.39, -0.25, -0.13, 0, 0.13, 0.25, 0.39, 0.52, 0.67, 0.84, 1.04, 1.28, 1.64]
 }
 
+def most_freq_subseq_len(df, capture=.95):
+	cust, count_df = cust_count(df)
+	vc = count_df.apply(pd.Series.value_counts, normalize=True)
+	proportion = 0.0
+
+	for idx, val in sorted(list(vc.iteritems()), key=lambda tup: tup[0], reverse=True):
+		print(idx)
+		if (proportion > capture):
+			return {'max':ser.idxmax(), proportion: idx}
+		else:
+			proportion += val
+
+
 """ ********** SEGMENTATION ********** """
+DEF_PATTERN_SIZE = 5
+DEF_PIP_METHOD = 'vd'
+
 def pip_df(df, pattern_size=DEF_PATTERN_SIZE, method=DEF_PIP_METHOD):
 	"""
 	Perceptually Important Points: Choose points by distance to points already in pattern.
@@ -49,9 +65,9 @@ def pip_df(df, pattern_size=DEF_PATTERN_SIZE, method=DEF_PIP_METHOD):
 	This implementation assumes all points are equally spaced.
 	"""
 	distance_fun = {
-		'ed': None,    # euclidean distance
-		'pd': None,    # perpendicular distance to joining line
-		'vd': vd       # vertical distance to joining line
+		'ed': None,	# euclidean distance
+		'pd': None,	# perpendicular distance to joining line
+		'vd': vd	# vertical distance to joining line
 	}.get(method)
 
 	def get_max_dist_point(ser, left, right, dist_fun=distance_fun):
@@ -112,11 +128,8 @@ def pip_df(df, pattern_size=DEF_PATTERN_SIZE, method=DEF_PIP_METHOD):
 
 
 
-
-
-
 """ ********** SYMBOLIZATION ********** """
-def sax_df(df, num_sym):
+def sax_df(df, num_sym, max_seg=None):
 	"""
 	Symbolic Aggregate Approximation (SAX) style symbolization.
 	This does not perform paa or any other subseries downsampling/aggregation
@@ -130,19 +143,25 @@ def sax_df(df, num_sym):
 		pd.Dataframe with rows aggregated by day into symbolic sequences
 	"""
 	breakpoints = gaussian_breakpoints[num_sym]
-	symbols = map(lambda idx: chr(ord('a') +idx), range(len(breakpoints)+1))
+	symbols = list(map(lambda idx: chr(ord('a') +idx), range(len(breakpoints)+1)))
 
 	def symbolize_value(value):
 		for idx, brk in enumerate(breakpoints):
 			if (value <= brk):
 				return symbols[idx]
 		else:
-			return symbols[-1]
+			return symbols[len(breakpoints)]
 
 	def sax_ser(ser):
-		return ser.map(symbolize_value)
+		if (max_seg is not None and ser.shape[0] > max_seg):
+			segs = ser.tail(max_seg)
+		else:
+			segs = ser
+		code = segs.map(symbolize_value).str.cat(sep=',')
+		return code
 
-	saxed = df.groupby(pd.Grouper(freq=cust)).transform(sax_ser)
+	cust = get_custom_biz_freq(df)
+	saxed = df.groupby(pd.Grouper(freq=cust)).aggregate(sax_ser)
 
 	return saxed
 
