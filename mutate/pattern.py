@@ -123,7 +123,7 @@ def pip_df(df, pattern_size=DEF_PATTERN_SIZE, method=DEF_PIP_METHOD):
 
 
 """ ********** SYMBOLIZATION ********** """
-def sax_df(df, num_sym, max_seg=None):
+def sax_df(df, num_sym, max_seg=None, numeric_symbols=True):
 	"""
 	Symbolic Aggregate Approximation (SAX) style symbolization.
 	This does not perform paa or any other subseries downsampling/aggregation
@@ -137,7 +137,10 @@ def sax_df(df, num_sym, max_seg=None):
 		pd.Dataframe with rows aggregated by day into symbolic sequences
 	"""
 	breakpoints = gaussian_breakpoints[num_sym]
-	symbols = list(map(lambda idx: chr(ord('a') +idx), range(len(breakpoints)+1)))
+	if (numeric_symbols):
+		symbols = [str(idx+1) for idx in range(len(breakpoints)+1)]
+	else:
+		symbols = list(map(lambda idx: chr(ord('a') +idx), range(len(breakpoints)+1)))
 
 	def symbolize_value(value):
 		for idx, brk in enumerate(breakpoints):
