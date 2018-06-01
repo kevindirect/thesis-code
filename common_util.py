@@ -49,6 +49,7 @@ DT_HOURLY_FREQ = 'H'
 DT_CAL_DAILY_FREQ = DT_DAILY_FREQ
 DT_BIZ_DAILY_FREQ = 'B'
 DT_BIZ_HOURLY_FREQ = 'BH'
+DT_FMT_YMD =  '%Y-%m-%d'
 DT_FMT_YMD_HM = '%Y-%m-%d %H:%M'
 DT_FMT_YMD_HMS = '%Y-%m-%d %H:%M:%S'
 
@@ -237,15 +238,6 @@ def get_custom_biz_freq_df(df, ref=DT_BIZ_DAILY_FREQ):
 	for column in df.columns:
 		cust_freqs[column] = get_custom_biz_freq(df[column])
 	return cust_freqs
-
-def dti_to_ymd(df):
-	"""
-	Return pd.Dataframe with DateTimeIndex index labels changed to Year-Month-Day format.
-	"""
-	df.index = df.index.strftime("%Y-%m-%d")
-	df.index = df.index.rename('id')
-
-	return df
 
 def cust_count(df):
 	"""
