@@ -1,33 +1,91 @@
 {
+	"#pba": {
+		"all": {
+			"exact": [],
+			"startswith": ["pba"],
+			"endswith": [],
+			"regex": [],
+			"exclude": null
+		},
+		"oc": {
+			"all": {
+				"exact": [],
+				"startswith": ["pba_oc"],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			"all": {
+				"exact": [],
+				"startswith": ["pba_oc"],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			}
+		},
+		"oa": {
+			"all": {
+				"exact": [],
+				"startswith": ["pba_oa"],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			}
+		},
+		"lh": {
+			"all": {
+				"exact": [],
+				"startswith": ["pba_lh"],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			}
+		}
+	},
+
 	"#fth": {
+		"all": {
+			"exact": [],
+			"startswith": ["fth"],
+			"endswith": [],
+			"regex": [],
+			"exclude": null
+		},
 		"af": {
 			"exact": [],
 			"startswith": ["fth_af"],
-			"endswith": ["gmtOffset", "ver"],
+			"endswith": [],
 			"regex": [],
 			"exclude": null
 		},
 		"of": {
 			"exact": [],
 			"startswith": ["fth_of"],
-			"endswith": ["gmtOffset", "ver"],
+			"endswith": [],
 			"regex": [],
 			"exclude": null
 		}
 	},
 
 	"#vth": {
+		"all": {
+			"exact": [],
+			"startswith": ["vth"],
+			"endswith": [],
+			"regex": [],
+			"exclude": null
+		},
 		"af": {
 			"exact": [],
 			"startswith": ["vth_af"],
-			"endswith": ["gmtOffset", "ver"],
+			"endswith": [],
 			"regex": [],
 			"exclude": null
 		},
 		"of": {
 			"exact": [],
 			"startswith": ["vth_of"],
-			"endswith": ["gmtOffset", "ver"],
+			"endswith": [],
 			"regex": [],
 			"exclude": null
 		}
