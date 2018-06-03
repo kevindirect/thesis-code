@@ -42,7 +42,7 @@ def saxify(argv):
 			logging.info('normalize type: ' +str(norm_type))
 			norm_df = norm_dfs[root_name][norm_type]
 			saxed_df = sax_df(norm_df, num_sym, max_seg=max_seg)
-			desc = 'saxify' +'(' +str(num_sym) +',' +str(max_seg) +')'
+			desc = 'sax' +'(' +str(num_sym) +',' +str(max_seg) +')'
 			sax_entry = make_sax_entry(desc, str('mutate_' +desc), norm_recs[root_name][norm_type])
 			DataAPI.dump(saxed_df, sax_entry)
 
