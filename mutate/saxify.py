@@ -69,7 +69,7 @@ def make_sax_entry(desc, hist, base_rec):
 		'root': base_rec.root,
 		'basis': base_rec.name,
 		'stage': 'mutate',
-		'mutate_type': 'saxify',
+		'mutate_type': 'sax',
 		'raw_cat': base_rec.raw_cat,
 		'hist': '->'.join([str(base_rec.hist), hist]),
 		'desc': '_'.join([base_rec.desc, desc])
