@@ -1,5 +1,5 @@
 {
-	"idtb_fth_of_xwhole": {
+	"itb_fth_of_xwhole": {
 		"all": {
 			"stage": "mutate",
 			"mutate_type": "label",
@@ -14,7 +14,7 @@
 			}
 		}
 	},
-	"idtb_fth_of_xact": {
+	"itb_fth_of_xact": {
 		"all": {
 			"stage": "mutate",
 			"mutate_type": "label",
@@ -29,7 +29,7 @@
 			}
 		}
 	},
-	"idtb_fth_af_whole": {
+	"itb_fth_af_whole": {
 		"all": {
 			"stage": "mutate",
 			"mutate_type": "label",
