@@ -6,7 +6,7 @@ Kevin Patel
 import sys
 from os import sep, path, makedirs
 from os.path import dirname, basename, realpath, exists, isfile, getsize
-from json import load
+from json import load, dumps
 from itertools import chain, tee
 from functools import reduce, partial, wraps
 from datetime import datetime
@@ -44,6 +44,7 @@ DF_DATA_FMT = 'parquet'
 """Constants"""
 BYTES_PER_MEGABYTE = 10**6
 EMPTY_STR = ''
+JSON_SFX_LEN = len(".json")
 DT_DAILY_FREQ = 'D'
 DT_HOURLY_FREQ = 'H'
 DT_CAL_DAILY_FREQ = DT_DAILY_FREQ
@@ -106,6 +107,26 @@ def pairwise(iterable):
 	a, b = tee(iterable)
 	next(b, None)
 	return zip(a, b)
+
+
+"""Dict"""
+def nice_print_dict(dictionary):
+	print(dumps(dictionary, indent=4, sort_keys=True))
+
+def dict_path(my_dict, path=None, stop_cond=lambda v: not isinstance(v, dict)):
+	"""
+	Convenience function to give explicit paths from root keys until stop_cond is met.
+	By default stop_cond is set such that the path to all leaves (non-dict values) are found.
+	"""
+	if (path is None):
+		path = []
+	for key, val in my_dict.items():
+		newpath = path + [key]
+		if (stop_cond(val)):
+			yield newpath, val
+		else:
+			for unfinished in dict_path(val, newpath, stop_cond=stop_cond):
+				yield unfinished
 
 
 """ ********** FS AND GENERAL IO UTILS ********** """
