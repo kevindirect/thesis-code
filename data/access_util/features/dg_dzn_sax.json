@@ -1,0 +1,20 @@
+{
+	"dzn_sax(4,8)": {
+		"all": {
+			"stage": "mutate",
+			"mutate_type": "sax",
+			"raw_cat": "us_equity_index"
+		},
+		"subsets": {
+			"raw_pba": {
+				"desc": "raw_pba_dzn_sax(4,8)"
+			},
+			"raw_vol": {
+				"desc": "raw_vol_dzn_sax(4,8)"
+			},
+			"thresh": {
+				"desc": "thresh_dzn_sax(4,8)"
+			}
+		}
+	}
+}

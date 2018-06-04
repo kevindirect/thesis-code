@@ -7,6 +7,8 @@ import sys
 from os import sep, path, makedirs
 from os.path import dirname, basename, realpath, exists, isfile, getsize
 from json import load, dumps
+import operator
+from collections import defaultdict
 from itertools import chain, tee
 from functools import reduce, partial, wraps
 from datetime import datetime
@@ -112,6 +114,21 @@ def pairwise(iterable):
 """Dict"""
 def nice_print_dict(dictionary):
 	print(dumps(dictionary, indent=4, sort_keys=True))
+
+def recursive_dict():
+	"""
+	Creates a recursive nestable defaultdict.
+
+	In other words, it will automatically create intermediate keys if
+	they don't exist!
+	"""
+	return defaultdict(recursive_dict)
+
+def list_get_dict(dictionary, key_list):
+    return reduce(operator.getitem, key_list, dictionary)
+
+def list_set_dict(dictionary, key_list, value):
+    list_get_dict(dictionary, key_list[:-1])[key_list[-1]] = value
 
 def dict_path(my_dict, path=None, stop_cond=lambda v: not isinstance(v, dict)):
 	"""

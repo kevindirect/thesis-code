@@ -1,0 +1,47 @@
+{
+	"idtb_fth_of_xwhole": {
+		"all": {
+			"stage": "mutate",
+			"mutate_type": "label",
+			"raw_cat": "us_equity_index"
+		},
+		"subsets": {
+			"pba_oc_return": {
+				"desc": "pba_oc_return_fth_of_xwhole"
+			},
+			"pba_oa_return": {
+				"desc": "pba_oa_return_fth_of_xwhole"
+			}
+		}
+	},
+	"idtb_fth_of_xact": {
+		"all": {
+			"stage": "mutate",
+			"mutate_type": "label",
+			"raw_cat": "us_equity_index"
+		},
+		"subsets": {
+			"pba_oc_return": {
+				"desc": "pba_oc_return_fth_of_xact"
+			},
+			"pba_oa_return": {
+				"desc": "pba_oa_return_fth_of_xact"
+			}
+		}
+	},
+	"idtb_fth_af_whole": {
+		"all": {
+			"stage": "mutate",
+			"mutate_type": "label",
+			"raw_cat": "us_equity_index"
+		},
+		"subsets": {
+			"pba_oc_return": {
+				"desc": "pba_oc_return_fth_af_whole"
+			},
+			"pba_oa_return": {
+				"desc": "pba_oa_return_fth_af_whole"
+			}
+		}
+	}
+}
