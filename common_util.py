@@ -130,14 +130,14 @@ def list_get_dict(dictionary, key_list):
 def list_set_dict(dictionary, key_list, value):
     list_get_dict(dictionary, key_list[:-1])[key_list[-1]] = value
 
-def dict_path(my_dict, path=None, stop_cond=lambda v: not isinstance(v, dict)):
+def dict_path(dictionary, path=None, stop_cond=lambda v: not isinstance(v, dict)):
 	"""
 	Convenience function to give explicit paths from root keys until stop_cond is met.
 	By default stop_cond is set such that the path to all leaves (non-dict values) are found.
 	"""
 	if (path is None):
 		path = []
-	for key, val in my_dict.items():
+	for key, val in dictionary.items():
 		newpath = path + [key]
 		if (stop_cond(val)):
 			yield newpath, val
