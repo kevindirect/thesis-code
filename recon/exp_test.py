@@ -19,7 +19,7 @@ def test(argv):
 	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 	features_paths, features = DataAPI.load_from_dg(dg['sax']['dzn_sax'])
-	labels_paths, labels = DataAPI.load_from_dg(dg['labels']['itb']['itb_fth_of_xwhole'])
+	labels_paths, labels = DataAPI.load_from_dg(dg['labels']['itb'])
 
 	print('features')
 	print(features_paths)
