@@ -36,7 +36,8 @@ def test(argv):
 	for label_path in labels_paths:
 		print('_'.join(label_path))
 		ldict = list_get_dict(labels, label_path)
-		print(ldict.columns)
+		print(ldict.iloc[:, 0].value_counts())
+		print(ldict.iloc[:, 0].head())
 
 	# kmeans = KMeans(n_clusters=4, random_state=0).fit(X)
 	
