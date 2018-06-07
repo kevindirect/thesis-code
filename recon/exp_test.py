@@ -17,7 +17,7 @@ from recon.common import dum
 
 def split_sax(ser):
 	# split_df = pd.DataFrame(index=ser.index)
-	return ser.str.split(',', 1, expand=True)
+	return ser.str.split(',', 8, expand=True)
 
 def test(argv):
 	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
