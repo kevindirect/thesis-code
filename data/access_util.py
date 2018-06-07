@@ -26,7 +26,7 @@ df_getters_file_qualifier = {
 	"regex": [],
 	"exclude": {
 		"exact": [],
-		"startswith": ["cs"],
+		"startswith": [CS_PFX],
 		"endswith": [],
 		"regex": [],
 		"exclude": None
@@ -95,3 +95,25 @@ thresh_col_subsetters = load_json(thresh_col_subsetsfile, dir_path=ACCESS_UTIL_D
 
 col_subsetters = ChainMap(base_col_subsetters, thresh_col_subsetters)
 
+## COL SUBSETTER V2
+
+col_subsetters2 = {}
+col_subsetters_file_qualifier = {
+	"exact": [],
+	"startswith": [CS_PFX],
+	"endswith": [".json"],
+	"regex": [],
+	"exclude": {
+		"exact": [base_col_subsetsfile, thresh_col_subsetsfile],
+		"startswith": [DG_PFX],
+		"endswith": [],
+		"regex": [],
+		"exclude": None
+	}
+}
+
+for g in os.walk(ACCESS_UTIL_DIR, topdown=True):
+	dgs = chained_filter(g[2], [col_subsetters_file_qualifier])
+
+	if (dgs):
+		col_subsetters2[basename(g[0])] = {fname[len(CS_PFX):-JSON_SFX_LEN]: load_json(fname, dir_path=g[0] +sep) for fname in dgs}
