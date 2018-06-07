@@ -171,9 +171,9 @@ class DataAPI:
 		By default separates the search by root at the bottom level.
 		"""
 
-		def dg_search_dict(end_dict, how=how, subset=subset):
+		def construct_search_dict(end_dict, how=how, subset=subset):
 			"""
-			Convenience function to extract the search dict based on the how parameter.
+			Convenience function to construct the search dict based on the how parameter.
 			"""
 			common = end_dict['all']
 
@@ -193,7 +193,7 @@ class DataAPI:
 
 		for ed_path, ed in paths_to_ed:
 
-			for sd_name, sd in dg_search_dict(ed).items():
+			for sd_name, sd in construct_search_dict(ed).items():
 				sd_path = ed_path +[sd_name]
 
 				for rec, df in cls.generate(sd):
