@@ -1,0 +1,35 @@
+{
+	"dzn_sax(4,8)": {
+		"all": {
+		},
+		"subsets": {
+			"raw_pba": {
+				"default": {
+					"exact": [],
+					"startswith": [],
+					"endswith": ["close", "avgPrice"],
+					"regex": [],
+					"exclude": null
+				}
+			},
+			"raw_vol": {
+				"default": {
+					"exact": [],
+					"startswith": [],
+					"endswith": ["close", "avgPrice"],
+					"regex": [],
+					"exclude": null
+				}
+			},
+			"thresh": {
+				"default": {
+					"exact": [],
+					"startswith": [],
+					"endswith": [],
+					"regex": [],
+					"exclude": null
+				}
+			}
+		}
+	}
+}
