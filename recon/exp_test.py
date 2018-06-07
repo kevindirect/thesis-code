@@ -9,26 +9,24 @@ import numpy as np
 import pandas as pd
 from sklearn.cluster import KMeans
 
-
 from common_util import search_df, get_subset, list_get_dict, list_set_dict, benchmark
 from data.data_api import DataAPI
-from data.access_util import df_getters as dg
+from data.access_util import df_getters as dg, col_subsetters2 as cs2
 from recon.common import dum
 
-def split_sax(ser):
-	# split_df = pd.DataFrame(index=ser.index)
-	return ser.str.split(',', 8, expand=True)
 
 def test(argv):
 	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
+	# Load feature and label data
 	features_paths, features = DataAPI.load_from_dg(dg['sax']['dzn_sax'])
 	labels_paths, labels = DataAPI.load_from_dg(dg['labels']['itb'])
+
+	# Asset list
 	assets = list(set(map(itemgetter(0), features_paths)))
 	print(assets)
 
-	sax_df = list_get_dict(features, features_paths[0])
-	print(split_sax(sax_df['pba_avgPrice']))
+	print(cs2)
 
 	print('features')
 	for feature_path in features_paths:
@@ -37,9 +35,8 @@ def test(argv):
 	print('labels')
 	for label_path in labels_paths:
 		print('_'.join(label_path))
-	
-	kmeans = KMeans(n_clusters=4, random_state=0).fit(X)
 
+	kmeans = KMeans(n_clusters=4, random_state=0).fit(X),
 	
 if __name__ == '__main__':
 	test(sys.argv[1:])
