@@ -35,6 +35,8 @@ def test(argv):
 	print('labels')
 	for label_path in labels_paths:
 		print('_'.join(label_path))
+		ldict = list_get_dict(labels, label_path)
+		print(ldict.columns)
 
 	# kmeans = KMeans(n_clusters=4, random_state=0).fit(X)
 	
