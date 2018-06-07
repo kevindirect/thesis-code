@@ -19,7 +19,7 @@ def test(argv):
 	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 	# Load feature and label data
-	features_paths, features = DataAPI.load_from_dg(dg['sax']['dzn_sax'], cs2['sax']['dzn_sax'])
+	features_paths, features = DataAPI.load_from_dg(dg['sax']['dzn_sax'], cs2['sax']['dzn_sax'], subset=['raw_pba', 'raw_vol'])
 	labels_paths, labels = DataAPI.load_from_dg(dg['labels']['itb'], cs2['labels']['itb'])
 
 	# Asset list
