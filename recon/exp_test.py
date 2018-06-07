@@ -15,6 +15,9 @@ from data.data_api import DataAPI
 from data.access_util import df_getters as dg
 from recon.common import dum
 
+def split_sax(ser):
+	# split_df = pd.DataFrame(index=ser.index)
+	return ser.str.split(',', 1, expand=True)
 
 def test(argv):
 	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
@@ -24,14 +27,14 @@ def test(argv):
 	assets = list(set(map(itemgetter(0), features_paths)))
 	print(assets)
 
-	print(list_get_dict(features, features_paths[0]))
+	sax_df = list_get_dict(features, features_paths[0])
+	print(split_sax(sax_df['pba_avgPrice']))
 
 	print('features')
 	for feature_path in features_paths:
 		print('_'.join(feature_path))
 
 	print('labels')
-	# print(labels_paths)
 	for label_path in labels_paths:
 		print('_'.join(label_path))
 	
