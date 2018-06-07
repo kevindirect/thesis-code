@@ -2,22 +2,58 @@
 	"itb_fth_of_xwhole": {
 		"all": null,
 		"subsets": {
-			"pba_oc_return": null,
-			"pba_oa_return": null
+			"pba_oc_return": {
+				"exact": [],
+				"startswith": [],
+				"endswith": ["dir"],
+				"regex": [],
+				"exclude": null
+			},
+			"pba_oa_return": {
+				"exact": [],
+				"startswith": [],
+				"endswith": ["dir"],
+				"regex": [],
+				"exclude": null
+			}
 		}
 	},
 	"itb_fth_of_xact": {
 		"all": null,
 		"subsets": {
-			"pba_oc_return": null,
-			"pba_oa_return": null
+			"pba_oc_return": {
+				"exact": [],
+				"startswith": [],
+				"endswith": ["dir"],
+				"regex": [],
+				"exclude": null
+			},
+			"pba_oa_return": {
+				"exact": [],
+				"startswith": [],
+				"endswith": ["dir"],
+				"regex": [],
+				"exclude": null
+			}
 		}
 	},
 	"itb_fth_af_whole": {
 		"all": null,
 		"subsets": {
-			"pba_oc_return": null,
-			"pba_oa_return": null
+			"pba_oc_return": {
+				"exact": [],
+				"startswith": [],
+				"endswith": ["dir"],
+				"regex": [],
+				"exclude": null
+			},
+			"pba_oa_return": {
+				"exact": [],
+				"startswith": [],
+				"endswith": ["dir"],
+				"regex": [],
+				"exclude": null
+			}
 		}
 	}
 }
