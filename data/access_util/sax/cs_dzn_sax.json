@@ -4,31 +4,25 @@
 		},
 		"subsets": {
 			"raw_pba": {
-				"default": {
-					"exact": [],
-					"startswith": [],
-					"endswith": ["close", "avgPrice"],
-					"regex": [],
-					"exclude": null
-				}
+				"exact": [],
+				"startswith": [],
+				"endswith": ["close", "avgPrice"],
+				"regex": [],
+				"exclude": null
 			},
 			"raw_vol": {
-				"default": {
-					"exact": [],
-					"startswith": [],
-					"endswith": ["close", "avgPrice"],
-					"regex": [],
-					"exclude": null
-				}
+				"exact": [],
+				"startswith": [],
+				"endswith": ["close", "avgPrice"],
+				"regex": [],
+				"exclude": null
 			},
 			"thresh": {
-				"default": {
-					"exact": [],
-					"startswith": [],
-					"endswith": [],
-					"regex": [],
-					"exclude": null
-				}
+				"exact": [],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
 			}
 		}
 	}

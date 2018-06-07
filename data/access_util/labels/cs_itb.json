@@ -1,13 +1,11 @@
 {
 	"itb_fth_of_xwhole": {
 		"all": {
-			"default": {
-				"exact": [],
-				"startswith": [],
-				"endswith": [],
-				"regex": [],
-				"exclude": null
-			}
+			"exact": [],
+			"startswith": [],
+			"endswith": [],
+			"regex": [],
+			"exclude": null
 		},
 		"subsets": {
 			"pba_oc_return": {
@@ -18,13 +16,11 @@
 	},
 	"itb_fth_of_xact": {
 		"all": {
-			"default": {
-				"exact": [],
-				"startswith": [],
-				"endswith": [],
-				"regex": [],
-				"exclude": null
-			}
+			"exact": [],
+			"startswith": [],
+			"endswith": [],
+			"regex": [],
+			"exclude": null
 		},
 		"subsets": {
 			"pba_oc_return": {
@@ -35,13 +31,11 @@
 	},
 	"itb_fth_af_whole": {
 		"all": {
-			"default": {
-				"exact": [],
-				"startswith": [],
-				"endswith": [],
-				"regex": [],
-				"exclude": null
-			}
+			"exact": [],
+			"startswith": [],
+			"endswith": [],
+			"regex": [],
+			"exclude": null
 		},
 		"subsets": {
 			"pba_oc_return": {
