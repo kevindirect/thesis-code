@@ -1,7 +1,6 @@
 {
 	"dzn_sax(4,8)": {
-		"all": {
-		},
+		"all": null,
 		"subsets": {
 			"raw_pba": {
 				"exact": [],
@@ -17,13 +16,7 @@
 				"regex": [],
 				"exclude": null
 			},
-			"thresh": {
-				"exact": [],
-				"startswith": [],
-				"endswith": [],
-				"regex": [],
-				"exclude": null
-			}
+			"thresh": null
 		}
 	}
 }

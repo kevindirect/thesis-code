@@ -19,24 +19,24 @@ def test(argv):
 	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 	# Load feature and label data
-	features_paths, features = DataAPI.load_from_dg(dg['sax']['dzn_sax'])
-	labels_paths, labels = DataAPI.load_from_dg(dg['labels']['itb'])
+	features_paths, features = DataAPI.load_from_dg(dg['sax']['dzn_sax'], cs2['sax']['dzn_sax'])
+	labels_paths, labels = DataAPI.load_from_dg(dg['labels']['itb'], cs2['labels']['itb'])
 
 	# Asset list
 	assets = list(set(map(itemgetter(0), features_paths)))
 	print(assets)
 
-	print(cs2)
-
 	print('features')
 	for feature_path in features_paths:
 		print('_'.join(feature_path))
+		fdict = list_get_dict(features, feature_path)
+		print(fdict.columns)
 
 	print('labels')
 	for label_path in labels_paths:
 		print('_'.join(label_path))
 
-	kmeans = KMeans(n_clusters=4, random_state=0).fit(X),
+	# kmeans = KMeans(n_clusters=4, random_state=0).fit(X)
 	
 if __name__ == '__main__':
 	test(sys.argv[1:])

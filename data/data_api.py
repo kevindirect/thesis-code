@@ -10,7 +10,7 @@ import logging
 import pandas as pd
 from pandas.util import hash_pandas_object
 
-from common_util import DATA_DIR, load_df, dump_df, makedir_if_not_exists, search_df, recursive_dict, list_get_dict, list_set_dict, dict_path, str_now, benchmark
+from common_util import DATA_DIR, load_df, dump_df, makedir_if_not_exists, get_subset, search_df, recursive_dict, list_get_dict, list_set_dict, dict_path, str_now, benchmark
 from data.common import DR_NAME, DR_FMT, DR_COLS, DR_IDS, DR_REQ, DR_STAGE, DR_META, DR_GEN
 
 
@@ -165,42 +165,51 @@ class DataAPI:
 		yield from map(cls.DataRecordAPI.loader(**kwargs), cls.DataRecordAPI.matched(search_dict))
 
 	@classmethod
-	def load_from_dg(cls, df_getter, separators=['root'], how='subsets', subset=None, **kwargs):
+	def load_from_dg(cls, df_getter, col_subsetter=None, separators=['root'], how='subsets', subset=None, **kwargs):
 		"""
-		Load data using a df_getter dictionary
+		Load data using a df_getter dictionary, and col_subsetter dictionary (optional)
 		By default separates the search by root at the bottom level.
 		"""
 
-		def construct_search_dict(end_dict, how=how, subset=subset):
+		def construct_search_subset_dict(end_dg, end_cs=None, how=how, subset=subset):
 			"""
-			Convenience function to construct the search dict based on the how parameter.
+			Convenience function to construct the search dict (optionally col subsetter dict) based on the how parameter.
 			"""
-			common = end_dict['all']
-
 			if (how == 'all'):
-				return {'all': common}
+				cs_dict = None if (end_cs is None) else end_cs['all']
+				return {'all': (end_dg['all'], cs_dict)}
+
 			elif (how == 'subsets'):
-				if (subset is None):
-					# Load all subsets
-					return {s_name: dict(common, **s_dict) for s_name, s_dict in end_dict['subsets'].items()}
-				elif (isinstance(subset, list)):
-					return {s_name: dict(common, **s_dict) for s_name, s_dict in end_dict['subsets'].items() if (s_name in subset)}
+				ss_dict = {}
+
+				if (isinstance(subset, list)):
+					subsets_dict = {key: val for key, val in end_dg['subsets'].items() if (key in subset)}
+				else:
+					subsets_dict = end_dg['subsets'] # all subsets
+
+				for s_name, s_dict in subsets_dict.items():
+					cs_dict = None if (end_cs is None) else end_cs['subsets'][s_name]
+					ss_dict[s_name] = (dict(end_dg['all'], **s_dict), cs_dict)
+
+				return ss_dict
 
 		hit_bottom = lambda val: any(key in val for key in ['all', 'subsets'])
-		paths_to_ed = list(dict_path(df_getter, stop_cond=hit_bottom))
+		paths_to_end = list(dict_path(df_getter, stop_cond=hit_bottom))
 		result_paths = []
 		result = recursive_dict()
 
-		for ed_path, ed in paths_to_ed:
+		for edg_path, edg in paths_to_end:
+			ecs = None if (col_subsetter is None) else list_get_dict(col_subsetter, edg_path)
 
-			for sd_name, sd in construct_search_dict(ed).items():
-				sd_path = ed_path +[sd_name]
+			for sd_name, sd_cs in construct_search_subset_dict(edg, end_cs=ecs).items():
+				sd_path = edg_path +[sd_name]
 
-				for rec, df in cls.generate(sd):
+				for rec, df in cls.generate(sd_cs[0]):
 					seps = [getattr(rec, separator) for separator in separators]
 					df_path = seps + sd_path
 					result_paths.append(df_path)
-					list_set_dict(result, df_path, df)
+					filtered_df = df if (sd_cs[1] is None) else df[get_subset(df.columns, sd_cs[1])]
+					list_set_dict(result, df_path, filtered_df)
 
 		return result_paths, result
 

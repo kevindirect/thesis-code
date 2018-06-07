@@ -1,47 +1,23 @@
 {
 	"itb_fth_of_xwhole": {
-		"all": {
-			"exact": [],
-			"startswith": [],
-			"endswith": [],
-			"regex": [],
-			"exclude": null
-		},
+		"all": null,
 		"subsets": {
-			"pba_oc_return": {
-			},
-			"pba_oa_return": {
-			}
+			"pba_oc_return": null,
+			"pba_oa_return": null
 		}
 	},
 	"itb_fth_of_xact": {
-		"all": {
-			"exact": [],
-			"startswith": [],
-			"endswith": [],
-			"regex": [],
-			"exclude": null
-		},
+		"all": null,
 		"subsets": {
-			"pba_oc_return": {
-			},
-			"pba_oa_return": {
-			}
+			"pba_oc_return": null,
+			"pba_oa_return": null
 		}
 	},
 	"itb_fth_af_whole": {
-		"all": {
-			"exact": [],
-			"startswith": [],
-			"endswith": [],
-			"regex": [],
-			"exclude": null
-		},
+		"all": null,
 		"subsets": {
-			"pba_oc_return": {
-			},
-			"pba_oa_return": {
-			}
+			"pba_oc_return": null,
+			"pba_oa_return": null
 		}
 	}
 }
