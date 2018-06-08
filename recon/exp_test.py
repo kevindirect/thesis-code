@@ -47,7 +47,7 @@ def test(argv):
 				fct_df = default_fct(label_df[base_label_sel], name_pfx=base_label)
 				label_fct_df[dir_col_name] = fct_df[dir_col_name]
 
-			label_fct_df.index = label_fct_df.index.normalize()
+			label_fct_df.index = label_fct_df.index.normalize().dropna()
 			print(label_fct_df)
 			return
 
