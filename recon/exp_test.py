@@ -44,8 +44,8 @@ def test(argv):
 			for base_label, base_label_sel in label_col_sel.items():
 				logging.debug('base label: ' +base_label)
 				dir_col_name = '_'.join([base_label, 'dir'])
-				dir_col = default_fct(label_df[base_label_sel], name_pfx=base_label)[dir_col_name]
-				label_fct_df[dir_col_name] = dir_col
+				fct_df = default_fct(label_df[base_label_sel], name_pfx=base_label)
+				label_fct_df[dir_col_name] = fct_df[dir_col_name]
 
 			label_fct_df.index = label_fct_df.index.normalize()
 			print(label_fct_df)
