@@ -21,4 +21,4 @@ def split_ser(ser, num_cols, pfx=''):
 def handle_nans_df(df, method='drop'):
 	# TODO - add in threshold
 	# TODO - add in a method to ffill if under threshold
-	return df.dropna(axis=0, how='all')
+	return df.dropna(axis=0, how='any')
