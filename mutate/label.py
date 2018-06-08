@@ -13,7 +13,7 @@ from data.data_api import DataAPI
 from data.access_util import col_subsetters as cs
 from mutate.common import dum
 
-
+LABEL_SFX_LEN = len('_dir')
 UP = 1
 DOWN = -1
 SIDEWAYS = 0

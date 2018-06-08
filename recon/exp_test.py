@@ -13,7 +13,7 @@ from common_util import search_df, get_subset, list_get_dict, list_set_dict, ben
 from data.data_api import DataAPI
 from data.access_util import df_getters as dg, col_subsetters2 as cs2
 from recon.common import dum
-
+from recon.label_util import get_base_labels
 
 def test(argv):
 	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
@@ -36,6 +36,7 @@ def test(argv):
 	for label_path in labels_paths:
 		print('_'.join(label_path))
 		ldict = list_get_dict(labels, label_path)
+		print(get_base_labels(ldict))
 		print(ldict.iloc[:, 0].value_counts())
 		print(ldict.iloc[:, 0].head())
 
