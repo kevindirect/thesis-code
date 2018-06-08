@@ -2,6 +2,7 @@
 
 import sys
 import os
+from functools import partial
 from operator import itemgetter
 import logging
 
