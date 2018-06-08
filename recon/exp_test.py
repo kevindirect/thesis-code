@@ -49,10 +49,10 @@ def test(argv):
 
 			for col_name in feat_df:
 				sax_df = split_ser(feat_df[col_name], 8, pfx='_'.join(feature_path[1:]))
-				print(sax_df)
+				# print(sax_df)
 				print(count_nn_df(sax_df))
-				kmeans = KMeans(n_clusters=4, random_state=0).fit(sax_df.values)
-				print(kmeans.labels_)
+				# kmeans = KMeans(n_clusters=4, random_state=0).fit(sax_df.values)
+				# print(kmeans.labels_)
 				break
 
 
