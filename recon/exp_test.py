@@ -48,7 +48,7 @@ def test(argv):
 			feat_df = list_get_dict(features, feature_path)
 
 			for col_name in feat_df:
-				logging.debug(col_name)
+				logging.info(col_name)
 				sax_df = handle_nans_df(split_ser(feat_df[col_name], 8, pfx='_'.join(feature_path[1:])))
 				print('num_rows:', count_nn_df(sax_df).iloc[0])
 
