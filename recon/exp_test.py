@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 from sklearn.cluster import KMeans
 
-from common_util import search_df, get_subset, remove_dups_list, list_get_dict, list_set_dict, benchmark
+from common_util import search_df, get_subset, count_nn_df, remove_dups_list, list_get_dict, list_set_dict, benchmark
 from data.data_api import DataAPI
 from data.access_util import df_getters as dg, col_subsetters2 as cs2
 from recon.common import dum
@@ -50,6 +50,7 @@ def test(argv):
 			for col_name in feat_df:
 				sax_df = split_ser(feat_df[col_name], 8, pfx='_'.join(feature_path[1:]))
 				print(sax_df)
+				print(count_nn_df(sax_df))
 				kmeans = KMeans(n_clusters=4, random_state=0).fit(sax_df.values)
 				print(kmeans.labels_)
 				break
