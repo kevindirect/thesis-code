@@ -52,17 +52,16 @@ def test(argv):
 			# return
 
 			for label_fct_col in label_fct_df:
-				label_fct_df = label_fct_df[[label_fct_col]].dropna().astype(int)
-				shift_freq = get_custom_biz_freq(label_fct_df)
-				label_fct_df = label_fct_ser.shift(periods=-1, freq=None, axis=0).dropna().astype(int)
-				print(label_fct_ser)
+				label_fct_shf_df = label_fct_df[[label_fct_col]].dropna().astype(int)
+				shift_freq = get_custom_biz_freq(label_fct_shf_df)
+				label_fct_shf_df = label_fct_ser.shift(periods=-1, freq=None, axis=0).dropna().astype(int)
 
 				# Iterate through all feature sets
 				for feature_path in filter(lambda fpath: fpath[0]==asset, features_paths):
 					feat_df = list_get_dict(features, feature_path)
 					np_feat = {}
 					handled_df = pd.DataFrame(index=feat_df.index)
-					handled_df[label_fct_col] = label_fct_df[label_fct_col]
+					handled_df[label_fct_col] = label_fct_shf_df[label_fct_col]
 
 					for col_name in feat_df:
 						col_name_prefix = '_'.join(feature_path[1:] +[col_name])
