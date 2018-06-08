@@ -41,7 +41,7 @@ def test(argv):
 				for base_label in get_base_labels(label_df.columns)}
 
 			# Iterate through all variations of this label
-			for base_label, base_label_sel in label_col_sel:
+			for base_label, base_label_sel in label_col_sel.items():
 				logging.debug('base label: ' +base_label)
 				dir_col_name = '_'.join([base_label, 'dir'])
 				dir_col = default_fct(label_df[base_label_sel], name_pfx=base_label)[dir_col_name]
