@@ -29,7 +29,7 @@ def split_cluster_ser(ser, sklearn_cluster, col_name_pfx='', cluster_sfx=''):
 
 	sax_df = handle_nans_df(split_ser(ser, 8, pfx=col_pfx))
 	clustered_values = sklearn_cluster.fit(sax_df.values).labels_
-	clustered = pd.Series(data=clustered_values, name='_'.join(col_pfx, cluster_sfx), index=sax_df.index)
+	clustered = pd.Series(data=clustered_values, name='_'.join([col_pfx, cluster_sfx]), index=sax_df.index)
 
 	return clustered
 	# temp_df = inner_join(label_fct_shf_df, sax_df)
