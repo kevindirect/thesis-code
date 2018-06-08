@@ -38,7 +38,7 @@ def test(argv):
 			label_fct_df = pd.DataFrame(index=label_df.index)
 
 			label_col_sel = {base_label: get_subset(label_df.columns, make_sw_dict(base_label))
-				for base_label in get_base_labels(label_df.columns)}
+				for base_label in get_base_labels(label_df.columns[1:])}
 
 			# Iterate through all variations of this label
 			for base_label, base_label_sel in label_col_sel.items():
