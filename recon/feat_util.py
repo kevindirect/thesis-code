@@ -17,3 +17,8 @@ def split_ser(ser, num_cols, pfx=''):
 	column_names = [str(pfx +'_' +str(i)) for i in range(num_cols)]
 	split_df[column_names] = ser.str.split(',', num_cols, expand=True)
 	return split_df
+
+def handle_nans_df(df, method='drop'):
+	# TODO - add in threshold
+	# TODO - add in a method to ffill if under threshold
+	return df.dropna(axis=0, how='all')

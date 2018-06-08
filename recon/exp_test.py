@@ -13,7 +13,7 @@ from common_util import search_df, get_subset, count_nn_df, remove_dups_list, li
 from data.data_api import DataAPI
 from data.access_util import df_getters as dg, col_subsetters2 as cs2
 from recon.common import dum
-from recon.feat_util import split_ser
+from recon.feat_util import split_ser, handle_nans_df
 from recon.label_util import get_base_labels
 
 def test(argv):
@@ -48,7 +48,8 @@ def test(argv):
 			feat_df = list_get_dict(features, feature_path)
 
 			for col_name in feat_df:
-				sax_df = split_ser(feat_df[col_name], 8, pfx='_'.join(feature_path[1:]))
+				logging.debug(col_name)
+				sax_df = handle_nans_df(split_ser(feat_df[col_name], 8, pfx='_'.join(feature_path[1:])))
 				# print(sax_df)
 				print(count_nn_df(sax_df))
 				# kmeans = KMeans(n_clusters=4, random_state=0).fit(sax_df.values)
