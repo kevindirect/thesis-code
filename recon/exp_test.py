@@ -52,9 +52,9 @@ def test(argv):
 			# return
 
 			for label_fct_col in label_fct_df:
-				label_fct_ser = label_fct_df[label_fct_col].dropna()
+				label_fct_ser = label_fct_df[label_fct_col].dropna().astype(int)
 				shift_freq = get_custom_biz_freq_ser(label_fct_ser)
-				label_fct_ser = label_fct_ser.shift(periods=-1, freq=shift_freq, axis=0)
+				label_fct_ser = label_fct_ser.shift(periods=-1, freq=None, axis=0)
 				print(label_fct_ser)
 				continue
 
