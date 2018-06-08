@@ -2,7 +2,6 @@
 
 import sys
 import os
-from functools import partial
 from operator import itemgetter
 import logging
 
@@ -54,8 +53,9 @@ def test(argv):
 		logging.info('done transforming labels')
 
 		for feature_path in filter(lambda fpath: fpath[0]==asset, features_paths):
-			cl_transformer = partial(split_cluster_ser, sklearn_cluster=km_info['cl'], col_name_pfx='_'.join(feature_path[1::-1]), cluster_sfx=km_info['sfx'])
-			feat_df = list_get_dict(features, feature_path).transform(cl_transformer)
+			feat_df = list_get_dict(features, feature_path)
+				.transform(split_cluster_ser, sklearn_cluster=km_info['cl'], col_name_pfx='_'.join(feature_path[1::-1]), cluster_sfx=km_info['sfx']))
+			
 			print(feat_df)
 		logging.info('done transforming features')
 			# for col_name in feat_df:
