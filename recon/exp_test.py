@@ -32,25 +32,23 @@ def test(argv):
 		logging.info('asset: ' +str(asset))
 
 		for label_path in filter(lambda lpath: lpath[0]==asset, labels_paths):
-			label_path_str = '_'.join(label_path[1:])
-			logging.info('label df: ' +label_path_str)
-			lab_df = list_get_dict(labels, label_path)
-			lab_fct_df = pd.DataFrame(index=lab_df.index)
+			label_df = list_get_dict(labels, label_path)
+			label_name = label_df.columns[0]
+			logging.info('label: ' +label_name)
+			label_fct_df = pd.DataFrame(index=label_df.index)
 
-			# lab_col_set_selectors = {base_label: get_subset(lab_df.columns, make_sw_dict(base_label))
-			# 	for base_label in get_base_labels(lab_df.columns)}
+			label_col_sel = {base_label: get_subset(label_df.columns, make_sw_dict(base_label))
+				for base_label in get_base_labels(label_df.columns)}
 
 			# Iterate through all variations of this label
-			for base_label in get_base_labels(lab_df.columns):
+			for base_label, base_label_sel in label_col_sel:
 				logging.debug('base label: ' +base_label)
-				# lab_name_prefix = '_'.join([label_path_str, base_label])
-				base_label_subset = get_subset(lab_df.columns, make_sw_dict(base_label))
 				dir_col_name = '_'.join([base_label, 'dir'])
-				dir_col = default_fct(lab_df[base_label_subset], name_pfx=base_label)[dir_col_name]
-				lab_fct_df[dir_col_name] = dir_col
+				dir_col = default_fct(label_df[base_label_sel], name_pfx=base_label)[dir_col_name]
+				label_fct_df[dir_col_name] = dir_col
 
-			lab_fct_df.index = lab_fct_df.index.normalize()
-			print(lab_fct_df)
+			label_fct_df.index = label_fct_df.index.normalize()
+			print(label_fct_df)
 			return
 
 			# Iterate through all feature sets
