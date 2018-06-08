@@ -35,7 +35,7 @@ def test(argv):
 			label_path_str = '_'.join(label_path[1:])
 			logging.info('label df: ' +label_path_str)
 			lab_df = list_get_dict(labels, label_path)
-			lab_fct_df = pd.Dataframe(index=lab_df.index)
+			lab_fct_df = pd.DataFrame(index=lab_df.index)
 
 			# lab_col_set_selectors = {base_label: get_subset(lab_df.columns, make_sw_dict(base_label))
 			# 	for base_label in get_base_labels(lab_df.columns)}
