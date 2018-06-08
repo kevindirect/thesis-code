@@ -53,9 +53,9 @@ def test(argv):
 		logging.info('done transforming labels')
 
 		for feature_path in filter(lambda fpath: fpath[0]==asset, features_paths):
-			cname_pfx = '_'.join(feature_path[:-1:-1])
+			cname_pfx = '_'.join(feature_path[1::-1])
 			feat_df = list_get_dict(features, feature_path) \
-				.transform(split_cluster_ser, sklearn_cluster=km_info['cl'], col_name_pfx=cname_pfx, cluster_sfx=km_info['sfx'])
+				.apply(split_cluster_ser, axis=0, sklearn_cluster=km_info['cl'], col_name_pfx=cname_pfx, cluster_sfx=km_info['sfx'])
 			
 			print(feat_df)
 		logging.info('done transforming features')
