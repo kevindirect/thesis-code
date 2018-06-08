@@ -47,23 +47,29 @@ def test(argv):
 				fct_df = default_fct(label_df[base_label_sel], name_pfx=base_label)
 				label_fct_df[dir_col_name] = fct_df[dir_col_name]
 
-			label_fct_df.index = label_fct_df.index.normalize().dropna()
-			print(label_fct_df)
-			return
+			label_fct_df.index = label_fct_df.index.normalize()
+			# print(label_fct_df)
+			# return
 
-			# Iterate through all feature sets
-			for feature_path in filter(lambda fpath: fpath[0]==asset, features_paths):
-				feat_df = list_get_dict(features, feature_path)
-				np_feat = {}
+			for label_fct_col in label_fct_df:
+				shift_freq = get_custom_biz_freq_ser(label_fct_df[label_fct_col])
+				label_fct_ser = label_fct_df[label_fct_col].shift(periods=-1, freq=shift_freq, axis=0)
+				print(label_fct_df[label_fct_col])
+				continue
 
-				for col_name in feat_df:
-					col_name_prefix = '_'.join(feature_path[1:] +[col_name])
-					logging.info(col_name_prefix)
-					sax_df = handle_nans_df(split_ser(feat_df[col_name], 8, pfx=col_name_prefix))
-					# print('num_rows:', count_nn_df(sax_df).iloc[0])
+				# Iterate through all feature sets
+				for feature_path in filter(lambda fpath: fpath[0]==asset, features_paths):
+					feat_df = list_get_dict(features, feature_path)
+					np_feat = {}
 
-					kmeans = KMeans(n_clusters=4, random_state=0).fit(sax_df.values)
-					np_feat[col_name_prefix +'_' +'kmeans(4)'] = kmeans.labels_
+					for col_name in feat_df:
+						col_name_prefix = '_'.join(feature_path[1:] +[col_name])
+						logging.info(col_name_prefix)
+						sax_df = handle_nans_df(split_ser(feat_df[col_name], 8, pfx=col_name_prefix))
+						# print('num_rows:', count_nn_df(sax_df).iloc[0])
+
+						kmeans = KMeans(n_clusters=4, random_state=0).fit(sax_df.values)
+						np_feat[col_name_prefix +'_' +'kmeans(4)'] = kmeans.labels_
 
 				print(np_feat)
 
