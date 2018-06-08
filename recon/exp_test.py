@@ -54,7 +54,7 @@ def test(argv):
 			for label_fct_col in label_fct_df:
 				label_fct_shf_df = label_fct_df[[label_fct_col]].dropna().astype(int)
 				shift_freq = get_custom_biz_freq(label_fct_shf_df)
-				label_fct_shf_df = label_fct_ser.shift(periods=-1, freq=None, axis=0).dropna().astype(int)
+				label_fct_shf_df = label_fct_shf_df.shift(periods=-1, freq=None, axis=0).dropna().astype(int)
 
 				# Iterate through all feature sets
 				for feature_path in filter(lambda fpath: fpath[0]==asset, features_paths):
