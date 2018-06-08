@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 from sklearn.cluster import KMeans
 
-from common_util import get_custom_biz_freq_ser, get_subset, count_nn_df, remove_dups_list, list_get_dict, list_set_dict, benchmark
+from common_util import get_custom_biz_freq_ser, get_subset, inner_join, count_nn_df, remove_dups_list, list_get_dict, list_set_dict, benchmark
 from data.data_api import DataAPI
 from data.access_util import df_getters as dg, col_subsetters2 as cs2
 from recon.common import dum
@@ -54,23 +54,27 @@ def test(argv):
 			for label_fct_col in label_fct_df:
 				label_fct_ser = label_fct_df[label_fct_col].dropna().astype(int)
 				shift_freq = get_custom_biz_freq_ser(label_fct_ser)
-				label_fct_ser = label_fct_ser.shift(periods=-1, freq=None, axis=0)
+				label_fct_ser = label_fct_ser.shift(periods=-1, freq=None, axis=0).dropna().astype(int)
 				print(label_fct_ser)
-				continue
 
 				# Iterate through all feature sets
 				for feature_path in filter(lambda fpath: fpath[0]==asset, features_paths):
 					feat_df = list_get_dict(features, feature_path)
 					np_feat = {}
+					handled_df = pd.DataFrame(index=feat_df.index)
+					handled_df[label_fct_col] = label_fct_ser
 
 					for col_name in feat_df:
 						col_name_prefix = '_'.join(feature_path[1:] +[col_name])
 						logging.info(col_name_prefix)
 						sax_df = handle_nans_df(split_ser(feat_df[col_name], 8, pfx=col_name_prefix))
+						handled_df = inner_join(handled_df, sax_df)
+						# handled_df[sax_df.columns] = sax_df
 						# print('num_rows:', count_nn_df(sax_df).iloc[0])
 
-						kmeans = KMeans(n_clusters=4, random_state=0).fit(sax_df.values)
-						np_feat[col_name_prefix +'_' +'kmeans(4)'] = kmeans.labels_
+						# kmeans = KMeans(n_clusters=4, random_state=0).fit(sax_df.values)
+						# np_feat[col_name_prefix +'_' +'kmeans(4)'] = kmeans.labels_
+				print(handled_df)
 
 				print(np_feat)
 
