@@ -8,7 +8,7 @@ from os import sep, path, makedirs
 from os.path import dirname, basename, realpath, exists, isfile, getsize
 from json import load, dumps
 import operator
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from itertools import chain, tee
 from functools import reduce, partial, wraps
 from datetime import datetime
@@ -69,6 +69,9 @@ dt_now = lambda: datetime.now()
 str_now = lambda: dt_now().strftime(DT_FMT_YMD_HMS)
 
 """List"""
+def remove_dups_list(lst):
+	return list(OrderedDict.fromkeys(lst))
+
 def flatten2D(list2D):
 	return list(chain(*list2D))
 

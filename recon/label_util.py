@@ -8,13 +8,13 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from common_util import benchmark, inner_join
+from common_util import remove_dups_list
 from mutate.label import LABEL_SFX_LEN
 from recon.common import dum
 
 
 def get_base_labels(df_columns):
-	return list(set([col_name[:-LABEL_SFX_LEN] for col_name in df_columns]))
+	return remove_dups_list([col_name[:-LABEL_SFX_LEN] for col_name in df_columns])
 
 
 
