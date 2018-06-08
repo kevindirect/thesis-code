@@ -37,7 +37,7 @@ def test(argv):
 			logging.info('label: ' +label_name)
 			label_fct_df = pd.DataFrame(index=label_df.index)
 
-			label_col_sel = {base_label: get_subset(label_df.columns, make_sw_dict(base_label))
+			label_col_sel = {base_label: get_subset(label_df.columns[1:], make_sw_dict(base_label))
 				for base_label in get_base_labels(label_df.columns[1:])}
 
 			# Iterate through all variations of this label
@@ -71,8 +71,8 @@ def test(argv):
 def make_sw_dict(sw_str):
 	return {
 		"exact": [],
-		"startswith": [],
-		"endswith": [sw_str],
+		"startswith": [sw_str],
+		"endswith": [],
 		"regex": [],
 		"exclude": None
 	}
