@@ -67,16 +67,20 @@ def test(argv):
 						col_name_prefix = '_'.join(feature_path[1:] +[col_name])
 						logging.info(col_name_prefix)
 						sax_df = handle_nans_df(split_ser(feat_df[col_name], 8, pfx=col_name_prefix))
-						temp_df = inner_join(handled_df, sax_df)
+						temp_df = inner_join(label_fct_shf_df, sax_df)
+						feats_only = temp_df[temp_df.columns[1:]]
 						# handled_df[sax_df.columns] = sax_df
 						# print('num_rows:', count_nn_df(sax_df).iloc[0])
 
-						kmeans = KMeans(n_clusters=4, random_state=0).fit(temp_df.iloc[0, 1:].values)
+						kmeans = KMeans(n_clusters=4, random_state=0).fit(feats_only.values)
 						handled_df[col_name_prefix +'_' +'kmeans(4)'] = kmeans.labels_
 				print(handled_df)
 
 				print(np_feat)
 
+
+def test_logistic_reg(lab_feat_df):
+	lab = la
 
 def make_sw_dict(sw_str):
 	return {
