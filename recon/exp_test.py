@@ -14,13 +14,13 @@ from common_util import get_custom_biz_freq, get_subset, inner_join, count_nn_df
 from data.data_api import DataAPI
 from data.access_util import df_getters as dg, col_subsetters2 as cs2
 from recon.common import dum
-from recon.feat_util import split_cluster_ser
-from recon.label_util import get_base_labels, default_fct, fastbreak_fct, confidence_fct, fastbreak_confidence_fct
+from recon.feat_util import gen_cluster_feats
+from recon.label_util import gen_label_dfs, get_base_labels, default_fct, fastbreak_fct, confidence_fct, fastbreak_confidence_fct
 
 def test(argv):
 	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
-	km_info = {'cl': KMeans(n_clusters=4, random_state=0), 'sfx': 'kmeans(4)'}
+	km_info = {'cl': KMeans(n_clusters=8, random_state=0), 'sfx': 'kmeans(8)'}
 	features_paths, features = DataAPI.load_from_dg(dg['sax']['dzn_sax'], cs2['sax']['dzn_sax'], subset=['raw_pba', 'raw_vol'])
 	logging.info('loaded features')
 
@@ -33,33 +33,31 @@ def test(argv):
 	for asset in assets:
 		logging.info('asset: ' +str(asset))
 
-		for label_path in filter(lambda lpath: lpath[0]==asset, labels_paths):
-			label_df = list_get_dict(labels, label_path)
-			label_name = label_df.columns[0]
-			logging.info('label: ' +label_name)
-			label_fct_df = pd.DataFrame(index=label_df.index)
+		for lab_df in gen_label_dfs(labels, label_paths, asset):
+			print(lab_df)
 
-			label_col_sel = {base_label: get_subset(label_df.columns[1:], make_sw_dict(base_label))
-				for base_label in get_base_labels(label_df.columns[1:])}
+		# for label_path in filter(lambda lpath: lpath[0]==asset, labels_paths):
+		# 	label_df = list_get_dict(labels, label_path)
+		# 	label_name = label_df.columns[0]
+		# 	logging.info('label: ' +label_name)
+		# 	label_fct_df = pd.DataFrame(index=label_df.index)
 
-			# Iterate through all variations of this label
-			for base_label, base_label_cols in label_col_sel.items():
-				logging.debug('base label: ' +base_label)
-				dir_col_name = '_'.join([base_label, 'dir'])
-				fct_df = default_fct(label_df[base_label_cols], name_pfx=base_label)
-				label_fct_df = fct_df[[dir_col_name]]
+		# 	label_col_sel = {base_label: get_subset(label_df.columns[1:], make_sw_dict(base_label))
+		# 		for base_label in get_base_labels(label_df.columns[1:])}
 
-			label_fct_df.index = label_fct_df.index.normalize()
-		logging.info('done transforming labels')
+		# 	# Iterate through all variations of this label
+		# 	for base_label, base_label_cols in label_col_sel.items():
+		# 		logging.debug('base label: ' +base_label)
+		# 		dir_col_name = '_'.join([base_label, 'dir'])
+		# 		fct_df = default_fct(label_df[base_label_cols], name_pfx=base_label)
+		# 		label_fct_df = fct_df[[dir_col_name]]
 
-		for feature_path in filter(lambda fpath: fpath[0]==asset, features_paths):
-			cname_pfx = '_'.join(feature_path[:0:-1] + [km_info['sfx']]) + '_'
-			logging.info(cname_pfx)
-			feat_df = list_get_dict(features, feature_path) \
-				.apply(split_cluster_ser, axis=0, sklearn_cluster=km_info['cl']) \
-				.add_prefix(cname_pfx)
+		# 	label_fct_df.index = label_fct_df.index.normalize()
+		# logging.info('done transforming labels')
+
+		for feat_df in gen_cluster_feats(features, feature_paths, asset, km_info):
 			print(feat_df)
-		logging.info('done transforming features')
+
 			# for col_name in feat_df:
 			# 	col_name_prefix = '_'.join(feature_path[1:] +[col_name])
 			# 	logging.info(col_name_prefix)
@@ -106,23 +104,23 @@ def test(argv):
 def test_logistic_reg(lab_feat_df):
 	pass
 
-def make_sw_dict(sw_str):
-	return {
-		"exact": [],
-		"startswith": [sw_str],
-		"endswith": [],
-		"regex": [],
-		"exclude": None
-	}
+# def make_sw_dict(sw_str):
+# 	return {
+# 		"exact": [],
+# 		"startswith": [sw_str],
+# 		"endswith": [],
+# 		"regex": [],
+# 		"exclude": None
+# 	}
 
-def make_ew_dict(ew_str):
-	return {
-		"exact": [],
-		"startswith": [],
-		"endswith": [ew_str],
-		"regex": [],
-		"exclude": None
-	}
+# def make_ew_dict(ew_str):
+# 	return {
+# 		"exact": [],
+# 		"startswith": [],
+# 		"endswith": [ew_str],
+# 		"regex": [],
+# 		"exclude": None
+# 	}
 
 
 if __name__ == '__main__':
