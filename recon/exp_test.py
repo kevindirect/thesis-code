@@ -21,7 +21,7 @@ def test(argv):
 	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 	km_info = {'cl': KMeans(n_clusters=8, random_state=0), 'sfx': 'kmeans(8)'}
-	features_paths, features = DataAPI.load_from_dg(dg['sax']['dzn_sax'], cs2['sax']['dzn_sax'], subset=['raw_pba', 'raw_vol'])
+	features_paths, features = DataAPI.load_from_dg(dg['sax']['dzn_sax'], cs2['sax']['dzn_sax'], subset=['raw_pba', 'raw_vol', 'thresh'])
 	logging.info('loaded features')
 
 	labels_paths, labels = DataAPI.load_from_dg(dg['labels']['itb'], cs2['labels']['itb'])
@@ -33,8 +33,8 @@ def test(argv):
 	for asset in assets:
 		logging.info('asset: ' +str(asset))
 
-		for lab_df in gen_label_dfs(labels, labels_paths, asset):
-			print(lab_df.columns)
+		# for lab_df in gen_label_dfs(labels, labels_paths, asset):
+		# 	print(lab_df.columns)
 
 		for feat_df in gen_cluster_feats(features, features_paths, asset, km_info):
 			print(feat_df.columns)
