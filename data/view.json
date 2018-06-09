@@ -1,0 +1,7 @@
+{
+	"thresh_norm": {
+		"stage": "mutate",
+		"mutate_type": "normalize",
+		"raw_cat": "us_equity_index"
+	}
+}
