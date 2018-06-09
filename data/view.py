@@ -2,6 +2,7 @@
 
 import sys
 import os
+import getopt
 import logging
 
 import numpy as np
