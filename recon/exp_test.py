@@ -55,7 +55,7 @@ def test(argv):
 		# 	label_fct_df.index = label_fct_df.index.normalize()
 		# logging.info('done transforming labels')
 
-		for feat_df in gen_cluster_feats(features, feature_paths, asset, km_info):
+		for feat_df in gen_cluster_feats(features, features_paths, asset, km_info):
 			print(feat_df)
 
 			# for col_name in feat_df:
