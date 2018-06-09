@@ -34,7 +34,7 @@ def test(argv):
 		logging.info('asset: ' +str(asset))
 
 		# for lab_df in gen_label_dfs(labels, labels_paths, asset):
-		# 	print(lab_df.columns)
+		# 	print(count_nn_df(lab_df))
 
 		for feat_df in gen_cluster_feats(features, features_paths, asset, km_info):
 			print(count_nn_df(feat_df))
