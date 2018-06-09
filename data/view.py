@@ -50,7 +50,7 @@ def view(argv):
 		'r': lambda df: df.sample(n=num_rows, axis=0),
 	}
 
-	for key, search_dict in view_search_dicts.items()
+	for key, search_dict in view_search_dicts.items():
 		print('group:', key)
 
 		for rec, gen_df in DataAPI.generate(search_dict):
