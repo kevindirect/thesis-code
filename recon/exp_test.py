@@ -37,7 +37,7 @@ def test(argv):
 			print(lab_df.columns)
 
 		for feat_df in gen_cluster_feats(features, features_paths, asset, km_info):
-			print(feat_df.column)
+			print(feat_df.columns)
 
 
 			# for label_fct_col in label_fct_df:
