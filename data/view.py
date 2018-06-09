@@ -3,6 +3,7 @@
 import sys
 import os
 import getopt
+from textwrap import indent
 import logging
 
 import numpy as np
@@ -56,10 +57,15 @@ def view(argv):
 
 		for rec, gen_df in DataAPI.generate(search_dict):
 			print('root:', rec.root)
+			print('desc:', rec.desc)
+			print('\n')
 
 			for activated in debugs_activated:
 				print('debug:', activated)
 				print(debug_functions[activated](gen_df))
+				print('\n')
+
+		print('\n')
 
 	
 if __name__ == '__main__':
