@@ -34,42 +34,10 @@ def test(argv):
 		logging.info('asset: ' +str(asset))
 
 		for lab_df in gen_label_dfs(labels, labels_paths, asset):
-			print(lab_df)
-
-		# for label_path in filter(lambda lpath: lpath[0]==asset, labels_paths):
-		# 	label_df = list_get_dict(labels, label_path)
-		# 	label_name = label_df.columns[0]
-		# 	logging.info('label: ' +label_name)
-		# 	label_fct_df = pd.DataFrame(index=label_df.index)
-
-		# 	label_col_sel = {base_label: get_subset(label_df.columns[1:], make_sw_dict(base_label))
-		# 		for base_label in get_base_labels(label_df.columns[1:])}
-
-		# 	# Iterate through all variations of this label
-		# 	for base_label, base_label_cols in label_col_sel.items():
-		# 		logging.debug('base label: ' +base_label)
-		# 		dir_col_name = '_'.join([base_label, 'dir'])
-		# 		fct_df = default_fct(label_df[base_label_cols], name_pfx=base_label)
-		# 		label_fct_df = fct_df[[dir_col_name]]
-
-		# 	label_fct_df.index = label_fct_df.index.normalize()
-		# logging.info('done transforming labels')
+			print(lab_df.columns)
 
 		for feat_df in gen_cluster_feats(features, features_paths, asset, km_info):
-			print(feat_df)
-
-			# for col_name in feat_df:
-			# 	col_name_prefix = '_'.join(feature_path[1:] +[col_name])
-			# 	logging.info(col_name_prefix)
-			# 	sax_df = handle_nans_df(split_ser(feat_df[col_name], 8, pfx=col_name_prefix))
-			# 	temp_df = inner_join(label_fct_shf_df, sax_df)
-			# 	feats_only = temp_df[temp_df.columns[1:]]
-			# 	# handled_df[sax_df.columns] = sax_df
-			# 	# print('num_rows:', count_nn_df(sax_df).iloc[0])
-
-			# 	kmeans = KMeans(n_clusters=4, random_state=0).fit(feats_only.values)
-			# 	handled_df[col_name_prefix +'_' +'kmeans(4)'] = kmeans.labels_
-			# 	pd.DataFrame(data=labels, columns=['cluster'], index=collapsed.index)
+			print(feat_df.column)
 
 
 			# for label_fct_col in label_fct_df:
