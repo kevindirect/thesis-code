@@ -99,16 +99,16 @@ def gen_label_dfs(lab_dict, lab_paths, asset_name):
 		lab_df = list_get_dict(lab_dict, lab_path)
 		lab_name = lab_df.columns[0]
 		logging.info('label: ' +lab_name)
-		lab_fct_df = pd.DataFrame(index=label_df.index)
+		lab_fct_df = pd.DataFrame(index=lab_df.index)
 
-		label_col_sel = {base_label: get_subset(label_df.columns[1:], make_sw_dict(base_label))
-			for base_label in get_base_labels(label_df.columns[1:])}
+		label_col_sel = {base_label: get_subset(lab_df.columns[1:], make_sw_dict(base_label))
+			for base_label in get_base_labels(lab_df.columns[1:])}
 
 		# Iterate through all thresholded variations of this label
 		for base_label, base_label_cols in label_col_sel.items():
 			logging.debug('base label: ' +base_label)
 			dir_col_name = '_'.join([base_label, 'dir'])
-			fct_df = default_fct(label_df[base_label_cols], name_pfx=base_label)
+			fct_df = default_fct(lab_df[base_label_cols], name_pfx=base_label)
 			lab_fct_df[dir_col_name] = fct_df[dir_col_name]
 
 		lab_fct_df.index = lab_fct_df.index.normalize()
