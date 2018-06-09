@@ -35,8 +35,8 @@ def gen_cluster_feats(feat_dict, feat_paths, asset_name, cluster_info):
 	for feat_path in filter(lambda feat_path: feat_path[0]==asset_name, feat_paths):
 		cname_pfx = '_'.join(feat_path[:0:-1] + [cluster_info['sfx']]) + '_'
 		logging.info(cname_pfx)
-		feat_df = list_get_dict(feat_dict, feat_path)# \
-			# .apply(split_cluster_ser, axis=0, sklearn_cluster=cluster_info['cl']) \
-			# .add_prefix(cname_pfx)
+		feat_df = list_get_dict(feat_dict, feat_path) \
+			.apply(split_cluster_ser, axis=0, sklearn_cluster=cluster_info['cl']) \
+			.add_prefix(cname_pfx)
 
 		yield feat_df
