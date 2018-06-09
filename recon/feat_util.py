@@ -23,7 +23,8 @@ def handle_nans_df(df, method='drop'):
 	# TODO - add in a method to ffill if under threshold
 	return df.dropna(axis=0, how='any')
 
-def split_cluster_ser(ser, sklearn_cluster):
+def split_cluster_ser(ser, sklearn_cluster, col_pfx=None):
+	col_pfx = ser.name if (col_pfx is None) else col_pfx
 	sax_df = handle_nans_df(split_ser(ser, 8, pfx=col_pfx))
 	clustered_values = sklearn_cluster.fit(sax_df.values).labels_
 	clustered = pd.Series(data=clustered_values, index=sax_df.index)
