@@ -8,7 +8,9 @@ import logging
 import numpy as np
 import pandas as pd
 from sklearn.cluster import KMeans
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import AdaBoostClassifier, RandomForestClassifier
 
 from common_util import get_custom_biz_freq, get_subset, inner_join, count_nn_df, remove_dups_list, list_get_dict, list_set_dict, benchmark
 from data.data_api import DataAPI
@@ -36,8 +38,15 @@ def test(argv):
 		for lab_df in gen_label_dfs(labels, labels_paths, asset):
 			print(count_nn_df(lab_df))
 
-			for feat_df in gen_cluster_feats(features, features_paths, asset, km_info):
-				print(count_nn_df(feat_df))
+			for lab_col_name in lab_df:
+				print(lab_df[lab_col_name])
+				print(lab_df[lab_col_name].shift(-1))
+
+			break
+				# for feat_df in gen_cluster_feats(features, features_paths, asset, km_info):
+				# 	print(count_nn_df(feat_df))
+
+				# Select a label col
 
 
 			# for label_fct_col in label_fct_df:
