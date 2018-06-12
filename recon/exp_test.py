@@ -36,13 +36,13 @@ def test(argv):
 		logging.info('asset: ' +str(asset))
 
 		for lab_df in gen_label_dfs(labels, labels_paths, asset):
-			print(count_nn_df(lab_df))
 
 			for lab_col_name in lab_df:
 				logging.info(lab_col_name)
 				lab_col_shf = lab_df[lab_col_name].dropna().shift(periods=-1, freq=None, axis=0).dropna().astype(int)
 				
 				for feat_df in gen_cluster_feats(features, features_paths, asset, km_info):
+					print(feat_df)
 					feat_dum_df = pd.get_dummies(feat_df, prefix=feat_df.columns, prefix_sep='_', drop_first=True)
 					print(feat_dum_df)
 
