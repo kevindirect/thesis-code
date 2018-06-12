@@ -43,7 +43,8 @@ def test(argv):
 			for lab_col_name in lab_df:
 				logging.info(lab_col_name)
 				lab_col_shf_df = lab_df[[lab_col_name]].dropna().shift(periods=-1, freq=None, axis=0).dropna().astype(int)
-				print("priors:", lab_col_shf_df[lab_col_name].value_counts(normalize=True, sort=True))
+				prior_ser = lab_col_shf_df[lab_col_name].value_counts(normalize=True, sort=True)
+				print("[priors]: 1: {:0.3f}, -1: {:0.3f}".format(prior_ser.loc[1], prior_ser.loc[-1]))
 
 				for feat_df in gen_cluster_feats(features, features_paths, asset, km_info):
 					feat_dum_df = pd.get_dummies(feat_df, prefix=feat_df.columns, prefix_sep='_', columns=feat_df.columns, drop_first=True)
@@ -58,7 +59,7 @@ def test(argv):
 def test_maxent(feats, lab):
 	feat_train, lab_train, feat_test, lab_test = get_train_test_split(feats, lab)
 	lr = LogisticRegression(penalty='l2', tol=0.0001, C=1.0, fit_intercept=True, intercept_scaling=1, random_state=0)
-	clf = lr.fit(feats, lab)
+	clf = lr.fit(feat_train, lab_train)
 	predictions = clf.predict(feat_test)
 
 	return lab_test, predictions
