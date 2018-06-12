@@ -39,8 +39,9 @@ def test(argv):
 			print(count_nn_df(lab_df))
 
 			for lab_col_name in lab_df:
-				print(lab_df[lab_col_name])
-				print(lab_df[lab_col_name].shift(-1))
+				lab_col = lab_df[lab_col_name].dropna()
+				print(lab_col)
+				print(lab_col.shift(-1))
 
 			break
 				# for feat_df in gen_cluster_feats(features, features_paths, asset, km_info):
