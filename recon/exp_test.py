@@ -39,15 +39,17 @@ def test(argv):
 			print(count_nn_df(lab_df))
 
 			for lab_col_name in lab_df:
-				lab_col = lab_df[lab_col_name].dropna()
-				print(lab_col)
-				print(lab_col.shift(-1).dropna().astype(int))
+				logging.info(lab_col_name)
+				lab_col_shf = lab_df[lab_col_name].dropna().shift(periods=-1, freq=None, axis=0).dropna().astype(int)
+				
+				for feat_df in gen_cluster_feats(features, features_paths, asset, km_info):
+					feat_dum_df = pd.get_dummies(feat_df, prefix=feat_df.columns, prefix_sep='_', drop_first=True)
+					print(feat_dum_df)
 
-			break
-				# for feat_df in gen_cluster_feats(features, features_paths, asset, km_info):
-				# 	print(count_nn_df(feat_df))
+				break
 
-				# Select a label col
+			continue
+
 
 
 			# for label_fct_col in label_fct_df:
