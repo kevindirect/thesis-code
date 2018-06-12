@@ -15,6 +15,7 @@ from data.access_util import col_subsetters as cs
 from mutate.common import dum
 from mutate.pattern import sax_df
 
+# TODO - Known Issue: thresh group data is lost after saxify (rows that are not non-null in all columns)
 
 def saxify(argv):
 	logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
