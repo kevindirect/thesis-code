@@ -23,7 +23,7 @@ from recon.model_util import get_train_test_split
 
 
 def test(argv):
-	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+	logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 	km_info = {'cl': KMeans(n_clusters=8, random_state=0), 'sfx': 'kmeans(8)'}
 	features_paths, features = DataAPI.load_from_dg(dg['sax']['dzn_sax'], cs2['sax']['dzn_sax'], subset=['raw_pba', 'raw_vol'])
@@ -58,6 +58,9 @@ def test(argv):
 
 def test_maxent(feats, lab):
 	feat_train, lab_train, feat_test, lab_test = get_train_test_split(feats, lab)
+	logging.debug("feat_train.shape {0}, lab_train.shape {0}".format(feat_train, lab_train))
+	logging.debug("feat_test.shape {0}, lab_test.shape {0}".format(feat_test, lab_test))
+
 	lr = LogisticRegression(penalty='l2', tol=0.0001, C=1.0, fit_intercept=True, intercept_scaling=1, random_state=0)
 	clf = lr.fit(feat_train, lab_train)
 	predictions = clf.predict(feat_test)
