@@ -41,7 +41,7 @@ def test(argv):
 			for lab_col_name in lab_df:
 				lab_col = lab_df[lab_col_name].dropna()
 				print(lab_col)
-				print(lab_col.shift(-1))
+				print(lab_col.shift(-1).dropna())
 
 			break
 				# for feat_df in gen_cluster_feats(features, features_paths, asset, km_info):
