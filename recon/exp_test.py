@@ -11,6 +11,7 @@ from sklearn.cluster import KMeans
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import AdaBoostClassifier, RandomForestClassifier
+from sklearn.metrics import accuracy_score
 
 from common_util import get_custom_biz_freq, get_subset, inner_join, count_nn_df, remove_dups_list, list_get_dict, list_set_dict, benchmark
 from data.data_api import DataAPI
@@ -18,6 +19,8 @@ from data.access_util import df_getters as dg, col_subsetters2 as cs2
 from recon.common import dum
 from recon.feat_util import gen_cluster_feats
 from recon.label_util import gen_label_dfs, get_base_labels, default_fct, fastbreak_fct, confidence_fct, fastbreak_confidence_fct
+from recon.model_util import get_train_test_split
+
 
 def test(argv):
 	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
@@ -43,65 +46,21 @@ def test(argv):
 				
 				for feat_df in gen_cluster_feats(features, features_paths, asset, km_info):
 					feat_dum_df = pd.get_dummies(feat_df, prefix=feat_df.columns, prefix_sep='_', columns=feat_df.columns, drop_first=True)
-					
 					lab_feat_df = inner_join(lab_col_shf_df, feat_dum_df)
-					print(count_nn_df(lab_feat_df))
 
-				break
-
-			continue
+					true_vals, predicted = test_maxent(lab_feat_df.iloc[:, 1:], lab_feat_df.iloc[:, 0])
+					print(", ".join(feat_df.columns) +": {:0.2f}".format(accuracy_score(true_vals, predicted)))
 
 
+def test_maxent(feats, lab):
+	feat_train, lab_train, feat_test, lab_test = get_train_test_split(feats, lab)
+	lr = LogisticRegression(penalty='l2', tol=0.0001, C=1.0, fit_intercept=True, intercept_scaling=1, random_state=0)
+	clf = lr.fit(feats, lab)
+	predictions = clf.predict(feat_test)
 
-			# for label_fct_col in label_fct_df:
-			# 	label_fct_shf_df = label_fct_df[[label_fct_col]].dropna()
-			# 	shift_freq = get_custom_biz_freq(label_fct_shf_df)
-			# 	label_fct_shf_df = label_fct_shf_df.shift(periods=-1, freq=None, axis=0).dropna()
-
-			# 	# Iterate through all feature sets
-			# 	for feature_path in filter(lambda fpath: fpath[0]==asset, features_paths):
-			# 		feat_df = list_get_dict(features, feature_path)
-			# 		np_feat = {}
-			# 		handled_df = pd.DataFrame(index=feat_df.index)
-			# 		handled_df[label_fct_col] = label_fct_shf_df[label_fct_col]
-
-			# 		for col_name in feat_df:
-			# 			col_name_prefix = '_'.join(feature_path[1:] +[col_name])
-			# 			logging.info(col_name_prefix)
-			# 			sax_df = handle_nans_df(split_ser(feat_df[col_name], 8, pfx=col_name_prefix))
-			# 			temp_df = inner_join(label_fct_shf_df, sax_df)
-			# 			feats_only = temp_df[temp_df.columns[1:]]
-			# 			# handled_df[sax_df.columns] = sax_df
-			# 			# print('num_rows:', count_nn_df(sax_df).iloc[0])
-
-			# 			kmeans = KMeans(n_clusters=4, random_state=0).fit(feats_only.values)
-			# 			handled_df[col_name_prefix +'_' +'kmeans(4)'] = kmeans.labels_
-			# 			pd.DataFrame(data=labels, columns=['cluster'], index=collapsed.index)
-			# 	print(handled_df)
-
-			# 	print(np_feat)
+	return lab_test, predictions
 
 
-def test_logistic_reg(lab_feat_df):
-	pass
-
-# def make_sw_dict(sw_str):
-# 	return {
-# 		"exact": [],
-# 		"startswith": [sw_str],
-# 		"endswith": [],
-# 		"regex": [],
-# 		"exclude": None
-# 	}
-
-# def make_ew_dict(ew_str):
-# 	return {
-# 		"exact": [],
-# 		"startswith": [],
-# 		"endswith": [ew_str],
-# 		"regex": [],
-# 		"exclude": None
-# 	}
 
 
 if __name__ == '__main__':
