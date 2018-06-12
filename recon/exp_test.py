@@ -57,7 +57,7 @@ def test(argv):
 
 
 def test_maxent(feats, lab):
-	feat_train, lab_train, feat_test, lab_test = get_train_test_split(feats, lab)
+	feat_train, feat_test, lab_train, lab_test = get_train_test_split(feats, lab)
 	logging.debug("feat_train.shape {0}, lab_train.shape {0}".format(feat_train.shape, lab_train.shape))
 	logging.debug("feat_test.shape {0}, lab_test.shape {0}".format(feat_test.shape, lab_test.shape))
 	assert(feat_train.shape[0] == lab_train.shape[0])
