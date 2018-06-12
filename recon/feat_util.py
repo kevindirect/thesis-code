@@ -6,7 +6,6 @@ import logging
 
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 
 from common_util import remove_dups_list, list_get_dict
 from recon.common import dum
