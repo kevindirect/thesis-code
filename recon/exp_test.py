@@ -43,13 +43,16 @@ def test(argv):
 			for lab_col_name in lab_df:
 				logging.info(lab_col_name)
 				lab_col_shf_df = lab_df[[lab_col_name]].dropna().shift(periods=-1, freq=None, axis=0).dropna().astype(int)
-				
+				print("priors:", lab_col_shf_df[lab_col_name].value_counts(normalize=True, sort=True))
+
 				for feat_df in gen_cluster_feats(features, features_paths, asset, km_info):
 					feat_dum_df = pd.get_dummies(feat_df, prefix=feat_df.columns, prefix_sep='_', columns=feat_df.columns, drop_first=True)
 					lab_feat_df = inner_join(lab_col_shf_df, feat_dum_df)
 
 					true_vals, predicted = test_maxent(lab_feat_df.iloc[:, 1:], lab_feat_df.iloc[:, 0])
 					print(", ".join(feat_df.columns) +": {:0.2f}".format(accuracy_score(true_vals, predicted)))
+
+				print()
 
 
 def test_maxent(feats, lab):
