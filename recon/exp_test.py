@@ -43,7 +43,7 @@ def test(argv):
 				
 				for feat_df in gen_cluster_feats(features, features_paths, asset, km_info):
 					print(feat_df)
-					feat_dum_df = pd.get_dummies(feat_df, prefix=feat_df.columns, prefix_sep='_', drop_first=True)
+					feat_dum_df = pd.get_dummies(feat_df, prefix=feat_df.columns, prefix_sep='_', columns=feat_df.columns, drop_first=True)
 					print(feat_dum_df)
 
 				break
