@@ -63,7 +63,7 @@ def test_maxent(feats, lab):
 	assert(feat_train.shape[0] == lab_train.shape[0])
 	assert(feat_test.shape[0]  == lab_test.shape[0])
 
-	lr = LogisticRegression(penalty='l2', tol=0.0001, C=1.0, fit_intercept=True, intercept_scaling=1, random_state=0)
+	lr = LogisticRegression(penalty='l2', tol=0.001, C=0.5, fit_intercept=True, intercept_scaling=1, random_state=0)
 	clf = lr.fit(feat_train, lab_train)
 	predictions = clf.predict(feat_test)
 
