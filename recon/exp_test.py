@@ -39,13 +39,12 @@ def test(argv):
 
 			for lab_col_name in lab_df:
 				logging.info(lab_col_name)
-				lab_col_shf = lab_df[lab_col_name].dropna().shift(periods=-1, freq=None, axis=0).dropna().astype(int)
+				lab_col_shf_df = lab_df[[lab_col_name]].dropna().shift(periods=-1, freq=None, axis=0).dropna().astype(int)
 				
 				for feat_df in gen_cluster_feats(features, features_paths, asset, km_info):
-					print(feat_df)
 					feat_dum_df = pd.get_dummies(feat_df, prefix=feat_df.columns, prefix_sep='_', columns=feat_df.columns, drop_first=True)
 					
-					lab_feat_df = inner_join(lab_col_shf, feat_dum_df)
+					lab_feat_df = inner_join(lab_col_shf_df, feat_dum_df)
 					print(count_nn_df(lab_feat_df))
 
 				break
