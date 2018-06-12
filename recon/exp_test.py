@@ -44,7 +44,9 @@ def test(argv):
 				for feat_df in gen_cluster_feats(features, features_paths, asset, km_info):
 					print(feat_df)
 					feat_dum_df = pd.get_dummies(feat_df, prefix=feat_df.columns, prefix_sep='_', columns=feat_df.columns, drop_first=True)
-					print(feat_dum_df)
+					
+					lab_feat_df = inner_join(lab_col_shf, feat_dum_df)
+					print(count_nn_df(lab_feat_df))
 
 				break
 
