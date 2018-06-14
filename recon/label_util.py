@@ -97,7 +97,6 @@ def gen_label_dfs(lab_dict, lab_paths, asset_name, forecast=default_fct):
 	for lab_path in filter(lambda lab_path: lab_path[0]==asset_name, lab_paths):
 		lab_df = list_get_dict(lab_dict, lab_path)
 		lab_name = lab_df.columns[0]
-		logging.info('label: ' +lab_name)
 		lab_fct_df = pd.DataFrame(index=lab_df.index)
 
 		label_col_sel = {base_label: get_subset(lab_df.columns[1:], make_sw_dict(base_label))
