@@ -36,7 +36,7 @@ def test(argv):
 	for asset in assets:
 		logging.info('asset: ' +str(asset))
 
-		for lab_df in gen_label_dfs(labels, labels_paths, asset):
+		for lab_name, lab_df in gen_label_dfs(labels, labels_paths, asset):
 
 			for lab_col_name in lab_df:
 				logging.info(lab_col_name)
