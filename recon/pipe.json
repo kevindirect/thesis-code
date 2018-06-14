@@ -1,5 +1,5 @@
 {
-	"steps": ["kmeans", "maxent"],
+	"steps": ["kmeans", "onehot", "maxent"],
 	"grid": {
 		"kmeans__n_clusters": [2, 3, 4, 5, 8, 9, 16, 17],
 		"maxent__tol": [1e-5, 1e-4, 1e-3, 1e-2, 1e-1],
