@@ -49,6 +49,6 @@ def gen_split_feats(feat_dict, feat_paths, asset_name, num_cols=8):
 		cname_pfx = '_'.join(feat_path[:0:-1] + [cluster_info['sfx']]) + '_'
 		logging.info(cname_pfx)
 
-		feat_df = list_get_dict(feat_dict, feat_path):
+		feat_df = list_get_dict(feat_dict, feat_path)
 		for feat_name in feat_df:
 			yield handle_nans_df(split_ser(feat_df[feat_name], num_cols, pfx=feat_name)).add_prefix(cname_pfx)
