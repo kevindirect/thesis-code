@@ -10,7 +10,6 @@ sys.path.insert(0, dirname(dirname(dirname(realpath(sys.argv[0])))))
 # RECON
 import pandas as pd
 from os import sep
-from common_util import RECON_DIR
 
 # OTHER STAGE DEPENDENCIES
 
@@ -20,6 +19,8 @@ dum = 0
 
 
 # PACKAGE DEFAULTS
+default_pipefile = 'pipe.json'
+default_cv_file = 'cv_kfold.json'
 
 
 # PACKAGE UTIL FUNCTIONS

@@ -1,0 +1,6 @@
+{
+	"name": "TimeSeriesSplit",
+	"params": {
+		"n_splits": 4
+	}
+}

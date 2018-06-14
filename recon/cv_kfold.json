@@ -1,0 +1,7 @@
+{
+	"name": "KFold",
+	"params": {
+		"n_splits": 4,
+		"shuffle":false
+	}
+}
