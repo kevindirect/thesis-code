@@ -10,7 +10,7 @@ import pandas as pd
 from common_util import DT_HOURLY_FREQ, DT_BIZ_DAILY_FREQ, DT_CAL_DAILY_FREQ, search_df, get_custom_biz_freq, chained_filter
 from data.data_api import DataAPI
 from data.access_util import col_subsetters as cs
-from mutate.common import dum
+from mutate.common import STANDARD_DAY_LEN
 
 
 gaussian_breakpoints = {
@@ -150,8 +150,19 @@ def sax_df(df, num_sym, max_seg=None, numeric_symbols=True):
 			return symbols[len(breakpoints)]
 
 	def sax_ser(ser):
-		if (max_seg is not None and ser.shape[0] > max_seg):
-			segs = ser.tail(max_seg)
+		day_len = ser.shape[0]
+		last_hour = ser.index.hour.last()
+		logging.info('hour', last_hour)
+
+		if (max_seg is not None and max_seg < day_len):
+			if (max_seg == STANDARD_DAY_LEN):
+				segs = ser.tail(max_seg)
+
+			elif (max_seg < STANDARD_DAY_LEN):
+				if (day_len == STANDARD_DAY_LEN):
+					segs = ser.head(max_seg)
+				elif (day_len > STANDARD_DAY_LEN):
+					segs = ser.tail(max_seg)
 		else:
 			segs = ser
 		code = segs.map(symbolize_value).str.cat(sep=',')

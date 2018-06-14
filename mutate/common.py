@@ -14,7 +14,7 @@ import pandas as pd
 
 
 # PACKAGE CONSTANTS
-
+STANDARD_DAY_LEN = 8 # standard eight hour trading day
 
 # PACKAGE DEFAULTS
 dum = 0
