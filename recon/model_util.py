@@ -38,8 +38,3 @@ def gen_time_series_split(feats, lab, num_splits=5, max_train=None):
 	for train_index, test_index in tscv.split(feats):
 		yield feats[train_index], lab[train_index], feats[test_index], lab[test_index]
 
-
-def search_hyper()
-
-# Hyper parameter strategies:
-

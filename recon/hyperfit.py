@@ -6,7 +6,9 @@ import logging
 
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
+
+from dask_ml.model_selection import GridSearchCV
+from sklearn.pipeline import Pipeline
 from sklearn.metrics import accuracy_score, log_loss, f1_score, fbeta_score, precision_score, recall_score
 from sklearn.metrics import confusion_matrix, precision_recall_fscore_support, classification_report, roc_curve, precision_recall_curve
 
@@ -51,7 +53,7 @@ def clfHyperFit(feat, lbl, t1, pipe_clf, param_grid, cv=3, bagging=[0,None,1.], 
 
 
 
-def cv_fit_hyper_parameters(feat_mat, label_arr, pipe_clf, param_space, optimization_metric='neg log loss', testing_method=('cv', 3), how_vary=1):
+def cv_hyper_fit(feat_mat, label_arr, pipe_clf, param_grid, cv_splitter, scoring='neg log loss'):
 	"""
 	Optimizes hyperparameters of the classifier according to the passed options.
 	
@@ -59,7 +61,8 @@ def cv_fit_hyper_parameters(feat_mat, label_arr, pipe_clf, param_space, optimiza
 		feat_map (np.array)
 		label_arr (np.array)
 		pipe_clf
-
-
 	"""
 
+	gs = GridSearchCV(estimator=pipe_clf, param_grid=param_grid, scoring=scoring, cv=cv_splitter, n_jobs=-1, iid=False)
+
+	return gs
