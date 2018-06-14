@@ -83,12 +83,12 @@ def search_hyperspace(argv):
 					label_arr = lab_feat_df.iloc[:, 0].values
 					res = gs.fit(feat_arr, label_arr)
 					row = {
-						lab_col_name,
-						one_feat_df.columns[0][:-2]
-						res.best_score_,
-						res.best_params_,
-						res.best_index_,
-						prior_ser.max()-res.best_score_
+						'label_name': lab_col_name,
+						'feature_name': one_feat_df.columns[0][:-2],
+						'best_score': res.best_score_,
+						'best_params': res.best_params_,
+						'best_index': res.best_index_,
+						'adv': prior_ser.max()-res.best_score_
 					}
 					rep_list.append(row)
 
