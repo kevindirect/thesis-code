@@ -151,11 +151,10 @@ def sax_df(df, num_sym, max_seg=None, numeric_symbols=True):
 
 	def sax_ser(ser):
 		day_len = ser.shape[0]
-		last_hour = ser.index.last().hour
-		logging.info('hour', last_hour)
 
 		if (max_seg is not None and max_seg < day_len):
 			if (max_seg == STANDARD_DAY_LEN):
+				# Assumes any day beyond the standard length is due to pre-market trading
 				segs = ser.tail(max_seg)
 
 			elif (max_seg < STANDARD_DAY_LEN):
