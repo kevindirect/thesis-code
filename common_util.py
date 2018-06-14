@@ -336,6 +336,11 @@ count_nn_df = lambda df: len(df) - df.isnull().sum()
 count_nz_df = lambda df: df.apply(lambda ser: (ser.dropna(axis=0, how='any')!=0).sum())
 count_nn_nz_df = lambda df: pd.concat([count_nn_df(df), count_nz_df(df)], axis=1, names=['non_nan', 'non_zero'])
 
+def get_nmost_nulled_cols_df(df, n=5, keep_counts=False):
+	nsmall = count_nn_df(df).nsmallest(n=n, keep='first')
+
+	return nsmall if (keep_counts) else list(nsmall.index)
+
 def is_empty_df(df, count_nans=False, **kwargs):
 	if (count_nans):
 		return df.empty
