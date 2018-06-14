@@ -40,7 +40,7 @@ def clfHyperFit(feat, lbl, t1, pipe_clf, param_grid, cv=3, bagging=[0,None,1.], 
 	else:
 		gs = RandomizedSearchCV(estimator=pipe_clf, param_distributions=param_grid, scoring=scoring, cv=inner_cv, n_jobs=n_jobs,
 			iid=False, n_iter=rnd_search_iter)
-		gs.fit(feat, lbl, **fit_params).best_estimator_
+	gs.fit(feat, lbl, **fit_params).best_estimator_
 
 	#2) Fit validated model on the entirety of the data
 	if (bagging[1]>0):
