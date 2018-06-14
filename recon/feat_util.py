@@ -47,7 +47,7 @@ def gen_cluster_feats(feat_dict, feat_paths, asset_name, cluster_info):
 def gen_split_feats(feat_dict, feat_paths, asset_name, num_cols=8):
 	for feat_path in filter(lambda feat_path: feat_path[0]==asset_name, feat_paths):
 		cname_pfx = '_'.join(feat_path[:0:-1]) + '_'
-		logging.info(cname_pfx)
+		logging.info(cname_pfx[:-1])
 
 		feat_df = list_get_dict(feat_dict, feat_path)
 		for feat_name in feat_df:
