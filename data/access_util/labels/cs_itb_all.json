@@ -6,6 +6,13 @@
 			"pba_oa_return": null
 		}
 	},
+	"itb_fth_of_xact": {
+		"all": null,
+		"subsets": {
+			"pba_oc_return": null,
+			"pba_oa_return": null
+		}
+	},
 	"itb_fth_af_whole": {
 		"all": null,
 		"subsets": {

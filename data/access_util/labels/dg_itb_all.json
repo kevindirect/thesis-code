@@ -14,6 +14,21 @@
 			}
 		}
 	},
+	"itb_fth_of_xact": {
+		"all": {
+			"stage": "mutate",
+			"mutate_type": "label",
+			"raw_cat": "us_equity_index"
+		},
+		"subsets": {
+			"pba_oc_return": {
+				"desc": "pba_oc_return_fth_of_xact"
+			},
+			"pba_oa_return": {
+				"desc": "pba_oa_return_fth_of_xact"
+			}
+		}
+	},
 	"itb_fth_af_whole": {
 		"all": {
 			"stage": "mutate",
