@@ -5,7 +5,7 @@ import os
 import logging
 
 from sklearn.cluster import KMeans
-from sklearn.preprocessing import CategoricalEncoder, OneHotEncoder
+from sklearn.preprocessing import OneHotEncoder
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 
@@ -15,7 +15,7 @@ from recon.common import dum
 
 DEFAULT_STEP_TRANSLATOR = {
 	"kmeans": KMeans(),
-	"onehot": CategoricalEncoder(encoding='onehot'),
+	"onehot": OneHotEncoder(),
 	"maxent": LogisticRegression(penalty='l2', fit_intercept=True, intercept_scaling=1),
 	"__name": "DEFAULT_STEP_TRANSLATOR"
 }
