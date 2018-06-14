@@ -151,7 +151,7 @@ def sax_df(df, num_sym, max_seg=None, numeric_symbols=True):
 
 	def sax_ser(ser):
 		day_len = ser.shape[0]
-		last_hour = ser.index.hour.last()
+		last_hour = ser.index.last().hour
 		logging.info('hour', last_hour)
 
 		if (max_seg is not None and max_seg < day_len):
@@ -160,7 +160,8 @@ def sax_df(df, num_sym, max_seg=None, numeric_symbols=True):
 
 			elif (max_seg < STANDARD_DAY_LEN):
 				if (day_len == STANDARD_DAY_LEN):
-					segs = ser.head(max_seg)
+					# XXX - information is lost in this case
+					segs = ser.tail(max_seg)
 				elif (day_len > STANDARD_DAY_LEN):
 					segs = ser.tail(max_seg)
 		else:
