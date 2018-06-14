@@ -47,7 +47,7 @@ def search_hyperspace(argv):
 
 	pipe_dict = load_json(pipefile, dir_path=RECON_DIR)
 	pipeline, grid = extract_pipeline(pipe_dict)
-	logging.info('loaded pipeline from ' +str(pipefile))
+	logging.info('loaded pipeline settings from ' +str(pipefile))
 
 	cv_dict = load_json(cv_file, dir_path=RECON_DIR)
 	cv_splitter = extract_cv_splitter(cv_dict)
@@ -69,7 +69,8 @@ def search_hyperspace(argv):
 	for asset in relevant_assets:
 		logging.info('asset: ' +str(asset))
 
-		for lab_name, lab_df in gen_label_dfs(labels, labels_paths, asset):
+		for ret_ser_name, lab_df in gen_label_dfs(labels, labels_paths, asset):
+			logging.info('original return series: ' +ret_ser_name)
 			rep_list = []
 			
 			for lab_col_name in lab_df:
@@ -81,6 +82,10 @@ def search_hyperspace(argv):
 					lab_feat_df = inner_join(lab_col_shf_df, one_feat_df)
 					feat_arr = lab_feat_df.iloc[:, 1:].values
 					label_arr = lab_feat_df.iloc[:, 0].values
+					assert(feat_arr.shape[0] == label_arr.shape[0])
+					print(feat_arr)
+					print(label_arr)
+
 					res = gs.fit(feat_arr, label_arr)
 					row = {
 						'label_name': lab_col_name,
@@ -93,7 +98,7 @@ def search_hyperspace(argv):
 					rep_list.append(row)
 
 			rep_df = pd.DataFrame(rep_list, columns=['label_name', 'feature_name', 'best_score', 'best_params', 'best_index', 'adv'])
-			dump_df(rep_df, lab_name, dir_path=RECON_DIR +'rep' +os.sep +asset +os.sep) # this is just temporary
+			dump_df(rep_df, ret_ser_name, dir_path=RECON_DIR +'rep' +os.sep +asset +os.sep) # this is just temporary
 
 if __name__ == '__main__':
 	search_hyperspace(sys.argv[1:])
