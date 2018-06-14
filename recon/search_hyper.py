@@ -17,7 +17,7 @@ from recon.pipe_util import extract_pipeline
 from recon.cv_util import extract_cv_splitter
 from recon.feat_util import gen_split_feats
 from recon.label_util import gen_label_dfs, default_fct, fastbreak_fct, confidence_fct, fastbreak_confidence_fct
-from recon.hyperfit import cv_hyper_fit
+# from recon.hyperfit import cv_hyper_fit
 
 
 def fit_all(argv):
