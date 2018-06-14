@@ -11,17 +11,7 @@ from sklearn.model_selection import train_test_split
 from common_util import remove_dups_list, list_get_dict
 from recon.common import dum
 from recon.cv_util import PurgedKFold
-
-
-class MyPipeline(Pipeline):
-	"""
-	Enhanced Pipeline Class
-	Lopez De Prado, Advances in Financial Machine Learning (p. 131)
-	"""
-	def fit(self, X, y, sample_weight=None, **fit_params):
-		if (sample_weight is not None):
-			fit_params[self.steps[-1][0]+'__sample_weight'] = sample_weight
-		return super(MyPipeline, self).fit(X, y, **fit_params)
+from recon.model_util import MyPipeline
 
 
 def clfHyperFit(feat, lbl, t1, pipe_clf, param_grid, cv=3, bagging=[0,None,1.], rnd_search_iter=0, n_jobs=-1, pct_embargo=0, **fit_params):
