@@ -6,7 +6,7 @@ import logging
 
 from sklearn.cluster import KMeans
 from sklearn.linear_model import LogisticRegression
-from sklearn.pipeline import make_pipeline
+from sklearn.pipeline import Pipeline, make_pipeline
 
 from common_util import RECON_DIR
 from recon.common import dum
@@ -32,7 +32,7 @@ def extract_pipeline(dictionary):
 	Converts a passed pipeline dictionary into a sklearn Pipeline object and parameter grid
 	"""
 	pipeline_steps = [(step_name, translate_step(step_name)) for step_name in dictionary['steps']]
-	logging.debug(str(pipeline_steps))
-	pipeline = make_pipeline(pipeline_steps)
+	logging.debug('pipeline structure: ' +str(pipeline_steps))
+	pipeline = Pipeline(steps=pipeline_steps)
 	
 	return pipeline, extract_pipeline['grid']
