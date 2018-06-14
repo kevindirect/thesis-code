@@ -1,3 +1,6 @@
+# general
+ignore*
+
 # data
 *.csv
 *.parquet
