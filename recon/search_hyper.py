@@ -22,7 +22,7 @@ from recon.label_util import gen_label_dfs, default_fct, fastbreak_fct, confiden
 
 
 def fit_all(argv):
-	logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 	usage = lambda: print('fit_all.py [-p <pipefile> -c <cv_file> -a <asset>]')
 	pipefile = default_pipefile
 	cv_file = default_cv_file
