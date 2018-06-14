@@ -22,7 +22,7 @@ from recon.label_util import gen_label_dfs, default_fct, fastbreak_fct, confiden
 
 
 def fit_all(argv):
-	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+	logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 	usage = lambda: print('fit_all.py [-p <pipefile> -c <cv_file> -a <asset>]')
 	pipefile = default_pipefile
 	cv_file = default_cv_file
@@ -47,7 +47,6 @@ def fit_all(argv):
 
 	pipe_dict = load_json(pipefile, dir_path=RECON_DIR)
 	pipeline, grid = extract_pipeline(pipe_dict)
-	print(pipeline)
 	logging.info('loaded pipeline from ' +str(pipefile))
 
 	cv_dict = load_json(cv_file, dir_path=RECON_DIR)

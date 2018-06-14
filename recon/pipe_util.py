@@ -32,6 +32,7 @@ def extract_pipeline(dictionary):
 	Converts a passed pipeline dictionary into a sklearn Pipeline object and parameter grid
 	"""
 	pipeline_steps = [(step_name, translate_step(step_name)) for step_name in dictionary['steps']]
+	logging.debug(str(pipeline_steps))
 	pipeline = make_pipeline(pipeline_steps)
 	
 	return pipeline, extract_pipeline['grid']
