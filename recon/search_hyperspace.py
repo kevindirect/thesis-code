@@ -21,9 +21,9 @@ from recon.label_util import gen_label_dfs, default_fct, fastbreak_fct, confiden
 # from recon.hyperfit import cv_hyper_fit
 
 
-def fit_all(argv):
+def search_hyperspace(argv):
 	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-	usage = lambda: print('fit_all.py [-p <pipefile> -c <cv_file> -a <asset>]')
+	usage = lambda: print('search_hyperspace.py [-p <pipefile> -c <cv_file> -a <asset>]')
 	pipefile = default_pipefile
 	cv_file = default_cv_file
 	relevant_assets = None
@@ -85,4 +85,4 @@ def fit_all(argv):
 		
 
 if __name__ == '__main__':
-	fit_all(sys.argv[1:])
+	search_hyperspace(sys.argv[1:])
