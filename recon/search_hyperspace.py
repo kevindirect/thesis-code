@@ -81,6 +81,7 @@ def search_hyperspace(argv):
 
 				for one_feat_df in gen_split_feats(features, features_paths, asset):
 					lab_feat_df = inner_join(lab_col_shf_df, one_feat_df)
+					print(lab_feat_df.info())
 					feat_arr = lab_feat_df.iloc[:, 1:].values
 					label_arr = lab_feat_df.iloc[:, 0].values
 					assert(feat_arr.shape[0] == label_arr.shape[0])
