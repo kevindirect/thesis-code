@@ -11,7 +11,7 @@ from recon.common import dum
 
 
 DEFAULT_CV_TRANSLATOR = {
-	"KMeans": KMeans,
+	"KFold": KFold,
 	"TimeSeriesSplit": TimeSeriesSplit,
 	"__name": "DEFAULT_CV_TRANSLATOR"
 }
