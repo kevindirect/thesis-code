@@ -23,7 +23,7 @@ from recon.label_util import gen_label_dfs, default_fct, fastbreak_fct, confiden
 
 def fit_all(argv):
 	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-	usage = lambda: print('fit_all.py [-p <pipefile> -c <cv_file>]')
+	usage = lambda: print('fit_all.py [-p <pipefile> -c <cv_file> -a <asset>]')
 	pipefile = default_pipefile
 	cv_file = default_cv_file
 	relevant_assets = None
@@ -40,7 +40,7 @@ def fit_all(argv):
 			sys.exit()
 		elif opt in ('-p', '--pipefile'):
 			pipefile = arg
-		elif opt in ('-p', '--cv_file'):
+		elif opt in ('-c', '--cv_file'):
 			cv_file = arg
 		elif opt in ('-a', '--asset'):
 			relevant_assets = [arg]
