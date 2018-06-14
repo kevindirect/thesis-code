@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from dask_ml.model_selection import GridSearchCV
 
-from common_util import RECON_DIR, load_json, inner_join, remove_dups_list, benchmark
+from common_util import RECON_DIR, load_json, dump_df, inner_join, remove_dups_list, benchmark
 from data.data_api import DataAPI
 from data.access_util import df_getters as dg, col_subsetters2 as cs2
 from recon.common import default_pipefile, default_cv_file
@@ -64,25 +64,36 @@ def search_hyperspace(argv):
 	assert(set(relevant_assets) <= set(valid_assets))
 	logging.info('running on the following asset(s): ' +', '.join(relevant_assets))
 
+	gs = GridSearchCV(estimator=pipeline, param_grid=grid, scoring='accuracy', cv=cv_splitter, n_jobs=-1, iid=False)
 
 	for asset in relevant_assets:
 		logging.info('asset: ' +str(asset))
 
-		for lab_df in gen_label_dfs(labels, labels_paths, asset):
-
+		for lab_name, lab_df in gen_label_dfs(labels, labels_paths, asset):
+			rep_list = []
+			
 			for lab_col_name in lab_df:
 				logging.info(lab_col_name)
 				lab_col_shf_df = lab_df[[lab_col_name]].dropna().shift(periods=-1, freq=None, axis=0).dropna().astype(int)
 				prior_ser = lab_col_shf_df[lab_col_name].value_counts(normalize=True, sort=True)
-				print("[priors]: 1: {:0.3f}, -1: {:0.3f}".format(prior_ser.loc[1], prior_ser.loc[-1]))
 
 				for one_feat_df in gen_split_feats(features, features_paths, asset):
 					lab_feat_df = inner_join(lab_col_shf_df, one_feat_df)
-					print(lab_feat_df)
-				break
-			break
-		break
-		
+					feat_arr = lab_feat_df.iloc[:, 1:].values
+					label_arr = lab_feat_df.iloc[:, 0].values
+					res = gs.fit(feat_arr, label_arr)
+					row = {
+						lab_col_name,
+						one_feat_df.columns[0][:-2]
+						res.best_score_,
+						res.best_params_,
+						res.best_index_,
+						prior_ser.max()-res.best_score_
+					}
+					rep_list.append(row)
+
+			rep_df = pd.DataFrame(rep_list, columns=['label_name', 'feature_name', 'best_score', 'best_params', 'best_index', 'adv'])
+			dump_df(rep_df, lab_name, dir_path=RECON_DIR +'rep' +os.sep +asset +os.sep) # this is just temporary
 
 if __name__ == '__main__':
 	search_hyperspace(sys.argv[1:])
