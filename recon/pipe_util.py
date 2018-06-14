@@ -6,7 +6,7 @@ import logging
 
 from sklearn.cluster import KMeans
 from sklearn.linear_model import LogisticRegression
-from sklearn.pipeline import Pipeline, make_pipeline
+from sklearn.pipeline import Pipeline
 
 from common_util import RECON_DIR
 from recon.common import dum
