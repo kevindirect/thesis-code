@@ -35,4 +35,4 @@ def extract_pipeline(dictionary):
 	logging.debug('pipeline structure: ' +str(pipeline_steps))
 	pipeline = Pipeline(steps=pipeline_steps)
 	
-	return pipeline, extract_pipeline['grid']
+	return pipeline, dictionary['grid']
