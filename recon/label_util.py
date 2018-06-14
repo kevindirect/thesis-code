@@ -112,4 +112,4 @@ def gen_label_dfs(lab_dict, lab_paths, asset_name, forecast=default_fct):
 
 		lab_fct_df.index = lab_fct_df.index.normalize()
 
-		yield lab_fct_df
+		yield lab_name, lab_fct_df
