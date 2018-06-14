@@ -2,6 +2,7 @@
 
 import sys
 import os
+import getopt
 from operator import itemgetter
 import logging
 
