@@ -15,7 +15,7 @@ from recon.common import dum
 
 DEFAULT_STEP_TRANSLATOR = {
 	"kmeans": KMeans(),
-	"onehot": OneHotEncoder(),
+	"onehot": OneHotEncoder(handle_unknown='warn'),
 	"maxent": LogisticRegression(penalty='l2', fit_intercept=True, intercept_scaling=1),
 	"__name": "DEFAULT_STEP_TRANSLATOR"
 }
