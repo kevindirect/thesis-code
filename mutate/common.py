@@ -21,7 +21,8 @@ dum = 0
 default_threshfile = 'thresh.json'
 default_labelfile = 'label.json'
 default_pattern_threshfile = 'pattern_thresh.json'
-
+default_num_sym = 4
+default_max_seg = 8
 
 # PACKAGE UTIL FUNCTIONS
 count_nonnan = lambda df: len(df) - df.isnull().sum()

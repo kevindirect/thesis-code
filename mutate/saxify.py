@@ -12,13 +12,31 @@ from numba import jit, vectorize
 from common_util import DT_HOURLY_FREQ, DT_BIZ_DAILY_FREQ, get_custom_biz_freq, outer_join, right_join, search_df, chained_filter, benchmark
 from data.data_api import DataAPI
 from data.access_util import col_subsetters as cs
-from mutate.common import dum
+from mutate.common import default_num_sym, default_max_seg
 from mutate.pattern import sax_df
 
-# TODO - Known Issue: thresh group data is lost after saxify (rows that are not non-null in all columns)
+# TODO - Known Issue: some thresh group data is lost after saxify (rows that are not non-null in all columns)
 
 def saxify(argv):
-	logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+	usage = lambda: print('search_hyperspace.py [-n <num_sym> -s <max_seg>]')
+	num_sym = default_num_sym
+	max_seg = default_max_seg
+
+	try:
+		opts, args = getopt.getopt(argv, 'hn:s:', ['help', 'num_sym=', 'max_seg='])
+	except getopt.GetoptError:
+		usage()
+		sys.exit(2)
+
+	for opt, arg in opts:
+		if opt in ('-h', '--help'):
+			usage()
+			sys.exit()
+		elif opt in ('-n', '--num_sym'):
+			num_sym = int(arg)
+		elif opt in ('-s', '--max_seg'):
+			max_seg = int(arg)
 
 	date_range = {
 		'id': ('lt', 2018)
@@ -34,8 +52,6 @@ def saxify(argv):
 		norm_recs[rec.root][rec.desc] = rec
 	logging.info('normalize data loaded')
 
-	num_sym = 4
-	max_seg = 8
 	for root_name in norm_recs:
 		logging.info('asset: ' +str(root_name))
 

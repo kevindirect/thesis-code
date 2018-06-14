@@ -157,7 +157,8 @@ def sax_df(df, num_sym, max_seg=None, numeric_symbols=True):
 		code = segs.map(symbolize_value).str.cat(sep=',')
 		return code
 
-	cust = get_custom_biz_freq(df)
+	cust = get_custom_biz_freq(df) 
+	# XXX - Known Issue: some thresh group data is lost after saxify (rows that are not non-null in all columns)
 	saxed = df.groupby(pd.Grouper(freq=cust)).aggregate(sax_ser)
 
 	return saxed
