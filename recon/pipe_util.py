@@ -4,6 +4,8 @@ import sys
 import os
 import logging
 
+from sklearn.cluster import KMeans
+from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import make_pipeline
 
 from common_util import RECON_DIR
