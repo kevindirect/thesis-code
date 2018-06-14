@@ -8,7 +8,8 @@ import logging
 
 import numpy as np
 import pandas as pd
-from dask_ml.model_selection import GridSearchCV
+# from dask_ml.model_selection import GridSearchCV
+from sklearn.model_selection import GridSearchCV
 
 from common_util import RECON_DIR, load_json, dump_df, inner_join, remove_dups_list, benchmark
 from data.data_api import DataAPI
@@ -70,7 +71,7 @@ def search_hyperspace(argv):
 		logging.info('asset: ' +str(asset))
 
 		for ret_ser_name, lab_df in gen_label_dfs(labels, labels_paths, asset):
-			logging.info('original return series: ' +ret_ser_name)
+			logging.info('OG return series: ' +ret_ser_name)
 			rep_list = []
 			
 			for lab_col_name in lab_df:
@@ -83,10 +84,8 @@ def search_hyperspace(argv):
 					feat_arr = lab_feat_df.iloc[:, 1:].values
 					label_arr = lab_feat_df.iloc[:, 0].values
 					assert(feat_arr.shape[0] == label_arr.shape[0])
-					print(feat_arr)
-					print(label_arr)
-
 					res = gs.fit(feat_arr, label_arr)
+
 					row = {
 						'label_name': lab_col_name,
 						'feature_name': one_feat_df.columns[0][:-2],
