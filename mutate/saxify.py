@@ -2,6 +2,7 @@
 
 import sys
 import os
+import getopt
 from collections import defaultdict
 import logging
 
