@@ -8,17 +8,15 @@ import logging
 import numpy as np
 import pandas as pd
 from sklearn.cluster import KMeans
-from sklearn.preprocessing import OneHotEncoder
 from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import AdaBoostClassifier, RandomForestClassifier
 from sklearn.metrics import accuracy_score
 
-from common_util import get_custom_biz_freq, get_subset, inner_join, count_nn_df, remove_dups_list, list_get_dict, list_set_dict, benchmark
+from common_util import inner_join, remove_dups_list, benchmark
 from data.data_api import DataAPI
 from data.access_util import df_getters as dg, col_subsetters2 as cs2
 from recon.common import dum
 from recon.feat_util import gen_cluster_feats
-from recon.label_util import gen_label_dfs, get_base_labels, default_fct, fastbreak_fct, confidence_fct, fastbreak_confidence_fct
+from recon.label_util import gen_label_dfs, default_fct, fastbreak_fct, confidence_fct, fastbreak_confidence_fct
 from recon.model_util import get_train_test_split
 
 
@@ -68,8 +66,6 @@ def test_maxent(feats, lab):
 	predictions = clf.predict(feat_test)
 
 	return lab_test, predictions
-
-
 
 
 if __name__ == '__main__':
