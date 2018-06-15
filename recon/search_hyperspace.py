@@ -106,8 +106,6 @@ def search_hyperspace(argv):
 					}
 					rep_list.append(row)
 
-				break # for debugging purposes
-
 			rep_df = pd.DataFrame(rep_list, columns=['label_name', 'feature_name', 'best_score', 'best_params', 'best_index', 'adv'])
 			dump_df(rep_df, ret_ser_name, dir_path=RECON_DIR +'rep' +os.sep +asset +os.sep, data_format='csv') # this is just temporary
 
