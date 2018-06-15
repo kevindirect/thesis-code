@@ -8,7 +8,7 @@ import logging
 import numpy as np
 import pandas as pd
 
-from common_util import remove_dups_list, list_get_dict, get_nmost_nulled_cols_df
+from common_util import remove_dups_list, list_get_dict, count_nn_df, get_nmost_nulled_cols_df
 from recon.common import dum
 
 
@@ -22,6 +22,7 @@ def split_ser(ser, pfx=''):
 	split_df.add_prefix(pfx +'_')
 	# column_names = ['_'.join([pfx, str(i)]) for i in range(len(split_df.columns))]
 	# split_df[column_names] = unnamed_split_df
+	print(count_nn_df(split_df))
 	return split_df
 
 def handle_nans_df(df, method='drop_row', max_col_drop=1):
