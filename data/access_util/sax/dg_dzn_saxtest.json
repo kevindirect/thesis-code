@@ -7,7 +7,7 @@
 		},
 		"subsets": {
 			"raw_pba": {
-				"desc": ["raw_pba_dzn_sax(3,7)", "raw_pba_dzn_sax(4,7)", "raw_pba_dzn_sax(5,7)", "raw_pba_dzn_sax(8,7)"]
+				"desc": ["raw_pba_dzn_sax(3,8)", "raw_pba_dzn_sax(4,8)", "raw_pba_dzn_sax(5,8)", "raw_pba_dzn_sax(8,8)"]
 			},
 			"raw_vol": {
 				"desc": ["raw_vol_dzn_sax(3,7)", "raw_vol_dzn_sax(4,7)", "raw_vol_dzn_sax(5,7)", "raw_vol_dzn_sax(8,7)"]

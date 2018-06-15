@@ -5,14 +5,14 @@
 			"raw_pba": {
 				"exact": [],
 				"startswith": [],
-				"endswith": ["close", "avgPrice"],
+				"endswith": ["avgPrice"],
 				"regex": [],
 				"exclude": null
 			},
 			"raw_vol": {
 				"exact": [],
 				"startswith": [],
-				"endswith": ["close", "avgPrice"],
+				"endswith": ["avgPrice"],
 				"regex": [],
 				"exclude": null
 			},
