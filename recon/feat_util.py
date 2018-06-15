@@ -13,7 +13,7 @@ from recon.common import dum
 
 def split_ser(ser, pfx=''):
 	split_df = pd.DataFrame(index=ser.index)
-	unnamed_split_df = ser.str.split(',', n=-1, expand=False)
+	split_df = ser.str.split(',', n=-1, expand=False)
 	column_names = ['_'.join([pfx, str(i)]) for i in range(len(unnamed_split_df.columns))]
 	split_df[column_names] = unnamed_split_df
 	return split_df
@@ -47,7 +47,8 @@ def gen_cluster_feats(feat_dict, feat_paths, asset_name, cluster_info):
 
 def gen_split_feats(feat_dict, feat_paths, asset_name):
 	for feat_path in filter(lambda feat_path: feat_path[0]==asset_name, feat_paths):
-		cname_pfx = '_'.join(feat_path[-1]) + '_'
+		cname_pfx = feat_path[-1] + '_'
+		# cname_pfx = '_'.join(feat_path[:0:-1]) + '_'
 		logging.info(cname_pfx[:-1])
 
 		feat_df = list_get_dict(feat_dict, feat_path)
