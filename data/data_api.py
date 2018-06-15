@@ -205,13 +205,13 @@ class DataAPI:
 			ecs = None if (col_subsetter is None) else list_get_dict(col_subsetter, edg_path)
 
 			for sd_name, sd_cs in construct_search_subset_dict(edg, end_cs=ecs).items():
-				sd_path = edg_path +[sd_name]
-				print(sd_cs)
+				sd_path = edg_path + [sd_name]
+				add_desc_identifier = True if (isinstance(sd_cs[0]['desc'], list)) else False
 
 				for rec, df in cls.generate(sd_cs[0]):
-					print(rec.desc)
 					seps = [getattr(rec, separator) for separator in separators]
-					df_path = seps + sd_path
+					df_path = seps + sd_path + [rec.desc] if (add_desc_identifier) else seps + sd_path
+
 					result_paths.append(df_path)
 					filtered_df = df if (sd_cs[1] is None) else df[get_subset(df.columns, sd_cs[1])]
 					list_set_dict(result, df_path, filtered_df)
