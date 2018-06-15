@@ -20,9 +20,8 @@ def test(argv):
 	pba_oc_whole = load_df('pba_oc_return_fth_af_whole.csv', RECON_DIR +'rep' +os.sep +asset +os.sep, data_format='csv')
 	pba_oa_whole = load_df('pba_oa_return_fth_af_whole.csv', RECON_DIR +'rep' +os.sep +asset +os.sep, data_format='csv')
 
-	print(pba_oc_xwhole)
-
-	# print(ve)
+	for res_df in [pba_oc_xwhole, pba_oa_xwhole, pba_oc_whole, pba_oa_whole]:
+		print(res_df.groupby('label_name')[['best_score']].describe())
 	
 if __name__ == '__main__':
 	test(sys.argv[1:])
