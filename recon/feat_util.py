@@ -15,7 +15,7 @@ from recon.common import dum
 def split_ser(ser, pfx=''):
 	# split_df = pd.DataFrame(index=ser.index)
 	list_ser = ser.str.split(',', n=-1, expand=False)
-	split_df = pd.DataFrame.from_records(zip_longest(*list_ser.values.T))
+	split_df = pd.DataFrame.from_records(zip_longest(*list_ser.values)).T
 	print(split_df)
 	split_df.add_prefix(pfx +'_')
 	# column_names = ['_'.join([pfx, str(i)]) for i in range(len(split_df.columns))]
