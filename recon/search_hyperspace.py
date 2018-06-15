@@ -8,8 +8,6 @@ import logging
 
 import numpy as np
 import pandas as pd
-# from dask_ml.model_selection import GridSearchCV
-from sklearn.model_selection import GridSearchCV
 
 from common_util import RECON_DIR, load_json, dump_df, inner_join, remove_dups_list, benchmark
 from data.data_api import DataAPI
@@ -19,18 +17,18 @@ from recon.pipe_util import extract_pipeline
 from recon.cv_util import extract_cv_splitter
 from recon.feat_util import gen_split_feats
 from recon.label_util import gen_label_dfs, default_fct, fastbreak_fct, confidence_fct, fastbreak_confidence_fct
-# from recon.hyperfit import cv_hyper_fit
 
 
 def search_hyperspace(argv):
 	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 	usage = lambda: print('search_hyperspace.py [-p <pipefile> -c <cv_file> -a <asset>]')
+	optimize = False
 	pipefile = default_pipefile
 	cv_file = default_cv_file
 	relevant_assets = None
 
 	try:
-		opts, args = getopt.getopt(argv, 'hp:c:a:', ['help', 'pipefile=', 'cv_file=', 'asset='])
+		opts, args = getopt.getopt(argv, 'hOp:c:a:', ['help', 'optimize', 'pipefile=', 'cv_file=', 'asset='])
 	except getopt.GetoptError:
 		usage()
 		sys.exit(2)
@@ -39,12 +37,21 @@ def search_hyperspace(argv):
 		if opt in ('-h', '--help'):
 			usage()
 			sys.exit()
+		elif opt in ('-O', '--optimize'):
+			optimize = True
 		elif opt in ('-p', '--pipefile'):
 			pipefile = arg
 		elif opt in ('-c', '--cv_file'):
 			cv_file = arg
 		elif opt in ('-a', '--asset'):
 			relevant_assets = [arg]
+
+	if (optimize):
+		logging.info('Optimize flag set (parallelism enabled)')
+		from dask_ml.model_selection import GridSearchCV
+	else:
+		logging.info('Optimize flag not set (parallelism disabled)')
+		from sklearn.model_selection import GridSearchCV
 
 	pipe_dict = load_json(pipefile, dir_path=RECON_DIR)
 	pipeline, grid = extract_pipeline(pipe_dict)
@@ -57,6 +64,10 @@ def search_hyperspace(argv):
 	features_paths, features = DataAPI.load_from_dg(dg['sax']['dzn_sax'], cs2['sax']['dzn_sax'], subset=['raw_pba', 'raw_vol'])
 	logging.info('loaded features')
 
+	print(features_paths)
+	print(features)
+	return
+
 	labels_paths, labels = DataAPI.load_from_dg(dg['labels']['itb'], cs2['labels']['itb'])
 	logging.info('loaded labels')
 
@@ -67,6 +78,7 @@ def search_hyperspace(argv):
 
 	gs = GridSearchCV(estimator=pipeline, param_grid=grid, scoring='accuracy', cv=cv_splitter, n_jobs=-1, iid=False)
 
+	# XXX Parallelize
 	for asset in relevant_assets:
 		logging.info('asset: ' +str(asset))
 
@@ -96,8 +108,10 @@ def search_hyperspace(argv):
 					}
 					rep_list.append(row)
 
+				break # for debugging purposes
+
 			rep_df = pd.DataFrame(rep_list, columns=['label_name', 'feature_name', 'best_score', 'best_params', 'best_index', 'adv'])
-			dump_df(rep_df, ret_ser_name, dir_path=RECON_DIR +'rep' +os.sep +asset +os.sep) # this is just temporary
+			dump_df(rep_df, ret_ser_name, dir_path=RECON_DIR +'rep' +os.sep +asset +os.sep, data_format='csv') # this is just temporary
 
 if __name__ == '__main__':
 	search_hyperspace(sys.argv[1:])
