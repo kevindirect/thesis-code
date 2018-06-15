@@ -57,7 +57,7 @@ def saxify(argv):
 		raw_subqueries = [build_query({ 'desc': '_'.join(['raw', terms[0], terms[1]]) })
 			for terms in product(['pba', 'vol'], ['dzn', 'dmx'])]
 		raw_query = wrap_parens(' or '.join(raw_subqueries))
-		search_query = ' and '.join([search_query], [raw_query])
+		search_query = ' and '.join([search_query, raw_query])
 
 	norm_recs, norm_dfs = defaultdict(dict), defaultdict(dict)
 	for rec, norm_df in DataAPI.generate(search_query, direct_query=True):
