@@ -207,7 +207,6 @@ class DataAPI:
 			for sd_name, sd_cs in construct_search_subset_dict(edg, end_cs=ecs).items():
 				sd_path = edg_path + [sd_name]
 				add_desc_identifier = True if (isinstance(sd_cs[0]['desc'], list)) else False
-				print(sd_cs)
 
 				for rec, df in cls.generate(sd_cs[0]):
 					seps = [getattr(rec, separator) for separator in separators]
@@ -215,7 +214,6 @@ class DataAPI:
 
 					result_paths.append(df_path)
 					filtered_df = df if (sd_cs[1] is None) else df[get_subset(df.columns, sd_cs[1])]
-					print(filtered_df.columns)
 					list_set_dict(result, df_path, filtered_df)
 
 		return result_paths, result
