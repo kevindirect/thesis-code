@@ -207,6 +207,7 @@ class DataAPI:
 			for sd_name, sd_cs in construct_search_subset_dict(edg, end_cs=ecs).items():
 				sd_path = edg_path + [sd_name]
 				add_desc_identifier = True if (isinstance(sd_cs[0]['desc'], list)) else False
+				print(sd_cs)
 
 				for rec, df in cls.generate(sd_cs[0]):
 					seps = [getattr(rec, separator) for separator in separators]
