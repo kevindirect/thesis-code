@@ -15,12 +15,15 @@ def test(argv):
 	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 	asset = 'sp_500'
-	pba_oc_xwhole = load_df('pba_oc_return_fth_of_xwhole.csv', RECON_DIR +'rep' +os.sep +asset +os.sep, data_format='csv')
-	pba_oa_xwhole = load_df('pba_oa_return_fth_of_xwhole.csv', RECON_DIR +'rep' +os.sep +asset +os.sep, data_format='csv')
-	pba_oc_whole = load_df('pba_oc_return_fth_af_whole.csv', RECON_DIR +'rep' +os.sep +asset +os.sep, data_format='csv')
-	pba_oa_whole = load_df('pba_oa_return_fth_af_whole.csv', RECON_DIR +'rep' +os.sep +asset +os.sep, data_format='csv')
+	res_dfs = {
+		'pba_oc_xwhole': load_df('pba_oc_return_fth_of_xwhole.csv', RECON_DIR +'rep' +os.sep +asset +os.sep, data_format='csv')
+		'pba_oa_xwhole': load_df('pba_oa_return_fth_of_xwhole.csv', RECON_DIR +'rep' +os.sep +asset +os.sep, data_format='csv')
+		'pba_oc_whole': load_df('pba_oc_return_fth_af_whole.csv', RECON_DIR +'rep' +os.sep +asset +os.sep, data_format='csv')
+		'pba_oa_whole': load_df('pba_oa_return_fth_af_whole.csv', RECON_DIR +'rep' +os.sep +asset +os.sep, data_format='csv')
+	}
 
-	for res_df in [pba_oc_xwhole, pba_oa_xwhole, pba_oc_whole, pba_oa_whole]:
+	for res_df_name, res_df in res_dfs.items():
+		print(res_df_name)
 		print(res_df.groupby('label_name')[['best_score']].describe())
 	
 if __name__ == '__main__':
