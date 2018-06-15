@@ -2,15 +2,43 @@
 	"itb_fth_of_xwhole": {
 		"all": null,
 		"subsets": {
-			"pba_oc_return": null,
-			"pba_oa_return": null
+			"pba_oc_return": {
+				"exact": ["pba_oc_return_fth_af_estd_shf_0.5", "pba_oc_return_fth_af_estd_shf_1", "pba_oc_return_fth_af_estd_shf_2",
+					"pba_oc_return_fth_of_abs_xstd_shf_0.5", "pba_oc_return_fth_of_abs_xstd_shf_1", "pba_oc_return_fth_of_abs_xstd_shf_2",
+					"vol_oc_return_fth_of_abs_xavg_shf_0.125", "vol_oc_return_fth_of_abs_xavg_shf_0.5", "vol_oc_return_fth_of_abs_xavg_shf_1"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			"pba_oa_return": {
+				"exact": ["pba_oa_return_fth_af_estd_shf_0.5", "pba_oa_return_fth_af_estd_shf_1", "pba_oa_return_fth_af_estd_shf_2",
+					"pba_oa_return_fth_of_abs_xstd_shf_0.5", "pba_oa_return_fth_of_abs_xstd_shf_1", "pba_oa_return_fth_of_abs_xstd_shf_2",
+					"vol_oa_return_fth_of_abs_xavg_shf_0.125", "vol_oa_return_fth_of_abs_xavg_shf_0.5", "vol_oa_return_fth_of_abs_xavg_shf_1"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			}
 		}
 	},
 	"itb_fth_af_whole": {
 		"all": null,
 		"subsets": {
-			"pba_oc_return": null,
-			"pba_oa_return": null
+			"pba_oc_return": {
+				"exact": ["pba_oc_return_fth_af_estd_shf_0.5", "pba_oc_return_fth_af_estd_shf_1", "pba_oc_return_fth_af_estd_shf_2"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			"pba_oa_return": {
+				"exact": ["pba_oa_return_fth_af_estd_shf_0.5", "pba_oa_return_fth_af_estd_shf_1", "pba_oa_return_fth_af_estd_shf_2"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			}
 		}
 	}
 }
