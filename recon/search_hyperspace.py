@@ -63,10 +63,10 @@ def search_hyperspace(argv):
 	cv_splitter = extract_cv_splitter(cv_dict)
 	logging.info('loaded cross val settings from ' +str(cv_file))
 
-	features_paths, features = DataAPI.load_from_dg(dg['sax']['dzn_sax_test'], cs2['sax']['dzn_sax_test'], subset=['raw_pba', 'raw_vol'])
+	features_paths, features = DataAPI.load_from_dg(dg['sax']['dzn_sax'], cs2['sax']['dzn_sax'], subset=['raw_pba', 'raw_vol'])
 	logging.info('loaded features')
 
-	labels_paths, labels = DataAPI.load_from_dg(dg['labels']['itb_test'], cs2['labels']['itb_test'])
+	labels_paths, labels = DataAPI.load_from_dg(dg['labels']['itb'], cs2['labels']['itb'])
 	logging.info('loaded labels')
 
 	valid_assets = remove_dups_list(map(itemgetter(0), features_paths))
