@@ -110,5 +110,5 @@ def search_hyperspace(argv):
 			dump_df(rep_df, ret_ser_name, dir_path=RECON_DIR +'rep' +os.sep +asset +os.sep, data_format='csv') # this is just temporary
 
 if __name__ == '__main__':
-	with benchmark('ttf ') as b):
+	with benchmark('ttf ') as b:
 		search_hyperspace(sys.argv[1:])
