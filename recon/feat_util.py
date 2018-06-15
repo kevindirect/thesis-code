@@ -2,6 +2,7 @@
 
 import sys
 import os
+from itertools import zip_longest
 import logging
 
 import numpy as np
@@ -12,10 +13,13 @@ from recon.common import dum
 
 
 def split_ser(ser, pfx=''):
-	split_df = pd.DataFrame(index=ser.index)
-	print(ser.str.split(',', n=-1, expand=False))
-	column_names = ['_'.join([pfx, str(i)]) for i in range(len(unnamed_split_df.columns))]
-	split_df[column_names] = unnamed_split_df
+	# split_df = pd.DataFrame(index=ser.index)
+	list_ser = ser.str.split(',', n=-1, expand=False)
+	split_df = pd.DataFrame.from_records(zip_longest(*list_ser.values), index=ser.index)
+	print(split_df)
+	split_df.add_prefix(pfx +'_')
+	# column_names = ['_'.join([pfx, str(i)]) for i in range(len(split_df.columns))]
+	# split_df[column_names] = unnamed_split_df
 	return split_df
 
 def handle_nans_df(df, method='drop_row', max_col_drop=1):
