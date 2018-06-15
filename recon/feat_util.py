@@ -13,7 +13,7 @@ from recon.common import dum
 
 def split_ser(ser, pfx=''):
 	split_df = pd.DataFrame(index=ser.index)
-	split_df = ser.str.split(',', n=-1, expand=False)
+	print(ser.str.split(',', n=-1, expand=False))
 	column_names = ['_'.join([pfx, str(i)]) for i in range(len(unnamed_split_df.columns))]
 	split_df[column_names] = unnamed_split_df
 	return split_df
