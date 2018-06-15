@@ -96,6 +96,7 @@ def search_hyperspace(argv):
 					assert(feat_arr.shape[0] == label_arr.shape[0])
 					res = gs.fit(feat_arr, label_arr)
 
+					logging.info('priors: ' +str(prior_ser)
 					logging.info('best_score: ' +str(res.best_score_))
 					logging.info('best_params: ' +str(res.best_params_))
 
