@@ -47,10 +47,10 @@ def search_hyperspace(argv):
 			relevant_assets = [arg]
 
 	if (optimize):
-		logging.info('Optimize flag set (parallelism enabled)')
+		logging.info('optimize flag set (parallelism enabled)')
 		from dask_ml.model_selection import GridSearchCV
 	else:
-		logging.info('Optimize flag not set (parallelism disabled)')
+		logging.info('optimize flag not set (parallelism disabled)')
 		from sklearn.model_selection import GridSearchCV
 
 	pipe_dict = load_json(pipefile, dir_path=RECON_DIR)
