@@ -54,6 +54,6 @@ def gen_split_feats(feat_dict, feat_paths, asset_name):
 
 		feat_df = list_get_dict(feat_dict, feat_path)
 		for feat_name in feat_df:
-			yield handle_nans_df(split_ser(feat_df[feat_name]))
-				.add_prefix(cname_pfx +feat_name +'_')
-				.transform(pd.to_numeric)
+			yield handle_nans_df(split_ser(feat_df[feat_name])) \
+				.add_prefix(cname_pfx +feat_name +'_') \
+				.transform(pd.to_numeric) \
