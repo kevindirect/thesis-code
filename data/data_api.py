@@ -206,6 +206,7 @@ class DataAPI:
 
 			for sd_name, sd_cs in construct_search_subset_dict(edg, end_cs=ecs).items():
 				sd_path = edg_path +[sd_name]
+				print(sd_cs)
 
 				for rec, df in cls.generate(sd_cs[0]):
 					print(rec.desc)
