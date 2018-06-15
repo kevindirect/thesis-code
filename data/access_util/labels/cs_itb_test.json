@@ -3,7 +3,7 @@
 		"all": null,
 		"subsets": {
 			"pba_oc_return": {
-				"exact": [],
+				"exact": ["pba_oc_return_fth_of_xwhole"],
 				"startswith": ["pba_oc_return_fth_af_estd_shf_0.5_", "pba_oc_return_fth_af_estd_shf_1_", "pba_oc_return_fth_af_estd_shf_2_",
 					"pba_oc_return_fth_of_abs_xstd_shf_0.5_", "pba_oc_return_fth_of_abs_xstd_shf_1_", "pba_oc_return_fth_of_abs_xstd_shf_2_",
 					"vol_oc_return_fth_of_abs_xavg_shf_0.125_", "vol_oc_return_fth_of_abs_xavg_shf_0.5_", "vol_oc_return_fth_of_abs_xavg_shf_1_"],
@@ -12,7 +12,7 @@
 				"exclude": null
 			},
 			"pba_oa_return": {
-				"exact": [],
+				"exact": ["pba_oa_return_fth_of_xwhole"],
 				"startswith": ["pba_oa_return_fth_af_estd_shf_0.5_", "pba_oa_return_fth_af_estd_shf_1_", "pba_oa_return_fth_af_estd_shf_2_",
 					"pba_oa_return_fth_of_abs_xstd_shf_0.5_", "pba_oa_return_fth_of_abs_xstd_shf_1_", "pba_oa_return_fth_of_abs_xstd_shf_2_",
 					"vol_oa_return_fth_of_abs_xavg_shf_0.125_", "vol_oa_return_fth_of_abs_xavg_shf_0.5_", "vol_oa_return_fth_of_abs_xavg_shf_1_"],
@@ -26,7 +26,7 @@
 		"all": null,
 		"subsets": {
 			"pba_oc_return": {
-				"exact": [],
+				"exact": ["pba_oc_return_fth_af_whole"],
 				"startswith": ["pba_oc_return_fth_of_abs_xstd_shf_0.5_", "pba_oc_return_fth_of_abs_xstd_shf_1_", "pba_oc_return_fth_of_abs_xstd_shf_2_",
 					"vol_oc_return_fth_of_abs_xavg_shf_0.125_", "vol_oc_return_fth_of_abs_xavg_shf_0.5_", "vol_oc_return_fth_of_abs_xavg_shf_1_"],
 				"endswith": [],
@@ -34,7 +34,7 @@
 				"exclude": null
 			},
 			"pba_oa_return": {
-				"exact": [],
+				"exact": ["pba_oa_return_fth_af_whole"],
 				"startswith": ["pba_oa_return_fth_of_abs_xstd_shf_0.5_", "pba_oa_return_fth_of_abs_xstd_shf_1_", "pba_oa_return_fth_of_abs_xstd_shf_2_",
 					"vol_oa_return_fth_of_abs_xavg_shf_0.125_", "vol_oa_return_fth_of_abs_xavg_shf_0.5_", "vol_oa_return_fth_of_abs_xavg_shf_1_"],
 				"endswith": [],
