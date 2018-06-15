@@ -14,6 +14,7 @@ from recon.common import dum
 def test(argv):
 	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
+	asset = 'sp_500'
 	pba_oc_xwhole = load_df('pba_oc_return_fth_of_xwhole.csv', RECON_DIR +'rep' +os.sep +asset +os.sep, data_format='csv')
 	pba_oa_xwhole = load_df('pba_oa_return_fth_of_xwhole.csv', RECON_DIR +'rep' +os.sep +asset +os.sep, data_format='csv')
 	pba_oc_whole = load_df('pba_oc_return_fth_af_whole.csv', RECON_DIR +'rep' +os.sep +asset +os.sep, data_format='csv')
