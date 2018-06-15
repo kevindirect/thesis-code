@@ -99,6 +99,7 @@ def search_hyperspace(argv):
 					logging.info('priors: ' +str(prior_ser))
 					logging.info('best_score: ' +str(res.best_score_))
 					logging.info('best_params: ' +str(res.best_params_))
+					logging.info('best_index: ' +str(res.best_index_))
 
 					row = {
 						'label_name': lab_col_name,
