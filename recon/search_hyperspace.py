@@ -64,9 +64,6 @@ def search_hyperspace(argv):
 	features_paths, features = DataAPI.load_from_dg(dg['sax']['dzn_sax'], cs2['sax']['dzn_sax'], subset=['raw_pba', 'raw_vol'])
 	logging.info('loaded features')
 
-	print(features_paths)
-	return
-
 	labels_paths, labels = DataAPI.load_from_dg(dg['labels']['itb'], cs2['labels']['itb'])
 	logging.info('loaded labels')
 
@@ -91,6 +88,7 @@ def search_hyperspace(argv):
 				prior_ser = lab_col_shf_df[lab_col_name].value_counts(normalize=True, sort=True)
 
 				for one_feat_df in gen_split_feats(features, features_paths, asset):
+					print(one_feat_df)
 					lab_feat_df = inner_join(lab_col_shf_df, one_feat_df)
 					feat_arr = lab_feat_df.iloc[:, 1:].values
 					label_arr = lab_feat_df.iloc[:, 0].values
