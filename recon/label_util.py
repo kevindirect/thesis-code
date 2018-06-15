@@ -104,6 +104,7 @@ def gen_label_dfs(lab_dict, lab_paths, asset_name, forecast=default_fct):
 
 		label_col_sel = {base_label: get_subset(lab_df.columns[1:], make_sw_dict(base_label))
 			for base_label in get_base_labels(lab_df.columns[1:])}
+		logging.debug(label_col_sel)
 
 		# Iterate through all thresholded variations of this label
 		for base_label, base_label_cols in label_col_sel.items():
