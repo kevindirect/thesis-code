@@ -65,7 +65,6 @@ def search_hyperspace(argv):
 	logging.info('loaded features')
 
 	print(features_paths)
-	print(features)
 	return
 
 	labels_paths, labels = DataAPI.load_from_dg(dg['labels']['itb'], cs2['labels']['itb'])
