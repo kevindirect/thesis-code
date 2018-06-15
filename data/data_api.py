@@ -215,6 +215,7 @@ class DataAPI:
 
 					result_paths.append(df_path)
 					filtered_df = df if (sd_cs[1] is None) else df[get_subset(df.columns, sd_cs[1])]
+					print(filtered_df.columns)
 					list_set_dict(result, df_path, filtered_df)
 
 		return result_paths, result
