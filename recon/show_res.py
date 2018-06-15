@@ -7,7 +7,7 @@ import logging
 import numpy as np
 import pandas as pd
 
-from common_util import load_df, 
+from common_util import load_df
 from recon.common import dum
 
 
