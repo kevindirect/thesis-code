@@ -2,27 +2,21 @@
 
 import sys
 import os
-from itertools import zip_longest
 import logging
 
 import numpy as np
 import pandas as pd
 
-from common_util import remove_dups_list, list_get_dict, count_nn_df, get_nmost_nulled_cols_df
+from common_util import remove_dups_list, list_get_dict, get_nmost_nulled_cols_df
 from recon.common import dum
 
 
-def split_ser(ser, pfx=''):
-	# split_df = pd.DataFrame(index=ser.index)
-	split_df = ser.str.split(',', n=-1, expand=False).apply(pd.Series)
-	# # split_df = pd.DataFrame.from_records(zip_longest(list_ser.index, list_ser.values))
-	# # print(split_df)
-	# split_df = pd.DataFrame.from_records()
-	# print(split_df)
-	split_df.add_prefix(pfx +'_')
-	# column_names = ['_'.join([pfx, str(i)]) for i in range(len(split_df.columns))]
-	# split_df[column_names] = unnamed_split_df
-	print(count_nn_df(split_df))
+def split_ser(ser):
+	"""
+	Split a comma separated series of string values into a dataframe
+	"""
+	list_ser = ser.str.split(',', n=-1, expand=False)
+	split_df = list_ser.apply(pd.Series)
 	return split_df
 
 def handle_nans_df(df, method='drop_row', max_col_drop=1):
@@ -36,7 +30,7 @@ def handle_nans_df(df, method='drop_row', max_col_drop=1):
 
 def split_cluster_ser(ser, sklearn_cluster, col_pfx=None):
 	col_pfx = ser.name if (col_pfx is None) else col_pfx
-	sax_df = handle_nans_df(split_ser(ser, pfx=col_pfx))
+	sax_df = handle_nans_df(split_ser(ser)).add_prefix(col_pfx)
 	clustered_values = sklearn_cluster.fit(sax_df.values).labels_
 	clustered = pd.Series(data=clustered_values, index=sax_df.index)
 
@@ -60,4 +54,6 @@ def gen_split_feats(feat_dict, feat_paths, asset_name):
 
 		feat_df = list_get_dict(feat_dict, feat_path)
 		for feat_name in feat_df:
-			yield handle_nans_df(split_ser(feat_df[feat_name], pfx=feat_name)).add_prefix(cname_pfx)
+			yield handle_nans_df(split_ser(feat_df[feat_name]))
+				.add_prefix(cname_pfx +feat_name +'_')
+				.transform(pd.to_numeric)
