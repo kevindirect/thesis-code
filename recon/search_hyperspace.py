@@ -96,6 +96,9 @@ def search_hyperspace(argv):
 					assert(feat_arr.shape[0] == label_arr.shape[0])
 					res = gs.fit(feat_arr, label_arr)
 
+					logging.info('best_score: ' +str(res.best_score_))
+					logging.info('best_params: ' +str(res.best_params_))
+
 					row = {
 						'label_name': lab_col_name,
 						'feature_name': one_feat_df.columns[0][:-2],
