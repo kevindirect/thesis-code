@@ -20,7 +20,7 @@ from recon.label_util import gen_label_dfs, default_fct, fastbreak_fct, confiden
 
 
 def search_hyperspace(argv):
-	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+	logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 	usage = lambda: print('search_hyperspace.py [-p <pipefile> -c <cv_file> -a <asset>]')
 	optimize = False
 	pipefile = default_pipefile
@@ -95,21 +95,32 @@ def search_hyperspace(argv):
 					feat_arr = lab_feat_df.iloc[:, 1:].values
 					label_arr = lab_feat_df.iloc[:, 0].values
 					assert(feat_arr.shape[0] == label_arr.shape[0])
-					res = gs.fit(feat_arr, label_arr)
+					try:
+						res = gs.fit(feat_arr, label_arr)
 
-					logging.info('best_score: {:0.3f}'.format(res.best_score_))
-					logging.info('best_params: ' +str(res.best_params_))
-					logging.info('best_index: {0}'.format(res.best_index_))
+						logging.info('best_score: {:0.3f}'.format(res.best_score_))
+						logging.info('best_params: ' +str(res.best_params_))
+						logging.info('best_index: {0}'.format(res.best_index_))
 
-					row = {
-						'label_name': lab_col_name,
-						'feature_name': one_feat_df.columns[0][:-2],
-						'best_score': res.best_score_,
-						'best_params': res.best_params_,
-						'best_index': res.best_index_,
-						'adv': prior_ser.max()-res.best_score_
-					}
-					rep_list.append(row)
+						row = {
+							'label_name': lab_col_name,
+							'feature_name': one_feat_df.columns[0][:-2],
+							'best_score': res.best_score_,
+							'best_params': res.best_params_,
+							'best_index': res.best_index_,
+							'adv': prior_ser.max()-res.best_score_
+						}
+					except IndexError:
+						row = {
+							'label_name': lab_col_name,
+							'feature_name': one_feat_df.columns[0][:-2],
+							'best_score': None,
+							'best_params': None,
+							'best_index': None,
+							'adv': None
+						}
+					finally:
+						rep_list.append(row)
 
 			rep_df = pd.DataFrame(rep_list, columns=['label_name', 'feature_name', 'best_score', 'best_params', 'best_index', 'adv'])
 			dump_df(rep_df, ret_ser_name, dir_path=RECON_DIR +'rep' +os.sep +asset +os.sep, data_format='csv') # this is just temporary
