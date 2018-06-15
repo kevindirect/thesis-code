@@ -3,6 +3,7 @@
 import sys
 import os
 import getopt
+from itertools import product
 from collections import defaultdict
 import logging
 
@@ -10,7 +11,7 @@ import numpy as np
 import pandas as pd
 from numba import jit, vectorize
 
-from common_util import DT_HOURLY_FREQ, DT_BIZ_DAILY_FREQ, get_custom_biz_freq, outer_join, right_join, search_df, chained_filter, benchmark
+from common_util import DT_HOURLY_FREQ, DT_BIZ_DAILY_FREQ, get_custom_biz_freq, outer_join, right_join, wrap_parens, build_query, search_df, chained_filter, benchmark
 from data.data_api import DataAPI
 from data.access_util import col_subsetters as cs
 from mutate.common import default_num_sym, default_max_seg
@@ -23,9 +24,10 @@ def saxify(argv):
 	usage = lambda: print('search_hyperspace.py [-n <num_sym> -s <max_seg>]')
 	num_sym = default_num_sym
 	max_seg = default_max_seg
+	raw_only = False
 
 	try:
-		opts, args = getopt.getopt(argv, 'hn:s:', ['help', 'num_sym=', 'max_seg='])
+		opts, args = getopt.getopt(argv, 'hn:s:r', ['help', 'num_sym=', 'max_seg=', 'raw_only'])
 	except getopt.GetoptError:
 		usage()
 		sys.exit(2)
@@ -38,6 +40,8 @@ def saxify(argv):
 			num_sym = int(arg)
 		elif opt in ('-s', '--max_seg'):
 			max_seg = int(arg)
+		elif opt in ('-r', '--raw_only'):
+			raw_only = True
 
 	date_range = {
 		'id': ('lt', 2018)
@@ -47,8 +51,16 @@ def saxify(argv):
 		'mutate_type': 'normalize',
 		'raw_cat': 'us_equity_index'
 	}
+	search_query = build_query(search_terms)
+
+	if (raw_only):
+		raw_subqueries = [build_query({ 'desc': '_'.join(['raw', terms[0], terms[1]]) })
+			for terms in product(['pba', 'vol'], ['dzn', 'dmx'])]
+		raw_query = wrap_parens(' or '.join(raw_subqueries))
+		search_query = ' and '.join([search_query], [raw_query])
+
 	norm_recs, norm_dfs = defaultdict(dict), defaultdict(dict)
-	for rec, norm_df in DataAPI.generate(search_terms):
+	for rec, norm_df in DataAPI.generate(search_query, direct_query=True):
 		norm_dfs[rec.root][rec.desc] = norm_df.loc[search_df(norm_df, date_range)]
 		norm_recs[rec.root][rec.desc] = rec
 	logging.info('normalize data loaded')
