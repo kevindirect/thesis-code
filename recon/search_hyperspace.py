@@ -88,6 +88,7 @@ def search_hyperspace(argv):
 				logging.info(lab_col_name)
 				lab_col_shf_df = lab_df[[lab_col_name]].dropna().shift(periods=-1, freq=None, axis=0).dropna().astype(int)
 				prior_ser = lab_col_shf_df[lab_col_name].value_counts(normalize=True, sort=True)
+				logging.info('max prior: {:0.3f}'.format(prior_ser.max()))
 
 				for one_feat_df in gen_split_feats(features, features_paths, asset):
 					lab_feat_df = inner_join(lab_col_shf_df, one_feat_df)
@@ -96,10 +97,9 @@ def search_hyperspace(argv):
 					assert(feat_arr.shape[0] == label_arr.shape[0])
 					res = gs.fit(feat_arr, label_arr)
 
-					logging.info('priors: ' +str(prior_ser))
-					logging.info('best_score: ' +str(res.best_score_))
+					logging.info('best_score: {:0.3f}'.format((res.best_score_))
 					logging.info('best_params: ' +str(res.best_params_))
-					logging.info('best_index: ' +str(res.best_index_))
+					logging.info('best_index: {0}'.format((res.best_index_))
 
 					row = {
 						'label_name': lab_col_name,
