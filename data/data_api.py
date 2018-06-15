@@ -10,7 +10,7 @@ import logging
 import pandas as pd
 from pandas.util import hash_pandas_object
 
-from common_util import DATA_DIR, load_df, dump_df, makedir_if_not_exists, get_subset, search_df, recursive_dict, list_get_dict, list_set_dict, dict_path, str_now, benchmark
+from common_util import DATA_DIR, load_df, dump_df, makedir_if_not_exists, get_subset, search_df, query_df, recursive_dict, list_get_dict, list_set_dict, dict_path, str_now, benchmark
 from data.common import DR_NAME, DR_FMT, DR_COLS, DR_IDS, DR_REQ, DR_STAGE, DR_META, DR_GEN
 
 
@@ -104,9 +104,12 @@ class DataAPI:
 			return path_dir
 
 		@classmethod
-		def matched(cls, search_dict):
+		def matched(cls, search_dict, direct_query=False):
 			"""Yield iterator of NamedTuples from matched entry subset"""
-			match_ids = search_df(cls.DATA_RECORD, search_dict)
+			if (direct_query):
+				match_ids = query_df(cls.DATA_RECORD, search_dict)
+			else:
+				match_ids = search_df(cls.DATA_RECORD, search_dict)
 			yield from cls.DATA_RECORD.loc[match_ids].itertuples()
 
 		@classmethod
@@ -160,9 +163,9 @@ class DataAPI:
 		print(cls.DataRecordAPI.get_record_view())
 
 	@classmethod
-	def generate(cls, search_dict, **kwargs):
+	def generate(cls, search_dict, direct_query=False, **kwargs):
 		"""Provide generator interface to get data"""
-		yield from map(cls.DataRecordAPI.loader(**kwargs), cls.DataRecordAPI.matched(search_dict))
+		yield from map(cls.DataRecordAPI.loader(**kwargs), cls.DataRecordAPI.matched(search_dict, direct_query=direct_query))
 
 	@classmethod
 	def load_from_dg(cls, df_getter, col_subsetter=None, separators=['root'], how='subsets', subset=None, **kwargs):

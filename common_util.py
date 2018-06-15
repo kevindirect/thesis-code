@@ -64,6 +64,8 @@ enclosing quotes to recognize strings (like numexpr and sql).
 """
 quote_it = lambda string: '\'' +string +'\''
 
+wrap_parens = lambda string: '(' +string +')'
+
 """Datetime"""
 dt_now = lambda: datetime.now()
 str_now = lambda: dt_now().strftime(DT_FMT_YMD_HMS)
