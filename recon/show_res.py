@@ -2,6 +2,7 @@
 
 import sys
 import os
+import getopt
 import logging
 
 import numpy as np
@@ -11,8 +12,9 @@ from common_util import RECON_DIR, load_df
 from recon.common import dum
 
 
-def test(argv):
+def show_res(argv):
 	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+	usage = lambda: print('show_res.py [-a <asset> -s <sfx>]')
 	asset = 'sp_500'
 	sfx = '_test'
 
@@ -44,4 +46,4 @@ def test(argv):
 		print(res_df.groupby('label_name')[['best_score']].describe())
 	
 if __name__ == '__main__':
-	test(sys.argv[1:])
+	show_res(sys.argv[1:])
