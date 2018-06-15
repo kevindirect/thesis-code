@@ -208,6 +208,7 @@ class DataAPI:
 				sd_path = edg_path +[sd_name]
 
 				for rec, df in cls.generate(sd_cs[0]):
+					print(rec.desc)
 					seps = [getattr(rec, separator) for separator in separators]
 					df_path = seps + sd_path
 					result_paths.append(df_path)
