@@ -67,7 +67,7 @@ def search_hyperspace(argv):
 	logging.info('loaded features')
 
 	labels_paths, labels = DataAPI.load_from_dg(dg['labels']['itb_test'], cs2['labels']['itb_test'])
-	print(labels_paths)
+	print(labels)
 	logging.info('loaded labels')
 
 	valid_assets = remove_dups_list(map(itemgetter(0), features_paths))
