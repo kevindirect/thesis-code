@@ -20,7 +20,7 @@ from recon.label_util import gen_label_dfs, default_fct, fastbreak_fct, confiden
 
 
 def search_hyperspace(argv):
-	logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 	usage = lambda: print('search_hyperspace.py [-p <pipefile> -c <cv_file> -a <asset>]')
 	optimize = False
 	pipefile = default_pipefile
