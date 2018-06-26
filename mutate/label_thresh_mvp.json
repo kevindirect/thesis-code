@@ -9,6 +9,7 @@
 		"of": ["abs_xavg", "abs_xstd", "abs_xmax", "abs_xmin"]
 	},
 	"ret_trans": {
+		"af": [],
 		"of": ["xwhole"]
 	}
 }
