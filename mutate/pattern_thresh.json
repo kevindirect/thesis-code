@@ -5,6 +5,6 @@
 	"time_hor": ["fth"],
 	"shift_code": ["of"],
 	"pattern_trans": {
-		"of": ["xact", "xwhole", "xstd", "xavg", "xmed"]
+		"of": ["xact", "xavg", "xstd", "xmed", "xwhole"]
 	}
 }
