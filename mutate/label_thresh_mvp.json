@@ -1,0 +1,14 @@
+{
+	"src": ["pba", "vol"],
+	"fast_slow": ["oc", "oa"],
+	"thresh_type": ["return"],
+	"time_hor": ["fth"],
+	"shift_code": ["af", "of"],
+	"all_trans": {
+		"af": ["abs_avg", "abs_std", "abs_max"],
+		"of": ["abs_xavg", "abs_xstd", "abs_xmax"]
+	},
+	"ret_trans": {
+		"of": ["xwhole"]
+	}
+}

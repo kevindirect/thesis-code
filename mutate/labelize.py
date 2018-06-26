@@ -13,16 +13,16 @@ from dask import delayed, compute
 from common_util import MUTATE_DIR, DT_HOURLY_FREQ, DT_BIZ_DAILY_FREQ, load_json, get_custom_biz_freq_ser, flatten2D, left_join, search_df, chained_filter, benchmark
 from data.data_api import DataAPI
 from data.access_util import col_subsetters as cs
-from mutate.common import dum, default_threshfile, default_labelfile
+from mutate.common import dum, default_label_threshfile, default_labelfile
 from mutate.label import *
 
 
 def labelize(argv):
 	logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-	threshfile = default_threshfile
+	label_threshfile = default_label_threshfile
 	labelfile = default_labelfile
 
-	thresh_info = load_json(threshfile, dir_path=MUTATE_DIR)
+	thresh_info = load_json(label_threshfile, dir_path=MUTATE_DIR)
 	label_info = load_json(labelfile, dir_path=MUTATE_DIR)
 	ret_groups = get_ret_groups(thresh_info)
 

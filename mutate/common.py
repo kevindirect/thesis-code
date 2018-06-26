@@ -18,11 +18,12 @@ STANDARD_DAY_LEN = 8 # standard eight hour trading day
 
 # PACKAGE DEFAULTS
 dum = 0
-default_threshfile = 'thresh.json'
-default_labelfile = 'label.json'
+default_threshfile = 'thresh_all.json'
+default_label_threshfile = 'label_thresh_mvp.json'
+default_labelfile = 'label_mvp.json'
 default_pattern_threshfile = 'pattern_thresh.json'
 default_num_sym = 4
-default_max_seg = 8
+default_max_seg = STANDARD_DAY_LEN
 
 # PACKAGE UTIL FUNCTIONS
 count_nonnan = lambda df: len(df) - df.isnull().sum()

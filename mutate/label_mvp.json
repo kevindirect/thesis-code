@@ -5,8 +5,8 @@
 
 	"rvt": {
 		"thresh_mod": {
-			"shiftedness": [true, false],
-			"scalings": [0.03125,  0.125, 0.5, 1, 2, 8, 32]
+			"shiftedness": [true],
+			"scalings": [0.25, 0.5, 1, 2, 4]
 		}
 	},
 
