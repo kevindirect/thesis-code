@@ -223,7 +223,6 @@ def shift_time_series_df(shift_procedure, to_shift_df, shift_col_name, to_join_d
 def make_label_entry(desc, hist, base_rec):
 
 	return {
-		'freq': DT_BIZ_DAILY_FREQ,
 		'root': base_rec.root,
 		'basis': base_rec.name,
 		'stage': 'mutate',
