@@ -129,7 +129,7 @@ def make_normalize_entry(desc, hist, base_rec):
 	prev_hist = '' if isinstance(base_rec.hist, float) else str(base_rec.hist)
 
 	return {
-		'freq': DT_BIZ_DAILY_FREQ,
+		'freq': DT_HOURLY_FREQ,
 		'root': base_rec.root,
 		'basis': base_rec.name,
 		'stage': 'mutate',
