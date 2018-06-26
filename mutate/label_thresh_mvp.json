@@ -5,8 +5,8 @@
 	"time_hor": ["fth"],
 	"shift_code": ["af", "of"],
 	"all_trans": {
-		"af": ["abs_avg", "abs_std", "abs_max"],
-		"of": ["abs_xavg", "abs_xstd", "abs_xmax"]
+		"af": ["abs_avg", "abs_std", "abs_max", "abs_min"],
+		"of": ["abs_xavg", "abs_xstd", "abs_xmax", "abs_xmin"]
 	},
 	"ret_trans": {
 		"of": ["xwhole"]
