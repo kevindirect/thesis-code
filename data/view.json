@@ -1,7 +1,7 @@
 {
-	"thresh_norm": {
+	"label_dfs": {
 		"stage": "mutate",
-		"mutate_type": "normalize",
+		"mutate_type": "label",
 		"raw_cat": "us_equity_index"
 	}
 }
