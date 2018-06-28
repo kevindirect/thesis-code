@@ -476,6 +476,9 @@ def chained_filter(str_list, qualifier_dict_list):
 	Returns:
 		sublist of str_list
 	"""
+	if (not isinstance(qualifier_dict_list, list)):
+		qualifier_dict_list = [qualifier_dict_list]
+
 	return reduce(get_subset, qualifier_dict_list, str_list)
 
 
