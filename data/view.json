@@ -2,7 +2,7 @@
 	"thresh_normalize": {
 		"stage": "mutate",
 		"mutate_type": "normalize",
-		"desc": "thresh_dmx",
+		"desc": "thresh_dzn",
 		"raw_cat": "us_equity_index"
 	}
 }
