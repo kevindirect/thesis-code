@@ -12,7 +12,10 @@
 			"raw_vol": {
 				"desc": "raw_vol_dzn"
 			},
-			"thresh": {
+			"ret_pba": {
+				"desc": "thresh_dzn"
+			},
+			"ret_vol": {
 				"desc": "thresh_dzn"
 			}
 		}
