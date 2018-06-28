@@ -1,7 +1,14 @@
 {
-	"thresh_dfs": {
+	"raw_normalize": {
 		"stage": "mutate",
-		"mutate_type": "thresh",
+		"mutate_type": "normalize",
+		"desc": ["raw_pba_dmx", "raw_vol_dmx"],
 		"raw_cat": "us_equity_index"
-	}
+	},
+	"thresh_normalize": {
+		"stage": "mutate",
+		"mutate_type": "normalize",
+		"desc": "thresh_dmx",
+		"raw_cat": "us_equity_index"
+	},
 }
