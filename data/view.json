@@ -10,5 +10,5 @@
 		"mutate_type": "normalize",
 		"desc": "thresh_dmx",
 		"raw_cat": "us_equity_index"
-	},
+	}
 }
