@@ -60,11 +60,12 @@ def view(argv):
 			print('root:', rec.root)
 			print('desc:', rec.desc)
 			print('\n')
+			sel_cols = chained_filter(gen_df.columns, cs_search_dicts[key])
+			sel_df = gen_df[sel_cols]
 
 			for activated in debugs_activated:
 				print('debug:', activated)
-				selected_cols = chained_filter(gen_df.columns, cs_search_dicts[key])
-				print(debug_functions[activated](gen_df[gen_df]))
+				print(debug_functions[activated](sel_df))
 				print('\n')
 
 		print('\n')
