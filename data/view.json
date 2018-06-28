@@ -1,7 +1,7 @@
 {
-	"label_dfs": {
+	"thresh_dfs": {
 		"stage": "mutate",
-		"mutate_type": "label",
+		"mutate_type": "thresh",
 		"raw_cat": "us_equity_index"
 	}
 }
