@@ -9,16 +9,16 @@ import logging
 import numpy as np
 import pandas as pd
 
-from common_util import DATA_DIR, load_json, count_nn_df, count_nz_df, count_nn_nz_df, benchmark
-from data.common import default_viewfile
+from common_util import DATA_DIR, load_json, count_nn_df, count_nz_df, count_nn_nz_df, chained_filter, benchmark
+from data.common import default_viewfile_sfx
 from data.data_api import DataAPI
 
 def view(argv):
-	usage = lambda: print('view.py [-n -z -b -i -d -s -r -c -f <searchfile>]')
-	viewfile = default_viewfile
+	usage = lambda: print('view.py [-n -z -b -i -d -s -r -c -f <viewfilesfx>]')
+	viewfile_sfx = default_viewfile_sfx
 
 	try:
-		opts, args = getopt.getopt(argv, 'hnzbidsrc:f:', ['help', 'nonnan', 'nonzero', 'both', 'info', 'describe', 'show', 'random', 'count=', 'searchfile='])
+		opts, args = getopt.getopt(argv, 'hnzbidsrc:f:', ['help', 'nonnan', 'nonzero', 'both', 'info', 'describe', 'show', 'random', 'count=', 'viewfilesfx='])
 	except getopt.GetoptError:
 		usage()
 		sys.exit(2)
@@ -38,9 +38,10 @@ def view(argv):
 		elif opt in ('-s', '--show'):        debugs_activated.append('s')
 		elif opt in ('-r', '--random'):      debugs_activated.append('r')
 		elif opt in ('-c', '--count'):       num_rows = int(arg)
-		elif opt in ('-f', '--searchfile'):  viewfile = arg
+		elif opt in ('-f', '--viewfilesfx'):  viewfile_sfx = arg
 
-	view_search_dicts = load_json(viewfile, dir_path=DATA_DIR)
+	dg_search_dicts = load_json('dg_' +viewfile_sfx +'.json', dir_path=DATA_DIR)
+	cs_search_dicts = load_json('cs_' +viewfile_sfx +'.json', dir_path=DATA_DIR)
 
 	debug_functions = {
 		'n': count_nn_df,
@@ -52,7 +53,7 @@ def view(argv):
 		'r': lambda df: df.sample(n=num_rows, axis=0),
 	}
 
-	for key, search_dict in view_search_dicts.items():
+	for key, search_dict in dg_search_dicts.items():
 		print('group:', key)
 
 		for rec, gen_df in DataAPI.generate(search_dict):
@@ -62,7 +63,8 @@ def view(argv):
 
 			for activated in debugs_activated:
 				print('debug:', activated)
-				print(debug_functions[activated](gen_df))
+				selected_cols = chained_filter(gen_df.columns, cs_search_dicts[key])
+				print(debug_functions[activated](gen_df[gen_df]))
 				print('\n')
 
 		print('\n')
