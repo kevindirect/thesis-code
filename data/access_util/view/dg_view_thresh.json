@@ -1,5 +1,10 @@
 {
-	"thresh_dfs": {
+	"thresh_pba_dfs": {
+		"stage": "mutate",
+		"mutate_type": "thresh",
+		"raw_cat": "us_equity_index"
+	},
+	"thresh_vol_dfs": {
 		"stage": "mutate",
 		"mutate_type": "thresh",
 		"raw_cat": "us_equity_index"
