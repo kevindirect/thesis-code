@@ -16,12 +16,12 @@ from data.data_api import DataAPI
 def view(argv):
 	usage = lambda: print('view.py [-n -z -b -i -d -s -r -c -f <viewfilesfx>]')
 	viewfile_sfx = default_viewfile_sfx
-	keep_nans = False
+	keep_nulls = False
 	num_rows = 20
 	debugs_activated = []
 
 	try:
-		opts, args = getopt.getopt(argv, 'hnzbidsrkc:f:', ['help', 'nonnan', 'nonzero', 'both', 'info', 'describe', 'show', 'random', 'keepnans', 'count=', 'viewfilesfx='])
+		opts, args = getopt.getopt(argv, 'hnzbidsrkc:f:', ['help', 'nonnan', 'nonzero', 'both', 'info', 'describe', 'show', 'random', 'keep_nulls', 'count=', 'viewfilesfx='])
 	except getopt.GetoptError:
 		usage()
 		sys.exit(2)
@@ -37,7 +37,7 @@ def view(argv):
 		elif opt in ('-d', '--describe'):     debugs_activated.append('d')
 		elif opt in ('-s', '--show'):         debugs_activated.append('s')
 		elif opt in ('-r', '--random'):       debugs_activated.append('r')
-		elif opt in ('-k', '--keepnans'):     keep_nans = True
+		elif opt in ('-k', '--keep_nulls'):   keep_nulls = True
 		elif opt in ('-c', '--count'):        num_rows = int(arg)
 		elif opt in ('-f', '--viewfilesfx'):  viewfile_sfx = arg
 
@@ -61,8 +61,9 @@ def view(argv):
 			print('root:', rec.root)
 			print('desc:', rec.desc)
 			print('\n')
-			sel_cols = chained_filter(gen_df.columns, cs_search_dicts[key])
-			sel_df = gen_df[sel_cols] if (not keep_nans) else gen_df[sel_cols].dropna(axis=0, how='all')
+			sel_df = gen_df.loc[:, chained_filter(gen_df.columns, cs_search_dicts[key])]
+			if (not keep_nulls):
+				sel_df = sel_df.dropna(axis=0, how='all')
 
 			for activated in debugs_activated:
 				print('debug:', activated)
