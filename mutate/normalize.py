@@ -15,6 +15,8 @@ from data.data_api import DataAPI
 from data.access_util import col_subsetters as cs
 from mutate.common import default_pattern_threshfile
 
+# TODO - Known Issue: thresh data looks wierd
+
 def normalize(argv):
 	logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 	pattern_threshfile = default_pattern_threshfile

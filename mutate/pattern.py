@@ -172,7 +172,8 @@ def sax_df(df, num_sym, max_seg=None, numeric_symbols=True):
 
 	return saxed
 
-
+def uniform_sym_ser(ser, num_sym):
+	pass
 
 
 """ ********** CLUSTERING ********** """
