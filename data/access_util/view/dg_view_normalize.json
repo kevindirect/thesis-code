@@ -1,14 +1,26 @@
 {
-	"thresh_pba_normalize": {
+	"thresh_pba_thresh_dzn_normalize": {
 		"stage": "mutate",
 		"mutate_type": "normalize",
 		"desc": "thresh_dzn",
 		"raw_cat": "us_equity_index"
 	},
-	"thresh_vol_normalize": {
+	"thresh_pba_thresh_dmx_normalize": {
+		"stage": "mutate",
+		"mutate_type": "normalize",
+		"desc": "thresh_dmx",
+		"raw_cat": "us_equity_index"
+	},
+	"thresh_vol_thresh_dzn_normalize": {
 		"stage": "mutate",
 		"mutate_type": "normalize",
 		"desc": "thresh_dzn",
 		"raw_cat": "us_equity_index"
-	}
+	},
+	"thresh_vol_thresh_dmx_normalize": {
+		"stage": "mutate",
+		"mutate_type": "normalize",
+		"desc": "thresh_dmx",
+		"raw_cat": "us_equity_index"
+	},
 }
