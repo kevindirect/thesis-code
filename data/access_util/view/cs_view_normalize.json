@@ -6,7 +6,7 @@
 		"regex": [],
 		"exclude": null
 	},
-	"thresh_pba_dmz_normalize": {
+	"thresh_pba_dmx_normalize": {
 		"exact": ["pba_oc_return_fth_of_xact", "pba_oa_return_fth_of_xact", "pba_lh_return_fth_of_xact"],
 		"startswith": [],
 		"endswith": [],
