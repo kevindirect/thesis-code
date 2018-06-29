@@ -1,26 +1,26 @@
 {
-	"thresh_pba_thresh_dzn_normalize": {
+	"thresh_pba_dzn_normalize": {
 		"exact": ["pba_oc_return_fth_of_xact", "pba_oa_return_fth_of_xact", "pba_lh_return_fth_of_xact"],
 		"startswith": [],
 		"endswith": [],
 		"regex": [],
 		"exclude": null
 	},
-	"thresh_pba_thresh_dmz_normalize": {
+	"thresh_pba_dmz_normalize": {
 		"exact": ["pba_oc_return_fth_of_xact", "pba_oa_return_fth_of_xact", "pba_lh_return_fth_of_xact"],
 		"startswith": [],
 		"endswith": [],
 		"regex": [],
 		"exclude": null
 	},
-	"thresh_vol_thresh_dzn_normalize": {
+	"thresh_vol_dzn_normalize": {
 		"exact": ["vol_oc_return_fth_of_xact", "vol_oa_return_fth_of_xact", "vol_lh_return_fth_of_xact"],
 		"startswith": [],
 		"endswith": [],
 		"regex": [],
 		"exclude": null
 	},
-	"thresh_vol_thresh_dmx_normalize": {
+	"thresh_vol_dmx_normalize": {
 		"exact": ["vol_oc_return_fth_of_xact", "vol_oa_return_fth_of_xact", "vol_lh_return_fth_of_xact"],
 		"startswith": [],
 		"endswith": [],
