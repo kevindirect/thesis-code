@@ -1,0 +1,10 @@
+{
+	"raw_pba_dfs": {
+		"stage": "raw",
+		"raw_cat": "us_equity_index"
+	},
+	"raw_vol_dfs": {
+		"stage": "raw",
+		"raw_cat": "us_equity_index"
+	}
+}

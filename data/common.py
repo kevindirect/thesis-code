@@ -28,6 +28,7 @@ DG_PFX = 'dg_'
 CS_PFX = 'cs_'
 
 ACCESS_UTIL_DIR = DATA_DIR +'access_util' +sep
+VIEW_DIR = ACCESS_UTIL_DIR +'view' +sep
 
 # PACKAGE DEFAULTS
 default_col_subsetsfile = CS_PFX +'hourly.json'

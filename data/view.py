@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 
 from common_util import DATA_DIR, load_json, count_nn_df, count_nz_df, count_nn_nz_df, chained_filter, benchmark
-from data.common import default_viewfile_sfx
+from data.common import VIEW_DIR, default_viewfile_sfx
 from data.data_api import DataAPI
 
 def view(argv):
@@ -40,8 +40,8 @@ def view(argv):
 		elif opt in ('-c', '--count'):       num_rows = int(arg)
 		elif opt in ('-f', '--viewfilesfx'):  viewfile_sfx = arg
 
-	dg_search_dicts = load_json('dg_' +viewfile_sfx +'.json', dir_path=DATA_DIR)
-	cs_search_dicts = load_json('cs_' +viewfile_sfx +'.json', dir_path=DATA_DIR)
+	dg_search_dicts = load_json('dg_' +viewfile_sfx +'.json', dir_path=VIEW_DIR)
+	cs_search_dicts = load_json('cs_' +viewfile_sfx +'.json', dir_path=VIEW_DIR)
 
 	debug_functions = {
 		'n': count_nn_df,

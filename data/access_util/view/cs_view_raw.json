@@ -1,0 +1,16 @@
+{
+	"raw_pba_dfs": {
+		"exact": ["pba_open", "pba_close", "pba_avgPrice"],
+		"startswith": [],
+		"endswith": [],
+		"regex": [],
+		"exclude": null
+	},
+	"raw_vol_dfs": {
+		"exact": ["vol_open", "vol_close", "vol_avgPrice"],
+		"startswith": [],
+		"endswith": [],
+		"regex": [],
+		"exclude": null
+	}
+}
