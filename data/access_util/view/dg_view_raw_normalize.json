@@ -1,0 +1,26 @@
+{
+	"raw_pba_dzn_normalize": {
+		"stage": "mutate",
+		"mutate_type": "normalize",
+		"desc": "raw_pba_dzn",
+		"raw_cat": "us_equity_index"
+	},
+	"raw_pba_dmx_normalize": {
+		"stage": "mutate",
+		"mutate_type": "normalize",
+		"desc": "raw_pba_dmx",
+		"raw_cat": "us_equity_index"
+	},
+	"raw_vol_dzn_normalize": {
+		"stage": "mutate",
+		"mutate_type": "normalize",
+		"desc": "raw_vol_dzn",
+		"raw_cat": "us_equity_index"
+	},
+	"raw_vol_dmx_normalize": {
+		"stage": "mutate",
+		"mutate_type": "normalize",
+		"desc": "raw_vol_dmx",
+		"raw_cat": "us_equity_index"
+	}
+}
