@@ -191,7 +191,12 @@ def load_df(fname, dir_path=None, data_format=DF_DATA_FMT, subset=None, dti_freq
 				df = df.set_index('id')
 
 			if (dti_freq is not None):
-				df.index.freq = pd.tseries.frequencies.to_offset(dti_freq)
+				try:
+					df = df.asfreq(dti_freq) 										# alt method (this adds null rows)
+					# df.index.freq = pd.tseries.frequencies.to_offset(dti_freq) 	# Old way
+				except Exception as ve:
+					logging.warning('could not change time series index freq')
+					logging.warning('ValueError caught:', ve)
 
 			return df
 
@@ -287,7 +292,7 @@ def cust_count(df):
 	Return custom biz freq and a Dataframe of counts per aggregation period.
 	"""
 	cust = get_custom_biz_freq(df)
-	count_df = df.groupby(pd.Grouper(freq='B')).count()
+	count_df = df.groupby(pd.Grouper(freq=DT_BIZ_DAILY_FREQ)).count()
 
 	return cust, dti_to_ymd(count_df)
 
