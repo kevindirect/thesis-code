@@ -213,7 +213,7 @@ class DataAPI:
 					df_path = seps + sd_path + [rec.desc] if (add_desc_identifier) else seps + sd_path
 
 					result_paths.append(df_path)
-					filtered_df = df if (sd_cs[1] is None) else df[get_subset(df.columns, sd_cs[1])]
+					filtered_df = df if (sd_cs[1] is None) else df[chained_filter(df.columns, sd_cs[1])]
 					list_set_dict(result, df_path, filtered_df)
 
 		return result_paths, result
