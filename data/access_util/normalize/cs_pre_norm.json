@@ -16,7 +16,7 @@
 				"regex": [],
 				"exclude": null
 			}
-		},
+		}
 	},
 	"thresh": {
 		"all": null,
@@ -48,7 +48,7 @@
 				"endswith": ["of_xact", "of_xavg", "of_xstd", "of_xmed", "of_xwhole"],
 				"regex": [],
 				"exclude": null
-			}],
+			}]
 		}
 	}
 }
