@@ -33,6 +33,9 @@ gaussian_breakpoints = {
 	20: [-1.64, -1.28, -1.04, -0.84, -0.67, -0.52, -0.39, -0.25, -0.13, 0, 0.13, 0.25, 0.39, 0.52, 0.67, 0.84, 1.04, 1.28, 1.64]
 }
 
+MIN_VAL, MAX_VAL = -1, 1	# Inclusive limits of range for min-max scaling
+uniform_max_min_breakpoints = {n: [MIN_VAL+(k*((MAX_VAL-MIN_VAL)/n)) for k in range(1, n)] for n in range(2, 21)}
+
 def most_freq_subseq_len(df, capture=.95):
 	cust, count_df = cust_count(df)
 	vc = count_df.apply(pd.Series.value_counts, normalize=True)
@@ -44,6 +47,16 @@ def most_freq_subseq_len(df, capture=.95):
 			return {'max':ser.idxmax(), proportion: idx}
 		else:
 			proportion += val
+
+
+""" ********** NORMALIZATION ********** """
+zscore_transform = lambda ser: (ser-ser.mean()) / ser.std()
+bipolar_mm_transform = lambda ser: 2 * ((ser-ser.min()) / (ser.max()-ser.min())) - 1
+
+def day_norm(df, transform_fn, freq=DT_CAL_DAILY_FREQ):
+	if (freq is None):
+		freq = get_custom_biz_freq(df)
+	return df.groupby(pd.Grouper(freq=freq)).transform(transform_fn) 
 
 
 """ ********** SEGMENTATION ********** """
@@ -121,6 +134,20 @@ def pip_df(df, pattern_size=DEF_PATTERN_SIZE, method=DEF_PIP_METHOD):
 
 
 """ ********** SYMBOLIZATION ********** """
+def get_sym_list(breakpoints, numeric_symbol=True):
+	if (numeric_symbol):
+		return [str(idx+1) for idx in range(len(breakpoints)+1)]
+	else:
+		return list(map(lambda idx: chr(ord('a') +idx), range(len(breakpoints)+1)))
+
+def symbolize_value(val, breakpoints, symbols):
+	for idx, brk in enumerate(breakpoints):
+		if (value <= brk):
+			return symbols[idx]
+	else:
+		return symbols[len(breakpoints)]
+
+
 def sax_df(df, num_sym, max_seg=None, numeric_symbols=True):
 	"""
 	Symbolic Aggregate Approximation (SAX) style symbolization.
@@ -134,18 +161,8 @@ def sax_df(df, num_sym, max_seg=None, numeric_symbols=True):
 	Return:
 		pd.Dataframe with rows aggregated by day into symbolic sequences
 	"""
-	breakpoints = gaussian_breakpoints[num_sym]
-	if (numeric_symbols):
-		symbols = [str(idx+1) for idx in range(len(breakpoints)+1)]
-	else:
-		symbols = list(map(lambda idx: chr(ord('a') +idx), range(len(breakpoints)+1)))
-
-	def symbolize_value(value):
-		for idx, brk in enumerate(breakpoints):
-			if (value <= brk):
-				return symbols[idx]
-		else:
-			return symbols[len(breakpoints)]
+	gaussian_brks = gaussian_breakpoints[num_sym]
+	gaussian_syms = get_sym_list(gaussian_brks, numeric_symbol=numeric_symbol)
 
 	def sax_ser(ser):
 		day_len = ser.shape[0]
@@ -163,14 +180,16 @@ def sax_df(df, num_sym, max_seg=None, numeric_symbols=True):
 					segs = ser.tail(max_seg)
 		else:
 			segs = ser
-		code = segs.map(symbolize_value).str.cat(sep=',')
+		code = segs.map(symbolize_value, gaussian_brks, gaussian_syms).str.cat(sep=',')
 		return code
 
 	cust = get_custom_biz_freq(df) 
 	# XXX - Known Issue: some thresh group data is lost after saxify (rows that are not non-null in all columns)
+	# UPDATE: This is probably an issue with normalize, not with saxing
 	saxed = df.groupby(pd.Grouper(freq=cust)).aggregate(sax_ser)
 
 	return saxed
+
 
 def uniform_sym_ser(ser, num_sym):
 	pass
