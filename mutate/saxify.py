@@ -15,7 +15,7 @@ from common_util import DT_HOURLY_FREQ, DT_BIZ_DAILY_FREQ, get_custom_biz_freq, 
 from data.data_api import DataAPI
 from data.access_util import col_subsetters as cs
 from mutate.common import default_num_sym, default_max_seg
-from mutate.pattern import sax_df
+from mutate.pattern_util import sax_df
 
 # TODO - Known Issue: some thresh group data is lost after saxify (rows that are not non-null in all columns)
 
