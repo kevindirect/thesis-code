@@ -53,6 +53,11 @@ def most_freq_subseq_len(df, capture=.95):
 zscore_transform = lambda ser: (ser-ser.mean()) / ser.std()
 bipolar_mm_transform = lambda ser: 2 * ((ser-ser.min()) / (ser.max()-ser.min())) - 1
 
+NORM_FUN_MAP = {
+	'dzn': zscore_transform,
+	'dmx': bipolar_mm_transform
+}
+
 def day_norm(df, transform_fn, freq=DT_CAL_DAILY_FREQ):
 	if (freq is None):
 		freq = get_custom_biz_freq(df)
