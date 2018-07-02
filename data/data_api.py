@@ -206,11 +206,11 @@ class DataAPI:
 
 			for sd_name, sd_cs in construct_search_subset_dict(edg, end_cs=ecs).items():
 				sd_path = edg_path + [sd_name]
-				add_desc_identifier = True if (isinstance(sd_cs[0]['desc'], list)) else False
+				add_desc_as_path_identifier = True if ('desc' in sd_cs[0] and isinstance(sd_cs[0]['desc'], list)) else False
 
 				for rec, df in cls.generate(sd_cs[0]):
 					seps = [getattr(rec, separator) for separator in separators]
-					df_path = seps + sd_path + [rec.desc] if (add_desc_identifier) else seps + sd_path
+					df_path = seps + sd_path + [rec.desc] if (add_desc_as_path_identifier) else seps + sd_path
 
 					result_paths.append(df_path)
 					filtered_df = df if (sd_cs[1] is None) else df[chained_filter(df.columns, sd_cs[1])]
