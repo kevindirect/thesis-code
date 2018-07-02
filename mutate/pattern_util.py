@@ -217,20 +217,3 @@ Take the slope of a best fit line through the id time series
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
