@@ -199,6 +199,7 @@ class DataAPI:
 		hit_bottom = lambda val: any(key in val for key in ['all', 'subsets'])
 		paths_to_end = list(dict_path(df_getter, stop_cond=hit_bottom))
 		result, recs = recursive_dict(), recursive_dict()
+		result_paths = []
 
 		for edg_path, edg in paths_to_end:
 			ecs = None if (col_subsetter is None) else list_get_dict(col_subsetter, edg_path)
