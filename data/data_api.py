@@ -198,8 +198,7 @@ class DataAPI:
 
 		hit_bottom = lambda val: any(key in val for key in ['all', 'subsets'])
 		paths_to_end = list(dict_path(df_getter, stop_cond=hit_bottom))
-		result_paths = []
-		result = recursive_dict()
+		result, recs = recursive_dict(), recursive_dict()
 
 		for edg_path, edg in paths_to_end:
 			ecs = None if (col_subsetter is None) else list_get_dict(col_subsetter, edg_path)
@@ -215,8 +214,9 @@ class DataAPI:
 					result_paths.append(df_path)
 					filtered_df = df if (sd_cs[1] is None) else df[chained_filter(df.columns, sd_cs[1])]
 					list_set_dict(result, df_path, filtered_df)
+					list_set_dict(recs, df_path, rec)
 
-		return result_paths, result
+		return result_paths, recs, result
 
 
 	@classmethod
