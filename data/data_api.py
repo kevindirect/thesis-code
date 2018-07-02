@@ -172,6 +172,8 @@ class DataAPI:
 		"""
 		Load data using a df_getter dictionary, and col_subsetter dictionary (optional)
 		By default separates the search by root at the bottom level.
+
+		XXX - a version of this that utilizes Dask for lazy data loading
 		"""
 
 		def construct_search_subset_dict(end_dg, end_cs=None, how=how, subset=subset):
