@@ -2,12 +2,13 @@
 
 import sys
 import os
+from functools import partial
 import logging
 
 import numpy as np
 import pandas as pd
 
-from common_util import DT_HOURLY_FREQ, DT_BIZ_DAILY_FREQ, DT_CAL_DAILY_FREQ, search_df, get_custom_biz_freq, chained_filter
+from common_util import DT_HOURLY_FREQ, DT_BIZ_DAILY_FREQ, DT_CAL_DAILY_FREQ, get_custom_biz_freq
 from mutate.common import STANDARD_DAY_LEN
 
 
@@ -33,9 +34,16 @@ gaussian_breakpoints = {
 	20: [-1.64, -1.28, -1.04, -0.84, -0.67, -0.52, -0.39, -0.25, -0.13, 0, 0.13, 0.25, 0.39, 0.52, 0.67, 0.84, 1.04, 1.28, 1.64]
 }
 
-MIN_VAL, MAX_VAL = -1, 1	# Inclusive limits of range for min-max scaling
-uniform_max_min_breakpoints = {n: [MIN_VAL+(k*((MAX_VAL-MIN_VAL)/n)) for k in range(1, n)] for n in range(2, 21)}
+MIN_VAL_OUT, MAX_VAL_OUT = -1, 1	# Inclusive limits of range for min-max scaling
+uniform_breakpoints = {n: [MIN_VAL_OUT+(k*((MAX_VAL_OUT-MIN_VAL_OUT)/n)) for k in range(1, n)] for n in range(2, 21)}
 
+BREAKPOINT_MAP = {
+	"gaussian": gaussian_breakpoints,
+	"uniform": uniform_breakpoints
+}
+
+
+""" ********** MISC ********** """
 def most_freq_subseq_len(df, capture=.95):
 	cust, count_df = cust_count(df)
 	vc = count_df.apply(pd.Series.value_counts, normalize=True)
@@ -139,65 +147,142 @@ def pip_df(df, pattern_size=DEF_PATTERN_SIZE, method=DEF_PIP_METHOD):
 
 
 """ ********** SYMBOLIZATION ********** """
-def get_sym_list(breakpoints, numeric_symbol=True):
-	if (numeric_symbol):
+def get_sym_list(breakpoints, numeric_symbols=True):
+	"""
+	Return list of symbols based on provided breakpoints list.
+	"""
+	if (numeric_symbols):
 		return [str(idx+1) for idx in range(len(breakpoints)+1)]
 	else:
 		return list(map(lambda idx: chr(ord('a') +idx), range(len(breakpoints)+1)))
 
-def symbolize_value(val, breakpoints, symbols):
+def clamp_subseq_len(subseq, max_seg=STANDARD_DAY_LEN):
+	"""
+	Clamp subsequence length to max_seg value.
+
+	Args:
+		subseq (pd.Series): subsequence of values
+		max_seg (int): max number of letters per word
+
+	Return:
+		clamped length pd.Series
+	"""
+	if (max_seg is None):
+		return subseq
+	else:
+		subseq_len = subseq.shape[0]
+
+		if (subseq_len > max_seg):
+			if (max_seg == STANDARD_DAY_LEN): 	# Assumes any extra data is pre-market trading
+				segs = subseq.tail(max_seg)
+
+			elif (max_seg < STANDARD_DAY_LEN):
+				if (subseq_len == STANDARD_DAY_LEN):
+					# XXX - information is lost in this case
+					segs = subseq.tail(max_seg)
+				elif (subseq_len > STANDARD_DAY_LEN):
+					segs = subseq.tail(max_seg)
+
+		return segs
+
+def symbolize_value(value, breakpoints, symbols):
+	"""
+	Return value converted to symbol based on provided breakpoints and symbols.
+	"""
 	for idx, brk in enumerate(breakpoints):
 		if (value <= brk):
+			# print(value, brk, symbols[idx])
 			return symbols[idx]
 	else:
 		return symbols[len(breakpoints)]
 
-
-def sax_df(df, num_sym, max_seg=None, numeric_symbols=True):
+def encode_subseq(subseq, max_seg, breakpoints, symbols):
 	"""
-	Symbolic Aggregate Approximation (SAX) style symbolization.
-	This does not perform paa or any other subseries downsampling/aggregation
-	on the data.
+	Encode float series -> symbol series.
+	Does not perform paa or any other subseries downsampling/aggregation.
 
 	Args:
-		df (pd.Dataframe):
-		num_sym (int): alphabet size
+		subseq (pd.Series):
+		max_seg (int): max number of letters per word
+		breakpoints (list):
+		symbols (list):
 
 	Return:
-		pd.Dataframe with rows aggregated by day into symbolic sequences
+		pd.Series with symbols instead of values
 	"""
-	gaussian_brks = gaussian_breakpoints[num_sym]
-	gaussian_syms = get_sym_list(gaussian_brks, numeric_symbol=numeric_symbol)
+	clamped = clamp_subseq_len(subseq, max_seg=max_seg)
+	sym_map = partial(symbolize_value, breakpoints=breakpoints, symbols=symbols)
+	code = clamped.map(sym_map).str.cat(sep=',')
 
-	def sax_ser(ser):
-		day_len = ser.shape[0]
+	return code
 
-		if (max_seg is not None and max_seg < day_len):
-			if (max_seg == STANDARD_DAY_LEN):
-				# Assumes any day beyond the standard length is due to pre-market trading
-				segs = ser.tail(max_seg)
+def encode_df(df, breakpoint_dict, num_sym, max_seg, numeric_symbols=True):
+	"""
+	Encode float df -> symbol df.
+	Does not perform paa or any other subseries downsampling/aggregation.
 
-			elif (max_seg < STANDARD_DAY_LEN):
-				if (day_len == STANDARD_DAY_LEN):
-					# XXX - information is lost in this case
-					segs = ser.tail(max_seg)
-				elif (day_len > STANDARD_DAY_LEN):
-					segs = ser.tail(max_seg)
-		else:
-			segs = ser
-		code = segs.map(symbolize_value, gaussian_brks, gaussian_syms).str.cat(sep=',')
-		return code
+	Args:
+		df (pd.DataFrame):
+		breakpoint_dict (dict): 
+		num_sym (int): alphabet size
+		max_seg (int): max number of letters per word
+		numeric_symbols (boolean): numeric or non-numeric symbols
 
-	cust = get_custom_biz_freq(df) 
-	# XXX - Known Issue: some thresh group data is lost after saxify (rows that are not non-null in all columns)
-	# UPDATE: This is probably an issue with normalize, not with saxing
-	saxed = df.groupby(pd.Grouper(freq=cust)).aggregate(sax_ser)
+	Return:
+		pd.Series with symbols instead of values
+	"""
+	breakpoints = breakpoint_dict[num_sym]
+	symbols = get_sym_list(breakpoints, numeric_symbols=numeric_symbols)
+	encoder = partial(encode_subseq, max_seg=max_seg, breakpoints=breakpoints, symbols=symbols)
+	cust_freq = get_custom_biz_freq(df) 
+	encoded = df.groupby(pd.Grouper(freq=cust_freq)).aggregate(encoder)
 
-	return saxed
+	return encoded
 
 
-def uniform_sym_ser(ser, num_sym):
-	pass
+
+
+# def sax_df(df, num_sym, max_seg=None, numeric_symbols=True):
+# 	"""
+# 	Symbolic Aggregate Approximation (SAX) style symbolization.
+# 	This does not perform paa or any other subseries downsampling/aggregation
+# 	on the data.
+
+# 	Args:
+# 		df (pd.Dataframe):
+# 		num_sym (int): alphabet size
+
+# 	Return:
+# 		pd.Dataframe with rows aggregated by day into symbolic sequences
+# 	"""
+# 	gaussian_brks = gaussian_breakpoints[num_sym]
+# 	gaussian_syms = get_sym_list(gaussian_brks, numeric_symbol=numeric_symbol)
+
+# 	def sax_ser(ser):
+# 		day_len = ser.shape[0]
+
+# 		if (max_seg is not None and max_seg < day_len):
+# 			if (max_seg == STANDARD_DAY_LEN):
+# 				# Assumes any day beyond the standard length is due to pre-market trading
+# 				segs = ser.tail(max_seg)
+
+# 			elif (max_seg < STANDARD_DAY_LEN):
+# 				if (day_len == STANDARD_DAY_LEN):
+# 					# XXX - information is lost in this case
+# 					segs = ser.tail(max_seg)
+# 				elif (day_len > STANDARD_DAY_LEN):
+# 					segs = ser.tail(max_seg)
+# 		else:
+# 			segs = ser
+# 		code = segs.map(symbolize_value, gaussian_brks, gaussian_syms).str.cat(sep=',')
+# 		return code
+
+# 	cust = get_custom_biz_freq(df) 
+# 	# XXX - Known Issue: some thresh group data is lost after saxify (rows that are not non-null in all columns)
+# 	# UPDATE: This is probably an issue with normalize, not with saxing
+# 	saxed = df.groupby(pd.Grouper(freq=cust)).aggregate(sax_ser)
+
+# 	return saxed
 
 
 """ ********** CLUSTERING ********** """
