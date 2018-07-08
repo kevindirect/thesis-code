@@ -18,7 +18,7 @@ def normalize(argv):
 	date_range = {
 		'id': ('lt', 2018)
 	}
-	pre_norm_paths, pre_norm_recs, pre_norm_dfs = DataAPI.load_from_dg(dg['normalize']['pre_norm'], cs2['normalize']['pre_norm'])
+	pre_norm_paths, pre_norm_recs, pre_norm_dfs = DataAPI.load_from_dg(dg['norm']['pre_norm'], cs2['norm']['pre_norm'])
 
 	for key_chain in pre_norm_paths:
 		logging.info('asset: ' +key_chain[0])

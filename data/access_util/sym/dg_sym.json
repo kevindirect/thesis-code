@@ -1,0 +1,52 @@
+{
+	"dzn_sym": {
+		"all": {
+			"stage": "mutate",
+			"mutate_type": "symbolize",
+			"raw_cat": "us_equity_index"
+		},
+		"subsets": {
+			"raw_pba": {
+				"desc": ["raw_pba_dzn_sym(2,7)", "raw_pba_dzn_sym(3,7)", "raw_pba_dzn_sym(5,7)", "raw_pba_dzn_sym(9,7)",
+					"raw_pba_dzn_sym(2,8)", "raw_pba_dzn_sym(3,8)", "raw_pba_dzn_sym(5,8)", "raw_pba_dzn_sym(9,8)"]
+			},
+			"raw_vol": {
+				"desc": ["raw_vol_dzn_sym(2,7)", "raw_vol_dzn_sym(3,7)", "raw_vol_dzn_sym(5,7)", "raw_vol_dzn_sym(9,7)",
+					"raw_vol_dzn_sym(2,8)", "raw_vol_dzn_sym(3,8)", "raw_vol_dzn_sym(5,8)", "raw_vol_dzn_sym(9,8)"]
+			},
+			"thresh_pba": {
+				"desc": ["thresh_pba_dzn_sym(2,7)", "thresh_pba_dzn_sym(3,7)", "thresh_pba_dzn_sym(5,7)", "thresh_pba_dzn_sym(9,7)",
+					"thresh_pba_dzn_sym(2,8)", "thresh_pba_dzn_sym(3,8)", "thresh_pba_dzn_sym(5,8)", "thresh_pba_dzn_sym(9,8)"]
+			},
+			"thresh_vol": {
+				"desc": ["thresh_vol_dzn_sym(2,7)", "thresh_vol_dzn_sym(3,7)", "thresh_vol_dzn_sym(5,7)", "thresh_vol_dzn_sym(9,7)",
+					"thresh_vol_dzn_sym(2,8)", "thresh_vol_dzn_sym(3,8)", "thresh_vol_dzn_sym(5,8)", "thresh_vol_dzn_sym(9,8)"]
+			}
+		}
+	},
+	"dmx_sym": {
+		"all": {
+			"stage": "mutate",
+			"mutate_type": "symbolize",
+			"raw_cat": "us_equity_index"
+		},
+		"subsets": {
+			"raw_pba": {
+				"desc": ["raw_pba_dmx_sym(2,7)", "raw_pba_dmx_sym(3,7)", "raw_pba_dmx_sym(5,7)", "raw_pba_dmx_sym(9,7)",
+					"raw_pba_dmx_sym(2,8)", "raw_pba_dmx_sym(3,8)", "raw_pba_dmx_sym(5,8)", "raw_pba_dmx_sym(9,8)"]
+			},
+			"raw_vol": {
+				"desc": ["raw_vol_dmx_sym(2,7)", "raw_vol_dmx_sym(3,7)", "raw_vol_dmx_sym(5,7)", "raw_vol_dmx_sym(9,7)",
+					"raw_vol_dmx_sym(2,8)", "raw_vol_dmx_sym(3,8)", "raw_vol_dmx_sym(5,8)", "raw_vol_dmx_sym(9,8)"]
+			},
+			"thresh_pba": {
+				"desc": ["thresh_pba_dmx_sym(2,7)", "thresh_pba_dmx_sym(3,7)", "thresh_pba_dmx_sym(5,7)", "thresh_pba_dmx_sym(9,7)",
+					"thresh_pba_dmx_sym(2,8)", "thresh_pba_dmx_sym(3,8)", "thresh_pba_dmx_sym(5,8)", "thresh_pba_dmx_sym(9,8)"]
+			},
+			"thresh_vol": {
+				"desc": ["thresh_vol_dmx_sym(2,7)", "thresh_vol_dmx_sym(3,7)", "thresh_vol_dmx_sym(5,7)", "thresh_vol_dmx_sym(9,7)",
+					"thresh_vol_dmx_sym(2,8)", "thresh_vol_dmx_sym(3,8)", "thresh_vol_dmx_sym(5,8)", "thresh_vol_dmx_sym(9,8)"]
+			}
+		}
+	}
+}

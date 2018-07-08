@@ -1,0 +1,96 @@
+{
+	"dzn": {
+		"all": null,
+		"subsets": {
+			"raw_pba": {
+				"exact": ["pba_close", "pba_avgPrice"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			"raw_vol": {
+				"exact": ["vol_close", "vol_avgPrice"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			"thresh_pba": [{
+				"exact": [],
+				"startswith": ["pba_oc_return", "pba_oa_return", "pba_lh_return"],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			{
+				"exact": [],
+				"startswith": [],
+				"endswith": ["of_xact", "of_xwhole"],
+				"regex": [],
+				"exclude": null
+			}],
+			"thresh_vol": [{
+				"exact": [],
+				"startswith": ["vol_oc_return", "vol_oa_return", "vol_lh_return"],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			{
+				"exact": [],
+				"startswith": [],
+				"endswith": ["of_xact", "of_xwhole"],
+				"regex": [],
+				"exclude": null
+			}]
+		}
+	},
+	"dmx": {
+		"all": null,
+		"subsets": {
+			"raw_pba": {
+				"exact": ["pba_close", "pba_avgPrice"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			"raw_vol": {
+				"exact": ["vol_close", "vol_avgPrice"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			"thresh_pba": [{
+				"exact": [],
+				"startswith": ["pba_oc_return", "pba_oa_return", "pba_lh_return"],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			{
+				"exact": [],
+				"startswith": [],
+				"endswith": ["of_xact", "of_xwhole"],
+				"regex": [],
+				"exclude": null
+			}],
+			"thresh_vol": [{
+				"exact": [],
+				"startswith": ["vol_oc_return", "vol_oa_return", "vol_lh_return"],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			{
+				"exact": [],
+				"startswith": [],
+				"endswith": ["of_xact", "of_xwhole"],
+				"regex": [],
+				"exclude": null
+			}]
+		}
+	}
+}

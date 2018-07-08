@@ -1,0 +1,15 @@
+{
+	"raw": {
+		"all": {
+			"stage": "raw",
+			"raw_cat": "us_equity_index"
+		},
+		"subsets": {
+			"raw_pba": {},
+			"raw_vol": {},
+			"raw_trmi": {},
+			"raw_trmi_v2": {},
+			"raw_trmi_v3": {}
+		}
+	}
+}
