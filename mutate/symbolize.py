@@ -8,21 +8,20 @@ import logging
 import numpy as np
 import pandas as pd
 
-from common_util import DT_HOURLY_FREQ, DT_BIZ_DAILY_FREQ, get_custom_biz_freq, list_get_dict, search_df, benchmark
+from common_util import DT_HOURLY_FREQ, DT_BIZ_DAILY_FREQ, get_custom_biz_freq, list_get_dict, left_join, outer_join, wrap_parens, search_df, benchmark
 from data.data_api import DataAPI
 from data.access_util import df_getters as dg, col_subsetters2 as cs2, col_subsetters as cs
-from mutate.common import STANDARD_DAY_LEN, default_num_sym, default_max_seg
+from mutate.common import STANDARD_DAY_LEN, default_num_sym
 from mutate.pattern_util import BREAKPOINT_MAP, encode_df
 
 
 def symbolize(argv):
-	logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-	usage = lambda: print('symbolize.py [-a <num_sym> -m <max_seg>]')
+	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+	usage = lambda: print('symbolize.py [-a <num_sym>]')
 	num_sym = default_num_sym
-	max_seg = default_max_seg
 
 	try:
-		opts, args = getopt.getopt(argv, 'ha:m:', ['help', 'num_sym=', 'max_seg='])
+		opts, args = getopt.getopt(argv, 'ha:', ['help', 'num_sym='])
 	except getopt.GetoptError:
 		usage()
 		sys.exit(2)
@@ -32,7 +31,6 @@ def symbolize(argv):
 			usage()
 			sys.exit()
 		elif opt in ('-a', '--num_sym'):  num_sym = int(arg)
-		elif opt in ('-m', '--max_seg'):  max_seg = int(arg)
 
 	NORM_BREAK_MAP = {
 		"dzn": "gaussian",
@@ -53,20 +51,28 @@ def symbolize(argv):
 		pre_sym_df = pre_sym_df.loc[search_df(pre_sym_df, date_range), :]
 
 		break_type = NORM_BREAK_MAP[key_chain[1]]
-		sym_df = encode_df(pre_sym_df, BREAKPOINT_MAP[break_type], num_sym, max_seg, numeric_symbols=True)
+		sym_df = encode_df(pre_sym_df, BREAKPOINT_MAP[break_type], num_sym, numeric_symbols=True)
 
-		desc = 'sym' +'(' +str(num_sym) +',' +str(max_seg) +')'
+		if (logging.getLogger().isEnabledFor(logging.DEBUG)):
+			for col_name in sym_df.columns:
+				before = pre_sym_df[[col_name]].rename(columns={col_name: str(col_name+'_before')})
+				after = sym_df[[col_name]].rename(columns={col_name: str(col_name+'_after')})
+				before_after = left_join(before, after).dropna(axis=0, how='any')
+				logging.debug(str(before_after))
+
+		desc = break_type[:3] +wrap_parens(str(num_sym))
 		sym_entry = make_symbolize_entry(desc, str('mutate_' +desc), pre_sym_rec)
-		logging.debug('dumping ' +pre_sym_rec.desc +'_' +desc +'...')
+		logging.info('dumping ' +pre_sym_rec.desc +'_' +desc +'...')
 		DataAPI.dump(sym_df, sym_entry)
 
 	DataAPI.update_record() # Sync
+
 
 def make_symbolize_entry(desc, hist, base_rec):
 	prev_hist = '' if isinstance(base_rec.hist, float) else str(base_rec.hist)
 
 	return {
-		'freq': DT_BIZ_DAILY_FREQ,
+		'freq': DT_HOURLY_FREQ,
 		'root': base_rec.root,
 		'basis': base_rec.name,
 		'stage': 'mutate',

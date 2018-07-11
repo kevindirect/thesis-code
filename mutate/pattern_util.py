@@ -147,6 +147,8 @@ def pip_df(df, pattern_size=DEF_PATTERN_SIZE, method=DEF_PIP_METHOD):
 
 
 """ ********** SYMBOLIZATION ********** """
+NULL_VALUE_SYMBOL = '_'
+
 def get_sym_list(breakpoints, numeric_symbols=True):
 	"""
 	Return list of symbols based on provided breakpoints list.
@@ -191,10 +193,12 @@ def symbolize_value(value, breakpoints, symbols):
 	"""
 	for idx, brk in enumerate(breakpoints):
 		if (value <= brk):
-			# print(value, brk, symbols[idx])
 			return symbols[idx]
 	else:
-		return symbols[len(breakpoints)]
+		if (value > breakpoints[-1]):
+			return symbols[-1]
+		else:
+			return NULL_VALUE_SYMBOL
 
 def encode_subseq(subseq, max_seg, breakpoints, symbols):
 	"""
@@ -216,7 +220,7 @@ def encode_subseq(subseq, max_seg, breakpoints, symbols):
 
 	return code
 
-def encode_df(df, breakpoint_dict, num_sym, max_seg, numeric_symbols=True):
+def encode_df(df, breakpoint_dict, num_sym, numeric_symbols=True):
 	"""
 	Encode float df -> symbol df.
 	Does not perform paa or any other subseries downsampling/aggregation.
@@ -233,13 +237,13 @@ def encode_df(df, breakpoint_dict, num_sym, max_seg, numeric_symbols=True):
 	"""
 	breakpoints = breakpoint_dict[num_sym]
 	symbols = get_sym_list(breakpoints, numeric_symbols=numeric_symbols)
-	encoder = partial(encode_subseq, max_seg=max_seg, breakpoints=breakpoints, symbols=symbols)
-	cust_freq = get_custom_biz_freq(df) 
-	encoded = df.groupby(pd.Grouper(freq=cust_freq)).aggregate(encoder)
+	logging.debug('breakpoints: ' +str(breakpoints))
+	logging.debug('symbols: ' +str(symbols))
 
-	return encoded
+	encoder = partial(symbolize_value, breakpoints=breakpoints, symbols=symbols)
+	mapped = df.applymap(encoder)
 
-
+	return mapped
 
 
 # def sax_df(df, num_sym, max_seg=None, numeric_symbols=True):
