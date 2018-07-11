@@ -7,20 +7,16 @@
 		},
 		"subsets": {
 			"raw_pba": {
-				"desc": ["raw_pba_dzn_gau(2)", "raw_pba_dzn_gau(3)", "raw_pba_dzn_gau(5)", "raw_pba_dzn_gau(7)",
-					"raw_pba_dzn_gau(8)", "raw_pba_dzn_gau(9)", "raw_pba_dzn_gau(11)", "raw_pba_dzn_gau(13)"]
+				"desc": ["raw_pba_dzn_gau(2)", "raw_pba_dzn_gau(3)", "raw_pba_dzn_gau(4)", "raw_pba_dzn_gau(8)"]
 			},
 			"raw_vol": {
-				"desc": ["raw_vol_dzn_gau(2)", "raw_vol_dzn_gau(3)", "raw_vol_dzn_gau(5)", "raw_vol_dzn_gau(7)",
-					"raw_vol_dzn_gau(8)", "raw_vol_dzn_gau(9)", "raw_vol_dzn_gau(11)", "raw_vol_dzn_gau(13)"]
+				"desc": ["raw_vol_dzn_gau(2)", "raw_vol_dzn_gau(3)", "raw_vol_dzn_gau(4)", "raw_vol_dzn_gau(8)"]
 			},
 			"thresh_pba": {
-				"desc": ["thresh_pba_dzn_gau(2)", "thresh_pba_dzn_gau(3)", "thresh_pba_dzn_gau(5)", "thresh_pba_dzn_gau(7)",
-					"thresh_pba_dzn_gau(8)", "thresh_pba_dzn_gau(9)", "thresh_pba_dzn_gau(11)", "thresh_pba_dzn_gau(13)"]
+				"desc": ["thresh_pba_dzn_gau(2)", "thresh_pba_dzn_gau(3)", "thresh_pba_dzn_gau(4)", "thresh_pba_dzn_gau(8)"]
 			},
 			"thresh_vol": {
-				"desc": ["thresh_vol_dzn_gau(2)", "thresh_vol_dzn_gau(3)", "thresh_vol_dzn_gau(5)", "thresh_vol_dzn_gau(7)",
-					"thresh_vol_dzn_gau(8)", "thresh_vol_dzn_gau(9)", "thresh_vol_dzn_gau(11)", "thresh_vol_dzn_gau(13)"]
+				"desc": ["thresh_vol_dzn_gau(2)", "thresh_vol_dzn_gau(3)", "thresh_vol_dzn_gau(4)", "thresh_vol_dzn_gau(8)"]
 			}
 		}
 	},
@@ -32,20 +28,16 @@
 		},
 		"subsets": {
 			"raw_pba": {
-				"desc": ["raw_pba_dmx_uni(2)", "raw_pba_dmx_uni(3)", "raw_pba_dmx_uni(5)", "raw_pba_dmx_uni(7)",
-					"raw_pba_dmx_uni(8)", "raw_pba_dmx_uni(9)", "raw_pba_dmx_uni(11)", "raw_pba_dmx_uni(13)"]
+				"desc": ["raw_pba_dmx_uni(2)", "raw_pba_dmx_uni(3)", "raw_pba_dmx_uni(4)", "raw_pba_dmx_uni(8)"]
 			},
 			"raw_vol": {
-				"desc": ["raw_vol_dmx_uni(2)", "raw_vol_dmx_uni(3)", "raw_vol_dmx_uni(5)", "raw_vol_dmx_uni(7)",
-					"raw_vol_dmx_uni(8)", "raw_vol_dmx_uni(9)", "raw_vol_dmx_uni(11)", "raw_vol_dmx_uni(13)"]
+				"desc": ["raw_vol_dmx_uni(2)", "raw_vol_dmx_uni(3)", "raw_vol_dmx_uni(4)", "raw_vol_dmx_uni(8)"]
 			},
 			"thresh_pba": {
-				"desc": ["thresh_pba_dmx_uni(2)", "thresh_pba_dmx_uni(3)", "thresh_pba_dmx_uni(5)", "thresh_pba_dmx_uni(7)",
-					"thresh_pba_dmx_uni(8)", "thresh_pba_dmx_uni(9)", "thresh_pba_dmx_uni(11)", "thresh_pba_dmx_uni(13)"]
+				"desc": ["thresh_pba_dmx_uni(2)", "thresh_pba_dmx_uni(3)", "thresh_pba_dmx_uni(4)", "thresh_pba_dmx_uni(8)"]
 			},
 			"thresh_vol": {
-				"desc": ["thresh_vol_dmx_uni(2)", "thresh_vol_dmx_uni(3)", "thresh_vol_dmx_uni(5)", "thresh_vol_dmx_uni(7)",
-					"thresh_vol_dmx_uni(8)", "thresh_vol_dmx_uni(9)", "thresh_vol_dmx_uni(11)", "thresh_vol_dmx_uni(13)"]
+				"desc": ["thresh_vol_dmx_uni(2)", "thresh_vol_dmx_uni(3)", "thresh_vol_dmx_uni(4)", "thresh_vol_dmx_uni(8)"]
 			}
 		}
 	}
