@@ -18,6 +18,7 @@ import logging
 import numpy as np
 import pandas as pd
 from pandas.tseries.offsets import CustomBusinessDay, CustomBusinessHour
+from pandas.testing import assert_series_equal, assert_frame_equal
 from pandas.api.types import is_numeric_dtype
 
 
@@ -353,6 +354,18 @@ def is_empty_df(df, count_nans=False, **kwargs):
 		return df.empty
 	else:
 		return df.dropna(**kwargs).empty
+
+is_df = lambda candidate: isinstance(candidate, pd.DataFrame)
+is_ser = lambda candidate: isinstance(candidate, pd.Series)
+
+def assert_equal_pandas(df1, df2, **kwargs):
+	are_frames = is_df(df1) and is_df(df2)
+	are_series = is_ser(df1) and is_ser(df2)
+
+	if (are_frames):
+		assert_frame_equal(df1, df2, **kwargs)
+	elif (are_series):
+		assert_series_equal(df1, df2, **kwargs)
 
 
 """ ********** PANDAS SEARCH AND FILTERING UTILS ********** """
