@@ -1,0 +1,96 @@
+{
+	"dl_ma": {
+		"all": null,
+		"subsets": {
+			"raw_pba": {
+				"exact": ["pba_close", "pba_avgPrice", "pba_numTrades"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			"raw_vol": {
+				"exact": ["vol_close", "vol_avgPrice", "vol_numTrades"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			"thresh_pba": [{
+				"exact": [],
+				"startswith": ["pba_oc_return", "pba_oa_return", "pba_lh_return"],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			{
+				"exact": [],
+				"startswith": [],
+				"endswith": ["of_xact", "of_xwhole"],
+				"regex": [],
+				"exclude": null
+			}],
+			"thresh_vol": [{
+				"exact": [],
+				"startswith": ["vol_oc_return", "vol_oa_return", "vol_lh_return"],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			{
+				"exact": [],
+				"startswith": [],
+				"endswith": ["of_xact", "of_xwhole"],
+				"regex": [],
+				"exclude": null
+			}]
+		}
+	},
+	"df_ma": {
+		"all": null,
+		"subsets": {
+			"raw_pba": {
+				"exact": ["pba_open", "pba_avgPrice", "pba_numTrades"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			"raw_vol": {
+				"exact": ["vol_open", "vol_avgPrice", "vol_numTrades"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			"thresh_pba": [{
+				"exact": [],
+				"startswith": ["pba_oc_return", "pba_oa_return", "pba_lh_return"],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			{
+				"exact": [],
+				"startswith": [],
+				"endswith": ["of_xact"],
+				"regex": [],
+				"exclude": null
+			}],
+			"thresh_vol": [{
+				"exact": [],
+				"startswith": ["vol_oc_return", "vol_oa_return", "vol_lh_return"],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			{
+				"exact": [],
+				"startswith": [],
+				"endswith": ["of_xact"],
+				"regex": [],
+				"exclude": null
+			}]
+		}
+	}
+}

@@ -1,0 +1,23 @@
+{
+	"diff": {
+		"all": {
+			"stage": "mutate",
+			"mutate_type": "diff",
+			"raw_cat": "us_equity_index"
+		},
+		"subsets": {
+			"raw_pba": {
+				"desc": "raw_pba_diff(1)"
+			},
+			"raw_vol": {
+				"desc": "raw_vol_diff(1)"
+			},
+			"thresh_pba": {
+				"desc": "thresh_pba_diff(1)"
+			},
+			"thresh_vol": {
+				"desc": "thresh_vol_diff(1)"
+			}
+		}
+	}
+}
