@@ -1,5 +1,5 @@
 {
-	"dzn_sym": {
+	"dzn_gau": {
 		"all": null,
 		"subsets": {
 			"raw_pba": {
@@ -32,7 +32,7 @@
 			}
 		}
 	},
-	"dmx_sym": {
+	"dmx_uni": {
 		"all": null,
 		"subsets": {
 			"raw_pba": {
