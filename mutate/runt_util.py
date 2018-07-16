@@ -20,6 +20,9 @@ def apply_rt_df(df, ser_transform_fn, freq=None): # regular transform
 def apply_gbt_df(df, ser_transform_fn, agg_freq): # groupby transform
 	return df.groupby(pd.Grouper(freq=agg_freq)).transform(ser_transform_fn)
 
+def apply_gbf_df(df, ser_filter_fn, agg_freq): # groupby filter
+	return df.groupby(pd.Grouper(freq=agg_freq)).filter(ser_filter_fn)
+
 
 """ ********** TRANSFORMS ********** """
 def difference(num_periods):
@@ -87,7 +90,7 @@ RUNT_FN_TRANSLATOR = {
 RUNT_TYPE_TRANSLATOR = {
 	"rt": apply_rt_df,
 	"gbt": apply_gbt_df,
-	None: None
+	"gbf": apply_gbf_df
 }
 
 RUNT_FREQ_TRANSLATOR = {
