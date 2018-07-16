@@ -162,7 +162,11 @@ def load_json(fname, dir_path=None):
 
 	if (isfile(fpath)):
 		with open(fpath) as json_data:
-			return load(json_data)
+			try:
+				return load(json_data)
+			except Exception as e:
+				logging.error('error in file', str(fname +':'), str(e))
+				raise e
 	else:
 		raise FileNotFoundError(str(basename(fpath) +' must be in:' +dirname(fpath)))
 
@@ -203,7 +207,7 @@ def load_df(fname, dir_path=None, data_format=DF_DATA_FMT, subset=None, dti_freq
 
 		except Exception as e:
 			logging.error('error during load:', e)
-			sys.exit(2)
+			raise e
 	else:
 		raise FileNotFoundError(str(basename(fpath) +' must be in:' +dirname(fpath)))
 
@@ -225,7 +229,7 @@ def dump_df(df, fname, dir_path=None, data_format=DF_DATA_FMT):
 
 	except Exception as e:
 		logging.error('error during dump:', e)
-		sys.exit(2)
+		raise e
 
 
 """ ********** PANDAS GENERAL UTILS ********** """
@@ -498,6 +502,10 @@ def chained_filter(str_list, qualifier_dict_list):
 		qualifier_dict_list = [qualifier_dict_list]
 
 	return reduce(get_subset, qualifier_dict_list, str_list)
+
+
+""" ********** DEBUGGING UTILS ********** """
+in_debug_mode = lambda: logging.getLogger().isEnabledFor(logging.DEBUG)
 
 
 """ ********** PROFILING UTILS ********** """

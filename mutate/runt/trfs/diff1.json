@@ -1,0 +1,19 @@
+{
+	"meta": {
+		"name": "diff1",
+		"mtype_from": "name",
+		"fmt_vars": ["num_periods"],
+		"rec_fmt": "diff({})",
+		"var_fmt": "grid"
+	},
+	"fn": {
+		"ser_fn": "diff",
+		"df_fn": "gbt",
+		"freq": "cal_daily"
+	},
+	"var": {
+		"num_periods": [1]
+	},
+	"src": null,
+	"dst": ["diff", "diff1"]
+}

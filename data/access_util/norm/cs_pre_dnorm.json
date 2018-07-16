@@ -1,21 +1,26 @@
 {
-	"dzn": {
+	"raw": {
 		"all": null,
 		"subsets": {
 			"raw_pba": {
-				"exact": ["pba_close", "pba_avgPrice"],
+				"exact": ["pba_open", "pba_close", "pba_avgPrice", "pba_numTrades"],
 				"startswith": [],
 				"endswith": [],
 				"regex": [],
 				"exclude": null
 			},
 			"raw_vol": {
-				"exact": ["vol_close", "vol_avgPrice"],
+				"exact": ["vol_open", "vol_close", "vol_avgPrice", "vol_numTrades"],
 				"startswith": [],
 				"endswith": [],
 				"regex": [],
 				"exclude": null
-			},
+			}
+		}
+	},
+	"thresh": {
+		"all": null,
+		"subsets": {
 			"thresh_pba": [{
 				"exact": [],
 				"startswith": ["pba_oc_return", "pba_oa_return", "pba_lh_return"],
@@ -26,7 +31,7 @@
 			{
 				"exact": [],
 				"startswith": [],
-				"endswith": ["of_xact", "of_xwhole"],
+				"endswith": ["of_xact", "of_xavg", "of_xstd", "of_xmed", "of_xwhole"],
 				"regex": [],
 				"exclude": null
 			}],
@@ -40,24 +45,24 @@
 			{
 				"exact": [],
 				"startswith": [],
-				"endswith": ["of_xact", "of_xwhole"],
+				"endswith": ["of_xact", "of_xavg", "of_xstd", "of_xmed", "of_xwhole"],
 				"regex": [],
 				"exclude": null
 			}]
 		}
 	},
-	"dmx": {
+	"diff1": {
 		"all": null,
 		"subsets": {
 			"raw_pba": {
-				"exact": ["pba_close", "pba_avgPrice"],
+				"exact": ["pba_open", "pba_close", "pba_avgPrice", "pba_numTrades"],
 				"startswith": [],
 				"endswith": [],
 				"regex": [],
 				"exclude": null
 			},
 			"raw_vol": {
-				"exact": ["vol_close", "vol_avgPrice"],
+				"exact": ["vol_open", "vol_close", "vol_avgPrice", "vol_numTrades"],
 				"startswith": [],
 				"endswith": [],
 				"regex": [],

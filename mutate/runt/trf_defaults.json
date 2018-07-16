@@ -1,0 +1,16 @@
+{
+	"meta": {
+		"name": null,
+		"mtype": "rec_fmt",
+		"save_vars": [],
+		"rec_fmt": "{}",
+		"var_fmt": "grid",
+		"fn": null,
+		"ttype": null,
+		"freq": null
+	},
+	"var": {
+	},
+	"src": ["runt", "src_default"],
+	"dst": null
+}

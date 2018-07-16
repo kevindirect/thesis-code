@@ -2,7 +2,7 @@
 	"dzn": {
 		"all": {
 			"stage": "mutate",
-			"mutate_type": "normalize",
+			"mutate_type": "dnorm",
 			"raw_cat": "us_equity_index"
 		},
 		"subsets": {
@@ -17,13 +17,25 @@
 			},
 			"thresh_vol": {
 				"desc": "thresh_vol_dzn"
+			},
+			"raw_pba_diff1": {
+				"desc": "raw_pba_diff1_dzn"
+			},
+			"raw_vol_diff1": {
+				"desc": "raw_vol_diff1_dzn"
+			},
+			"thresh_pba_diff1": {
+				"desc": "thresh_pba_diff1_dzn"
+			},
+			"thresh_vol_diff1": {
+				"desc": "thresh_vol_diff1_dzn"
 			}
 		}
 	},
 	"dmx": {
 		"all": {
 			"stage": "mutate",
-			"mutate_type": "normalize",
+			"mutate_type": "dnorm",
 			"raw_cat": "us_equity_index"
 		},
 		"subsets": {
@@ -38,6 +50,18 @@
 			},
 			"thresh_vol": {
 				"desc": "thresh_vol_dmx"
+			},
+			"raw_pba_diff1": {
+				"desc": "raw_pba_diff1_dmx"
+			},
+			"raw_vol_diff1": {
+				"desc": "raw_vol_diff1_dmx"
+			},
+			"thresh_pba_diff1": {
+				"desc": "thresh_pba_diff1_dmx"
+			},
+			"thresh_vol_diff1": {
+				"desc": "thresh_vol_diff1_dmx"
 			}
 		}
 	}

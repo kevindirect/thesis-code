@@ -1,0 +1,20 @@
+{
+	"meta": {
+		"name": "sym",
+		"mtype_from": "name",
+		"fmt_vars": ["sym_type", "num_sym"],
+		"rec_fmt": "{}({})",
+		"var_fmt": "grid"
+	},
+	"fn": {
+		"ser_fn": "sym",
+		"df_fn": "rt",
+		"freq": null
+	},
+	"var": {
+		"sym_type": ["gau", "uni"],
+		"num_sym": [2, 3, 4, 8]
+	},
+	"src": ["norm", "dnorm"],
+	"dst": ["sym", "sym"]
+}

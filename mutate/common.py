@@ -8,7 +8,8 @@ sys.path.insert(0, dirname(dirname(dirname(realpath(sys.argv[0])))))
 
 # ********** SPECIFIC TO THIS CRUNCH PACKAGE **********
 # MUTATE
-import pandas as pd
+from os import sep
+from common_util import MUTATE_DIR, DT_CAL_DAILY_FREQ
 
 # OTHER STAGE DEPENDENCIES
 
@@ -21,11 +22,10 @@ dum = 0
 default_threshfile = 'thresh_all.json'
 default_label_threshfile = 'label_thresh_mvp.json'
 default_labelfile = 'label_mvp.json'
+default_runt_dir_name = 'runt' +sep
+default_trfs_dir_name = 'trfs' +sep
 default_num_sym = 4
 default_max_seg = STANDARD_DAY_LEN
 
 # PACKAGE UTIL FUNCTIONS
-count_nonnan = lambda df: len(df) - df.isnull().sum()
-count_nonzero = lambda df: df.apply(lambda ser: (ser.dropna(axis=0, how='any')!=0).sum())
-count_both = lambda df: pd.concat([count_nonnan(df), count_nonzero(df)], axis=1, names=['non_nan', 'non_zero'])
 

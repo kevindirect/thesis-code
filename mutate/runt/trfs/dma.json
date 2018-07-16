@@ -1,0 +1,19 @@
+{
+	"meta": {
+		"name": "dma",
+		"mtype_from": "name",
+		"fmt_vars": ["num_periods"],
+		"rec_fmt": "dma({})",
+		"var_fmt": "grid"
+	},
+	"fn": {
+		"ser_fn": "ma",
+		"df_fn": "rt",
+		"freq": null
+	},
+	"var": {
+		"num_periods": [3, 5, 10, 20]
+	},
+	"src": ["srf", "dr"],
+	"dst": ["ma", "dma"]
+}

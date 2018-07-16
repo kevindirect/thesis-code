@@ -1,16 +1,16 @@
 {
-	"dzn": {
+	"drf": {
 		"all": null,
 		"subsets": {
 			"raw_pba": {
-				"exact": ["pba_close", "pba_avgPrice"],
+				"exact": ["pba_open", "pba_close", "pba_avgPrice", "pba_numTrades"],
 				"startswith": [],
 				"endswith": [],
 				"regex": [],
 				"exclude": null
 			},
 			"raw_vol": {
-				"exact": ["vol_close", "vol_avgPrice"],
+				"exact": ["vol_open", "vol_close", "vol_avgPrice", "vol_numTrades"],
 				"startswith": [],
 				"endswith": [],
 				"regex": [],
@@ -46,18 +46,18 @@
 			}]
 		}
 	},
-	"dmx": {
+	"drl": {
 		"all": null,
 		"subsets": {
 			"raw_pba": {
-				"exact": ["pba_close", "pba_avgPrice"],
+				"exact": ["pba_open", "pba_close", "pba_avgPrice", "pba_numTrades"],
 				"startswith": [],
 				"endswith": [],
 				"regex": [],
 				"exclude": null
 			},
 			"raw_vol": {
-				"exact": ["vol_close", "vol_avgPrice"],
+				"exact": ["vol_open", "vol_close", "vol_avgPrice", "vol_numTrades"],
 				"startswith": [],
 				"endswith": [],
 				"regex": [],
