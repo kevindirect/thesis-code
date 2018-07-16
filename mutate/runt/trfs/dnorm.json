@@ -2,8 +2,7 @@
 	"meta": {
 		"name": "dnorm",
 		"mtype_from": "rec_fmt",
-		"fmt_vars": ["norm_type"],
-		"rec_fmt": "{}",
+		"rec_fmt": "{norm_type}",
 		"var_fmt": "grid"
 	},
 	"fn": {

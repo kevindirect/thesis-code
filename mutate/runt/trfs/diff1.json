@@ -2,8 +2,7 @@
 	"meta": {
 		"name": "diff1",
 		"mtype_from": "name",
-		"fmt_vars": ["num_periods"],
-		"rec_fmt": "diff({})",
+		"rec_fmt": "diff({num_periods})",
 		"var_fmt": "grid"
 	},
 	"fn": {

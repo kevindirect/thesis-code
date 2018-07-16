@@ -2,8 +2,7 @@
 	"meta": {
 		"name": "dma",
 		"mtype_from": "name",
-		"fmt_vars": ["num_periods"],
-		"rec_fmt": "dma({})",
+		"rec_fmt": "dma({num_periods})",
 		"var_fmt": "grid"
 	},
 	"fn": {

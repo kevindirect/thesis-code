@@ -2,13 +2,12 @@
 	"meta": {
 		"name": "dr",
 		"mtype_from": "rec_fmt",
-		"fmt_vars": ["which_hour"],
-		"rec_fmt": "dr{}",
+		"rec_fmt": "dr{which_hour}",
 		"var_fmt": "grid"
 	},
 	"fn": {
 		"ser_fn": "srf",
-		"df_fn": "gbt",
+		"df_fn": "gbf",
 		"freq": "cal_daily"
 	},
 	"var": {

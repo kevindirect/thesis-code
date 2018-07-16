@@ -2,8 +2,7 @@
 	"meta": {
 		"name": "sym",
 		"mtype_from": "name",
-		"fmt_vars": ["sym_type", "num_sym"],
-		"rec_fmt": "{}({})",
+		"rec_fmt": "{sym_type}({num_sym})",
 		"var_fmt": "grid"
 	},
 	"fn": {
