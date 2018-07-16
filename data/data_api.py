@@ -7,6 +7,7 @@ from copy import deepcopy
 from collections import defaultdict
 import logging
 
+from dask import delayed
 import pandas as pd
 from pandas.util import hash_pandas_object
 
@@ -172,8 +173,59 @@ class DataAPI:
 		"""
 		Load data using a df_getter dictionary, and col_subsetter dictionary (optional)
 		By default separates the search by root at the bottom level.
+		"""
 
-		XXX - a version of this that utilizes Dask for lazy data loading
+		def construct_search_subset_dict(end_dg, end_cs=None, how=how, subset=subset):
+			"""
+			Convenience function to construct the search dict (optionally col subsetter dict) based on the how parameter.
+			"""
+			if (how == 'all'):
+				cs_dict = None if (end_cs is None) else end_cs['all']
+				return {'all': (end_dg['all'], cs_dict)}
+
+			elif (how == 'subsets'):
+				ss_dict = {}
+
+				if (isinstance(subset, list)):
+					subsets_dict = {key: val for key, val in end_dg['subsets'].items() if (key in subset)}
+				else:
+					subsets_dict = end_dg['subsets'] # all subsets
+
+				for s_name, s_dict in subsets_dict.items():
+					cs_dict = None if (end_cs is None) else end_cs['subsets'][s_name]
+					ss_dict[s_name] = (dict(end_dg['all'], **s_dict), cs_dict)
+
+				return ss_dict
+
+		hit_bottom = lambda val: any(key in val for key in ['all', 'subsets'])
+		paths_to_end = list(dict_path(df_getter, stop_cond=hit_bottom))
+		result, recs = recursive_dict(), recursive_dict()
+		result_paths = []
+
+		for edg_path, edg in paths_to_end:
+			ecs = None if (col_subsetter is None) else list_get_dict(col_subsetter, edg_path)
+
+			for sd_name, sd_cs in construct_search_subset_dict(edg, end_cs=ecs).items():
+				sd_path = edg_path + [sd_name]
+				add_desc_as_path_identifier = True if ('desc' in sd_cs[0] and isinstance(sd_cs[0]['desc'], list)) else False
+
+				for rec, df in cls.generate(sd_cs[0]):
+					seps = [getattr(rec, separator) for separator in separators]
+					df_path = seps + sd_path + [rec.desc] if (add_desc_as_path_identifier) else seps + sd_path
+
+					result_paths.append(df_path)
+					filtered_df = df if (sd_cs[1] is None) else df[chained_filter(df.columns, sd_cs[1])]
+					list_set_dict(result, df_path, filtered_df)
+					list_set_dict(recs, df_path, rec)
+
+		return result_paths, recs, result
+
+
+	@classmethod
+	def lazy_load_from_dg(cls, df_getter, col_subsetter=None, separators=['root'], how='subsets', subset=None, **kwargs):
+		"""
+		Return a dask graph that can be executed to return result of 'load_from_dg'.
+		XXX - TODO
 		"""
 
 		def construct_search_subset_dict(end_dg, end_cs=None, how=how, subset=subset):
