@@ -2,7 +2,7 @@
 	"meta": {
 		"name": "dr",
 		"mtype_from": "rec_fmt",
-		"rec_fmt": "dr{which_hour}",
+		"rec_fmt": "dr{which_row}",
 		"var_fmt": "grid"
 	},
 	"fn": {
@@ -11,7 +11,7 @@
 		"freq": "cal_daily"
 	},
 	"var": {
-		"which_hour": ["f", "l"]
+		"which_row": ["f", "l"]
 	},
 	"src": null,
 	"dst": ["srf", "dr"]
