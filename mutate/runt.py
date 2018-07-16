@@ -88,6 +88,7 @@ def process_step(step_info, defaults):
 			assert(not is_empty_df(runted_df))
 			entry = make_runt_entry(desc, None, mutate_type, src_rec)
 			logging.debug('dumping ' +desc +'...')
+			print(runted_df)
 			# DataAPI.dump(runted_df, entry)
 
 
