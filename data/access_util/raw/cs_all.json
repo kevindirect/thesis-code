@@ -15,27 +15,6 @@
 				"endswith": [],
 				"regex": [],
 				"exclude": null
-			},
-			"raw_trmi": {
-				"exact": [],
-				"startswith": ["enm", "etf", "mkt"],
-				"endswith": [],
-				"regex": [],
-				"exclude": null
-			},
-			"raw_trmi_v2": {
-				"exact": [],
-				"startswith": ["enm_v2", "etf_v2"],
-				"endswith": [],
-				"regex": [],
-				"exclude": null
-			},
-			"raw_trmi_v3": {
-				"exact": [],
-				"startswith": ["enm_v3", "etf_v3", "mkt_v3"],
-				"endswith": [],
-				"regex": [],
-				"exclude": null
 			}
 		}
 	}

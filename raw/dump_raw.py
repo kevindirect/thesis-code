@@ -48,6 +48,7 @@ def dump_raw(argv):
 			'root': equity,
 			'basis': equity,
 			'stage': 'raw',
+			'desc': 'raw'
 			'raw_cat': cat_map(file_list['price'])
 		}
 		print('\tdumping', end='...', flush=True)
