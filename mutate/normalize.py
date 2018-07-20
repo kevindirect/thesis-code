@@ -29,7 +29,7 @@ def normalize(argv):
 		for norm_code, norm_fun in NORM_FUN_MAP.items():
 			normed_df = day_norm(pre_norm_df, norm_fun, freq=DT_CAL_DAILY_FREQ).dropna(axis=0, how='all')
 			desc = '_'.join([key_chain[-1], norm_code])
-			entry = make_normalize_entry(desc, pre_norm_rec)
+			entry = make_normalize_entry(desc, norm_code, pre_norm_rec)
 
 			assert(not is_empty_df(normed_df))
 			logging.debug('dumping ' +desc +'...')
@@ -38,7 +38,7 @@ def normalize(argv):
 	DataAPI.update_record() # Sync
 
 
-def make_normalize_entry(desc, base_rec):
+def make_normalize_entry(desc, mutate_type, base_rec):
 	prev_hist = '' if isinstance(base_rec.hist, float) else str(base_rec.hist)
 
 	return {
@@ -46,9 +46,9 @@ def make_normalize_entry(desc, base_rec):
 		'root': base_rec.root,
 		'basis': base_rec.name,
 		'stage': 'mutate',
-		'mutate_type': 'normalize',
+		'mutate_type': mutate_type,
 		'raw_cat': base_rec.raw_cat,
-		'hist': '->'.join([prev_hist, 'mutate_normalize']),
+		'hist': '->'.join([prev_hist, str('mutate_'+mutate_type)]),
 		'desc': desc
 	}
 

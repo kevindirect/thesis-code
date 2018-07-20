@@ -90,7 +90,7 @@ def fastbreak_confidence_fct(label_df, name_pfx='', upper_bound=None):
 
 	return fb
 
-def gen_label_dfs(lab_dict, lab_paths, asset_name, forecast=default_fct):
+def gen_label_dfs(lab_dict, lab_paths, asset_name, forecast_mask=default_fct):
 
 	make_sw_dict = lambda sw: {"exact": [], "startswith": [sw], "endswith": [], "regex": [], "exclude": None}
 
@@ -110,7 +110,7 @@ def gen_label_dfs(lab_dict, lab_paths, asset_name, forecast=default_fct):
 		for base_label, base_label_cols in label_col_sel.items():
 			logging.debug('base label: ' +base_label)
 			dir_col_name = '_'.join([base_label, 'dir'])
-			fct_df = forecast(lab_df[base_label_cols], name_pfx=base_label)
+			fct_df = forecast_mask(lab_df[base_label_cols], name_pfx=base_label)
 			lab_fct_df[dir_col_name] = fct_df[dir_col_name]
 
 		lab_fct_df.index = lab_fct_df.index.normalize()
