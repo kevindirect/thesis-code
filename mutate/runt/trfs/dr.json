@@ -2,17 +2,17 @@
 	"meta": {
 		"name": "dr",
 		"mtype_from": "rec_fmt",
-		"rec_fmt": "dr{which_row}",
+		"rec_fmt": "dr{specifier}",
 		"var_fmt": "grid"
 	},
 	"fn": {
-		"ser_fn": "srf",
+		"ser_fn": "rf",
 		"df_fn": "gbf",
 		"freq": "cal_daily"
 	},
 	"var": {
-		"which_row": ["f", "l"]
+		"specifier": ["f", "l"]
 	},
 	"src": null,
-	"dst": ["srf", "dr"]
+	"dst": ["rf", "dr"]
 }
