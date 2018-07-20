@@ -61,7 +61,7 @@ def make_id_rm_entry(desc, base_rec):
 		'basis': base_rec.name,
 		'stage': 'raw',
 		'raw_cat': base_rec.raw_cat,
-		'hist': '->'.join([prev_hist, str('raw_' +desc)]),
+		'hist': '->'.join([prev_hist, str(desc)]),
 		'desc': desc
 	}
 
