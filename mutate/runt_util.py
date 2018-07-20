@@ -14,14 +14,14 @@ from mutate.pattern_util import gaussian_breakpoints, uniform_breakpoints, symbo
 
 
 """ ********** APPLY FUNCTIONS ********** """
-def apply_rt_df(df, ser_transform_fn, freq=None): # regular transform
+def apply_rt_df(df, ser_transform_fn, freq=None):	# regular transform
 	return df.transform(ser_transform_fn)
 
-def apply_gbt_df(df, ser_transform_fn, agg_freq): # groupby transform
+def apply_gbt_df(df, ser_transform_fn, agg_freq):	# groupby transform
 	return df.groupby(pd.Grouper(freq=agg_freq)).transform(ser_transform_fn)
 
-def apply_gbf_df(df, ser_filter_fn, agg_freq): # groupby filter
-	return df.groupby(pd.Grouper(freq=agg_freq)).filter(ser_filter_fn)
+def apply_agg_df(df, ser_agg_fn, agg_freq):		# groupby aggregation
+	return df.groupby(pd.Grouper(freq=agg_freq)).agg(ser_agg_fn)
 
 
 """ ********** TRANSFORMS ********** """
@@ -69,13 +69,13 @@ def symbolize(sym_type, num_sym, numeric_symbols=True):
 
 
 """ ********** FILTERS ********** """
-def single_row_filter(which_row):
-	if (which_row == 'f'):
+def single_row_filter(specifier):
+	if (specifier == 'f'):
 		return lambda ser: ser.first()
-	elif (which_row == 'l'):
+	elif (specifier == 'l'):
 		return lambda ser: ser.last()
-	elif (isinstance(which_row, int)):
-		return lambda ser: ser.nth(which_row)
+	elif (isinstance(specifier, int)):
+		return lambda ser: ser.nth(specifier)
 
 
 """ ********** JSON-STR-TO-CODE TRANSLATORS ********** """
@@ -84,13 +84,13 @@ RUNT_FN_TRANSLATOR = {
 	"ma": moving_average,
 	"norm": normalize,
 	"sym": symbolize,
-	"srf": single_row_filter,
+	"srf": single_row_filter
 }
 
 RUNT_TYPE_TRANSLATOR = {
 	"rt": apply_rt_df,
 	"gbt": apply_gbt_df,
-	"gbf": apply_gbf_df
+	"agg": apply_agg_df
 }
 
 RUNT_FREQ_TRANSLATOR = {

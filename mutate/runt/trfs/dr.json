@@ -6,13 +6,13 @@
 		"var_fmt": "grid"
 	},
 	"fn": {
-		"ser_fn": "rf",
-		"df_fn": "gbf",
+		"ser_fn": "srf",
+		"df_fn": "agg",
 		"freq": "cal_daily"
 	},
 	"var": {
 		"specifier": ["f", "l"]
 	},
 	"src": null,
-	"dst": ["rf", "dr"]
+	"dst": ["srf", "dr"]
 }
