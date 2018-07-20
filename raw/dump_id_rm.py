@@ -4,7 +4,7 @@ import sys
 import getopt
 import logging
 
-from common_util import RAW_DIR, load_json, load_df, series_to_dti, right_join, outer_join, list_get_dict, get_time_mask
+from common_util import RAW_DIR, DT_HOURLY_FREQ, load_json, load_df, series_to_dti, right_join, outer_join, list_get_dict, get_time_mask
 from raw.common import GMT_OFFSET_COL_SFX, default_row_masksfile
 from data.data_api import DataAPI
 from data.access_util import df_getters as dg, col_subsetters2 as cs2
@@ -38,6 +38,7 @@ def dump_intraday_row_masks(argv):
 		asset_name, data_subset = key_chain[0], key_chain[-1]
 		raw_rec, raw_df = list_get_dict(raw_recs, key_chain), list_get_dict(raw_dfs, key_chain)
 		gmt_col = '_'.join([data_subset[-3:], GMT_OFFSET_COL_SFX])
+		logging.info(asset_name)
 
 		for mask_type, mask in row_masks[asset_name][data_subset].items():
 			logging.info('mask name: ' +str(mask_type))
@@ -55,6 +56,7 @@ def make_id_rm_entry(desc, base_rec):
 	mutate_type = 'intraday_row_mask'
 
 	return {
+		'freq': DT_HOURLY_FREQ,
 		'root': base_rec.root,
 		'basis': base_rec.name,
 		'stage': 'raw',
