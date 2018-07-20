@@ -3,14 +3,14 @@
 		"all": null,
 		"subsets": {
 			"raw_pba": {
-				"exact": [],
+				"exact": ["times"],
 				"startswith": [],
 				"endswith": [],
 				"regex": [],
 				"exclude": null
 			},
 			"raw_vol": {
-				"exact": [],
+				"exact": ["times"],
 				"startswith": [],
 				"endswith": [],
 				"regex": [],
