@@ -261,6 +261,9 @@ def plot_day_df(df, date=None):
 	plot_df(df[date], title_str=date, xlabel_str='hour', ylabel_str='value')
 
 
+def plot_hist_df(df, column=None, separate_by=None, num_bins=10, **kwargs):
+	df.hist(column=column, by=separate_by, bins=num_bins, **kwargs)
+
 #config options
 # atomic_fn_options = OrderedDict({'nothing': lambda x:x, 'round': lambda a: np.around(a, 2), 'log10':np.log10, 'sine':np.sin, 'sinh':np.sinh})
 # delta_fn_options = OrderedDict({'nothing': lambda x:x, 'log10':np.log10, 'sine':np.sin, 'sinh':np.sinh})
