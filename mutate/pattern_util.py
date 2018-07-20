@@ -62,8 +62,8 @@ zscore_transform = lambda ser: (ser-ser.mean()) / ser.std()
 bipolar_mm_transform = lambda ser: 2 * ((ser-ser.min()) / (ser.max()-ser.min())) - 1
 
 NORM_FUN_MAP = {
-	'dzn': zscore_transform,
-	'dmx': bipolar_mm_transform
+	'dzn': lambda ser: (ser-ser.mean()) / ser.std(),
+	'dmx': lambda ser: 2 * ((ser-ser.min()) / (ser.max()-ser.min())) - 1
 }
 
 def day_norm(df, transform_fn, freq=DT_CAL_DAILY_FREQ):
@@ -158,6 +158,19 @@ def get_sym_list(breakpoints, numeric_symbols=True):
 	else:
 		return list(map(lambda idx: chr(ord('a') +idx), range(len(breakpoints)+1)))
 
+def symbolize_value(value, breakpoints, symbols):
+	"""
+	Return value converted to symbol based on provided breakpoints and symbols.
+	"""
+	for idx, brk in enumerate(breakpoints):
+		if (value <= brk):
+			return symbols[idx]
+	else:
+		if (value > breakpoints[-1]):
+			return symbols[-1]
+		else:
+			return NULL_VALUE_SYMBOL
+
 def clamp_subseq_len(subseq, max_seg=STANDARD_DAY_LEN):
 	"""
 	Clamp subsequence length to max_seg value.
@@ -186,19 +199,6 @@ def clamp_subseq_len(subseq, max_seg=STANDARD_DAY_LEN):
 					segs = subseq.tail(max_seg)
 
 		return segs
-
-def symbolize_value(value, breakpoints, symbols):
-	"""
-	Return value converted to symbol based on provided breakpoints and symbols.
-	"""
-	for idx, brk in enumerate(breakpoints):
-		if (value <= brk):
-			return symbols[idx]
-	else:
-		if (value > breakpoints[-1]):
-			return symbols[-1]
-		else:
-			return NULL_VALUE_SYMBOL
 
 def encode_subseq(subseq, max_seg, breakpoints, symbols):
 	"""
