@@ -301,6 +301,37 @@ def cust_count(df):
 
 	return cust, dti_to_ymd(count_df)
 
+def get_time_mask(df, offset_col_name=None, offset_unit=DT_HOURLY_FREQ, offset_tz=None, time_range=None):
+	"""
+	Return a df of shifted, range-masked times.
+	Setting start time temporally after end time filters for times outside of the time range.
+
+	Args:
+		df (pd.DataFrame): pd.DateTimeIndex indexed pd.DataFrame
+		offset_col_name (str, Optional): name of offset column, if not given index is assumed to be in desired timezone
+		offset_unit (str, Optional): unit of offset, must be supplied if offset_col_name is not None
+		offset_tz (str, Optional): target timezone of offset
+		time_range (list(str), Optional): start and end time range in form of strings with format options:
+											'%H:%M', '%H%M', '%I:%M%p', '%I%M%p',
+											'%H:%M:%S', '%H%M%S', '%I:%M:%S%p', '%I%M%S%p'
+
+	Returns:
+		pd.DataFrame indexed by original time with times column (shifted if an offset column was specified)
+	"""
+	mask_df = pd.DataFrame(data={'times': df.index}, index=df.index)
+
+	if (offset_col_name is not None):
+		lt_offset = pd.TimedeltaIndex(data=df.loc[:, offset_col_name], unit=offset_unit)
+		mask_df['times'] = mask_df['times'] + lt_offset
+		if (offset_tz is not None):
+			mask_df['times'] = mask_df['times'].tz_convert(offset_tz)
+
+	if (time_range is not None):
+		indices = pd.DatetimeIndex(mask_df['times']).indexer_between_time(time_range[0], time_range[1])
+		mask_df = mask_df.iloc[indices]
+
+	return mask_df
+
 """Numpy"""
 def pd_to_np(fn):
 	"""

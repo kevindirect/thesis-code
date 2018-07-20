@@ -1,0 +1,21 @@
+{
+	"id_rm": {
+		"all": null,
+		"subsets": {
+			"raw_pba": {
+				"exact": [],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			"raw_vol": {
+				"exact": [],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			}
+		}
+	}
+}

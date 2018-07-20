@@ -1,0 +1,66 @@
+{
+	"dow_jones": {
+		"raw_pba": {
+			"intraday": {
+				"time_range": ["08:00", "16:00"],
+				"target_tz": "US/Eastern",
+				"desc_sfx": "intraday_row_mask"
+			}
+		},
+		"raw_vol": {
+			"intraday": {
+				"time_range": ["08:00", "16:00"],
+				"target_tz": "US/Eastern",
+				"desc_sfx": "intraday_row_mask"
+			}
+		}
+	},
+	"sp_500": {
+		"raw_pba": {
+			"intraday": {
+				"time_range": ["08:00", "16:00"],
+				"target_tz": "US/Eastern",
+				"desc_sfx": "intraday_row_mask"
+			}
+		},
+		"raw_vol": {
+			"intraday": {
+				"time_range": ["08:00", "16:00"],
+				"target_tz": "US/Eastern",
+				"desc_sfx": "intraday_row_mask"
+			}
+		}
+	},
+	"nasdaq_100": {
+		"raw_pba": {
+			"intraday": {
+				"time_range": ["08:00", "16:00"],
+				"target_tz": "US/Eastern",
+				"desc_sfx": "intraday_row_mask"
+			}
+		},
+		"raw_vol": {
+			"intraday": {
+				"time_range": ["08:00", "16:00"],
+				"target_tz": "US/Eastern",
+				"desc_sfx": "intraday_row_mask"
+			}
+		}
+	},
+	"russell_2000": {
+		"raw_pba": {
+			"intraday": {
+				"time_range": ["08:00", "16:00"],
+				"target_tz": "US/Eastern",
+				"desc_sfx": "intraday_row_mask"
+			}
+		},
+		"raw_vol": {
+			"intraday": {
+				"time_range": ["08:00", "16:00"],
+				"target_tz": "US/Eastern",
+				"desc_sfx": "intraday_row_mask"
+			}
+		}
+	}
+}

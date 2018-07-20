@@ -16,6 +16,7 @@ from common_util import CRUNCH_DIR, RAW_DIR
 # PACKAGE CONSTANTS
 TRMI_CONFIG_FNAME = 'trmi.json'
 TRMI_CONFIG_DIR = CRUNCH_DIR
+GMT_OFFSET_COL_SFX = 'gmtOffset'
 
 # PACKAGE DEFAULTS
 default_pricefile = 'richard@marketpsychdata.com--N166567660.csv'
@@ -23,6 +24,7 @@ default_pathsfile = 'paths.json'
 default_columnsfile = 'columns.json'
 default_rowsfile = 'rows.json'
 default_joinsfile = 'joins.json'
+default_row_masksfile = 'row_masks.json'
 
 # PACKAGE UTIL FUNCTIONS
 def load_csv_no_idx(fname, dir_path=None, local_csv=True):
