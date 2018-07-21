@@ -2,7 +2,8 @@
 	"raw": {
 		"all": {
 			"raw_cat": "us_equity_index",
-			"stage": "raw"
+			"stage": "raw",
+			"desc": "raw"
 		},
 		"subsets": {
 			"raw_pba": {},
