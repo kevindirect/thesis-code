@@ -87,10 +87,10 @@ def process_step(step_info, date_range):
 
 		if (rm is not None):
 			rm_key_chain = get_row_mask_keychain(key_chain, rm_keys)
-			row_mask = list_get_dict(rm_dfs, rm_key_chain).index
 			logging.debug('row mask: ' +str('_'.join(rm_key_chain)))
-			print(any(idx is None for idx in row_mask))
-			src_df = src_df.loc[row_mask, :]
+			rm_df = list_get_dict(rm_dfs, rm_key_chain)
+			print('not in:', rm_df.index.difference(src_df.index))
+			src_df = src_df.loc[rm_df.index, :]
 
 		for variant in variants:
 			runted_df = rtype_fn(src_df, ser_fn(**variant), freq)
