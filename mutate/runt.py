@@ -84,6 +84,7 @@ def process_step(step_info, date_range):
 		logging.info('data: ' +str('_'.join(key_chain)))
 		src_rec, src_df = list_get_dict(src_recs, key_chain), list_get_dict(src_dfs, key_chain)
 		src_df = src_df.loc[search_df(src_df, date_range), :]
+		print('before:', src_df)
 
 		# Masking rows in src from row mask
 		if (rm is not None):
@@ -96,6 +97,8 @@ def process_step(step_info, date_range):
 				src_df = src_df.loc[src_df.index & rm_df.index, :]
 			else:
 				src_df = src_df.loc[rm_df.index, :]
+
+		print('after:', src_df)
 
 		# Running variants of the transform
 		for variant in variants:
