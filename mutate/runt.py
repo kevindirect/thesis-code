@@ -38,7 +38,7 @@ def run_transforms(argv):
 		trfs[trf['meta']['name']] = trf
 
 	logging.info('running task graph...')
-	done_steps = {}
+	done_steps = set()
 	for path_name, path in graph.items():
 		for step in path:
 			logging.info('step: ' +str(step))
