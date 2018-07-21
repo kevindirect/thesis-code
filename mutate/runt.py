@@ -38,11 +38,16 @@ def run_transforms(argv):
 		trfs[trf['meta']['name']] = trf
 
 	logging.info('running task graph...')
+	done_steps = {}
 	for path_name, path in graph.items():
 		for step in path:
 			logging.info('step: ' +str(step))
-			step_info = fill_defaults(trfs[step], trf_defaults)
-			process_step(step_info, date_range)
+			if (step not in done_steps):
+				step_info = fill_defaults(trfs[step], trf_defaults)
+				process_step(step_info, date_range)
+				done_steps.add(step)
+			else:
+				logging.info('already completed, skipping...')
 
 def fill_defaults(step_info, defaults):
 	if (step_info['src'] is None): step_info['src'] = defaults['src']
@@ -84,7 +89,6 @@ def process_step(step_info, date_range):
 		logging.info('data: ' +str('_'.join(key_chain)))
 		src_rec, src_df = list_get_dict(src_recs, key_chain), list_get_dict(src_dfs, key_chain)
 		src_df = src_df.loc[search_df(src_df, date_range), :].dropna(axis=0, how='all')
-		print('before:', src_df)
 
 		# Masking rows in src from row mask
 		if (rm is not None):
@@ -98,7 +102,7 @@ def process_step(step_info, date_range):
 			else:
 				src_df = src_df.loc[rm_df.index, :].dropna(axis=0, how='all')
 
-		print('after:', src_df)
+		logging.debug('pre_transform: ' +str(src_df))
 
 		# Running variants of the transform
 		for variant in variants:
@@ -111,10 +115,10 @@ def process_step(step_info, date_range):
 			assert(not is_empty_df(runted_df))
 			entry = make_runt_entry(desc, None, mutate_type, src_rec)
 			logging.info('dumping ' +desc +'...')
-			print(runted_df)
-			# DataAPI.dump(runted_df, entry)
+			logging.debug('post_transform: ', str(runted_df))
+			DataAPI.dump(runted_df, entry)
 	
-	# DataAPI.update_record() # Sync
+	DataAPI.update_record() # Sync
 
 
 def make_runt_entry(desc, mutate_freq, mutate_type, base_rec):
