@@ -14,11 +14,13 @@ from mutate.pattern_util import gaussian_breakpoints, uniform_breakpoints, symbo
 
 
 """ ********** APPLY FUNCTIONS ********** """
-def apply_rt_df(df, ser_transform_fn, freq=None):	# regular transform
-	return df.transform(ser_transform_fn)
+def apply_rt_df(df, ser_transform_fn, freq=None, dna=True):	# regular transform
+	res = df.transform(ser_transform_fn)
+	return res.dropna(axis=0, how='all') if (dna) else res
 
-def apply_gbt_df(df, ser_transform_fn, agg_freq):	# groupby transform
-	return df.groupby(pd.Grouper(freq=agg_freq)).transform(ser_transform_fn)
+def apply_gbt_df(df, ser_transform_fn, agg_freq, res=False):	# groupby transform
+	res = df.groupby(pd.Grouper(freq=agg_freq)).transform(ser_transform_fn)
+	return res.dropna(axis=0, how='all') if (dna) else res
 
 def apply_agg_df(df, ser_agg_fn, agg_freq, dna=True):		# groupby aggregation
 	res = df.groupby(pd.Grouper(freq=agg_freq)).agg(ser_agg_fn)
