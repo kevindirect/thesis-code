@@ -94,11 +94,9 @@ def process_step(step_info, date_range):
 			logging.debug('row mask: ' +str('_'.join(rm_key_chain)))
 			if (len(not_in_src)>0):
 				logging.debug('rm_idx - src_idx: ' +str(not_in_src))
-				src_df = src_df.loc[src_df.index & rm_df.index, :]
+				src_df = src_df.loc[src_df.index & rm_df.index, :].dropna(axis=0, how='all')
 			else:
-				src_df = src_df.loc[rm_df.index, :]
-
-			src_df = src_df.dropna(axis=0, how='all')
+				src_df = src_df.loc[rm_df.index, :].dropna(axis=0, how='all')
 
 		print('after:', src_df)
 

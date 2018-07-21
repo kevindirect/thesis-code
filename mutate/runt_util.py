@@ -71,9 +71,9 @@ def symbolize(sym_type, num_sym, numeric_symbols=True):
 """ ********** FILTERS ********** """
 def single_row_filter(specifier):
 	if (specifier == 'f'):
-		return lambda ser: ser.loc[ser.first_valid_index()]
+		return lambda ser: ser.loc[ser.first_valid_index()] if (ser.first_valid_index() is not None) else None
 	elif (specifier == 'l'):
-		return lambda ser: ser.loc[ser.last_valid_index()]
+		return lambda ser: ser.loc[ser.last_valid_index()] if (ser.last_valid_index() is not None) else None
 	elif (isinstance(specifier, int)):
 		return lambda ser: ser.nth(specifier)
 
