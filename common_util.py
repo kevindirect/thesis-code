@@ -8,6 +8,7 @@ from os import sep, path, makedirs
 from os.path import dirname, basename, realpath, exists, isfile, getsize
 from json import load, dumps
 import operator
+from difflib import SequenceMatcher
 from collections import defaultdict, OrderedDict
 from itertools import chain, tee
 from functools import reduce, partial, wraps
@@ -116,6 +117,24 @@ def pairwise(iterable):
 	next(b, None)
 	return zip(a, b)
 
+def best_match(original_key, candidates, alt_maps=None):
+	"""
+	Return string from candidates that is the best match to the original key
+	"""
+	if (original_key in candidates):		# exact match
+		return original_key
+	elif(len(candidates)==1):				# unchanging
+		return candidates[0]
+	elif (alt_maps is not None):			# mapped match
+		alt_keys = [original_key.replace(old, new) for old, new in alt_maps.items() if (old in original_key)]
+		for alt_key in alt_keys:
+			if (alt_key in candidates):
+				return alt_key
+	else:									# inexact longest subseq match
+		match_len = [SequenceMatcher(None, original_key, can).find_longest_match(0, len(original_key), 0, len(can)).size for can in candidates]
+		match_key = candidates[match_len.index(max(match_len))]
+		logging.warn('using inexact match: ' +str(quote_it(original_key)) +' mapped to ' +str(quote_it(match_key)))
+		return match_key
 
 """Dict"""
 def nice_print_dict(dictionary):
