@@ -109,12 +109,13 @@ def process_step(step_info, date_range):
 			runted_df = rtype_fn(src_df, ser_fn(**variant), freq)
 			desc_sfx = meta['rec_fmt'].format(**variant)
 			desc = '_'.join([key_chain[-1], desc_sfx])
+			res_freq = RUNT_FREQ_TRANSLATOR[meta['res_freq']]
 
 			if (meta['mtype_from']=='name'):       mutate_type = meta['name']
 			elif (meta['mtype_from']=='rec_fmt'):  mutate_type = desc_sfx
 
 			assert(not is_empty_df(runted_df))
-			entry = make_runt_entry(desc, meta['res_freq'], mutate_type, src_rec)
+			entry = make_runt_entry(desc, res_freq, mutate_type, src_rec)
 			logging.info('dumping ' +desc +'...')
 			logging.debug('post_transform: ' +str(runted_df))
 			DataAPI.dump(runted_df, entry)
