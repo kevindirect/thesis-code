@@ -20,8 +20,9 @@ def apply_rt_df(df, ser_transform_fn, freq=None):	# regular transform
 def apply_gbt_df(df, ser_transform_fn, agg_freq):	# groupby transform
 	return df.groupby(pd.Grouper(freq=agg_freq)).transform(ser_transform_fn)
 
-def apply_agg_df(df, ser_agg_fn, agg_freq):		# groupby aggregation
-	return df.groupby(pd.Grouper(freq=agg_freq)).agg(ser_agg_fn)
+def apply_agg_df(df, ser_agg_fn, agg_freq, dna=True):		# groupby aggregation
+	res = df.groupby(pd.Grouper(freq=agg_freq)).agg(ser_agg_fn)
+	return res.dropna(axis=0, how='all') if (dna) else res
 
 
 """ ********** TRANSFORMS ********** """
