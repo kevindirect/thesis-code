@@ -115,7 +115,7 @@ def process_step(step_info, date_range):
 			assert(not is_empty_df(runted_df))
 			entry = make_runt_entry(desc, None, mutate_type, src_rec)
 			logging.info('dumping ' +desc +'...')
-			logging.debug('post_transform: ', str(runted_df))
+			logging.debug('post_transform: ' +str(runted_df))
 			DataAPI.dump(runted_df, entry)
 	
 	DataAPI.update_record() # Sync
