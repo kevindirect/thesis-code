@@ -13,6 +13,7 @@
 	"var": {
 		"num_periods": [3, 5, 10, 20]
 	},
+	"rm": null,
 	"src": ["srf", "dr"],
 	"dst": ["ma", "dma"]
 }

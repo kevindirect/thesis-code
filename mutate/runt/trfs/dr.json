@@ -13,6 +13,7 @@
 	"var": {
 		"specifier": ["f", "l"]
 	},
+	"rm": ["raw", "id_rm"],
 	"src": null,
 	"dst": ["srf", "dr"]
 }

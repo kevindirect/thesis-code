@@ -13,6 +13,7 @@
 	"var": {
 		"norm_type": ["dzn", "dmx"]
 	},
+	"msk": null,
 	"src": ["norm", "pre_dnorm"],
 	"dst": ["norm", "dnorm"]
 }

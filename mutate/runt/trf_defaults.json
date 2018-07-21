@@ -11,6 +11,7 @@
 	},
 	"var": {
 	},
+	"rm": null,
 	"src": ["runt", "src_default"],
 	"dst": null
 }
