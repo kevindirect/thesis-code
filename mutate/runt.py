@@ -83,13 +83,13 @@ def process_step(step_info, date_range):
 	for key_chain in src_paths:
 		logging.info('data: ' +str('_'.join(key_chain)))
 		src_rec, src_df = list_get_dict(src_recs, key_chain), list_get_dict(src_dfs, key_chain)
-		src_df = src_df.loc[search_df(src_df, date_range), :]
+		src_df = src_df.loc[search_df(src_df, date_range), :].dropna(axis=0, how='all')
 		print('before:', src_df)
 
 		# Masking rows in src from row mask
 		if (rm is not None):
 			rm_key_chain = get_row_mask_keychain(key_chain, rm_keys)
-			rm_df = list_get_dict(rm_dfs, rm_key_chain)
+			rm_df = list_get_dict(rm_dfs, rm_key_chain).dropna()
 			not_in_src = rm_df.index.difference(src_df.index)
 			logging.debug('row mask: ' +str('_'.join(rm_key_chain)))
 			if (len(not_in_src)>0):
