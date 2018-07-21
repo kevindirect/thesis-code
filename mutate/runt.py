@@ -8,7 +8,7 @@ import logging
 
 from dask import delayed
 
-from common_util import MUTATE_DIR, DT_HOURLY_FREQ, DT_CAL_DAILY_FREQ, load_json, list_get_dict, is_empty_df, search_df, benchmark
+from common_util import MUTATE_DIR, DT_HOURLY_FREQ, DT_CAL_DAILY_FREQ, load_json, best_match, remove_dups_list, list_get_dict, is_empty_df, search_df, benchmark
 from data.data_api import DataAPI
 from data.access_util import df_getters as dg, col_subsetters2 as cs2
 from mutate.common import default_runt_dir_name, default_trfs_dir_name
@@ -35,61 +35,76 @@ def run_transforms(argv):
 	logging.info('loading step settings...')
 	for fname in os.listdir(trfs_dir):
 		trf = load_json(fname, dir_path=trfs_dir)
-		meta = trf['meta']
-		trfs[meta['name']] = trf
+		trfs[trf['meta']['name']] = trf
 
 	logging.info('running task graph...')
 	for path_name, path in graph.items():
 		for step in path:
-			logging.info('step:', step)
-			process_step(trfs[step], trf_defaults)
+			logging.info('step: ' +str(step))
+			step_info = fill_defaults(trfs[step], trf_defaults)
+			process_step(step_info, date_range)
 
+def fill_defaults(step_info, defaults):
+	if (step_info['src'] is None): step_info['src'] = defaults['src']
+	return step_info
 
-def process_step(step_info, defaults):
-	meta, fn, var, src, dst = step_info['meta'], step_info['fn'], step_info['var'], step_info['src'], step_info['dst']
+def get_row_mask_keychain(original_keychain, all_mask_keys):
+	"""
+	Return mask keychain that best corresponds to original_keychain
+	"""
+	assert(len(original_keychain)==len(all_mask_keys))
+	mapped = [best_match(key, all_mask_keys[idx], alt_maps={'thresh': 'raw'}) for idx, key in enumerate(original_keychain)]
+	return mapped
 
-	# Setting transform function
+def process_step(step_info, date_range):
+	meta, fn, var, rm, src, dst = step_info['meta'], step_info['fn'], step_info['var'], step_info['rm'], step_info['src'], step_info['dst']
+
+	# Loading transform, apply, and frequency settings
 	ser_fn = RUNT_FN_TRANSLATOR[fn['ser_fn']]
 	rtype_fn = RUNT_TYPE_TRANSLATOR[fn['df_fn']]
 	freq = RUNT_FREQ_TRANSLATOR[fn['freq']]
 
-	# Get indices of metadata variables
-	if (meta['fmt_vars'] is not None):
-		desc_var_idx = [idx for idx, var_name in enumerate(var.keys()) if (var_name in meta['fmt_vars'])]
-	else:
-		desc_var_idx = []
-
-	# Setting transform parameter metadata for later
-	variants = {}
+	# Making all possible parameter combinations
 	if (meta['var_fmt'] == 'grid'):
-		for variant in product(*var.values()):
-			desc_vars = [variant[idx] for idx in desc_var_idx]
-			unique_desc = meta['rec_fmt'].format(*desc_vars)
-			variants[unique_desc] = variant
+		var_names, param_combos = list(var.keys()), list(product(*var.values()))
+		variants = [{var_names[idx]: param_value for idx, param_value in enumerate(combo)} for combo in param_combos]
+
+	# Loading row mask, if any
+	if (rm is not None):
+		rm_dg, rm_cs = list_get_dict(dg, rm), list_get_dict(cs2, rm)
+		rm_paths, rm_recs, rm_dfs = DataAPI.load_from_dg(rm_dg, rm_cs)
+		rm_keys = [remove_dups_list([key_chain[i] for key_chain in rm_paths]) for i in range(len(rm_paths[0]))]
 
 	# Loading input data
-	if (src is None): src = defaults['src']
 	src_dg, src_cs = list_get_dict(dg, src), list_get_dict(cs2, src)
 	src_paths, src_recs, src_dfs = DataAPI.load_from_dg(src_dg, src_cs)
 
 	# Run transforms on inputs
 	for key_chain in src_paths:
-		logging.debug('asset: ' +key_chain[0])
-		src_rec = list_get_dict(src_recs, key_chain)
-		src_df = list_get_dict(src_dfs, key_chain)
+		logging.info('data: ' +str('_'.join(key_chain)))
+		src_rec, src_df = list_get_dict(src_recs, key_chain), list_get_dict(src_dfs, key_chain)
 		src_df = src_df.loc[search_df(src_df, date_range), :]
 
-		for desc, variant in variants.items():
-			runted_df = rtype_fn(src_df, ser_fn(variant), freq)
+		if (rm is not None):
+			rm_key_chain = get_row_mask_keychain(key_chain, rm_keys)
+			row_mask = list_get_dict(rm_dfs, rm_key_chain).index
+			logging.debug('row mask: ' +str('_'.join(rm_key_chain)))
+			src_df = src_df.loc[row_mask, :]
+
+		for variant in variants:
+			runted_df = rtype_fn(src_df, ser_fn(**variant), freq)
+			desc = meta['rec_fmt'].format(**variant)
 
 			if (meta['mtype_from']=='name'):       mutate_type = meta['name']
 			elif (meta['mtype_from']=='rec_fmt'):  mutate_type = desc
 
 			assert(not is_empty_df(runted_df))
 			entry = make_runt_entry(desc, None, mutate_type, src_rec)
-			logging.debug('dumping ' +desc +'...')
+			logging.info('dumping ' +desc +'...')
 			print(runted_df)
 			# DataAPI.dump(runted_df, entry)
+	
+	# DataAPI.update_record() # Sync
 
 
 def make_runt_entry(desc, mutate_freq, mutate_type, base_rec):
