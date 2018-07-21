@@ -1,16 +1,17 @@
 {
 	"meta": {
 		"name": null,
-		"mtype": "rec_fmt",
-		"save_vars": [],
+		"mtype_from": "name",
 		"rec_fmt": "{}",
 		"var_fmt": "grid",
-		"fn": null,
-		"ttype": null,
+		"res_freq": null
+	},
+	"fn": {
+		"ser_fn": null,
+		"df_fn": null,
 		"freq": null
 	},
-	"var": {
-	},
+	"var": {},
 	"rm": null,
 	"src": ["runt", "src_default"],
 	"dst": null

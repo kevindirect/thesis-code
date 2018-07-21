@@ -3,7 +3,8 @@
 		"name": "dnorm",
 		"mtype_from": "rec_fmt",
 		"rec_fmt": "{norm_type}",
-		"var_fmt": "grid"
+		"var_fmt": "grid",
+		"res_freq": "hourly"
 	},
 	"fn": {
 		"ser_fn": "norm",
@@ -13,7 +14,7 @@
 	"var": {
 		"norm_type": ["dzn", "dmx"]
 	},
-	"msk": null,
+	"rm": null,
 	"src": ["norm", "pre_dnorm"],
 	"dst": ["norm", "dnorm"]
 }

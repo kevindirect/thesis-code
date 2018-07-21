@@ -3,7 +3,8 @@
 		"name": "diff1",
 		"mtype_from": "name",
 		"rec_fmt": "diff({num_periods})",
-		"var_fmt": "grid"
+		"var_fmt": "grid",
+		"res_freq": "hourly"
 	},
 	"fn": {
 		"ser_fn": "diff",
@@ -13,7 +14,7 @@
 	"var": {
 		"num_periods": [1]
 	},
-	"msk": ["raw", "id_rm"],
+	"rm": ["raw", "id_rm"],
 	"src": null,
 	"dst": ["diff", "diff1"]
 }

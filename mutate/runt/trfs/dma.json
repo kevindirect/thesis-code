@@ -3,7 +3,8 @@
 		"name": "dma",
 		"mtype_from": "name",
 		"rec_fmt": "dma({num_periods})",
-		"var_fmt": "grid"
+		"var_fmt": "grid",
+		"res_freq": "cal_daily"
 	},
 	"fn": {
 		"ser_fn": "ma",

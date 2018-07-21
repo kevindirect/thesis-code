@@ -113,7 +113,7 @@ def process_step(step_info, date_range):
 			elif (meta['mtype_from']=='rec_fmt'):  mutate_type = desc
 
 			assert(not is_empty_df(runted_df))
-			entry = make_runt_entry(desc, None, mutate_type, src_rec)
+			entry = make_runt_entry(desc, meta['res_freq'], mutate_type, src_rec)
 			logging.info('dumping ' +desc +'...')
 			logging.debug('post_transform: ' +str(runted_df))
 			DataAPI.dump(runted_df, entry)

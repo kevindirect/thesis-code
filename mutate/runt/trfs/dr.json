@@ -3,7 +3,8 @@
 		"name": "dr",
 		"mtype_from": "rec_fmt",
 		"rec_fmt": "dr{specifier}",
-		"var_fmt": "grid"
+		"var_fmt": "grid",
+		"res_freq": "cal_daily"
 	},
 	"fn": {
 		"ser_fn": "srf",
