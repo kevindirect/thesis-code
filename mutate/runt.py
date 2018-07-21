@@ -89,6 +89,7 @@ def process_step(step_info, date_range):
 			rm_key_chain = get_row_mask_keychain(key_chain, rm_keys)
 			row_mask = list_get_dict(rm_dfs, rm_key_chain).index
 			logging.debug('row mask: ' +str('_'.join(rm_key_chain)))
+			print(any(idx is None for idx in row_mask))
 			src_df = src_df.loc[row_mask, :]
 
 		for variant in variants:
