@@ -98,6 +98,8 @@ def process_step(step_info, date_range):
 			else:
 				src_df = src_df.loc[rm_df.index, :]
 
+			src_df = src_df.dropna(axis=0, how='all')
+
 		print('after:', src_df)
 
 		# Running variants of the transform
