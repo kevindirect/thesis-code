@@ -18,7 +18,7 @@ def apply_rt_df(df, ser_transform_fn, freq=None, dna=True):	# regular transform
 	res = df.transform(ser_transform_fn)
 	return res.dropna(axis=0, how='all') if (dna) else res
 
-def apply_gbt_df(df, ser_transform_fn, agg_freq, res=False):	# groupby transform
+def apply_gbt_df(df, ser_transform_fn, agg_freq, dna=True):	# groupby transform
 	res = df.groupby(pd.Grouper(freq=agg_freq)).transform(ser_transform_fn)
 	return res.dropna(axis=0, how='all') if (dna) else res
 
