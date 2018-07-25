@@ -134,7 +134,7 @@ def get_desc_pfx(kc, base_rec):
 	"""
 	if (base_rec.stage=='raw' and base_rec.desc=='raw'):
 		return kc[-1]
-	elif (base_rec.stage=='mutate' and base_rec.desc=='fth thresh' and base_rec.mutate_type=='thresh')
+	elif (base_rec.stage=='mutate' and base_rec.desc=='fth thresh' and base_rec.mutate_type=='thresh'):
 		return kc[-1]
 	else:
 		return base_rec.desc
