@@ -6,8 +6,9 @@ Kevin Patel
 import sys
 from os import sep, path, makedirs
 from os.path import dirname, basename, realpath, exists, isfile, getsize
-from json import load, dumps
+from json import load, dump, dumps
 import operator
+import getopt
 from difflib import SequenceMatcher
 from collections import defaultdict, OrderedDict
 from itertools import chain, tee
@@ -188,6 +189,53 @@ def load_json(fname, dir_path=None):
 				raise e
 	else:
 		raise FileNotFoundError(str(basename(fpath) +' must be in:' +dirname(fpath)))
+
+def dump_json(json_dict, fname, dir_path=None, ind="\t", seps=(", ", ": "), **kwargs):
+	fpath = str(dir_path + fname) if dir_path else fname
+
+	if (isfile(fpath)):
+		logging.debug('json file exists at ' +str(fpath) +', syncing...')
+	else:
+		logging.debug('json file does not exist at ' +str(fpath) +', writing...')
+
+	with open(fpath, 'w', **kwargs) as json_fp:
+		try:
+			return dump(json_dict, json_fp, indent=ind, separators=seps, **kwargs)
+		except Exception as e:
+			logging.error('error in file', str(fname +':'), str(e))
+			raise e
+
+def get_cmd_args(argv, arg_list, help_fn=None):
+	arg_list_short = [str(arg_name[0] + ':' if arg_name[-1]=='=' else '') for arg_name in arg_list]
+	arg_str = ''.join(arg_list_short)
+	res = {arg_name: None for arg_name in arg_list}
+
+	arg_list_short_no_sym = [arg_short[0] for arg_short in arg_list_short]
+	assert(len({}.fromkeys(arg_list_short_no_sym)) == len(arg_list_short_no_sym))	# assert first letters of arg names are unique
+	assert(all(arg_char!='h' for arg_char in arg_list_short_no_sym))				# The 'h' letter is reserved
+
+	try:
+		opts, args = getopt.getopt(argv, str('h' +arg_str), list(['help']+arg_list))
+	except getopt.GetoptError:
+		if (help_fn is not None): help_fn()
+		sys.exit(2)
+
+	for opt, arg in opts:
+		if opt in ('-h', '--help'):
+			if (help_fn is not None): help_fn()
+			sys.exit()
+		else:
+			for idx, arg_name in enumerate(arg_list):
+				arg_char = arg_list_short[i][0]
+
+				if (arg_name[-1] == '='):
+					if opt in (str('-'+arg_char), str('--'+arg_name[:-1])):
+						res[arg_name] = arg
+				else:
+					if opt in (str('-'+arg_char), str('--'+arg_name)):
+						res[arg_name] = True
+
+	return res
 
 
 """ ********** PANDAS IO UTILS ********** """
