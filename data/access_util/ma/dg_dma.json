@@ -6,29 +6,21 @@
 			"raw_cat": "us_equity_index"
 		},
 		"subsets": {
-			"raw_pba_drf": {
-				"desc": ["raw_pba_drf_dma(3)", "raw_pba_drf_dma(5)", "raw_pba_drf_dma(10)", "raw_pba_drf_dma(20)"]
+			"raw_pba": {
+				"desc": ["raw_pba_drf_dma(3)", "raw_pba_drf_dma(5)", "raw_pba_drf_dma(10)", "raw_pba_drf_dma(20)",
+						"raw_pba_drl_dma(3)", "raw_pba_drl_dma(5)", "raw_pba_drl_dma(10)", "raw_pba_drl_dma(20)"]
 			},
-			"raw_vol_drf": {
-				"desc": ["raw_vol_drf_dma(3)", "raw_vol_drf_dma(5)", "raw_vol_drf_dma(10)", "raw_vol_drf_dma(20)"]
+			"raw_vol": {
+				"desc": ["raw_vol_drf_dma(3)", "raw_vol_drf_dma(5)", "raw_vol_drf_dma(10)", "raw_vol_drf_dma(20)",
+						"raw_vol_drl_dma(3)", "raw_vol_drl_dma(5)", "raw_vol_drl_dma(10)", "raw_vol_drl_dma(20)"]
 			},
-			"thresh_pba_drf": {
-				"desc": ["thresh_pba_drf_dma(3)", "thresh_pba_drf_dma(5)", "thresh_pba_drf_dma(10)", "thresh_pba_drf_dma(20)"]
+			"thresh_pba": {
+				"desc": ["thresh_pba_drf_dma(3)", "thresh_pba_drf_dma(5)", "thresh_pba_drf_dma(10)", "thresh_pba_drf_dma(20)",
+						"thresh_pba_drl_dma(3)", "thresh_pba_drl_dma(5)", "thresh_pba_drl_dma(10)", "thresh_pba_drl_dma(20)"]
 			},
-			"thresh_vol_drf": {
-				"desc": ["thresh_vol_drf_dma(3)", "thresh_vol_drf_dma(5)", "thresh_vol_drf_dma(10)", "thresh_vol_drf_dma(20)"]
-			},
-			"raw_pba_drl": {
-				"desc": ["raw_pba_drl_dma(3)", "raw_pba_drl_dma(5)", "raw_pba_drl_dma(10)", "raw_pba_drl_dma(20)"]
-			},
-			"raw_vol_drl": {
-				"desc": ["raw_vol_drl_dma(3)", "raw_vol_drl_dma(5)", "raw_vol_drl_dma(10)", "raw_vol_drl_dma(20)"]
-			},
-			"thresh_pba_drl": {
-				"desc": ["thresh_pba_drl_dma(3)", "thresh_pba_drl_dma(5)", "thresh_pba_drl_dma(10)", "thresh_pba_drl_dma(20)"]
-			},
-			"thresh_vol_drl": {
-				"desc": ["thresh_vol_drl_dma(3)", "thresh_vol_drl_dma(5)", "thresh_vol_drl_dma(10)", "thresh_vol_drl_dma(20)"]
+			"thresh_vol": {
+				"desc": ["thresh_vol_drf_dma(3)", "thresh_vol_drf_dma(5)", "thresh_vol_drf_dma(10)", "thresh_vol_drf_dma(20)",
+						"thresh_vol_drl_dma(3)", "thresh_vol_drl_dma(5)", "thresh_vol_drl_dma(10)", "thresh_vol_drl_dma(20)"]
 			}
 		}
 	}

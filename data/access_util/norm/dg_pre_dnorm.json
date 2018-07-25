@@ -2,6 +2,7 @@
 	"raw": {
 		"all": {
 			"stage": "raw",
+			"desc": "raw",
 			"raw_cat": "us_equity_index"
 		},
 		"subsets": {
@@ -28,16 +29,16 @@
 		},
 		"subsets": {
 			"raw_pba": {
-				"desc": "raw_pba_diff1"
+				"desc": "raw_pba_diff(1)"
 			},
 			"raw_vol": {
-				"desc": "raw_vol_diff1"
+				"desc": "raw_vol_diff(1)"
 			},
 			"thresh_pba": {
-				"desc": "thresh_pba_diff1"
+				"desc": "thresh_pba_diff(1)"
 			},
 			"thresh_vol": {
-				"desc": "thresh_vol_diff1"
+				"desc": "thresh_vol_diff(1)"
 			}
 		}
 	}
