@@ -10,7 +10,7 @@ import pandas as pd
 
 from common_util import DT_HOURLY_FREQ, DT_BIZ_DAILY_FREQ, DT_CAL_DAILY_FREQ, get_custom_biz_freq
 from mutate.common import STANDARD_DAY_LEN
-from mutate.pattern_util import gaussian_breakpoints, uniform_breakpoints, symbolize_value
+from mutate.pattern_util import gaussian_breakpoints, uniform_breakpoints, get_sym_list, symbolize_value
 
 
 """ ********** APPLY FUNCTIONS ********** """
