@@ -18,7 +18,7 @@ from mutate.runt_util import RUNT_FN_TRANSLATOR, RUNT_TYPE_TRANSLATOR, RUNT_FREQ
 def run_transforms(argv):
 	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 	cmd_arg_list = ['runt_dir=', 'trfs_dir=']
-	cmd_input = get_cmd_args(argv, cmd_arg_list, help_fn=lambda: print('runt.py [-r <runt_dir>]'))
+	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name='runt')
 	runt_dir_name = cmd_input['runt_dir='] if (cmd_input['runt_dir='] is not None) else default_runt_dir_name
 	trfs_dir_name = cmd_input['trfs_dir='] if (cmd_input['trfs_dir='] is not None) else default_trfs_dir_name
 
@@ -89,6 +89,8 @@ def process_step(step_info, date_range):
 	# Loading input data
 	src_dg, src_cs = list_get_dict(dg, src), list_get_dict(cs2, src)
 	src_paths, src_recs, src_dfs = DataAPI.load_from_dg(src_dg, src_cs)
+	logging.debug('src_paths[0] ' +str(src_paths[0]))
+	logging.debug('src_paths[-1] ' +str(src_paths[-1]))
 
 	# Run transforms on inputs
 	for key_chain in src_paths:

@@ -68,7 +68,7 @@ def symbolize(sym_type, num_sym, numeric_symbols=True):
 	logging.debug('breakpoints: ' +str(breakpoints))
 	logging.debug('symbols: ' +str(symbols))
 
-	return encoder
+	return lambda ser: ser.transform(encoder)
 
 
 """ ********** FILTERS ********** """
