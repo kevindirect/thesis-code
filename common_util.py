@@ -190,7 +190,7 @@ def load_json(fname, dir_path=None):
 	else:
 		raise FileNotFoundError(str(basename(fpath) +' must be in:' +dirname(fpath)))
 
-def dump_json(json_dict, fname, dir_path=None, ind="\t", seps=(", ", ": "), **kwargs):
+def dump_json(json_dict, fname, dir_path=None, ind="\t", seps=None, **kwargs):
 	fpath = str(dir_path + fname) if dir_path else fname
 
 	if (isfile(fpath)):
@@ -205,7 +205,7 @@ def dump_json(json_dict, fname, dir_path=None, ind="\t", seps=(", ", ": "), **kw
 			logging.error('error in file', str(fname +':'), str(e))
 			raise e
 
-def get_cmd_args(argv, arg_list, help_fn=None):
+def get_cmd_args(argv, arg_list, script_name=''):
 	arg_list_short = [str(arg_name[0] + ':' if arg_name[-1]=='=' else '') for arg_name in arg_list]
 	arg_str = ''.join(arg_list_short)
 	res = {arg_name: None for arg_name in arg_list}
@@ -214,15 +214,19 @@ def get_cmd_args(argv, arg_list, help_fn=None):
 	assert(len({}.fromkeys(arg_list_short_no_sym)) == len(arg_list_short_no_sym))	# assert first letters of arg names are unique
 	assert(all(arg_char!='h' for arg_char in arg_list_short_no_sym))				# The 'h' letter is reserved
 
+	help_arg_strs = ['-{} <{}>'.format(arg_list_short_no_sym[i], arg_list[i][:-1] if arg_list[i][-1]=='=' else arg_list[i]) \
+		for i in range(len(arg_list))]
+	help_fn = lambda: print('{}.py {}'.format(script_name, str('[' +' '.join(help_arg_strs) +']')))
+
 	try:
 		opts, args = getopt.getopt(argv, str('h' +arg_str), list(['help']+arg_list))
 	except getopt.GetoptError:
-		if (help_fn is not None): help_fn()
+		help_fn()
 		sys.exit(2)
 
 	for opt, arg in opts:
 		if opt in ('-h', '--help'):
-			if (help_fn is not None): help_fn()
+			help_fn()
 			sys.exit()
 		else:
 			for idx, arg_name in enumerate(arg_list):
