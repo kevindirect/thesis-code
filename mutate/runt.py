@@ -8,7 +8,7 @@ import logging
 
 from dask import delayed
 
-from common_util import MUTATE_DIR, DT_HOURLY_FREQ, DT_CAL_DAILY_FREQ, load_json, best_match, remove_dups_list, list_get_dict, is_empty_df, search_df, benchmark
+from common_util import MUTATE_DIR, DT_HOURLY_FREQ, DT_CAL_DAILY_FREQ, load_json, dump_json, get_cmd_args, best_match, remove_dups_list, list_get_dict, is_empty_df, search_df, benchmark
 from data.data_api import DataAPI
 from data.access_util import df_getters as dg, col_subsetters2 as cs2
 from mutate.common import default_runt_dir_name, default_trfs_dir_name
@@ -17,8 +17,10 @@ from mutate.runt_util import RUNT_FN_TRANSLATOR, RUNT_TYPE_TRANSLATOR, RUNT_FREQ
 
 def run_transforms(argv):
 	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-	runt_dir_name = default_runt_dir_name
-	trfs_dir_name = default_trfs_dir_name
+	cmd_arg_list = ['runt_dir=', 'trfs_dir=']
+	cmd_input = get_cmd_args(argv, cmd_arg_list, help_fn=lambda: print('runt.py [-r <runt_dir>]'))
+	runt_dir_name = cmd_input['runt_dir='] if (cmd_input['runt_dir='] is not None) else default_runt_dir_name
+	trfs_dir_name = cmd_input['trfs_dir='] if (cmd_input['trfs_dir='] is not None) else default_trfs_dir_name
 
 	runt_dir = MUTATE_DIR +runt_dir_name
 	trfs_dir = runt_dir +trfs_dir_name
@@ -38,16 +40,22 @@ def run_transforms(argv):
 		trfs[trf['meta']['name']] = trf
 
 	logging.info('running task graph...')
-	done_steps = set()
-	for path_name, path in graph.items():
+	for path_name, path in graph['paths'].items():
+		root_trf = True
 		for step in path:
 			logging.info('step: ' +str(step))
-			if (step not in done_steps):
+			if (step not in graph['visited']):
 				step_info = fill_defaults(trfs[step], trf_defaults)
-				process_step(step_info, date_range)
-				done_steps.add(step)
+				process_step(step_info, date_range, root_trf)
+				graph['visited'].append(step)
+				graph_updated = True
 			else:
 				logging.info('already completed, skipping...')
+
+			root_trf = False
+			if (graph_updated):
+				dump_json(graph, 'graph.json', dir_path=runt_dir)
+
 
 def fill_defaults(step_info, defaults):
 	if (step_info['src'] is None): step_info['src'] = defaults['src']
@@ -61,13 +69,14 @@ def get_row_mask_keychain(original_keychain, all_mask_keys):
 	mapped = [best_match(key, all_mask_keys[idx], alt_maps={'thresh': 'raw'}) for idx, key in enumerate(original_keychain)]
 	return mapped
 
-def process_step(step_info, date_range):
+def process_step(step_info, date_range, root_step=False):
 	meta, fn, var, rm, src, dst = step_info['meta'], step_info['fn'], step_info['var'], step_info['rm'], step_info['src'], step_info['dst']
 
 	# Loading transform, apply, and frequency settings
 	ser_fn = RUNT_FN_TRANSLATOR[fn['ser_fn']]
 	rtype_fn = RUNT_TYPE_TRANSLATOR[fn['df_fn']]
 	freq = RUNT_FREQ_TRANSLATOR[fn['freq']]
+	res_freq = RUNT_FREQ_TRANSLATOR[meta['res_freq']]
 
 	# Making all possible parameter combinations
 	if (meta['var_fmt'] == 'grid'):
@@ -108,8 +117,8 @@ def process_step(step_info, date_range):
 		for variant in variants:
 			runted_df = rtype_fn(src_df, ser_fn(**variant), freq)
 			desc_sfx = meta['rec_fmt'].format(**variant)
-			desc = '_'.join([key_chain[-1], desc_sfx])
-			res_freq = RUNT_FREQ_TRANSLATOR[meta['res_freq']]
+			desc_pfx = get_desc_pfx(key_chain, src_rec, root_step)
+			desc = '_'.join([desc_pfx, desc_sfx])
 
 			if (meta['mtype_from']=='name'):       mutate_type = meta['name']
 			elif (meta['mtype_from']=='rec_fmt'):  mutate_type = desc_sfx
@@ -122,6 +131,8 @@ def process_step(step_info, date_range):
 	
 	DataAPI.update_record() # Sync
 
+def get_desc_pfx(kc, base_rec, root_step=False):
+	return kc[-1] if (root_step) else base_rec.desc
 
 def make_runt_entry(desc, mutate_freq, mutate_type, base_rec):
 	prev_hist = '' if isinstance(base_rec.hist, float) else str(base_rec.hist)
