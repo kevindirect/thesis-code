@@ -41,20 +41,17 @@ def run_transforms(argv):
 
 	logging.info('running task graph...')
 	for path_name, path in graph['paths'].items():
-		root_trf = True
 		for step in path:
 			logging.info('step: ' +str(step))
 			if (step not in graph['visited']):
 				step_info = fill_defaults(trfs[step], trf_defaults)
-				process_step(step_info, date_range, root_trf)
+				process_step(step_info, date_range)
+
 				graph['visited'].append(step)
-				graph_updated = True
+				logging.info('dumping updated graph json...')
+				dump_json(graph, 'graph.json', dir_path=runt_dir)
 			else:
 				logging.info('already completed, skipping...')
-
-			root_trf = False
-			if (graph_updated):
-				dump_json(graph, 'graph.json', dir_path=runt_dir)
 
 
 def fill_defaults(step_info, defaults):
@@ -69,7 +66,7 @@ def get_row_mask_keychain(original_keychain, all_mask_keys):
 	mapped = [best_match(key, all_mask_keys[idx], alt_maps={'thresh': 'raw'}) for idx, key in enumerate(original_keychain)]
 	return mapped
 
-def process_step(step_info, date_range, root_step=False):
+def process_step(step_info, date_range):
 	meta, fn, var, rm, src, dst = step_info['meta'], step_info['fn'], step_info['var'], step_info['rm'], step_info['src'], step_info['dst']
 
 	# Loading transform, apply, and frequency settings
@@ -117,7 +114,7 @@ def process_step(step_info, date_range, root_step=False):
 		for variant in variants:
 			runted_df = rtype_fn(src_df, ser_fn(**variant), freq)
 			desc_sfx = meta['rec_fmt'].format(**variant)
-			desc_pfx = get_desc_pfx(key_chain, src_rec, root_step)
+			desc_pfx = get_desc_pfx(key_chain, src_rec)
 			desc = '_'.join([desc_pfx, desc_sfx])
 
 			if (meta['mtype_from']=='name'):       mutate_type = meta['name']
@@ -131,8 +128,16 @@ def process_step(step_info, date_range, root_step=False):
 	
 	DataAPI.update_record() # Sync
 
-def get_desc_pfx(kc, base_rec, root_step=False):
-	return kc[-1] if (root_step) else base_rec.desc
+def get_desc_pfx(kc, base_rec):
+	"""
+	Crude workaround...
+	"""
+	if (base_rec.stage=='raw' and base_rec.desc=='raw'):
+		return kc[-1]
+	elif (base_rec.stage=='mutate' and base_rec.desc=='fth thresh' and base_rec.mutate_type=='thresh')
+		return kc[-1]
+	else:
+		return base_rec.desc
 
 def make_runt_entry(desc, mutate_freq, mutate_type, base_rec):
 	prev_hist = '' if isinstance(base_rec.hist, float) else str(base_rec.hist)
