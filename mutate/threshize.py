@@ -92,6 +92,7 @@ def threshize(argv):
 
 def make_thresh_entry(desc, hist, base_rec):
 	prev_hist = '' if np.isnan(base_rec.hist) else str(base_rec.hist)
+	# TODO - change the thresh desc field so it is formatted similarly to raw data (thresh_pba and thresh_vol)
 
 	return {
 		'freq': base_rec.freq,
