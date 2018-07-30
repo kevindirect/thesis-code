@@ -3,14 +3,9 @@
 		"all": null,
 		"subsets": {
 			"pba_oc_return": null,
-			"pba_oa_return": null
-		}
-	},
-	"itb_fth_af_whole": {
-		"all": null,
-		"subsets": {
-			"pba_oc_return": null,
-			"pba_oa_return": null
+			"pba_oa_return": null,
+			"vol_oc_return": null,
+			"vol_oa_return": null
 		}
 	}
 }

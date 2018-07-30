@@ -11,21 +11,12 @@
 			},
 			"pba_oa_return": {
 				"desc": "pba_oa_return_fth_of_xwhole"
-			}
-		}
-	},
-	"itb_fth_af_whole": {
-		"all": {
-			"stage": "mutate",
-			"mutate_type": "label",
-			"raw_cat": "us_equity_index"
-		},
-		"subsets": {
-			"pba_oc_return": {
-				"desc": "pba_oc_return_fth_af_whole"
 			},
-			"pba_oa_return": {
-				"desc": "pba_oa_return_fth_af_whole"
+			"vol_oc_return": {
+				"desc": "vol_oc_return_fth_of_xwhole"
+			},
+			"vol_oa_return": {
+				"desc": "vol_oa_return_fth_of_xwhole"
 			}
 		}
 	}
