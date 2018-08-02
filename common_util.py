@@ -172,6 +172,10 @@ def dict_path(dictionary, path=None, stop_cond=lambda v: not isinstance(v, dict)
 			for unfinished in dict_path(val, newpath, stop_cond=stop_cond):
 				yield unfinished
 
+"""Math"""
+def zdiv(top, bottom, zdiv_ret=0):
+	return top/bottom if (bottom != 0) else zdiv_ret
+
 
 """ ********** FS AND GENERAL IO UTILS ********** """
 get_script_dir = lambda: dirname(realpath(sys.argv[0])) +sep
