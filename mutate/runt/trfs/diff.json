@@ -1,6 +1,6 @@
 {
 	"meta": {
-		"name": "diff1",
+		"name": "diff",
 		"mtype_from": "name",
 		"rec_fmt": "diff({num_periods})",
 		"var_fmt": "grid",
@@ -16,5 +16,5 @@
 	},
 	"rm": ["raw", "id_rm"],
 	"src": null,
-	"dst": ["diff", "diff1"]
+	"dst": ["diff", "diff"]
 }

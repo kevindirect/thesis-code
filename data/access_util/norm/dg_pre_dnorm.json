@@ -24,7 +24,7 @@
 	"diff1": {
 		"all": {
 			"stage": "mutate",
-			"mutate_type": "diff1",
+			"mutate_type": "diff",
 			"raw_cat": "us_equity_index"
 		},
 		"subsets": {
