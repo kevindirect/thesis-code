@@ -11,6 +11,7 @@ import pandas as pd
 from common_util import DT_HOURLY_FREQ, DT_BIZ_DAILY_FREQ, DT_CAL_DAILY_FREQ, get_custom_biz_freq
 from mutate.common import STANDARD_DAY_LEN
 from mutate.pattern_util import gaussian_breakpoints, uniform_breakpoints, get_sym_list, symbolize_value
+from mutate.fracdiff import get_weights
 
 
 """ ********** APPLY FUNCTIONS ********** """
@@ -22,7 +23,7 @@ def apply_gbt_df(df, ser_transform_fn, agg_freq, dna=True):	# groupby transform
 	res = df.groupby(pd.Grouper(freq=agg_freq)).transform(ser_transform_fn)
 	return res.dropna(axis=0, how='all') if (dna) else res
 
-def apply_agg_df(df, ser_agg_fn, agg_freq, dna=True):		# groupby aggregation
+def apply_gagg_df(df, ser_agg_fn, agg_freq, dna=True):		# groupby aggregation
 	res = df.groupby(pd.Grouper(freq=agg_freq)).agg(ser_agg_fn)
 	return res.dropna(axis=0, how='all') if (dna) else res
 
@@ -30,6 +31,30 @@ def apply_agg_df(df, ser_agg_fn, agg_freq, dna=True):		# groupby aggregation
 """ ********** TRANSFORMS ********** """
 def difference(num_periods):
 	return lambda ser: ser.diff(periods=num_periods)
+
+def expanding_fracdiff(d, size, thresh):
+	"""
+	Expanding Window Fractional Differencing
+	XXX - Implement
+	"""
+	pass
+# 	def expanding_fracdiff(ser):
+# 		_ser = ser.dropna()
+# 		weights = get_weights(d, size=_ser.size, thresh=thresh)
+# 		# Determine initial calcs to be skipped based on weight-loss threshold
+# 		weight_changes = np.cumsum(abs(weights))
+# 		weight_changes /= weight_changes[-1]
+# 		skip = weight_changes[weight_changes > thresh].shape[0]
+
+# 	return lambda ser: ser.transform(dot_weights_fn)
+
+def fixed_fracdiff(d, size, thresh):
+	"""
+	Fixed Window Fractional Differencing
+	"""
+	weights = get_weights(d, size=size, thresh=thresh)
+	dot_weights_fn = lambda ser: ser.dot(weights)
+	return lambda ser: ser.dropna().rolling(window=len(weights), min_periods=len(weights)).apply(dot_weights_fn)
 
 def moving_average(num_periods):
 	return lambda ser: ser.rolling(window=num_periods, min_periods=num_periods).mean()
@@ -84,6 +109,8 @@ def single_row_filter(specifier):
 """ ********** JSON-STR-TO-CODE TRANSLATORS ********** """
 RUNT_FN_TRANSLATOR = {
 	"diff": difference,
+	"efracdiff": expanding_fracdiff,
+	"ffracdiff": fixed_fracdiff,
 	"ma": moving_average,
 	"norm": normalize,
 	"sym": symbolize,
@@ -93,7 +120,7 @@ RUNT_FN_TRANSLATOR = {
 RUNT_TYPE_TRANSLATOR = {
 	"rt": apply_rt_df,
 	"gbt": apply_gbt_df,
-	"agg": apply_agg_df
+	"gagg": apply_gagg_df
 }
 
 RUNT_FREQ_TRANSLATOR = {

@@ -12,68 +12,133 @@ import matplotlib.pyplot as plt
 from numba import jit, vectorize
 from dask import delayed
 
-from common_util import search_df, get_subset #, pd_to_np
+from common_util import search_df, get_subset
 from mutate.common import dum
 
 
 """ ********** GETTING WEIGHTS ********** """
 def getWeights(d, size):
 	"""
-	Returns weighting for arbitrary differentiation.
-	Lopez De Prado, Advances in Financial Machine Learning (p. 79)
+	Return weighting for arbitrary differentiation.
+	Number of weights are pre-determined based on size.
+	Adapted from:
+		Lopez De Prado, Advances in Financial Machine Learning (p. 79)
 
 	Args:
-		d (float): coefficient of differentiation
-		size (int): window size
+		d (float ∈ ℝ≥0): coefficient of differentiation
+		size (int ∈ ℤ>0): window size
 
 	Returns:
 		array of weights
 	"""
-	w = [1.]
+	weights = [1.]
 
-	for k in range(1, size):
-		w_ = -w[-1] / k * (d-k+1)
-		w.append(w_)
-	w = np.array(w[::-1]).reshape(-1, 1)
-
-	return w
-
-
-def getWeights_FFD(d, thresh, max_size=1000):
-	"""
-	Returns weighting for arbitrary differentiation, fixed window.
-
-	Args:
-		d (float): coefficient of differentiation
-		thresh (float): threshold
-		max_size (int): max possible window size
-
-	Returns:
-		array of weights
-	"""
-	next_weight = 1.0
-	weights = []
-	k = len(weights)
-
-	while (abs(next_weight) >= thresh and k < max_size):
+	for weight_idx in range(1, size):
+		# Calculate next_weight: wₖ = -wₖ₋₁ * ((d-k+1) / k)
+		weight_multiplier = (d-weight_idx+1) / weight_idx
+		next_weight = -weights[-1] * weight_multiplier
 		weights.append(next_weight)
-		k = len(weights)
-		next_weight = -weights[-1] / k * (d-k+1)
 
 	weights = np.array(weights[::-1]).reshape(-1, 1)
+	logging.debug('weights: ' +str(weights.T))
 
 	return weights
 
+def getWeights_FFD(d, thresh):
+	"""
+	Return weighting for arbitrary differencing, fixed window.
+	The number of weights returned are determined based on cutoff threshold.
+	Adapted from:
+		Lopez De Prado, Advances in Financial Machine Learning (p. 83)
+
+	Args:
+		d (float ∈ ℝ≥0): coefficient of fractional differencing
+		thresh (float ∈ ℝ>0): threshold
+
+	Returns:
+		array of weights
+	"""
+	weights, weight_idx, next_weight = [], 0, 1 # First weight is one (the latest value which will be differenced)
+
+	while (abs(next_weight) >= thresh):
+		weights.append(next_weight); weight_idx += 1;
+		
+		# Calculate next_weight: wₖ = -wₖ₋₁ * ((d-k+1) / k)
+		weight_multiplier = (d-weight_idx+1) / weight_idx
+		next_weight = -weights[-1] * weight_multiplier
+
+	weights = np.array(weights[::-1]).reshape(-1, 1)
+	logging.debug('weights: ' +str(weights.T))
+
+	return weights
+
+def getWeights_LB(d, size, thresh):
+	"""
+	Returns weighting for arbitrary differencing.
+	Uses the lower bound of expanding window and fixed window fracdiff.
+
+	Args:
+		d (float ∈ ℝ≥0): coefficient of fractional differencing
+		size (int ∈ ℤ>0): window size
+		thresh (float ∈ ℝ>0): threshold of window cutoff
+
+	Returns:
+		array of weights
+	"""
+	weights, weight_idx = [1.], 1
+
+	while (weight_idx < size):
+		# Calculate next_weight: wₖ = -wₖ₋₁ * ((d-k+1) / k)
+		weight_multiplier = (d-weight_idx+1) / weight_idx
+		next_weight = -weights[-1] * weight_multiplier
+
+		if (abs(next_weight) < thresh):
+			break
+		else:
+			weights.append(next_weight)
+			weight_idx += 1
+
+	weights = np.array(weights[::-1]).reshape(-1, 1)
+	logging.debug('weights: ' +str(weights.T))
+
+	return weights
+
+def get_weights(d, size=None, thresh=None):
+	"""
+	Returns weighting for arbitrary differentiation.
+	If only size is specified, runs fracdiff.
+	If only thresh is specified, runs fixed window fracdiff.
+	If both size and thresh are specified, uses the lower bound weights.
+
+	Args:
+		d (float ∈ ℝ≥0): coefficient of differentiation
+		size (int ∈ ℤ>0): window size (if None, uses fixed window)
+		thresh (float ∈ ℝ>0): threshold of window cutoff (if None, uses expanding window)
+
+	Returns:
+		array of weights
+	"""
+	weight_fun = {
+		(True, False):	lambda: getWeights(d, size),
+		(False, True):	lambda: getWeights_FFD(d, thresh),
+		(True, True):	lambda: getWeights_LB(d, size, thresh),
+	}.get((size is not None, thresh is not None), None)
+
+	if (weight_fun is None):
+		raise ValueError('must specify size and/or thresh')
+	else:
+		return weight_fun()
+
 
 """ ********** FRACTIONAL DIFFERENTIATION ********** """
-def fracDiff(raw_df, d, thresh=.01):
+def fracDiff_EFD(raw_df, d, thresh=.01):
 	"""
 	Expanding window fractional differentiation.
 	Lopez De Prado, Advances in Financial Machine Learning (p. 82)
 
 	Increasing width window, with treatment of NaNs
 	Note 1: for thresh=1, nothing is skipped
-	Note 2: d can be any positive fractional float, not necessarily bounded [0, 1].
+	Note 2: d can be any positive fractional float, not necessarily bounded within [0, 1].
 	
 	Args:
 		raw_df (pd.DataFrame): df of series to differentiate
@@ -86,8 +151,7 @@ def fracDiff(raw_df, d, thresh=.01):
 
 	# Compute weights for the longest series
 	w = getWeights(d, raw_df.shape[0])
-	logging.info("finished computing weights")
-	logging.debug(str(w[:-5:-1].T))
+	logging.debug("finished computing weights: " +str(w[:-5:-1].T))
 
 	# Determine initial calcs to be skipped based on weight-loss threshold
 	w_ = np.cumsum(abs(w))
@@ -118,7 +182,7 @@ def fracDiff_FFD(raw_df, d, thresh=1e-5):
 	Lopez De Prado, Advances in Financial Machine Learning (p. 83-84)
 
 	Note 1: thresh determines the cut-off weight for the window
-	Note 2: d can be any positive fractional float, not necessarily bounded [0, 1].
+	Note 2: d can be any positive fractional float, not necessarily bounded within [0, 1].
 	
 	Args:
 		raw_df (pd.DataFrame): df of series to differentiate
@@ -132,8 +196,7 @@ def fracDiff_FFD(raw_df, d, thresh=1e-5):
 	# Compute weights for the longest series
 	w = getWeights_FFD(d, thresh)
 	width = len(w) - 1
-	logging.info("finished computing weights")
-	logging.debug(str(w[:-5:-1].T))
+	logging.debug("finished computing weights: " +str(w[:-5:-1].T))
 
 	# Apply weights to values
 	df = {}
@@ -142,8 +205,7 @@ def fracDiff_FFD(raw_df, d, thresh=1e-5):
 		df_= pd.Series()
 
 		for iloc1 in range(width, seriesF.shape[0]):
-			loc0 = seriesF.index[iloc1-width]
-			loc1 = seriesF.index[iloc1]
+			loc0, loc1 = seriesF.index[iloc1-width], seriesF.index[iloc1]
 
 			if not np.isfinite(raw_df.loc[loc1, name]):
 				continue # Exclude NAs
