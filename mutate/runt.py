@@ -17,11 +17,11 @@ from mutate.runt_util import RUNT_FN_TRANSLATOR, RUNT_TYPE_TRANSLATOR, RUNT_FREQ
 
 def run_transforms(argv):
 	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-	cmd_arg_list = ['runt_dir=', 'trfs_dir=', 'run_all']
+	cmd_arg_list = ['runt_dir=', 'trfs_dir=', 'runt_all']
 	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name='runt')
 	runt_dir_name = cmd_input['runt_dir='] if (cmd_input['runt_dir='] is not None) else default_runt_dir_name
 	trfs_dir_name = cmd_input['trfs_dir='] if (cmd_input['trfs_dir='] is not None) else default_trfs_dir_name
-	run_all = True if (cmd_input['run_all'] is not None) else False
+	runt_all = True if (cmd_input['runt_all'] is not None) else False
 
 	runt_dir = MUTATE_DIR +runt_dir_name
 	trfs_dir = runt_dir +trfs_dir_name
@@ -44,7 +44,7 @@ def run_transforms(argv):
 	for path_name, path in graph['paths'].items():
 		for step in path:
 			logging.info('step: ' +str(step))
-			if (run_all or step not in graph['visited']):
+			if (runt_all or step not in graph['visited']):
 				step_info = fill_defaults(trfs[step], trf_defaults)
 				process_step(step_info, date_range)
 
