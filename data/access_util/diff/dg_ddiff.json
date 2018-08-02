@@ -17,6 +17,12 @@
 			},
 			"thresh_vol": {
 				"desc": ["thresh_vol_ddiff(1)", "thresh_vol_ddiff(2)"]
+			},
+			"raw_trmi_v2": {
+				"desc": ["raw_trmi_v2_ddiff(1)", "raw_trmi_v2_ddiff(2)"]
+			},
+			"raw_trmi_v3": {
+				"desc": ["raw_trmi_v3_ddiff(1)", "raw_trmi_v3_ddiff(2)"]
 			}
 		}
 	}
