@@ -7,7 +7,9 @@
 		},
 		"subsets": {
 			"raw_pba": {},
-			"raw_vol": {}
+			"raw_vol": {},
+			"raw_trmi_v2": {},
+			"raw_trmi_v3": {}
 		}
 	},
 	"thresh": {
@@ -19,17 +21,6 @@
 		"subsets": {
 			"thresh_pba": {},
 			"thresh_vol": {}
-		}
-	},
-	"trmi": {
-		"all": {
-			"stage": "raw",
-			"raw_cat": "us_equity_index",
-			"desc": "raw"
-		},
-		"subsets": {
-			"raw_trmi_v2": {},
-			"raw_trmi_v3": {}
 		}
 	}
 }
