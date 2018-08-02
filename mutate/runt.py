@@ -17,10 +17,11 @@ from mutate.runt_util import RUNT_FN_TRANSLATOR, RUNT_TYPE_TRANSLATOR, RUNT_FREQ
 
 def run_transforms(argv):
 	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-	cmd_arg_list = ['runt_dir=', 'trfs_dir=']
+	cmd_arg_list = ['runt_dir=', 'trfs_dir=', 'run_all']
 	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name='runt')
 	runt_dir_name = cmd_input['runt_dir='] if (cmd_input['runt_dir='] is not None) else default_runt_dir_name
 	trfs_dir_name = cmd_input['trfs_dir='] if (cmd_input['trfs_dir='] is not None) else default_trfs_dir_name
+	run_all = True if (cmd_input['run_all'] is not None) else False
 
 	runt_dir = MUTATE_DIR +runt_dir_name
 	trfs_dir = runt_dir +trfs_dir_name
@@ -43,13 +44,14 @@ def run_transforms(argv):
 	for path_name, path in graph['paths'].items():
 		for step in path:
 			logging.info('step: ' +str(step))
-			if (step not in graph['visited']):
+			if (run_all or step not in graph['visited']):
 				step_info = fill_defaults(trfs[step], trf_defaults)
 				process_step(step_info, date_range)
 
-				graph['visited'].append(step)
-				logging.info('dumping updated graph json...')
-				dump_json(graph, 'graph.json', dir_path=runt_dir)
+				if (step not in graph['visited']):
+					graph['visited'].append(step)
+					logging.info('dumping updated graph json...')
+					dump_json(graph, 'graph.json', dir_path=runt_dir)
 			else:
 				logging.info('already completed, skipping...')
 
@@ -57,6 +59,18 @@ def run_transforms(argv):
 def fill_defaults(step_info, defaults):
 	if (step_info['src'] is None): step_info['src'] = defaults['src']
 	return step_info
+
+def get_variants(var, var_format):
+	"""
+	Return all possible combinations of parameters as a list of dictionaries
+	"""
+	if (var_format == 'grid'):
+		var_names, param_combos = list(var.keys()), list(product(*var.values()))
+		variants = [{var_names[idx]: param_value for idx, param_value in enumerate(combo)} for combo in param_combos]
+	elif (var_format == 'list'):
+		pass # XXX - Implement
+
+	return variants
 
 def get_row_mask_keychain(original_keychain, all_mask_keys):
 	"""
@@ -76,9 +90,7 @@ def process_step(step_info, date_range):
 	res_freq = RUNT_FREQ_TRANSLATOR[meta['res_freq']]
 
 	# Making all possible parameter combinations
-	if (meta['var_fmt'] == 'grid'):
-		var_names, param_combos = list(var.keys()), list(product(*var.values()))
-		variants = [{var_names[idx]: param_value for idx, param_value in enumerate(combo)} for combo in param_combos]
+	variants = get_variants(var, meta['var_fmt'])
 
 	# Loading row mask, if any
 	if (rm is not None):
