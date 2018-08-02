@@ -17,6 +17,12 @@
 			},
 			"thresh_vol": {
 				"desc": "thresh_vol_drf"
+			},
+			"raw_trmi_v2": {
+				"desc": "raw_trmi_v2_drf"
+			},
+			"raw_trmi_v3": {
+				"desc": "raw_trmi_v3_drf"
 			}
 		}
 	},
@@ -38,6 +44,12 @@
 			},
 			"thresh_vol": {
 				"desc": "thresh_vol_drl"
+			},
+			"raw_trmi_v2": {
+				"desc": "raw_trmi_v2_drl"
+			},
+			"raw_trmi_v3": {
+				"desc": "raw_trmi_v3_drl"
 			}
 		}
 	}

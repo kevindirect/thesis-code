@@ -1,8 +1,8 @@
 {
 	"raw": {
 		"all": {
-			"raw_cat": "us_equity_index",
 			"stage": "raw",
+			"raw_cat": "us_equity_index",
 			"desc": "raw"
 		},
 		"subsets": {
@@ -12,13 +12,24 @@
 	},
 	"thresh": {
 		"all": {
-			"raw_cat": "us_equity_index",
 			"stage": "mutate",
+			"raw_cat": "us_equity_index",
 			"mutate_type": "thresh"
 		},
 		"subsets": {
 			"thresh_pba": {},
 			"thresh_vol": {}
+		}
+	},
+	"trmi": {
+		"all": {
+			"stage": "raw",
+			"raw_cat": "us_equity_index",
+			"desc": "raw"
+		},
+		"subsets": {
+			"raw_trmi_v2": {},
+			"raw_trmi_v3": {}
 		}
 	}
 }
