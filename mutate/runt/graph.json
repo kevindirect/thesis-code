@@ -1,7 +1,23 @@
 {
 	"paths": {
-		"path1": ["dr", "dma"],
-		"path2": ["diff1", "dnorm", "sym"]
+		"dma": [
+			"dr",
+			"dma"
+		],
+		"ddiff": [
+			"dr",
+			"ddiff"
+		],
+		"dffracdiff": [
+			"dr",
+			"dffracdiff"
+		],
+		"sym": [
+			"diff",
+			"dnorm",
+			"sym"
+		]
 	},
-	"visited": []
+	"visited": [
+	]
 }
