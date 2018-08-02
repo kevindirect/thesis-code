@@ -43,7 +43,21 @@
 				"endswith": ["of_xact"],
 				"regex": [],
 				"exclude": null
-			}]
+			}],
+			"raw_trmi_v2": {
+				"exact": [],
+				"startswith": [""],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			"raw_trmi_v3": {
+				"exact": [],
+				"startswith": [""],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			}
 		}
 	}
 }

@@ -21,6 +21,14 @@
 			"thresh_vol": {
 				"desc": ["thresh_vol_drf_dma(3)", "thresh_vol_drf_dma(5)", "thresh_vol_drf_dma(10)", "thresh_vol_drf_dma(20)",
 						"thresh_vol_drl_dma(3)", "thresh_vol_drl_dma(5)", "thresh_vol_drl_dma(10)", "thresh_vol_drl_dma(20)"]
+			},
+			"raw_trmi_v2": {
+				"desc": ["raw_trmi_v2_drf_dma(3)", "raw_trmi_v2_drf_dma(5)", "raw_trmi_v2_drf_dma(10)", "raw_trmi_v2_drf_dma(20)",
+						"raw_trmi_v2_drl_dma(3)", "raw_trmi_v2_drl_dma(5)", "raw_trmi_v2_drl_dma(10)", "raw_trmi_v2_drl_dma(20)"]
+			},
+			"raw_trmi_v3": {
+				"desc": ["raw_trmi_v3_drf_dma(3)", "raw_trmi_v3_drf_dma(5)", "raw_trmi_v3_drf_dma(10)", "raw_trmi_v3_drf_dma(20)",
+						"raw_trmi_v3_drl_dma(3)", "raw_trmi_v3_drl_dma(5)", "raw_trmi_v3_drl_dma(10)", "raw_trmi_v3_drl_dma(20)"]
 			}
 		}
 	}
