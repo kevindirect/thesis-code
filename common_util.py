@@ -211,13 +211,13 @@ def dump_json(json_dict, fname, dir_path=None, ind="\t", seps=None, **kwargs):
 			raise e
 
 def get_cmd_args(argv, arg_list, script_name=''):
-	arg_list_short = [str(arg_name[0] + ':' if arg_name[-1]=='=' else '') for arg_name in arg_list]
+	arg_list = ['help'] + arg_list 	# Add any commonly used args here
+	arg_list_short = [str(arg_name[0] + ':' if arg_name[-1]=='=' else arg_name[0]) for arg_name in arg_list]
 	arg_str = ''.join(arg_list_short)
 	res = {arg_name: None for arg_name in arg_list}
 
 	arg_list_short_no_sym = [arg_short[0] for arg_short in arg_list_short]
 	assert(len({}.fromkeys(arg_list_short_no_sym)) == len(arg_list_short_no_sym))	# assert first letters of arg names are unique
-	assert(all(arg_char!='h' for arg_char in arg_list_short_no_sym))				# The 'h' letter is reserved
 
 	help_arg_strs = ['-{} <{}>'.format(arg_list_short_no_sym[i], arg_list[i][:-1] if arg_list[i][-1]=='=' else arg_list[i]) \
 		for i in range(len(arg_list))]
@@ -235,7 +235,7 @@ def get_cmd_args(argv, arg_list, script_name=''):
 			sys.exit()
 		else:
 			for idx, arg_name in enumerate(arg_list):
-				arg_char = arg_list_short[i][0]
+				arg_char = arg_list_short[idx][0]
 
 				if (arg_name[-1] == '='):
 					if opt in (str('-'+arg_char), str('--'+arg_name[:-1])):
