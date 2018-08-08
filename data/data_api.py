@@ -273,6 +273,9 @@ class DataAPI:
 
 		return result_paths, recs, result
 
+	@classmethod
+	def get_record_view(cls):
+		return get_record_view()
 
 	@classmethod
 	def dump(cls, df, entry, **kwargs):
