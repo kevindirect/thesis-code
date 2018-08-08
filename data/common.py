@@ -31,6 +31,7 @@ ACCESS_UTIL_DIR = DATA_DIR +'access_util' +sep
 VIEW_DIR = ACCESS_UTIL_DIR +'view' +sep
 
 # PACKAGE DEFAULTS
+default_cleanfile = 'clean.json'
 default_col_subsetsfile = CS_PFX +'hourly.json'
 default_col_thresh_subsetsfile = CS_PFX +'hourly_thresh.json'
 

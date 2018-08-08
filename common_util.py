@@ -4,8 +4,8 @@ Kevin Patel
 """
 
 import sys
-from os import sep, path, makedirs
-from os.path import dirname, basename, realpath, exists, isfile, getsize
+from os import sep, path, makedirs, walk, listdir, rmdir
+from os.path import dirname, basename, realpath, exists, isfile, getsize, join as path_join
 from json import load, dump, dumps
 import operator
 import getopt
@@ -245,6 +245,13 @@ def get_cmd_args(argv, arg_list, script_name=''):
 						res[arg_name] = True
 
 	return res
+
+def remove_empty_dirs(root_dir_path):
+	for path, subdirs, files in walk(root_dir_path, topdown=False):
+		for subdir in subdirs:
+			dir_path = path_join(path, subdir)
+			if not listdir(dir_path):  			# An empty list is False
+				rmdir(path_join(path, subdir))
 
 
 """ ********** PANDAS IO UTILS ********** """

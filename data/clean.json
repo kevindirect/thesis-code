@@ -1,0 +1,5 @@
+{
+	"clean_dirs": ["dow_jones", "gold", "nasdaq_100", "oil", "russell_2000", "sp_500"],
+	"ext": "default",
+	"check_ext": true
+}
