@@ -13,6 +13,12 @@
 			},
 			"raw_trmi": {
 				"desc": "raw_pba_intraday_row_mask"
+			},
+			"raw_trmi_v2": {
+				"desc": "raw_pba_intraday_row_mask"
+			},
+			"raw_trmi_v3": {
+				"desc": "raw_pba_intraday_row_mask"
 			}
 		}
 	}
