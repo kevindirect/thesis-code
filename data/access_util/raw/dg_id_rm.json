@@ -10,6 +10,9 @@
 			},
 			"raw_vol": {
 				"desc": "raw_vol_intraday_row_mask"
+			},
+			"raw_trmi": {
+				"desc": "raw_pba_intraday_row_mask"
 			}
 		}
 	}

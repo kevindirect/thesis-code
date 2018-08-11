@@ -15,6 +15,13 @@
 				"endswith": [],
 				"regex": [],
 				"exclude": null
+			},
+			"raw_trmi": {
+				"exact": ["times"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
 			}
 		}
 	}
