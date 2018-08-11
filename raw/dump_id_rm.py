@@ -4,7 +4,7 @@ import sys
 import getopt
 import logging
 
-from common_util import RAW_DIR, DT_HOURLY_FREQ, load_json, load_df, series_to_dti, right_join, outer_join, list_get_dict, get_time_mask
+from common_util import RAW_DIR, DT_HOURLY_FREQ, get_cmd_args, load_json, load_df, series_to_dti, right_join, outer_join, list_get_dict, get_time_mask
 from raw.common import GMT_OFFSET_COL_SFX, default_row_masksfile
 from data.data_api import DataAPI
 from data.access_util import df_getters as dg, col_subsetters2 as cs2
@@ -12,22 +12,9 @@ from data.access_util import df_getters as dg, col_subsetters2 as cs2
 
 def dump_intraday_row_masks(argv):
 	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-	usage = lambda: print('dump_id_rm.py [-m <row_masksfile>]')
-	row_masksfile = default_row_masksfile
-
-	try:
-		opts, args = getopt.getopt(argv, 'hm:', ['help', 'row_masksfile='])
-	except getopt.GetoptError:
-		usage()
-		sys.exit(2)
-
-	for opt, arg in opts:
-		if opt in ('-h', '--help'):
-			usage()
-			sys.exit()
-		elif opt in ('-m', '--row_masksfile'):
-			row_masksfile = arg
-
+	cmd_arg_list = ['row_masksfile=']
+	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name='dump_id_rm')
+	row_masksfile = cmd_input['row_masksfile='] if (cmd_input['row_masksfile='] is not None) else default_row_masksfile
 	row_masks = load_json(row_masksfile, dir_path=RAW_DIR)
 
 	all_raw = ['raw', 'all']
