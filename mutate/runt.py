@@ -113,6 +113,7 @@ def process_step(step_info, date_range):
 		# Masking rows in src from row mask
 		if (rm is not None):
 			rm_key_chain = get_row_mask_keychain(key_chain, rm_keys)
+			print(rm_dfs, rm_key_chain)
 			rm_df = list_get_dict(rm_dfs, rm_key_chain).dropna()
 			not_in_src = rm_df.index.difference(src_df.index)
 			logging.debug('row mask: ' +str('_'.join(rm_key_chain)))
