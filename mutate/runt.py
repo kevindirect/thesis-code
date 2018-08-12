@@ -134,10 +134,11 @@ def process_step(step_info, date_range):
 			if (meta['mtype_from']=='name'):       mutate_type = meta['name']
 			elif (meta['mtype_from']=='rec_fmt'):  mutate_type = desc_sfx
 
-			assert(not is_empty_df(runted_df))
-			entry = make_runt_entry(desc, res_freq, mutate_type, src_rec)
 			logging.info('dumping ' +desc +'...')
 			logging.debug('post_transform: ' +str(runted_df))
+			entry = make_runt_entry(desc, res_freq, mutate_type, src_rec)
+			if (is_empty_df(runted_df)):
+				raise Exception('Result of transform is an empty DatafFrame')
 			DataAPI.dump(runted_df, entry)
 	
 	DataAPI.update_record() # Sync
