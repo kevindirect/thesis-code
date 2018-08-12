@@ -467,11 +467,11 @@ def get_nmost_nulled_cols_df(df, n=5, keep_counts=False):
 
 	return nsmall if (keep_counts) else list(nsmall.index)
 
-def is_empty_df(df, count_nans=False, **kwargs):
+def is_empty_df(df, count_nans=False, how='all', **kwargs):
 	if (count_nans):
 		return df.empty
 	else:
-		return df.dropna(**kwargs).empty
+		return df.dropna(axis=0, how=how, **kwargs).empty
 
 is_df = lambda candidate: isinstance(candidate, pd.DataFrame)
 is_ser = lambda candidate: isinstance(candidate, pd.Series)
