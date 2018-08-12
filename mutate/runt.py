@@ -138,6 +138,7 @@ def process_step(step_info, date_range):
 			logging.debug('post_transform: ' +str(runted_df))
 			entry = make_runt_entry(desc, res_freq, mutate_type, src_rec)
 			if (is_empty_df(runted_df)):
+				logging.error(runted_df)
 				raise Exception('Result of transform is an empty DatafFrame')
 			DataAPI.dump(runted_df, entry)
 	
