@@ -9,6 +9,8 @@ echo "packing mutate...";
 tar -czf mutate.tar.gz mutate;
 echo "packing recon...";
 tar -czf recon.tar.gz recon;
+echo "packing model...";
+tar -czf model.tar.gz model;
 echo "packing git...";
 tar -czf git.tar.gz .git;
 
@@ -17,6 +19,7 @@ mv raw.tar.gz ./crunch/;
 mv data.tar.gz ./crunch/;
 mv mutate.tar.gz ./crunch/;
 mv recon.tar.gz ./crunch/;
+mv model.tar.gz ./crunch/;
 mv git.tar.gz ./crunch/;
 cp ./trmi.json ./crunch/;
 cp ./.gitignore ./crunch/;
