@@ -33,7 +33,8 @@ MUTATE_DIR = CRUNCH_DIR +'mutate' +sep
 RECON_DIR = CRUNCH_DIR +'recon' +sep
 MODEL_DIR = CRUNCH_DIR +'model' +sep
 
-logging.warning('using crunch dir: ' +CRUNCH_DIR)
+logging.warning('script location: ' +str(realpath(sys.argv[0])))
+logging.warning('using project dir: ' +CRUNCH_DIR)
 
 """Supported Pandas DF IO Formats"""
 FMT_EXTS = {
