@@ -26,6 +26,7 @@ from pandas.api.types import is_numeric_dtype
 
 """ ********** SYSTEM SETTINGS ********** """
 """Project Root and Subpackage paths"""
+logging.info('script location: ' +str(realpath(sys.argv[0])))
 CRUNCH_DIR = dirname(dirname(realpath(sys.argv[0]))) +sep # FIXME
 RAW_DIR = CRUNCH_DIR +'raw' +sep
 DATA_DIR = CRUNCH_DIR +'data' +sep
