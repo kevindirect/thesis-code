@@ -26,13 +26,14 @@ from pandas.api.types import is_numeric_dtype
 
 """ ********** SYSTEM SETTINGS ********** """
 """Project Root and Subpackage paths"""
-logging.info('script location: ' +str(realpath(sys.argv[0])))
 CRUNCH_DIR = dirname(dirname(realpath(sys.argv[0]))) +sep # FIXME
 RAW_DIR = CRUNCH_DIR +'raw' +sep
 DATA_DIR = CRUNCH_DIR +'data' +sep
 MUTATE_DIR = CRUNCH_DIR +'mutate' +sep
 RECON_DIR = CRUNCH_DIR +'recon' +sep
 MODEL_DIR = CRUNCH_DIR +'model' +sep
+
+logging.warning('using crunch dir: ' +CRUNCH_DIR)
 
 """Supported Pandas DF IO Formats"""
 FMT_EXTS = {
