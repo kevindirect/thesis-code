@@ -95,14 +95,14 @@ class DataAPI:
 
 		@classmethod
 		def get_path(cls, entry):
-			"""Return path of df on disk for given candidate entry"""
-			path_dir = DATA_DIR +sep.join([entry['root'], entry['basis'], entry['freq']]) +sep
+			"""Return path suffix of df on disk for given candidate entry, relative to DATA_DIR """
+			rel_path_dir = sep.join([entry['root'], entry['basis'], entry['freq']]) +sep
 
 			sorted_ss = sorted(filter(lambda c: c.startswith(entry['stage']), DR_STAGE))
 			if (sorted_ss):
-				path_dir += sep.join(map(cls.ss_to_path_loader(entry), sorted_ss)) +sep
+				rel_path_dir += sep.join(map(cls.ss_to_path_loader(entry), sorted_ss)) +sep
 
-			return path_dir
+			return rel_path_dir
 
 		@classmethod
 		def matched(cls, search_dict, direct_query=False):
@@ -118,7 +118,7 @@ class DataAPI:
 			"""Return a loader function that takes a record entry and returns something"""
 
 			def load_rec_df(rec):
-				return rec, load_df(rec.name, dir_path=rec.dir, dti_freq=rec.freq, **kwargs)
+				return rec, load_df(rec.name, dir_path=DATA_DIR+rec.dir, dti_freq=rec.freq, **kwargs)
 			
 			return load_rec_df
 
