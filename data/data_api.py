@@ -169,6 +169,17 @@ class DataAPI:
 		yield from map(cls.DataRecordAPI.loader(**kwargs), cls.DataRecordAPI.matched(search_dict, direct_query=direct_query))
 
 	@classmethod
+	def get_rec_matches(cls, search_dict, direct_query=False, **kwargs):
+		"""Provide generator to get matched records"""
+		yield from cls.DataRecordAPI.matched(search_dict, direct_query=direct_query)
+
+	@classmethod
+	def get_df_from_rec(cls, rec, col_subsetter=None, path_pfx=DATA_DIR, **kwargs):
+		selected = load_df(rec.name, dir_path=path_pfx+rec.dir, dti_freq=rec.freq, **kwargs)
+		if (col_subsetter is not None):
+			return selected[chained_filter(selected.columns, col_subsetter)]
+
+	@classmethod
 	def load_from_dg(cls, df_getter, col_subsetter=None, separators=['root'], how='subsets', subset=None, **kwargs):
 		"""
 		Load data using a df_getter dictionary, and col_subsetter dictionary (optional)
@@ -222,13 +233,11 @@ class DataAPI:
 
 
 	@classmethod
-	def lazy_load_from_dg(cls, df_getter, col_subsetter=None, separators=['root'], how='subsets', subset=None, **kwargs):
+	def lazy_load(cls, df_getter, col_subsetter, separators=['root'], how='subsets', subset=None, **kwargs):
 		"""
-		Return a dask graph that can be executed to return result of 'load_from_dg'.
-		XXX - TODO
+		Return paths, rec dicts, and df dicts identically to load_from_dg, but defer final loading of DataFrames using dask.delayed.
 		"""
-
-		def construct_search_subset_dict(end_dg, end_cs=None, how=how, subset=subset):
+		def get_search_dicts(end_dg, end_cs=None, how=how, subset=subset):
 			"""
 			Convenience function to construct the search dict (optionally col subsetter dict) based on the how parameter.
 			"""
@@ -251,24 +260,26 @@ class DataAPI:
 				return ss_dict
 
 		hit_bottom = lambda val: any(key in val for key in ['all', 'subsets'])
-		paths_to_end = list(dict_path(df_getter, stop_cond=hit_bottom))
+		end_paths = list(dict_path(df_getter, stop_cond=hit_bottom))
 		result, recs = recursive_dict(), recursive_dict()
 		result_paths = []
 
-		for edg_path, edg in paths_to_end:
-			ecs = None if (col_subsetter is None) else list_get_dict(col_subsetter, edg_path)
+		for end_path, end_dg in end_paths:
+			end_cs = None if (col_subsetter is None) else list_get_dict(col_subsetter, end_path)
+			search_dicts = get_search_dicts(end_dg, end_cs=end_cs)
 
-			for sd_name, sd_cs in construct_search_subset_dict(edg, end_cs=ecs).items():
-				sd_path = edg_path + [sd_name]
-				add_desc_as_path_identifier = True if ('desc' in sd_cs[0] and isinstance(sd_cs[0]['desc'], list)) else False
+			for name, search_dict_col_subsetter in search_dicts.items():
+				path = end_path + [name]
+				search_dict, col_subsetter = search_dict_col_subsetter
 
-				for rec, df in cls.generate(sd_cs[0]):
+				# If desc is in search_dict and refers to a list of desc values, use these to distinguish items
+				desc_in_path = True if ('desc' in search_dict and isinstance(search_dict['desc'], list)) else False
+
+				for rec in cls.get_rec_matches(search_dict):
 					seps = [getattr(rec, separator) for separator in separators]
-					df_path = seps + sd_path + [rec.desc] if (add_desc_as_path_identifier) else seps + sd_path
-
+					df_path = seps + path + [rec.desc] if (desc_in_path) else seps + path
 					result_paths.append(df_path)
-					filtered_df = df if (sd_cs[1] is None) else df[chained_filter(df.columns, sd_cs[1])]
-					list_set_dict(result, df_path, filtered_df)
+					list_set_dict(result, df_path, delayed(cls.get_df_from_rec)(rec, col_subsetter))
 					list_set_dict(recs, df_path, rec)
 
 		return result_paths, recs, result
