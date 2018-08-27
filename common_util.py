@@ -155,10 +155,10 @@ def recursive_dict():
 	return defaultdict(recursive_dict)
 
 def list_get_dict(dictionary, key_list):
-    return reduce(operator.getitem, key_list, dictionary)
+	return reduce(operator.getitem, key_list, dictionary)
 
 def list_set_dict(dictionary, key_list, value):
-    list_get_dict(dictionary, key_list[:-1])[key_list[-1]] = value
+	list_get_dict(dictionary, key_list[:-1])[key_list[-1]] = value
 
 def dict_path(dictionary, path=None, stop_cond=lambda v: not isinstance(v, dict)):
 	"""

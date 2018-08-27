@@ -270,7 +270,7 @@ class DataAPI:
 
 			for name, search_dict_col_subsetter in search_dicts.items():
 				path = end_path + [name]
-				search_dict, col_subsetter = search_dict_col_subsetter
+				search_dict, sd_col_subsetter = search_dict_col_subsetter
 
 				# If desc is in search_dict and refers to a list of desc values, use these to distinguish items
 				desc_in_path = True if ('desc' in search_dict and isinstance(search_dict['desc'], list)) else False
@@ -279,7 +279,7 @@ class DataAPI:
 					seps = [getattr(rec, separator) for separator in separators]
 					df_path = seps + path + [rec.desc] if (desc_in_path) else seps + path
 					result_paths.append(df_path)
-					list_set_dict(result, df_path, delayed(cls.get_df_from_rec)(rec, col_subsetter))
+					list_set_dict(result, df_path, delayed(cls.get_df_from_rec)(rec, sd_col_subsetter))
 					list_set_dict(recs, df_path, rec)
 
 		return result_paths, recs, result
