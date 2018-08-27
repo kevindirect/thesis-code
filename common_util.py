@@ -641,5 +641,5 @@ class benchmark(object):
 	def __exit__(self, *args):
 		t = default_timer() - self.start
 		if (not self.suppress):
-			logging.info(("%s : " + self.fmt + " seconds") % (self.msg, t))
+			logging.warning(("%s : " + self.fmt + " seconds") % (self.msg, t))
 		self.time = t
