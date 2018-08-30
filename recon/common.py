@@ -9,7 +9,7 @@ sys.path.insert(0, dirname(dirname(dirname(realpath(sys.argv[0])))))
 # ********** SPECIFIC TO THIS CRUNCH PACKAGE **********
 # RECON
 from os import sep
-from common_util import MODEL_DIR
+from common_util import RECON_DIR
 
 # OTHER STAGE DEPENDENCIES
 

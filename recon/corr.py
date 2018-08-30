@@ -2,31 +2,47 @@
 
 import sys
 import os
-import getopt
-from operator import itemgetter
+from itertools import product
 import logging
 
 import numpy as np
 import pandas as pd
+from dask import delayed
 
-from common_util import RECON_DIR, get_cmd_args, load_json, dump_df, inner_join, remove_dups_list, benchmark
-from data.data_api import DataAPI
-from data.access_util import df_getters as dg, col_subsetters2 as cs2
-from recon.common import default_corr_dataset
+from common_util import RECON_DIR, get_cmd_args, load_json, list_get_dict, benchmark
+from recon.common import DATASET_DIR, default_corr_dataset
+from recon.dataset_util import prep_set
 from recon.feat_util import gen_split_feats
 from recon.label_util import gen_label_dfs, default_fct, fastbreak_fct, confidence_fct, fastbreak_confidence_fct
 
 
 def corr(argv):
 	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-	cmd_arg_list = ['dataset=', 'all']
+	cmd_arg_list = ['dataset=']
 	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name='corr')
-	dataset = cmd_input['dataset='] if (cmd_input['dataset='] is not None) else default_corr_dataset
-	# runt_all = True if (cmd_input['all'] is not None) else False
+	dataset_name = cmd_input['dataset='] if (cmd_input['dataset='] is not None) else default_corr_dataset
 
-	prep_set(dataset)
+	dataset_dict = load_json(dataset_name, dir_path=DATASET_DIR)
+	dataset = prep_set(dataset_dict)
 
-	
+	for lpath, fpath in product(dataset['labels']['paths'], dataset['features']['paths']):
+		if (fpath[0] == lpath[0]): # Filter for combos where data source (asset) of label and feature df are the same
+			print(fpath)
+			print(lpath)
+			# fdf = list_get_dict(dataset['features']['dfs'], fpath)
+			ldf = list_get_dict(dataset['labels']['dfs'], lpath).compute()
+
+			# create label columns from labdf (apply mask)
+			labdf = delayed(apply_label_mask)(ldf, default_fct)
+
+			# shift new label df
+			
+
+			# run correlation between feat df and label df
+
+			# dump correlation matrix with filename identical to outer loop, in asset name folder
+
+
 
 
 def corr_mat(df=None, feat_col_name=None, lab_col_name=None, **kwargs):

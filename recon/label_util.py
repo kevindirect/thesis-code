@@ -90,29 +90,32 @@ def fastbreak_confidence_fct(label_df, name_pfx='', upper_bound=None):
 
 	return fb
 
-def gen_label_dfs(lab_dict, lab_paths, asset_name, forecast_mask=default_fct):
+make_sw_dict = lambda sw: {"exact": [], "startswith": [sw], "endswith": [], "regex": [], "exclude": None}
 
-	make_sw_dict = lambda sw: {"exact": [], "startswith": [sw], "endswith": [], "regex": [], "exclude": None}
+def gen_label_dfs(lab_dict, lab_paths, asset_name, forecast_mask=default_fct):
 
 	for lab_path in filter(lambda lab_path: lab_path[0]==asset_name, lab_paths):
 		lab_df = list_get_dict(lab_dict, lab_path)
-		lab_name = lab_df.columns[0]
-		lab_fct_df = pd.DataFrame(index=lab_df.index)
+		yield apply_label_mask(lab_df, forecast_mask=forecast_mask)
 
-		logging.debug('base_labels: ' +', '.join(get_base_labels(lab_df.columns[1:])))
-		logging.debug('all cols: ' +', '.join(lab_df.columns))
+def apply_label_mask(lab_df, forecast_mask):
+	lab_name = lab_df.columns[0]
+	lab_fct_df = pd.DataFrame(index=lab_df.index)
 
-		label_col_sel = {base_label: get_subset(lab_df.columns[1:], make_sw_dict(base_label))
-			for base_label in get_base_labels(lab_df.columns[1:])}
-		logging.debug(label_col_sel)
+	logging.debug('base_labels: ' +', '.join(get_base_labels(lab_df.columns[1:])))
+	logging.debug('all cols: ' +', '.join(lab_df.columns))
 
-		# Iterate through all thresholded variations of this label
-		for base_label, base_label_cols in label_col_sel.items():
-			logging.debug('base label: ' +base_label)
-			dir_col_name = '_'.join([base_label, 'dir'])
-			fct_df = forecast_mask(lab_df[base_label_cols], name_pfx=base_label)
-			lab_fct_df[dir_col_name] = fct_df[dir_col_name]
+	label_col_sel = {base_label: get_subset(lab_df.columns[1:], make_sw_dict(base_label))
+		for base_label in get_base_labels(lab_df.columns[1:])}
+	logging.debug(label_col_sel)
 
-		lab_fct_df.index = lab_fct_df.index.normalize()
+	# Iterate through all thresholded variations of this label
+	for base_label, base_label_cols in label_col_sel.items():
+		logging.debug('base label: ' +base_label)
+		dir_col_name = '_'.join([base_label, 'dir'])
+		fct_df = forecast_mask(lab_df[base_label_cols], name_pfx=base_label)
+		lab_fct_df[dir_col_name] = fct_df[dir_col_name]
 
-		yield lab_name, lab_fct_df
+	lab_fct_df.index = lab_fct_df.index.normalize()
+
+	return lab_name, lab_fct_df
