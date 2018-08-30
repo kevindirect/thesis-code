@@ -21,6 +21,7 @@ mv mutate.tar.gz ./crunch/;
 mv recon.tar.gz ./crunch/;
 mv model.tar.gz ./crunch/;
 mv git.tar.gz ./crunch/;
+cp ./common_util.py ./crunch/;
 cp ./trmi.json ./crunch/;
 cp ./.gitignore ./crunch/;
 
