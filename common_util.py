@@ -622,6 +622,10 @@ def chained_filter(str_list, qualifier_dict_list):
 
 
 """ ********** DEBUGGING UTILS ********** """
+def set_loglevel(loglevel=logging.INFO):
+	logging.basicConfig(stream=sys.stdout, level=loglevel)
+	logging.getLogger().setLevel(loglevel)
+
 in_debug_mode = lambda: logging.getLogger().isEnabledFor(logging.DEBUG)
 
 

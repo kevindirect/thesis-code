@@ -16,6 +16,8 @@ from common_util import RECON_DIR
 
 # PACKAGE CONSTANTS
 DATASET_DIR = RECON_DIR +'dataset' +sep
+REPORT_DIR = RECON_DIR +'report' +sep
+CORR_DIR = REPORT_DIR +'corr' +sep
 dum = 0
 
 
