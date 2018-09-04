@@ -29,7 +29,7 @@ def corr(argv):
 	for lpath in dataset['labels']['paths']:
 		asset_name, base_label_name = lpath[0], lpath[-1]
 		logging.info(asset_name +' ' +base_label_name)
-		ldf = delayed(list_get_dict)(dataset['labels']['dfs'], lpath)
+		ldf = list_get_dict(dataset['labels']['dfs'], lpath)
 		gldf = delayed(lambda d: d.groupby(pd.Grouper(freq=DT_CAL_DAILY_FREQ)).last())(ldf)
 
 		eod = delayed(eod_fct)(gldf).add_suffix('_eod')
@@ -58,7 +58,9 @@ def corr(argv):
 				result = delayed(dump_df)(corr_mat, feat_id, dir_path=dest_dir)
 				results.append(result)
 
+	logging.info('Executing dask graph...')
 	compute(*results)
+	logging.info('done')
 	
 
 def corr_matrix(data, vert_cols, corr_method='pearson', label_shift_periods=-1):
