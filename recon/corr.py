@@ -47,7 +47,7 @@ def corr(argv):
 		for fpath in filter(lambda fpath: fpath[0]==asset_name, dataset['features']['paths']):
 			logging.debug(fpath)
 			feat_id = fpath[-1]
-			feats = delayed(list_get_dict)(dataset['features']['dfs'], fpath)
+			feats = list_get_dict(dataset['features']['dfs'], fpath)
 			datadf = delayed(reduce)(outer_join, [feats, *blabels, *ilabels])
 
 			for corr_method in ['pearson', 'spearman', 'kendall']:
@@ -58,7 +58,7 @@ def corr(argv):
 				result = delayed(dump_df)(corr_mat, feat_id, dir_path=dest_dir)
 				results.append(result)
 
-	logging.info('Executing dask graph...')
+	logging.info('executing dask graph...')
 	compute(*results)
 	logging.info('done')
 	
