@@ -214,7 +214,20 @@ def dump_json(json_dict, fname, dir_path=None, ind="\t", seps=None, **kwargs):
 			raise e
 
 def get_cmd_args(argv, arg_list, script_name='', set_logging=True):
-	arg_list = ['help', 'loglevel='] + arg_list 	# Add any commonly used args here
+	"""
+	Parse commandline arguments from argv and return them as a dict.
+
+	Args:
+		argv (sys.argv): system argument input vector
+		arg_list (list): list of non-static commandline arguments (end with '=' for non-flag arguments)
+		script_name (str): name of calling script for use in the help dialog
+		set_logging (bool): whether or not to include a logging level commandline argument and initialize logging
+
+	Returns:
+		Dict of commandline argument to value mappings, a value maps to None if arg was not set or flag argument was not raised
+	"""
+	static_args = ['help', 'loglevel='] if (set_logging) else ['help']
+	arg_list = static_args + arg_list
 	arg_list_short = [str(arg_name[0] + ':' if arg_name[-1]=='=' else arg_name[0]) for arg_name in arg_list]
 	arg_str = ''.join(arg_list_short)
 	res = {arg_name: None for arg_name in arg_list}
