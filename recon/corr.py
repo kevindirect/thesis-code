@@ -19,8 +19,9 @@ from recon.label_util import shift_label, apply_label_mask, eod_fct, default_fct
 
 def corr(argv):
 	set_loglevel()
-	cmd_arg_list = ['dataset=']
+	cmd_arg_list = ['asset=', 'dataset=']
 	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name='corr')
+	chosen_asset = cmd_input['asset='] if (cmd_input['asset='] is not None) else None
 	dataset_name = cmd_input['dataset='] if (cmd_input['dataset='] is not None) else default_corr_dataset
 	dataset_dict = load_json(dataset_name, dir_path=DATASET_DIR)
 	dataset = prep_set(dataset_dict)
@@ -31,7 +32,12 @@ def corr(argv):
 		for lpath in dataset['labels']['paths']:
 			asset_name, base_label_name = lpath[0], lpath[-1]
 			corr_matrix_name = '_'.join([corr_method, base_label_name])
-			logging.info(asset_name +': ' +corr_matrix_name)
+			if (chosen_asset is not None and asset_name != chosen_asset):
+				logging.info('skipping ' +asset_name +': ' +corr_matrix_name)
+				continue
+			else:
+				logging.info(asset_name +': ' +corr_matrix_name)
+
 			ldf = list_get_dict(dataset['labels']['dfs'], lpath)
 			gldf = delayed(lambda d: d.groupby(pd.Grouper(freq=DT_CAL_DAILY_FREQ)).last())(ldf)
 
