@@ -10,7 +10,7 @@ from json import load, dump, dumps
 import operator
 import getopt
 from difflib import SequenceMatcher
-from collections import defaultdict, OrderedDict
+from collections import defaultdict, OrderedDict, ChainMap
 from itertools import chain, tee
 from functools import reduce, partial, wraps
 from datetime import datetime
@@ -213,8 +213,8 @@ def dump_json(json_dict, fname, dir_path=None, ind="\t", seps=None, **kwargs):
 			logging.error('error in file', str(fname +':'), str(e))
 			raise e
 
-def get_cmd_args(argv, arg_list, script_name=''):
-	arg_list = ['help'] + arg_list 	# Add any commonly used args here
+def get_cmd_args(argv, arg_list, script_name='', set_loglevel=True):
+	arg_list = ['help', 'loglevel='] + arg_list 	# Add any commonly used args here
 	arg_list_short = [str(arg_name[0] + ':' if arg_name[-1]=='=' else arg_name[0]) for arg_name in arg_list]
 	arg_str = ''.join(arg_list_short)
 	res = {arg_name: None for arg_name in arg_list}
@@ -246,6 +246,9 @@ def get_cmd_args(argv, arg_list, script_name=''):
 				else:
 					if opt in (str('-'+arg_char), str('--'+arg_name)):
 						res[arg_name] = True
+
+	if (set_log_level):
+		set_loglevel(res['loglevel='])
 
 	return res
 
@@ -622,11 +625,38 @@ def chained_filter(str_list, qualifier_dict_list):
 
 
 """ ********** DEBUGGING UTILS ********** """
-def set_loglevel(loglevel=logging.INFO):
-	logging.basicConfig(stream=sys.stdout, level=loglevel)
-	logging.getLogger().setLevel(loglevel)
+DEFAULT_LOG_LEVEL = logging.INFO
+
+LOG_LEVEL_STR_MAP ={
+	'critical': logging.CRITICAL,
+	'error': logging.ERROR,
+	'warning': logging.WARNING,
+	'info': logging.INFO,
+	'debug': logging.DEBUG,
+	'notset': logging.NOTSET
+}
+
+LOG_LEVEL_CHAR_MAP ={
+	'c': logging.CRITICAL,
+	'e': logging.ERROR,
+	'w': logging.WARNING,
+	'i': logging.INFO,
+	'd': logging.DEBUG,
+	'n': logging.NOTSET
+}
+
+LOG_LEVEL = ChainMap(LOG_LEVEL_CHAR_MAP, LOG_LEVEL_STR_MAP)
 
 in_debug_mode = lambda: logging.getLogger().isEnabledFor(logging.DEBUG)
+
+def set_loglevel(loglevel=DEFAULT_LOG_LEVEL):
+	if (loglevel is None):
+		loglevel = DEFAULT_LOG_LEVEL
+	elif (isinstance(loglevel, str)):
+		loglevel = LOG_LEVEL.get(loglevel, DEFAULT_LOG_LEVEL)
+
+	logging.basicConfig(stream=sys.stdout, level=loglevel)
+	logging.getLogger().setLevel(loglevel)
 
 
 """ ********** PROFILING UTILS ********** """

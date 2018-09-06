@@ -18,7 +18,6 @@ from recon.label_util import shift_label, apply_label_mask, eod_fct, default_fct
 
 
 def corr(argv):
-	set_loglevel()
 	cmd_arg_list = ['asset=', 'dataset=']
 	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name='corr')
 	chosen_asset = cmd_input['asset='] if (cmd_input['asset='] is not None) else None
