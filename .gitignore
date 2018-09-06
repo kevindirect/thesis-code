@@ -2,21 +2,18 @@
 ignore*
 
 # data
-*.csv
-*.parquet
+# *.csv
+# *.parquet
 
 # TRMI API info
 /trmi.json
 
 # data dirs
-/raw/*.csv
-/raw/*.ipynb
-/raw/cot/*
-/raw/price/*
-/raw/trmi/*
-/raw/vol/*
-/data/*.csv
-/data/*.parquet
+/raw/**/*.ipynb
+/raw/**/*.csv
+/raw/**/*.parquet
+/data/**/*.csv
+/data/**/*.parquet
 
 # other dirs
 /other_creds/*
