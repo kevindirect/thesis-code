@@ -213,7 +213,7 @@ def dump_json(json_dict, fname, dir_path=None, ind="\t", seps=None, **kwargs):
 			logging.error('error in file', str(fname +':'), str(e))
 			raise e
 
-def get_cmd_args(argv, arg_list, script_name='', set_loglevel=True):
+def get_cmd_args(argv, arg_list, script_name='', set_logging=True):
 	arg_list = ['help', 'loglevel='] + arg_list 	# Add any commonly used args here
 	arg_list_short = [str(arg_name[0] + ':' if arg_name[-1]=='=' else arg_name[0]) for arg_name in arg_list]
 	arg_str = ''.join(arg_list_short)
@@ -247,7 +247,7 @@ def get_cmd_args(argv, arg_list, script_name='', set_loglevel=True):
 					if opt in (str('-'+arg_char), str('--'+arg_name)):
 						res[arg_name] = True
 
-	if (set_log_level):
+	if (set_logging):
 		set_loglevel(res['loglevel='])
 
 	return res
