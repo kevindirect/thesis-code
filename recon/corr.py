@@ -25,6 +25,7 @@ def corr(argv):
 	dataset_name = cmd_input['dataset='] if (cmd_input['dataset='] is not None) else default_corr_dataset
 	dataset_dict = load_json(dataset_name, dir_path=DATASET_DIR)
 	dataset = prep_set(dataset_dict)
+	skipped_matrices = []
 	results = []
 
 	for corr_method in ['pearson', 'spearman', 'kendall']:
@@ -32,12 +33,12 @@ def corr(argv):
 		for lpath in dataset['labels']['paths']:
 			asset_name, base_label_name = lpath[0], lpath[-1]
 			corr_matrix_name = '_'.join([corr_method, base_label_name])
+			matrix_entry = asset_name +'_' +corr_matrix_name
 			if (chosen_asset is not None and asset_name != chosen_asset):
-				logging.info('skipping ' +asset_name +': ' +corr_matrix_name)
+				skipped_matrices.append(matrix_entry)
 				continue
-			else:
-				logging.info(asset_name +': ' +corr_matrix_name)
 
+			logging.info(matrix_entry)
 			ldf = list_get_dict(dataset['labels']['dfs'], lpath)
 			gldf = delayed(lambda d: d.groupby(pd.Grouper(freq=DT_CAL_DAILY_FREQ)).last())(ldf)
 
@@ -67,6 +68,8 @@ def corr(argv):
 
 			result = delayed(dump_df)(corr_matrix, corr_matrix_name, dir_path=dest_dir)
 			results.append(result)
+
+	logging.debug('skipped: ' +', '.join(sorted(skipped_matrices)))
 
 	logging.info('executing dask graph...')
 	compute(*results)
