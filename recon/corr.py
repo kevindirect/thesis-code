@@ -3,6 +3,7 @@
 import sys
 import os
 from os import sep
+from os.path import splitext
 from functools import partial, reduce
 import logging
 
@@ -53,7 +54,7 @@ def corr(argv):
 			mom = delayed(apply_label_mask)(gldf, partial(fastbreak_confidence_fct, momentum=True)).add_suffix('_mom')
 			int_labels = [vel, mag, mom]
 
-			dest_dir = sep.join([REPORT_DIR, asset_name]) +sep
+			dest_dir = sep.join([REPORT_DIR, splitext(dataset_name)[0], asset_name]) +sep
 			makedir_if_not_exists(dest_dir)
 			corr_matrix = delayed(pd.DataFrame)(columns=['feat_df_desc', 'feat_col_name'])
 
