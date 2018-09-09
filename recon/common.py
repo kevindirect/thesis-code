@@ -24,6 +24,7 @@ dum = 0
 default_pipefile = 'pipe.json'
 default_cv_file = 'cv_kfold.json'
 default_dataset = 'default.json'
+default_gta_dataset = 'gta_default.json'
 default_corr_dataset = 'corr_default.json'
 
 

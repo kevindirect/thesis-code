@@ -8,7 +8,7 @@ import logging
 
 from dask import delayed
 
-from common_util import MUTATE_DIR, DT_HOURLY_FREQ, DT_CAL_DAILY_FREQ, load_json, dump_json, get_cmd_args, best_match, remove_dups_list, list_get_dict, is_empty_df, search_df, benchmark
+from common_util import MUTATE_DIR, DT_HOURLY_FREQ, DT_CAL_DAILY_FREQ, load_json, dump_json, get_cmd_args, get_variants, best_match, remove_dups_list, list_get_dict, is_empty_df, search_df, benchmark
 from data.data_api import DataAPI
 from data.access_util import df_getters as dg, col_subsetters2 as cs2
 from mutate.common import default_runt_dir_name, default_trfs_dir_name
@@ -59,18 +59,6 @@ def run_transforms(argv):
 def fill_defaults(step_info, defaults):
 	if (step_info['src'] is None): step_info['src'] = defaults['src']
 	return step_info
-
-def get_variants(var, var_format):
-	"""
-	Return all possible combinations of parameters as a list of dictionaries
-	"""
-	if (var_format == 'grid'):
-		var_names, param_combos = list(var.keys()), list(product(*var.values()))
-		variants = [{var_names[idx]: param_value for idx, param_value in enumerate(combo)} for combo in param_combos]
-	elif (var_format == 'list'):
-		pass # XXX - Implement
-
-	return variants
 
 def get_row_mask_keychain(original_keychain, all_mask_keys):
 	"""

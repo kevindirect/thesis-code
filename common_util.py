@@ -180,6 +180,31 @@ def dict_path(dictionary, path=None, stop_cond=lambda v: not isinstance(v, dict)
 			for unfinished in dict_path(val, newpath, stop_cond=stop_cond):
 				yield unfinished
 
+def get_variants(mappings, fmt):
+	"""
+	Return all possible combinations of key-value maps as a list of dictionaries.
+
+	{
+		a: [1, 2, 3],
+		b: [4, 5, 6],
+	}
+
+	would be mapped to
+
+	[
+		{a: 1, b: 4}, {a: 2, b: 4}, {a: 3, b: 4},
+		{a: 1, b: 5}, {a: 2, b: 5}, {a: 3, b: 5},
+		{a: 1, b: 6}, {a: 2, b: 6}, {a: 3, b: 6}
+	]
+	"""
+	if (fmt == 'grid'):
+		names, combos = list(mappings.keys()), list(product(*mappings.values()))
+		variants = [{names[idx]: value for idx, value in enumerate(combo)} for combo in combos]
+	elif (fmt == 'list'):
+		pass # XXX - Implement
+
+	return variants
+
 """Math"""
 def zdiv(top, bottom, zdiv_ret=0):
 	return top/bottom if (bottom != 0) else zdiv_ret
