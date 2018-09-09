@@ -5,7 +5,7 @@ Kevin Patel
 
 import sys
 from os import sep, path, makedirs, walk, listdir, rmdir
-from os.path import dirname, basename, realpath, exists, isfile, getsize, join as path_join
+from os.path import dirname, basename, realpath, normpath, exists, isfile, getsize, join as path_join
 from json import load, dump, dumps
 import operator
 import getopt
@@ -47,6 +47,11 @@ FMT_EXTS = {
 
 """Default Pandas DF IO format"""
 DF_DATA_FMT = 'parquet'
+
+
+""" ********** SYSTEM UTILS ********** """
+get_pardir_from_path = lambda path: basename(normpath(path))
+add_sep_if_none = lambda path: path if (path[-1] == sep) else path+sep
 
 
 """ ********** GENERAL UTILS ********** """
@@ -186,7 +191,7 @@ get_parent_dir = lambda: dirname(dirname(realpath(sys.argv[0]))) +sep
 makedir_if_not_exists = lambda dir_path: makedirs(dir_path) if not exists(dir_path) else None
 
 def load_json(fname, dir_path=None):
-	fpath = str(dir_path + fname) if dir_path else fname
+	fpath = str(add_sep_if_none(dir_path) + fname) if dir_path else fname
 
 	if (isfile(fpath)):
 		with open(fpath) as json_data:
@@ -199,7 +204,7 @@ def load_json(fname, dir_path=None):
 		raise FileNotFoundError(str(basename(fpath) +' must be in:' +dirname(fpath)))
 
 def dump_json(json_dict, fname, dir_path=None, ind="\t", seps=None, **kwargs):
-	fpath = str(dir_path + fname) if dir_path else fname
+	fpath = str(add_sep_if_none(dir_path) + fname) if dir_path else fname
 
 	if (isfile(fpath)):
 		logging.debug('json file exists at ' +str(fpath) +', syncing...')
@@ -280,7 +285,7 @@ def load_df(fname, dir_path=None, data_format=DF_DATA_FMT, subset=None, dti_freq
 	assume that the file has an index as the first column
 	"""
 	ext_tuple = FMT_EXTS[data_format]
-	fpath = str(dir_path + fname) if dir_path else fname
+	fpath = str(add_sep_if_none(dir_path) + fname) if dir_path else fname
 	if (not fname.endswith(ext_tuple)):
 		fpath += ext_tuple[0]
 
@@ -315,7 +320,7 @@ def load_df(fname, dir_path=None, data_format=DF_DATA_FMT, subset=None, dti_freq
 
 def dump_df(df, fname, dir_path=None, data_format=DF_DATA_FMT):
 	ext_tuple = FMT_EXTS[data_format]
-	fpath = str(dir_path + fname) if dir_path else fname
+	fpath = str(add_sep_if_none(dir_path) + fname) if dir_path else fname
 	if (not fname.endswith(ext_tuple)):
 		fpath += ext_tuple[0]
 
