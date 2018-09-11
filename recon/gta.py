@@ -9,7 +9,7 @@ import logging
 
 import numpy as np
 import pandas as pd
-from dask import delayed, compute
+from dask import delayed, compute, visualize
 
 from common_util import RECON_DIR, get_cmd_args, makedir_if_not_exists, flatten2D, get_variants, dump_df, load_json, outer_join, list_get_dict, benchmark
 from recon.common import DATASET_DIR, TEST_DIR, default_gta_test, default_gta_dataset
@@ -18,11 +18,12 @@ from recon.gta_util import GTA_TYPE_TRANSLATOR, GTA_TEST_TRANSLATOR, report_path
 
 
 def generic_test_applicator(argv):
-	cmd_arg_list = ['dataset=', 'test=', 'assets=']
+	cmd_arg_list = ['dataset=', 'test=', 'assets=', 'visualize']
 	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name='gta')
 	test_name = cmd_input['test='] if (cmd_input['test='] is not None) else default_gta_test
 	dataset_name = cmd_input['dataset='] if (cmd_input['dataset='] is not None) else default_gta_dataset
 	assets = list(map(str.strip, cmd_input['assets='].split(','))) if (cmd_input['assets='] is not None) else None
+	run_compute = True if (cmd_input['visualize'] is None) else False
 
 	test_spec = load_json(test_name, dir_path=TEST_DIR)
 	dataset_dict = load_json(dataset_name, dir_path=DATASET_DIR)
@@ -35,14 +36,23 @@ def generic_test_applicator(argv):
 	if (isinstance(test_spec, dict)):
 		tests = specify_test(test_spec, dataset, dataset_name=dataset_name)
 	elif (isinstance(test_spec, list)):
+		tests = []
 		for subtest_name in test_spec:
 			logging.debug('subtest name: ' +subtest_name)
 			subtest_spec = load_json(subtest_name, dir_path=TEST_DIR)
 			tests.extend(specify_test(subtest_spec, dataset, dataset_name=dataset_name))
 
-	logging.info('executing dask graph...')
-	compute(*tests)
-	logging.info('done')
+	if (run_compute):
+		logging.info('executing dask graphs...')
+		compute(*tests)
+		logging.info('done')
+	else:
+		logging.info('visualizing first dask graph...')
+		visualize(tests[0], filename='first_graph.svg')
+		logging.info('visualizing last dask graph...')
+		visualize(tests[-1], filename='last_graph.svg')
+		logging.info('done')
+
 
 def specify_test(test_dict, dataset, dataset_name):
 	meta, fn, var = test_dict['meta'], test_dict['fn'], test_dict['var']
