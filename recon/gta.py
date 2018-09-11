@@ -38,7 +38,7 @@ def generic_test_applicator(argv):
 	elif (isinstance(test_spec, list)):
 		tests = []
 		for subtest_name in test_spec:
-			logging.debug('subtest name: ' +subtest_name)
+			logging.info('subtest name: ' +subtest_name)
 			subtest_spec = load_json(subtest_name, dir_path=TEST_DIR)
 			tests.extend(specify_test(subtest_spec, dataset, dataset_name=dataset_name))
 
