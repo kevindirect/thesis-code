@@ -1,0 +1,20 @@
+{
+	"meta": {
+		"name": "corr",
+		"pfx_fmt": "{method}",
+		"var_fmt": "grid"
+	},
+	"fn": {
+		"type_fn": "fl",
+		"test_fn": "corr"
+	},
+	"var": {
+		"method": ["kendall", "pearson", "spearman"]
+	},
+	"lab": {
+
+	},
+	"feat": {
+
+	}
+}

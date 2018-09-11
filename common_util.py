@@ -9,6 +9,7 @@ from os.path import dirname, basename, realpath, normpath, exists, isfile, getsi
 from json import load, dump, dumps
 import operator
 import getopt
+from contextlib import suppress
 from difflib import SequenceMatcher
 from collections import defaultdict, OrderedDict, ChainMap
 from itertools import chain, tee
@@ -150,6 +151,13 @@ def best_match(original_key, candidates, alt_maps=None):
 def nice_print_dict(dictionary):
 	print(dumps(dictionary, indent=4, sort_keys=True))
 
+def remove_keys(dictionary, list_keys):
+	for key in list_keys:
+		with suppress(KeyError):
+			del dictionary[key]
+
+	return dictionary
+
 def recursive_dict():
 	"""
 	Creates a recursive nestable defaultdict.
@@ -180,7 +188,7 @@ def dict_path(dictionary, path=None, stop_cond=lambda v: not isinstance(v, dict)
 			for unfinished in dict_path(val, newpath, stop_cond=stop_cond):
 				yield unfinished
 
-def get_variants(mappings, fmt):
+def get_variants(mappings, fmt='grid'):
 	"""
 	Return all possible combinations of key-value maps as a list of dictionaries.
 
@@ -369,6 +377,9 @@ left_join = lambda a,b: a.join(b, how='left', sort=True)
 right_join = lambda a,b: a.join(b, how='right', sort=True)
 inner_join = lambda a,b: a.join(b, how='inner', sort=True)
 outer_join = lambda a,b: a.join(b, how='outer', sort=True)
+
+def df_count(df):
+	return df.count(axis=0)
 
 """Datetime"""
 def series_to_dti(ser, fmt=DT_FMT_YMD_HM, utc=True, exact=True, freq=DT_HOURLY_FREQ):

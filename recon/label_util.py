@@ -32,7 +32,7 @@ def eod_fct(label_df, col=0, eod_thresh=(0, 0)):
 	lbl[lbl < eod_thresh[0]] = DOWN
 	lbl[~pd.isnull(lbl) & ~lbl.isin((UP, DOWN))] = SIDEWAYS
 
-	return lbl.to_frame()
+	return lbl.dropna().to_frame()
 
 def default_fct(label_df, name_pfx=''):
 	"""
@@ -60,12 +60,12 @@ def break_fct(label_df, name_pfx='', lower_bound=None, upper_bound=None):
 	return lbl
 
 
-def fastbreak_fct(label_df, name_pfx='', upper_bound=None, velocity=False):
+def fastbreak_fct(label_df, name_pfx='', velocity=False):
 	"""
 	Fast Break Forecast:
 		The label is the direction or velocity of the first thresh break, otherwise the label is 0
 	"""
-	filtered = break_fct(label_df, name_pfx=name_pfx, lower_bound=1, upper_bound=upper_bound)
+	filtered = break_fct(label_df, name_pfx=name_pfx, lower_bound=1)
 
 	if (velocity):
 		dir_name, brk_name = '_'.join([name_pfx, 'dir']), '_'.join([name_pfx, 'brk'])
@@ -92,7 +92,6 @@ def confidence_fct(label_df, name_pfx='', magnitude=False):
 	# No breaks, set to sideways (sets 0 thresh eod to zero)
 	lbl.loc[lbl[nmt_name] == 0, dir_name] = SIDEWAYS
 
-	# XXX - This case represents price action checking a support level
 	# Most common break dir is opposite to first break dir, reverse dir. The (lbl[nmb_name]/lbl[nmt_name]) >= .5 case is already set correctly
 	lbl.loc[(lbl[nmt_name] > 0) & ((lbl[nmb_name]/lbl[nmt_name]) < .5), dir_name] = -lbl.loc[:, dir_name]
 
@@ -100,23 +99,20 @@ def confidence_fct(label_df, name_pfx='', magnitude=False):
 		total_breaks = lbl.loc[lbl[nmt_name] > 0, nmt_name]
 		breaks_with_fb = lbl.loc[lbl[nmt_name] > 0, nmb_name]
 		confidence = np.maximum(breaks_with_fb, total_breaks-breaks_with_fb)
-		lbl.loc[:, dir_name] = lbl.loc[:, dir_name] * confidence
+		lbl.loc[lbl[nmt_name] > 0, dir_name] = lbl.loc[:, dir_name] * confidence
 
 	return lbl
 
 
-def fastbreak_confidence_fct(label_df, name_pfx='', upper_bound=None, momentum=False):
+def fastbreak_confidence_fct(label_df, name_pfx='', momentum=False):
 	"""
 	Fast Break Confidence Forecast:
 		The label is the sign of the first thresh break only if it is the most common break,
 		otherwise the label is 0
 	"""
 	dir_name = '_'.join([name_pfx, 'dir'])
-	fb = fastbreak_fct(label_df, name_pfx=name_pfx, upper_bound=upper_bound, velocity=momentum)
+	fb = fastbreak_fct(label_df, name_pfx=name_pfx, velocity=momentum)
 	cf = confidence_fct(label_df, name_pfx=name_pfx, magnitude=momentum)
-
-	# # Set locations in fast break where it is not the most populous to 0
-	# fb.loc[fb[dir_name] != cf[dir_name], dir_name] = SIDEWAYS
 
 	if (momentum):
 		# Velocity (Fastbreak) and Mass (Confidence) in agreement: P = M * V
@@ -157,8 +153,8 @@ def apply_label_mask(lab_df, forecast_mask, normalize_idx=True):
 	for base_label, base_label_cols in label_col_sel.items():
 		logging.debug('base label: ' +base_label)
 		dir_col_name = '_'.join([base_label, 'dir'])
-		fct_df = forecast_mask(lab_df[base_label_cols], name_pfx=base_label)
-		lab_fct_df[dir_col_name] = fct_df[dir_col_name]
+		fct_df = forecast_mask(lab_df[base_label_cols].dropna(axis=0, how='all'), name_pfx=base_label)
+		lab_fct_df[dir_col_name] = fct_df[dir_col_name].dropna()
 
 	if (normalize_idx):
 		lab_fct_df.index = lab_fct_df.index.normalize()
