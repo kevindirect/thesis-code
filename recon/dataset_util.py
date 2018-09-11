@@ -49,14 +49,14 @@ def prep_set(dataset_dict, join_on=['root'], join_method=inner_join, asset_filte
 
 	return datasets
 
-def prep_labels(label_df, groups=['bool', 'int']):
+def prep_labels(label_df, types=['bool', 'int']):
 	"""
 	Take label df and apply masks to produce df of label series.
 	"""
 	gb_label_df = delayed(lambda d: d.groupby(pd.Grouper(freq=DT_CAL_DAILY_FREQ)).last())(label_df)
 	label_groups = []
 
-	if ('bool' in groups):
+	if ('bool' in types):
 		eod = delayed(eod_fct)(gb_label_df).add_suffix('_eod')
 		fbeod = delayed(apply_label_mask)(gb_label_df, default_fct).add_suffix('_fbeod')
 		fb = delayed(apply_label_mask)(gb_label_df, fastbreak_fct).add_suffix('_fb')
@@ -64,7 +64,7 @@ def prep_labels(label_df, groups=['bool', 'int']):
 		fbconf = delayed(apply_label_mask)(gb_label_df, fastbreak_confidence_fct).add_suffix('_fbconf')
 		label_groups.extend((eod, fbeod, fb, conf, fbconf))
 
-	if ('int' in groups):
+	if ('int' in types):
 		vel = delayed(apply_label_mask)(gb_label_df, partial(fastbreak_fct, velocity=True)).add_suffix('_vel')
 		mag = delayed(apply_label_mask)(gb_label_df, partial(confidence_fct, magnitude=True)).add_suffix('_mag')
 		mom = delayed(apply_label_mask)(gb_label_df, partial(fastbreak_confidence_fct, momentum=True)).add_suffix('_mom')
