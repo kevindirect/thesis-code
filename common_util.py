@@ -381,6 +381,14 @@ outer_join = lambda a,b: a.join(b, how='outer', sort=True)
 def df_count(df):
 	return df.count(axis=0)
 
+def df_value_count(df, axis=0):
+	"""
+	Return value_count for each column of df.
+	Setting axis to '1' returns the value count of each column per index (if the range of each
+	column is identical, this simulates a vote count of each column for each row/example).
+	"""
+	return df.apply(lambda ser: ser.value_counts(), axis=axis)
+
 """Datetime"""
 def series_to_dti(ser, fmt=DT_FMT_YMD_HM, utc=True, exact=True, freq=DT_HOURLY_FREQ):
 	"""
