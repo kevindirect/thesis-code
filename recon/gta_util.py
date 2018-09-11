@@ -16,13 +16,14 @@ from recon.label_util import shift_label
 
 
 """ ********** APPLY FUNCTIONS ********** """
-def feat_label_apply(feat_df, label_df, apply_fn, label_shift=-1):
+def feat_label_apply(feat_df, feat_df_desc, label_df, apply_fn, label_shift=-1):
 	"""
 	Return matrix of test result for a feature/label apply function.
 	
 	Args:
-		feat_df (pd.DataFrame): features
-		label_df (pd.DataFrame): labels
+		feat_df (pd.DataFrame): df of feature series
+		feat_df_desc (str): string that uniquely identifies feat_df
+		label_df (pd.DataFrame): df of label series
 		apply_fn (function): function to apply, the only not set parameters must be two series
 
 	"""
@@ -33,6 +34,9 @@ def feat_label_apply(feat_df, label_df, apply_fn, label_shift=-1):
 		row['feat_col_name'] = feat
 		row.update({label: apply_fn(feat_df[feat], shift_label(label_df[label], shift_periods=label_shift)) for label in label_df.columns})
 		result = result.append(row, ignore_index=True)
+
+	if (feat_df_desc is not None):
+		result.insert(0, 'feat_df_desc', feat_df_desc)
 
 	return result
 
