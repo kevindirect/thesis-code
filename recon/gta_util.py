@@ -49,7 +49,7 @@ def corr(a, b, method='pearson'):
 	"""
 	return a.corr(b, method=method)
 
-def count(a, b, method='ratio'):
+def count(a, b, method='ratio_count'):
 	"""
 	Return count of rows of a relative to b (or non-null count of a if count method is selected).
 
@@ -81,11 +81,11 @@ def count(a, b, method='ratio'):
 	count(d, e) # expected 1
 	count(e, d) # expected .8
 	"""
-	if (method == 'ratio'):
+	if (method == 'ratio_count'):
 		adf, bdf = a.dropna().to_frame(), b.dropna().to_frame()
 		common_count, target_count = inner_join(adf, bdf).index.size, bdf.index.size
 		return zdiv(common_count, target_count)
-	elif (method == 'count'):
+	elif (method == 'int_count'):
 		return a.count()
 
 

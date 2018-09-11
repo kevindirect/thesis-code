@@ -9,7 +9,7 @@
 		"test_fn": "count"
 	},
 	"var": {
-		"method": ["ratio", "count"]
+		"method": ["ratio_count", "int_count"]
 	},
 	"lab": {
 
