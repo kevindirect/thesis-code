@@ -59,7 +59,8 @@ def specify_test(test_dict, dataset, dataset_name)
 				logging.debug(feat_df_desc)
 				feats = list_get_dict(dataset['features']['dfs'], fpath)
 				sub_matrix = delayed(gta_type)(feats, labels, partial(gta_test, **variant))
-				sub_matrix = delayed(lambda df: df.insert(0, 'feat_df_desc', feat_df_desc))(sub_matrix) # TODO - insert method must not be inplace to work
+				sub_matrix = delayed(lambda df: pd.concat([pd.DataFrame(index=df.index).assign(feat_df_desc=feat_df_desc), df], axis=1))(sub_matrix)
+				# sub_matrix = delayed(lambda df: df.insert(0, 'feat_df_desc', feat_df_desc))(sub_matrix) # TODO - insert method must not be inplace to work
 				matrix = delayed(pd.concat)([matrix, sub_matrix], axis=0, join='outer', ignore_index=True, sort=False)
 
 			dest_dir = report_path_dir(dataset_name, asset_name)
