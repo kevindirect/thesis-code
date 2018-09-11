@@ -12,7 +12,7 @@ import getopt
 from contextlib import suppress
 from difflib import SequenceMatcher
 from collections import defaultdict, OrderedDict, ChainMap
-from itertools import chain, tee
+from itertools import product, chain, tee
 from functools import reduce, partial, wraps
 from datetime import datetime
 from timeit import default_timer
@@ -59,7 +59,8 @@ add_sep_if_none = lambda path: path if (path[-1] == sep) else path+sep
 """Constants"""
 BYTES_PER_MEGABYTE = 10**6
 EMPTY_STR = ''
-JSON_SFX_LEN = len(".json")
+JSON_SFX = '.json'
+JSON_SFX_LEN = len(JSON_SFX)
 DT_DAILY_FREQ = 'D'
 DT_HOURLY_FREQ = 'H'
 DT_CAL_DAILY_FREQ = DT_DAILY_FREQ
@@ -225,6 +226,8 @@ makedir_if_not_exists = lambda dir_path: makedirs(dir_path) if not exists(dir_pa
 
 def load_json(fname, dir_path=None):
 	fpath = str(add_sep_if_none(dir_path) + fname) if dir_path else fname
+	if (not fname.endswith(JSON_SFX)):
+		fpath += JSON_SFX
 
 	if (isfile(fpath)):
 		with open(fpath) as json_data:
@@ -238,6 +241,8 @@ def load_json(fname, dir_path=None):
 
 def dump_json(json_dict, fname, dir_path=None, ind="\t", seps=None, **kwargs):
 	fpath = str(add_sep_if_none(dir_path) + fname) if dir_path else fname
+	if (not fname.endswith(JSON_SFX)):
+		fpath += JSON_SFX
 
 	if (isfile(fpath)):
 		logging.debug('json file exists at ' +str(fpath) +', syncing...')
