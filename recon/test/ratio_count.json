@@ -1,0 +1,20 @@
+{
+	"meta": {
+		"name": "ratio_count",
+		"pfx_fmt": "{method}",
+		"var_fmt": "grid"
+	},
+	"fn": {
+		"type_fn": "fl",
+		"test_fn": "count"
+	},
+	"var": {
+		"method": ["ratio"]
+	},
+	"lab": {
+
+	},
+	"feat": {
+
+	}
+}

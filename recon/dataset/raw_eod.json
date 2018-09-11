@@ -1,0 +1,8 @@
+{
+	"features": [
+		["srf", "dr", "drl"]
+	],
+	"labels": [
+		["labels", "itb_mvp"]
+	]
+}

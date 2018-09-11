@@ -17,7 +17,7 @@ from recon.common import DATASET_DIR
 from recon.label_util import apply_label_mask, eod_fct, default_fct, fastbreak_fct, confidence_fct, fastbreak_confidence_fct
 
 
-def prep_set(dataset_dict, join_on=['root'], join_method=inner_join, asset_filter=None):
+def prep_set(dataset_dict, join_on=['root'], join_method=inner_join, asset_list=None):
 	datasets = {}
 
 	for dataset, au_list in dataset_dict.items():
@@ -27,8 +27,8 @@ def prep_set(dataset_dict, join_on=['root'], join_method=inner_join, asset_filte
 			au_dg, au_cs = list_get_dict(dg, au_list[0]), list_get_dict(cs2, au_list[0])
 			paths, recs, dfs = DataAPI.lazy_load(au_dg, au_cs)
 
-			if (asset_filter is not None):
-				paths = list(filter(lambda p: p[0]==asset_filter, paths))
+			if (asset_list is not None):
+				paths = list(filter(lambda p: p[0] in asset_list, paths))
 
 			datasets[dataset]['paths'] = paths
 			datasets[dataset]['recs'] = recs
@@ -40,8 +40,8 @@ def prep_set(dataset_dict, join_on=['root'], join_method=inner_join, asset_filte
 				au_dg, au_cs = list_get_dict(dg, au), list_get_dict(cs2, au)
 				paths, recs, dfs = DataAPI.lazy_load(au_dg, au_cs)
 
-				if (asset_filter is not None):
-					paths = list(filter(lambda p: p[0]==asset_filter, paths))
+				if (asset_list is not None):
+					paths = list(filter(lambda p: p[0] in asset_list, paths))
 
 				datasets[dataset]['paths'] = paths
 				datasets[dataset]['recs'] = recs
