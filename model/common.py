@@ -15,11 +15,12 @@ from common_util import MODEL_DIR
 
 
 # PACKAGE CONSTANTS
-SETS_DIR = MODEL_DIR + 'sets' +sep
+DATASET_DIR = MODEL_DIR +'dataset' +sep
 dum = 0
 
 
 # PACKAGE DEFAULTS
+default_dataset = 'default.json'
 
 
 # PACKAGE UTIL FUNCTIONS
