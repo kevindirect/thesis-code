@@ -1,6 +1,7 @@
 {
 	"features": [
-		["sym", "sym"]
+		["sym", "sym"],
+		["norm", "dnorm"]
 	],
 	"labels": [
 		["labels", "itb_mvp"]

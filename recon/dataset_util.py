@@ -10,7 +10,7 @@ from functools import partial, reduce
 import pandas as pd
 from dask import delayed
 
-from common_util import DT_HOURLY_FREQ, DT_CAL_DAILY_FREQ, inner_join, outer_join, list_get_dict
+from common_util import DT_HOURLY_FREQ, DT_CAL_DAILY_FREQ, inner_join, outer_join, list_get_dict, list_set_dict, remove_dups_list
 from data.data_api import DataAPI
 from data.access_util import df_getters as dg, col_subsetters2 as cs2
 from recon.common import DATASET_DIR
@@ -23,29 +23,33 @@ def prep_set(dataset_dict, join_on=['root'], join_method=inner_join, asset_list=
 	for dataset, au_list in dataset_dict.items():
 		datasets[dataset] = {}
 
-		if (len(au_list) == 1):
-			au_dg, au_cs = list_get_dict(dg, au_list[0]), list_get_dict(cs2, au_list[0])
-			paths, recs, dfs = DataAPI.lazy_load(au_dg, au_cs)
+		au_dg, au_cs = list_get_dict(dg, au_list[0]), list_get_dict(cs2, au_list[0])
+		paths, recs, dfs = DataAPI.lazy_load(au_dg, au_cs)
 
-			if (asset_list is not None):
-				paths = list(filter(lambda p: p[0] in asset_list, paths))
+		if (asset_list is not None):
+			paths = list(filter(lambda p: p[0] in asset_list, paths))
 
-			datasets[dataset]['paths'] = paths
-			datasets[dataset]['recs'] = recs
-			datasets[dataset]['dfs'] = dfs
+		datasets[dataset]['paths'] = paths
+		datasets[dataset]['recs'] = recs
+		datasets[dataset]['dfs'] = dfs
 
-		else:
-			# TODO - Define this case better in the future
-			for au in au_list:
+		# For dataset partitions sourced from multiple access utils
+		if (len(au_list) > 1):
+			for au in au_list[1:]:
 				au_dg, au_cs = list_get_dict(dg, au), list_get_dict(cs2, au)
 				paths, recs, dfs = DataAPI.lazy_load(au_dg, au_cs)
 
 				if (asset_list is not None):
 					paths = list(filter(lambda p: p[0] in asset_list, paths))
 
-				datasets[dataset]['paths'] = paths
-				datasets[dataset]['recs'] = recs
-				datasets[dataset]['dfs'] = dfs
+				datasets[dataset]['paths'].extend(paths)
+				for path in paths:
+					rec, df = list_get_dict(recs, path), list_get_dict(dfs, path)
+					list_set_dict(datasets[dataset]['recs'], path, rec)
+					list_set_dict(datasets[dataset]['dfs'], path, df)
+
+		# Assert there are no duplicates
+		assert(len(remove_dups_list([''.join(lst) for lst in datasets[dataset]['paths']]))==len(datasets[dataset]['paths']))
 
 	return datasets
 
