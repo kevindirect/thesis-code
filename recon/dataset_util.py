@@ -17,7 +17,8 @@ from recon.common import DATASET_DIR
 from recon.label_util import apply_label_mask, eod_fct, default_fct, fastbreak_fct, confidence_fct, fastbreak_confidence_fct
 
 
-def prep_set(dataset_dict, join_on=['root'], join_method=inner_join, asset_list=None):
+
+def prep_set(dataset_dict, join_on=['root'], join_method=inner_join, assets=None, filters=None):
 	datasets = {}
 
 	for dataset, au_list in dataset_dict.items():
@@ -26,8 +27,10 @@ def prep_set(dataset_dict, join_on=['root'], join_method=inner_join, asset_list=
 		au_dg, au_cs = list_get_dict(dg, au_list[0]), list_get_dict(cs2, au_list[0])
 		paths, recs, dfs = DataAPI.lazy_load(au_dg, au_cs)
 
-		if (asset_list is not None):
-			paths = list(filter(lambda p: p[0] in asset_list, paths))
+		if (assets is not None):
+			paths = list(filter(lambda p: p[0] in assets, paths))
+		if (filters is not None):
+			paths = list(filter(partial(filters_match, filter_lists=filters), paths))
 
 		datasets[dataset]['paths'] = paths
 		datasets[dataset]['recs'] = recs
@@ -39,8 +42,10 @@ def prep_set(dataset_dict, join_on=['root'], join_method=inner_join, asset_list=
 				au_dg, au_cs = list_get_dict(dg, au), list_get_dict(cs2, au)
 				paths, recs, dfs = DataAPI.lazy_load(au_dg, au_cs)
 
-				if (asset_list is not None):
-					paths = list(filter(lambda p: p[0] in asset_list, paths))
+				if (assets is not None):
+					paths = list(filter(lambda p: p[0] in assets, paths))
+				if (filters is not None):
+					paths = list(filter(partial(filters_match, filter_lists=filters), paths))
 
 				datasets[dataset]['paths'].extend(paths)
 				for path in paths:
@@ -52,6 +57,19 @@ def prep_set(dataset_dict, join_on=['root'], join_method=inner_join, asset_list=
 		assert(len(remove_dups_list([''.join(lst) for lst in datasets[dataset]['paths']]))==len(datasets[dataset]['paths']))
 
 	return datasets
+
+def filters_match(item, filter_lists=None):
+	def filter_match(item, filter_list):
+		for idx, filter_field in enumerate(filter_list):
+			if (filter_field is not None and item[idx]!=filter_field):
+				return False
+		else:
+			return True
+
+	if (filter_lists is not None):
+		return any(filter_match(item, filter_list) for filter_list in filter_lists)
+	else:
+		return True
 
 def prep_labels(label_df, types=['bool', 'int']):
 	"""

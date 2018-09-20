@@ -27,7 +27,7 @@ def generic_test_applicator(argv):
 
 	test_spec = load_json(test_name, dir_path=TEST_DIR)
 	dataset_dict = load_json(dataset_name, dir_path=DATASET_DIR)
-	dataset = prep_set(dataset_dict, asset_list=assets)
+	dataset = prep_set(dataset_dict, assets=assets)
 
 	logging.info('assets: ' +str('all' if (assets==None) else ', '.join(assets)))
 	logging.info('dataset name: ' +dataset_name)
