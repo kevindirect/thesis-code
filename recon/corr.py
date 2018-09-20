@@ -13,7 +13,7 @@ from dask import delayed, compute
 
 from common_util import RECON_DIR, DT_CAL_DAILY_FREQ, makedir_if_not_exists, set_loglevel, get_cmd_args, dump_df, load_json, outer_join, list_get_dict, benchmark
 from recon.common import DATASET_DIR, REPORT_DIR, default_corr_dataset
-from recon.dataset_util import prep_set
+from recon.dataset_util import prep_dataset
 from recon.feat_util import gen_split_feats
 from recon.label_util import shift_label, apply_label_mask, eod_fct, default_fct, fastbreak_fct, confidence_fct, fastbreak_confidence_fct
 
@@ -24,7 +24,7 @@ def corr(argv):
 	chosen_asset = cmd_input['asset='] if (cmd_input['asset='] is not None) else None
 	dataset_name = cmd_input['dataset='] if (cmd_input['dataset='] is not None) else default_corr_dataset
 	dataset_dict = load_json(dataset_name, dir_path=DATASET_DIR)
-	dataset = prep_set(dataset_dict)
+	dataset = prep_dataset(dataset_dict)
 	skipped_matrices = []
 	results = []
 

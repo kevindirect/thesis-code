@@ -13,7 +13,7 @@ from dask import delayed, compute, visualize
 
 from common_util import RECON_DIR, get_cmd_args, makedir_if_not_exists, flatten2D, get_variants, dump_df, load_json, outer_join, list_get_dict, benchmark
 from recon.common import DATASET_DIR, TEST_DIR, default_gta_test, default_gta_dataset
-from recon.dataset_util import prep_set, prep_labels
+from recon.dataset_util import prep_dataset, prep_labels
 from recon.gta_util import GTA_TYPE_TRANSLATOR, GTA_TEST_TRANSLATOR, report_path_dir
 
 
@@ -27,7 +27,7 @@ def generic_test_applicator(argv):
 
 	test_spec = load_json(test_name, dir_path=TEST_DIR)
 	dataset_dict = load_json(dataset_name, dir_path=DATASET_DIR)
-	dataset = prep_set(dataset_dict, assets=assets)
+	dataset = prep_dataset(dataset_dict, assets=assets)
 
 	logging.info('assets: ' +str('all' if (assets==None) else ', '.join(assets)))
 	logging.info('dataset name: ' +dataset_name)

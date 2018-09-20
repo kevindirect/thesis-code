@@ -17,46 +17,49 @@ from recon.common import DATASET_DIR
 from recon.label_util import apply_label_mask, eod_fct, default_fct, fastbreak_fct, confidence_fct, fastbreak_confidence_fct
 
 
+def prep_dataset(dataset_dict, assets=None, filters_map=None):
+	"""
+	Return the tree of lazy loaded data specified by dataset_dict, asset list, and filter mapping.
+	"""
+	dataset = {}
 
-def prep_set(dataset_dict, join_on=['root'], join_method=inner_join, assets=None, filters=None):
-	datasets = {}
+	for name, accessors in dataset_dict.items():
+		filters = filters_map[name] if (name in filters_map) else None
+		dataset[name] = prep_data(accessors, assets=assets, filters=filters)
 
-	for dataset, au_list in dataset_dict.items():
-		datasets[dataset] = {}
+	return dataset
 
-		au_dg, au_cs = list_get_dict(dg, au_list[0]), list_get_dict(cs2, au_list[0])
-		paths, recs, dfs = DataAPI.lazy_load(au_dg, au_cs)
+def prep_data(accessors, assets=None, filters=None):
+	au_dg, au_cs = list_get_dict(dg, accessors[0]), list_get_dict(cs2, accessors[0])
+	paths, recs, dfs = DataAPI.lazy_load(au_dg, au_cs)
 
-		if (assets is not None):
-			paths = list(filter(lambda p: p[0] in assets, paths))
-		if (filters is not None):
-			paths = list(filter(partial(filters_match, filter_lists=filters), paths))
+	if (assets is not None):
+		paths = list(filter(lambda p: p[0] in assets, paths))
+	if (filters is not None):
+		paths = list(filter(partial(filters_match, filter_lists=filters), paths))
 
-		datasets[dataset]['paths'] = paths
-		datasets[dataset]['recs'] = recs
-		datasets[dataset]['dfs'] = dfs
+	data = {'paths': paths, 'recs': recs, 'dfs': dfs}
 
-		# For dataset partitions sourced from multiple access utils
-		if (len(au_list) > 1):
-			for au in au_list[1:]:
-				au_dg, au_cs = list_get_dict(dg, au), list_get_dict(cs2, au)
-				paths, recs, dfs = DataAPI.lazy_load(au_dg, au_cs)
+	# For data sourced from multiple data accessors
+	if (len(accessors) > 1):
+		for au in accessors[1:]:
+			au_dg, au_cs = list_get_dict(dg, au), list_get_dict(cs2, au)
+			paths, recs, dfs = DataAPI.lazy_load(au_dg, au_cs)
 
-				if (assets is not None):
-					paths = list(filter(lambda p: p[0] in assets, paths))
-				if (filters is not None):
-					paths = list(filter(partial(filters_match, filter_lists=filters), paths))
+			if (assets is not None):
+				paths = list(filter(lambda p: p[0] in assets, paths))
+			if (filters is not None):
+				paths = list(filter(partial(filters_match, filter_lists=filters), paths))
 
-				datasets[dataset]['paths'].extend(paths)
-				for path in paths:
-					rec, df = list_get_dict(recs, path), list_get_dict(dfs, path)
-					list_set_dict(datasets[dataset]['recs'], path, rec)
-					list_set_dict(datasets[dataset]['dfs'], path, df)
+			data['paths'].extend(paths)
+			for path in paths:
+				rec, df = list_get_dict(recs, path), list_get_dict(dfs, path)
+				list_set_dict(data['recs'], path, rec)
+				list_set_dict(data['dfs'], path, df)
 
-		# Assert there are no duplicates
-		assert(len(remove_dups_list([''.join(lst) for lst in datasets[dataset]['paths']]))==len(datasets[dataset]['paths']))
-
-	return datasets
+	# Assert there are no duplicates
+	assert(len(remove_dups_list([''.join(lst) for lst in data['paths']]))==len(data['paths']))
+	return data
 
 def filters_match(item, filter_lists=None):
 	def filter_match(item, filter_list):
