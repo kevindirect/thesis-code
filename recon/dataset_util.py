@@ -24,7 +24,7 @@ def prep_dataset(dataset_dict, assets=None, filters_map=None):
 	dataset = {}
 
 	for name, accessors in dataset_dict.items():
-		filters = filters_map[name] if (name in filters_map) else None
+		filters = filters_map[name] if (filters_map is not None and name in filters_map) else None
 		dataset[name] = prep_data(accessors, assets=assets, filters=filters)
 
 	return dataset

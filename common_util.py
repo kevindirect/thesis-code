@@ -91,6 +91,18 @@ def remove_dups_list(lst):
 def flatten2D(list2D):
 	return list(chain(*list2D))
 
+def get0(lst):
+	if (len(lst)==1):
+		return lst[0]
+	else:
+		return lst
+
+def getcon(lst, string):
+	"""
+	Return sublist of items containing string.
+	"""
+	return get0(list(filter(lambda el: string in el, lst)))
+
 def list_compare(master, other):
 	"""
 	Return describing relationship master and other.
