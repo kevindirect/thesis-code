@@ -501,6 +501,13 @@ def get_time_mask(df, offset_col_name=None, offset_unit=DT_HOURLY_FREQ, offset_t
 	return mask_df
 
 """Numpy"""
+def abs_df(df):
+	"""
+	Apply absolute value to all numeric items in pandas DataFrame.
+	"""
+	return df.apply(lambda x: x.abs() if x.dtype.kind in 'iufc' else x)
+
+
 def pd_to_np(fn):
 	"""
 	Return function with all pandas typed arguments converted to their numpy counterparts.
