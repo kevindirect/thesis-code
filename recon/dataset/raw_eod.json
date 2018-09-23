@@ -1,6 +1,8 @@
 {
 	"features": [
-		["srf", "dr", "drl"]
+		["srf", "dr", "drl"],
+		["ffracdiff", "dffracdiff"],
+		["diff", "ddiff"]
 	],
 	"labels": [
 		["labels", "itb_mvp"]
