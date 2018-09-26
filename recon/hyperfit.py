@@ -14,8 +14,7 @@ from sklearn.metrics import confusion_matrix, precision_recall_fscore_support, c
 
 from common_util import remove_dups_list, list_get_dict
 from recon.common import dum
-from recon.cv_util import PurgedKFold
-from recon.model_util import MyPipeline
+from recon.model_util import MyPipeline, PurgedKFold
 
 
 def clfHyperFit(feat, lbl, t1, pipe_clf, param_grid, cv=3, bagging=[0,None,1.], rnd_search_iter=0, n_jobs=-1, pct_embargo=0, **fit_params):

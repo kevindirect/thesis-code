@@ -9,12 +9,12 @@ import logging
 import numpy as np
 import pandas as pd
 
-from common_util import RECON_DIR, load_json, dump_df, inner_join, remove_dups_list, benchmark
+from common_util import RECON_DIR, PIPE_DIR, CV_DIR, load_json, dump_df, inner_join, remove_dups_list, benchmark
 from data.data_api import DataAPI
 from data.access_util import df_getters as dg, col_subsetters2 as cs2
 from recon.common import default_pipefile, default_cv_file
 from recon.pipe_util import extract_pipeline
-from recon.cv_util import extract_cv_splitter
+from recon.model_util import extract_cv_splitter
 from recon.feat_util import gen_split_feats
 from recon.label_util import gen_label_dfs, default_fct, fastbreak_fct, confidence_fct, fastbreak_confidence_fct
 
@@ -55,11 +55,11 @@ def search_hyperspace(argv):
 		logging.info('optimize flag not set (parallelism disabled)')
 		from sklearn.model_selection import GridSearchCV
 
-	pipe_dict = load_json(pipefile, dir_path=RECON_DIR)
+	pipe_dict = load_json(pipefile, dir_path=PIPE_DIR)
 	pipeline, grid = extract_pipeline(pipe_dict)
 	logging.info('loaded pipeline settings from ' +str(pipefile))
 
-	cv_dict = load_json(cv_file, dir_path=RECON_DIR)
+	cv_dict = load_json(cv_file, dir_path=CV_DIR)
 	cv_splitter = extract_cv_splitter(cv_dict)
 	logging.info('loaded cross val settings from ' +str(cv_file))
 
