@@ -13,17 +13,6 @@ from common_util import RECON_DIR
 from recon.common import dum
 
 
-class MyPipeline(Pipeline):
-	"""
-	Enhanced Pipeline Class
-	Lopez De Prado, Advances in Financial Machine Learning (p. 131)
-	"""
-	def fit(self, X, y, sample_weight=None, **fit_params):
-		if (sample_weight is not None):
-			fit_params[self.steps[-1][0]+'__sample_weight'] = sample_weight
-		return super(MyPipeline, self).fit(X, y, **fit_params)
-
-
 """ ********** TRAIN/TEST SPLITS ********** """
 def get_train_test_split(feats, lab, train_ratio=.8, to_np=True):
 	"""
