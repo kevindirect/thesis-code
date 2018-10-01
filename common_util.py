@@ -500,6 +500,21 @@ def get_time_mask(df, offset_col_name=None, offset_unit=DT_HOURLY_FREQ, offset_t
 
 	return mask_df
 
+def reindex_on_time_mask(reindex_df, time_mask_df, dest_tz_col_name='times'):
+	"""
+	Convenience function to reindex df by time_mask_df.
+
+	Args:
+		reindex_df (pd.DataFrame): DataFrame with index that is a superset (not strict superset) of time_mask_df
+		time_mask_df (pd.DataFrame): A table that maps its DatetimeIndex index to the destination timezone
+
+	Returns:
+		pd.DataFrame identical to reindex_df, with its index swapped with the 'times' column of time_mask_df
+	"""
+	new_index = inner_join(reindex_df, time_mask_df)[dest_tz_col_name]
+	reindex_df.index = new_index.rename('index')
+	return reindex_df
+
 """Numpy"""
 def abs_df(df):
 	"""
