@@ -15,8 +15,16 @@ from recon.common import dum
 """ ********** TRAIN/TEST SPLITS ********** """
 def get_train_test_split(feats, lab, train_ratio=.8, to_np=True):
 	"""
+	Return a basic train/test split.
+
+	Args:
+		feats (pd.DataFrame or ndarray): features dataframe
+		lab (pd.Series or ndarray): label series
+		train_ratio (float ∈ [0, 1]): proportion of total data used for training 
+		to_np (bool): boolean determines whether to convert input to numpy types
+
 	Returns:
-		train test split - feats_train, feats_test, lab_train, lab_test
+		Tuple of (feats_train, feats_test, lab_train, lab_test)
 	"""
 	if (to_np):
 		return train_test_split(feats.values, lab.values, train_size=train_ratio, shuffle=False)
