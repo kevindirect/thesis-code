@@ -18,6 +18,8 @@ from common_util import RECON_DIR
 DATASET_DIR = RECON_DIR +'dataset' +sep
 REPORT_DIR = RECON_DIR +'report' +sep
 TEST_DIR = RECON_DIR +'test' +sep
+PIPE_DIR = RECON_DIR +'pipe' +sep
+CV_DIR = RECON_DIR +'cv' +sep
 dum = 0
 
 

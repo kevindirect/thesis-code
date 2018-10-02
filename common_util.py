@@ -500,6 +500,115 @@ def get_time_mask(df, offset_col_name=None, offset_unit=DT_HOURLY_FREQ, offset_t
 
 	return mask_df
 
+def reindex_on_time_mask(reindex_df, time_mask_df, dest_tz_col_name='times'):
+	"""
+	Convenience function to reindex df by time_mask_df.
+
+	Args:
+		reindex_df (pd.DataFrame): DataFrame with index that is a superset (not strict superset) of time_mask_df
+		time_mask_df (pd.DataFrame): A table that maps its DatetimeIndex index to the destination timezone
+
+	Returns:
+		pd.DataFrame identical to reindex_df, with its index swapped with the 'times' column of time_mask_df
+	"""
+	new_index = inner_join(reindex_df, time_mask_df)[dest_tz_col_name]
+	reindex_df.index = new_index.rename('index')
+	return reindex_df
+
+def df_freq_transpose(df, col_freq='hour'):
+	"""
+	Transpose df by time index attribute.
+
+	Args:
+		df (pd.DataFrame): df to transpose
+		col_freq (str): columns of result df, must an be attribute of the original df index
+
+	Returns:
+		transposed pd.DataFrame 
+	"""
+	transposed = None
+	if (not df.index.empty):
+		day_date = df.index.date[0]
+		day_cols = getattr(df.index, col_freq)
+		transposed = pd.DataFrame(df.values.T, columns=day_cols, index=[day_date])
+	return transposed
+
+def gb_transpose(df, agg_freq=DT_CAL_DAILY_FREQ, col_freq='hour'):
+	"""
+	Convert a series a DataFrame grouped by agg_freq and transposed in each group.
+
+	Args:
+		df (pd.DataFrame): df to group-transpose
+		agg_freq (str): aggregation frequency
+
+	Returns:
+		pd.DataFrame where each aggregation has its rows and columns transposed.
+		
+		Example:
+
+		def make_example_intraday_df(tz_code='UTC'):
+			example_dti = ['2010-01-02 01:00:00+00:00', '2010-01-02 02:00:00+00:00', '2010-01-02 03:00:00+00:00', '2010-01-02 04:00:00+00:00',
+							'2010-01-03 01:00:00+00:00', '2010-01-03 02:00:00+00:00', '2010-01-03 03:00:00+00:00', '2010-01-03 04:00:00+00:00',
+							'2010-01-04 01:00:00+00:00', '2010-01-04 02:00:00+00:00', '2010-01-04 03:00:00+00:00', '2010-01-04 04:00:00+00:00',
+							'2010-01-08 01:00:00+00:00', '2010-01-08 02:00:00+00:00', '2010-01-08 03:00:00+00:00', '2010-01-08 04:00:00+00:00',
+							'2010-01-09 01:00:00+00:00',                                                           '2010-01-09 04:00:00+00:00']
+			example_vals = [i for i in range(len(example_dti))]
+			example = pd.DataFrame(example_vals, index=pd.DatetimeIndex(example_dti), columns=['intraday_vals'])
+			example.index.name = 'index'
+
+			for i in example.index:
+				if (i.hour==4):
+					example.loc[i] = None
+			example.loc['2010-01-03 02:00:00+00:00'] = None
+			example.loc['2010-01-09 04:00:00+00:00'] = 18
+
+			return example.tz_localize(tz_code)
+
+		Example Input:
+
+			index	                    vals
+			2010-01-02 01:00:00+00:00	0.0
+			2010-01-02 02:00:00+00:00	1.0
+			2010-01-02 03:00:00+00:00	2.0
+			2010-01-02 04:00:00+00:00	NaN
+			2010-01-03 01:00:00+00:00	4.0
+			2010-01-03 02:00:00+00:00	NaN
+			2010-01-03 03:00:00+00:00	6.0
+			2010-01-03 04:00:00+00:00	NaN
+			2010-01-04 01:00:00+00:00	8.0
+			2010-01-04 02:00:00+00:00	9.0
+			2010-01-04 03:00:00+00:00	10.0
+			2010-01-04 04:00:00+00:00	NaN
+			2010-01-08 01:00:00+00:00	12.0
+			2010-01-08 02:00:00+00:00	13.0
+			2010-01-08 03:00:00+00:00	14.0
+			2010-01-08 04:00:00+00:00	NaN
+			2010-01-09 01:00:00+00:00	16.0
+			2010-01-09 04:00:00+00:00	18.0
+
+		Example Output:
+
+			index	    1	  2	    3	  4
+			2010-01-02	0.0	  1.0	2.0	  NaN
+			2010-01-03	4.0	  NaN	6.0	  NaN
+			2010-01-04	8.0	  9.0	10.0  NaN
+			2010-01-05	NaN	  NaN	NaN   NaN
+			2010-01-06	NaN	  NaN	NaN   NaN
+			2010-01-07	NaN	  NaN	NaN   NaN
+			2010-01-08	12.0  13.0	14.0  NaN
+			2010-01-09	16.0  NaN	NaN	  18.0
+	"""
+	# Groupby aggfreq
+	gbt = df.groupby(pd.Grouper(freq=agg_freq)).apply(df_freq_transpose, col_freq=col_freq)
+
+	# Drop empty columns and MultiIndex
+	gbt = gbt.dropna(axis=1, how='all')
+	gbt.index = gbt.index.droplevel(level=0)
+	gbt.index = pd.to_datetime(gbt.index, yearfirst=True)
+	gbt = gbt.asfreq(agg_freq)
+
+	return gbt
+
 """Numpy"""
 def abs_df(df):
 	"""

@@ -6,6 +6,7 @@ import sys
 import os
 import logging
 from functools import partial, reduce
+from itertools import product
 
 import pandas as pd
 from dask import delayed
@@ -16,6 +17,21 @@ from data.access_util import df_getters as dg, col_subsetters2 as cs2
 from recon.common import DATASET_DIR
 from recon.label_util import apply_label_mask, eod_fct, default_fct, fastbreak_fct, confidence_fct, fastbreak_confidence_fct
 
+asset_match = lambda fp, lp: fp[0]==lp[0]
+fl_data_from_paths = lambda dset, fp, lp: (list_get_dict(dset['features']['dfs'], fp), list_get_dict(dset['labels']['dfs'], lp))
+
+def gen_fl(dataset, pairing_constraint=asset_match):
+	"""
+	Convenience function to yield all feature, label pairs from dataset.
+	"""
+	if (pairing_constraint is None):
+		pathgen = product(dataset['features']['paths'], dataset['labels']['paths'])
+	else:
+		pathgen = filter(lambda fp_lp: pairing_constraint(fp_lp[0], fp_lp[1]), product(dataset['features']['paths'], dataset['labels']['paths']))
+
+	datagen = map(lambda fp_lp: fl_data_from_paths(dataset, fp_lp[0], fp_lp[1]), pathgen)
+
+	yield from zip(pathgen, datagen)
 
 def prep_dataset(dataset_dict, assets=None, filters_map=None):
 	"""
