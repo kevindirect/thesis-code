@@ -693,6 +693,17 @@ def assert_equal_pandas(df1, df2, **kwargs):
 DEFAULT_NUMEXPR = EMPTY_STR
 DEFAULT_QUERY_JOIN = 'all'
 ALLOWED_TYPES = [int, float, str, tuple, list]
+ROW_COUNT_THRESH = .1
+
+def filter_cols_below(df, row_count_thresh=ROW_COUNT_THRESH):
+	"""
+	Return df where the columns whose counts below the row_count_thresh*max column's count are filtered out.
+	"""
+	df_counts = df.count()
+	max_row = max(df_counts)
+	low_dropped = df.loc[:, df_counts > (max_row*row_count_thresh)]
+
+	return low_dropped
 
 def equals_numexpr(key, val):
 	"""Return numexpr expression for 'key equals value'"""
