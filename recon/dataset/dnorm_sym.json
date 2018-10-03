@@ -5,5 +5,8 @@
 	],
 	"labels": [
 		["labels", "itb_mvp"]
+	],
+	"row_mask": [
+		["raw", "id_rm"]
 	]
 }
