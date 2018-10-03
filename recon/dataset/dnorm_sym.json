@@ -6,7 +6,7 @@
 	"labels": [
 		["labels", "itb_mvp"]
 	],
-	"row_mask": [
+	"row_masks": [
 		["raw", "id_rm"]
 	]
 }
