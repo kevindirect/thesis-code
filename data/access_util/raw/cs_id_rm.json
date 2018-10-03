@@ -15,27 +15,6 @@
 				"endswith": [],
 				"regex": [],
 				"exclude": null
-			},
-			"raw_trmi": {
-				"exact": ["times"],
-				"startswith": [],
-				"endswith": [],
-				"regex": [],
-				"exclude": null
-			},
-			"raw_trmi_v2": {
-				"exact": ["times"],
-				"startswith": [],
-				"endswith": [],
-				"regex": [],
-				"exclude": null
-			},
-			"raw_trmi_v3": {
-				"exact": ["times"],
-				"startswith": [],
-				"endswith": [],
-				"regex": [],
-				"exclude": null
 			}
 		}
 	}
