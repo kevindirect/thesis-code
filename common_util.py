@@ -811,7 +811,7 @@ def get_subset(str_list, qualifier_dict):
 		exclude_fn = lambda string: string not in get_subset(str_list, qualifier_dict['exclude'])
 		selected = filter(exclude_fn, selected)
 
-	return list(dict.fromkeys(selected)) # Remove dups (casting to dict keys retains order in Python 3.6+) and cast to list
+	return remove_dups_list(selected)
 
 def chained_filter(str_list, qualifier_dict_list):
 	"""
@@ -824,7 +824,7 @@ def chained_filter(str_list, qualifier_dict_list):
 	Returns:
 		sublist of str_list
 	"""
-	if (not isinstance(qualifier_dict_list, list)):
+	if (isinstance(qualifier_dict_list, dict)):
 		qualifier_dict_list = [qualifier_dict_list]
 
 	return reduce(get_subset, qualifier_dict_list, str_list)
