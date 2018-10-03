@@ -17,6 +17,7 @@ from common_util import RECON_DIR, MODEL_DIR
 # PACKAGE CONSTANTS
 DATASET_DIR = RECON_DIR +'dataset' +sep
 FILTERSET_DIR = RECON_DIR +'filterset' +sep
+EXPECTED_NUM_HOURS = 8
 dum = 0
 
 
@@ -24,6 +25,7 @@ dum = 0
 default_dataset = 'dnorm_sym.json'
 default_filterset = 'default_dnorm_sym.json'
 default_filter = ["0"]
+default_nt_filter = ["1"]
 
 # PACKAGE UTIL FUNCTIONS
 
