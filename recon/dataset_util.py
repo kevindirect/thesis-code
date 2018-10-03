@@ -17,19 +17,35 @@ from data.access_util import df_getters as dg, col_subsetters2 as cs2
 from recon.common import DATASET_DIR
 from recon.label_util import apply_label_mask, eod_fct, default_fct, fastbreak_fct, confidence_fct, fastbreak_confidence_fct
 
-asset_match = lambda fp, lp: fp[0]==lp[0]
-fl_data_from_paths = lambda dset, fp, lp: (list_get_dict(dset['features']['dfs'], fp), list_get_dict(dset['labels']['dfs'], lp))
 
-def gen_fl(dataset, pairing_constraint=asset_match):
-	"""
-	Convenience function to yield all feature, label pairs from dataset.
-	"""
-	if (pairing_constraint is None):
-		pathgen = product(dataset['features']['paths'], dataset['labels']['paths'])
-	else:
-		pathgen = filter(lambda fp_lp: pairing_constraint(fp_lp[0], fp_lp[1]), product(dataset['features']['paths'], dataset['labels']['paths']))
+asset_match = lambda a, b: a[0]==b[0]
+src_match = lambda a, b: a[2]==b[2]
 
-	datagen = map(lambda fp_lp: fl_data_from_paths(dataset, fp_lp[0], fp_lp[1]), pathgen)
+flr_asset_match = lambda fp, lp, rp: asset_match(fp, lp) and asset_match(fp, rp)
+flr_src_match = lambda fp, lp, rp: src_match(fp, rp)
+flr_constraint = lambda fp, lp, rp: flr_asset_match(fp, lp, rp) and flr_src_match(fp, lp, rp)
+
+data_from_paths = lambda dataset, group, paths: tuple(list_get_dict(dataset[part]['dfs'], paths[i]) for i, part in enumerate(group))
+
+def gen_group(dataset, group=['features', 'labels', 'row_masks'], constraint=flr_constraint):
+	"""
+	Convenience function to yield specified partitions from dataset.
+
+	Args:
+		dataset (dict): dictionary returned by prep_dataset
+		group (list): data partitions to include in generator
+		constraint (lambda): constraint of data partition paths, must have as many arguments as items in group
+
+	Yields:
+		Pair of paths and dataframes ordered by the specifed group list
+
+		Example:
+			gen_group(dataset, group=['features', 'labels'], constraint=asset_match) -> yields feature label pairs where the first items of their paths match
+	"""
+
+	parts = [dataset[part]['paths'] for part in group]
+	pathgen = filter(lambda combo: constraint(*combo), product(*parts))
+	datagen = map(partial(data_from_paths, dataset, group), pathgen)
 
 	yield from zip(pathgen, datagen)
 
