@@ -82,7 +82,7 @@ def net_test(argv):
 			final_labs = prep_labels(labels, types=['bool'])
 			final_labs = delayed(lambda df: df.loc[:, chained_filter(df.columns, labs_filter)])(final_labs) # EOD, FBEOD, FB
 			
-			sc = delayed(regular_test)(final_feats, final_labs)
+			sc = delayed(feedforward_test)(final_feats, final_labs)
 			print(sc.compute())
 
 
@@ -107,16 +107,20 @@ def align_first_last(df):
 
 	return filter_cols_below(df)
 
-def regular_test(feat_df, lab_df):
-	lab_ser = shift_label(lab_df.iloc[:, 0])
+def feedforward_test(feat_df, lab_df, label_col_idx=0):
+	lab_name, num_features = lab_df.columns[label_col_idx], feat_df.shape[1]
+	lab_ser = shift_label(lab_df.loc[:, lab_name])
+	feat_train, feat_test, lab_train, lab_test = get_train_test_split(feat_df.dropna(axis=0, how='all'), lab_ser.dropna())
+
+	logging.info('label name: ' +str(lab_name))
+	logging.info('num features: {}'.format(num_features))
+
 	model = Sequential()
-	num_features = feat_df.shape[1]
 	model.add(Dense(num_features*2, input_dim=num_features, activation='sigmoid'))
 	model.add(Dense(num_features, input_dim=num_features, activation='sigmoid'))
-	model.add(Dense(1, activation='sigmoid'))
+	model.add(Dense(1, activation='softmax'))
 
 	model.compile(loss='binary_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
-	feat_train, feat_test, lab_train, lab_test = get_train_test_split(feat_df.dropna(axis=0, how='all'), lab_ser.dropna())
 	model.fit(feat_train, lab_train, epochs=20, batch_size=128)
 	score = model.evaluate(feat_test, lab_test, batch_size=128)
 
