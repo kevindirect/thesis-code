@@ -11,7 +11,7 @@ from itertools import product
 import pandas as pd
 from dask import delayed
 
-from common_util import DT_HOURLY_FREQ, DT_CAL_DAILY_FREQ, inner_join, outer_join, list_get_dict, list_set_dict, remove_dups_list
+from common_util import DT_HOURLY_FREQ, DT_CAL_DAILY_FREQ, df_dti_index_to_date, inner_join, outer_join, list_get_dict, list_set_dict, remove_dups_list
 from data.data_api import DataAPI
 from data.access_util import df_getters as dg, col_subsetters2 as cs2
 from recon.common import DATASET_DIR
@@ -128,5 +128,6 @@ def prep_labels(label_df, types=['bool', 'int']):
 		label_groups.extend((vel, mag, mom))
 
 	labels = delayed(reduce)(outer_join, label_groups)
+	labels = delayed(df_dti_index_to_date)(labels)
 
 	return labels
