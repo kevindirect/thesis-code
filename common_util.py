@@ -407,6 +407,15 @@ def df_value_count(df, axis=0):
 	return df.apply(lambda ser: ser.value_counts(), axis=axis)
 
 """Datetime"""
+def df_dti_index_to_date(df, new_freq=DT_CAL_DAILY_FREQ):
+	"""
+	Convert DataFrame's DatetimeIndex index to solely a date component, set new frequency if specified.
+	"""
+	df.index = pd.DatetimeIndex(df.index.normalize().date)
+	if (new_freq is not None):
+		df = df.asfreq(new_freq)
+	return df
+
 def series_to_dti(ser, fmt=DT_FMT_YMD_HM, utc=True, exact=True, freq=DT_HOURLY_FREQ):
 	"""
 	Return object (str) dtyped series as DatetimeIndex dtyped series.
