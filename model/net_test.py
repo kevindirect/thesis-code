@@ -27,7 +27,7 @@ def net_test(argv):
 	filterset_name = cmd_input['filterset='] if (cmd_input['filterset='] is not None) else default_filterset
 	filter_idxs =  list(map(str.strip, cmd_input['idxfilters='].split(','))) if (cmd_input['idxfilters='] is not None) else default_nt_filter
 	assets = list(map(str.strip, cmd_input['assets='].split(','))) if (cmd_input['assets='] is not None) else None
-	target_col_idx = cmd_input['target_col_idx='] if (cmd_input['target_col_idx='] is not None) else default_target_col_idx
+	target_col_idx = int(cmd_input['target_col_idx=']) if (cmd_input['target_col_idx='] is not None) else default_target_col_idx
 	run_compute = True if (cmd_input['visualize'] is None) else False
 
 	dataset_dict = load_json(dataset_name, dir_path=DATASET_DIR)
