@@ -14,19 +14,20 @@ from keras.models import Sequential
 from keras.layers import Dense, Activation
 
 from common_util import RECON_DIR, JSON_SFX_LEN, DT_CAL_DAILY_FREQ, get_cmd_args, reindex_on_time_mask, gb_transpose, filter_cols_below, dump_df, load_json, outer_join, list_get_dict, chained_filter, benchmark
-from model.common import DATASET_DIR, FILTERSET_DIR, EXPECTED_NUM_HOURS, default_dataset, default_filterset, default_nt_filter
+from model.common import DATASET_DIR, FILTERSET_DIR, EXPECTED_NUM_HOURS, default_dataset, default_filterset, default_nt_filter, default_target_col_idx
 from recon.dataset_util import prep_dataset, prep_labels, gen_group
 from recon.model_util import get_train_test_split, gen_time_series_split
 from recon.label_util import shift_label
 
 
 def net_test(argv):
-	cmd_arg_list = ['dataset=', 'filterset=', 'idxfilters=', 'assets=', 'visualize']
+	cmd_arg_list = ['dataset=', 'filterset=', 'idxfilters=', 'assets=', 'target_col_idx=', 'visualize']
 	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name='net_test')
 	dataset_name = cmd_input['dataset='] if (cmd_input['dataset='] is not None) else default_dataset
 	filterset_name = cmd_input['filterset='] if (cmd_input['filterset='] is not None) else default_filterset
 	filter_idxs =  list(map(str.strip, cmd_input['idxfilters='].split(','))) if (cmd_input['idxfilters='] is not None) else default_nt_filter
 	assets = list(map(str.strip, cmd_input['assets='].split(','))) if (cmd_input['assets='] is not None) else None
+	target_col_idx = cmd_input['target_col_idx='] if (cmd_input['target_col_idx='] is not None) else default_target_col_idx
 	run_compute = True if (cmd_input['visualize'] is None) else False
 
 	dataset_dict = load_json(dataset_name, dir_path=DATASET_DIR)
@@ -82,7 +83,7 @@ def net_test(argv):
 			final_labs = prep_labels(labels, types=['bool'])
 			final_labs = delayed(lambda df: df.loc[:, chained_filter(df.columns, labs_filter)])(final_labs) # EOD, FBEOD, FB
 			
-			sc = delayed(feedforward_test)(final_feats, final_labs)
+			sc = delayed(feedforward_test)(final_feats, final_labs, label_col_idx=target_col_idx)
 			print(sc.compute())
 
 
@@ -110,7 +111,7 @@ def align_first_last(df):
 def feedforward_test(feat_df, lab_df, label_col_idx=0):
 	lab_name, num_features = lab_df.columns[label_col_idx], feat_df.shape[1]
 	lab_ser = shift_label(lab_df.loc[:, lab_name])
-	print(lab_ser.unique())
+
 	feat_train, feat_test, lab_train, lab_test = get_train_test_split(feat_df.dropna(axis=0, how='all'), lab_ser.dropna())
 
 	logging.info('label name: ' +str(lab_name))

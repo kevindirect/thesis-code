@@ -26,6 +26,7 @@ default_dataset = 'dnorm_sym.json'
 default_filterset = 'default_dnorm_sym.json'
 default_filter = ["0"]
 default_nt_filter = ["1"]
+default_target_col_idx = 0
 
 # PACKAGE UTIL FUNCTIONS
 
