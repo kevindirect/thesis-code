@@ -17,6 +17,7 @@ from common_util import RECON_DIR, JSON_SFX_LEN, DT_CAL_DAILY_FREQ, get_cmd_args
 from model.common import DATASET_DIR, FILTERSET_DIR, EXPECTED_NUM_HOURS, default_dataset, default_filterset, default_nt_filter
 from recon.dataset_util import prep_dataset, prep_labels, gen_group
 from recon.model_util import get_train_test_split, gen_time_series_split
+from recon.label_util import shift_label
 
 
 def net_test(argv):
@@ -68,7 +69,7 @@ def net_test(argv):
 			fpaths, lpaths, rpaths = paths
 			features, labels, row_masks = dfs
 			asset = fpaths[0]
-			print(fpaths, lpaths, rpaths)
+			logging.info(fpaths, lpaths, rpaths)
 
 			reindexed = delayed(reindex_on_time_mask)(features, row_masks)
 			transposed = delayed(gb_transpose)(reindexed.loc[:, ['pba_avgPrice']])
@@ -105,7 +106,7 @@ def align_first_last(df):
 	return filter_cols_below(df)
 
 def regular_test(feat_df, lab_df):
-	lab_ser = lab_df.iloc[:, 0]
+	lab_ser = shift_label(lab_df.iloc[:, 0])
 	model = Sequential()
 	num_features = feat_df.shape[1]
 	model.add(Dense(num_features*2, input_dim=num_features, activation='sigmoid'))
@@ -113,7 +114,7 @@ def regular_test(feat_df, lab_df):
 	model.add(Dense(1, activation='sigmoid'))
 
 	model.compile(loss='binary_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
-	feat_train, feat_test, lab_train, lab_test = get_train_test_split(feat_df, lab_ser)
+	feat_train, feat_test, lab_train, lab_test = get_train_test_split(feat_df.dropna(axis=0, how='all'), lab_ser.dropna())
 	model.fit(feat_train, lab_train, epochs=20, batch_size=128)
 	score = model.evaluate(feat_test, lab_test, batch_size=128)
 
