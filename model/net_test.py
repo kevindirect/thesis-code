@@ -123,29 +123,11 @@ def feedforward_test(feat_df, lab_df, label_col_idx=0):
 	model.add(Dense(num_features*2, input_dim=num_features*2, activation='sigmoid'))
 	model.add(Dense(1, input_dim=num_features, activation='tanh'))
 
-	model.compile(loss='binary_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
+	model.compile(loss='binary_crossentropy', optimizer='sgd', metrics=['accuracy'])
 	model.fit(feat_train, lab_train, epochs=20, batch_size=128)
 	score = model.evaluate(feat_test, lab_test, batch_size=128)
 
 	return score
-
-
-def cnn_test(dataset):
-
-	for lpath in dataset['labels']['paths']:
-		asset_name, base_label_name = lpath[0], lpath[-1]
-		test_name = '_'.join([meta['pfx_fmt'].format(**variant), base_label_name])
-		logging.info(asset_name +': ' +test_name)
-
-		label_df = list_get_dict(dataset['labels']['dfs'], lpath)
-		labels = prep_labels(label_df)
-
-		for fpath in filter(lambda fpath: fpath[0]==asset_name, dataset['features']['paths']):
-			feat_df_desc = fpath[-1]
-			logging.debug(feat_df_desc)
-			feats = list_get_dict(dataset['features']['dfs'], fpath)
-			sub_matrix = delayed(gta_apply_type_fn)(feats, feat_df_desc, labels, partial(gta_test_fn, **variant))
-			matrix = delayed(pd.concat)([matrix, sub_matrix], axis=0, join='outer', ignore_index=True, sort=False)
 
 
 if __name__ == '__main__':
