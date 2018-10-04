@@ -121,7 +121,7 @@ def feedforward_test(feat_df, lab_df, label_col_idx=0):
 	model.add(Dense(num_features, input_dim=num_features*2, activation='sigmoid'))
 	model.add(Dense(1, input_dim=num_features, activation='tanh'))
 
-	model.compile(loss='binary_crossentropy', optimizer='sgd', metrics=['accuracy'])
+	model.compile(loss='mean_absolute_error', optimizer='sgd', metrics=['accuracy'])
 	model.fit(feat_train, lab_train, epochs=20, batch_size=128)
 	score = model.evaluate(feat_test, lab_test, batch_size=128)
 
