@@ -69,7 +69,9 @@ def net_test(argv):
 			fpaths, lpaths, rpaths = paths
 			features, labels, row_masks = dfs
 			asset = fpaths[0]
-			logging.info(fpaths, lpaths, rpaths)
+			logging.info('fpaths: ' +str(fpaths))
+			logging.info('lpaths: ' +str(lpaths))
+			logging.info('rpaths: ' +str(rpaths))
 
 			reindexed = delayed(reindex_on_time_mask)(features, row_masks)
 			transposed = delayed(gb_transpose)(reindexed.loc[:, ['pba_avgPrice']])
