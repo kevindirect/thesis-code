@@ -110,6 +110,7 @@ def align_first_last(df):
 def feedforward_test(feat_df, lab_df, label_col_idx=0):
 	lab_name, num_features = lab_df.columns[label_col_idx], feat_df.shape[1]
 	lab_ser = shift_label(lab_df.loc[:, lab_name])
+	print(lab_ser.unique())
 	feat_train, feat_test, lab_train, lab_test = get_train_test_split(feat_df.dropna(axis=0, how='all'), lab_ser.dropna())
 
 	logging.info('label name: ' +str(lab_name))
