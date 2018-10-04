@@ -117,10 +117,10 @@ def feedforward_test(feat_df, lab_df, label_col_idx=0):
 
 	model = Sequential()
 	model.add(Dense(num_features*2, input_dim=num_features, activation='sigmoid'))
-	model.add(Dense(num_features, input_dim=num_features, activation='sigmoid'))
-	model.add(Dense(1, activation='softmax'))
+	model.add(Dense(num_features, input_dim=num_features*2, activation='sigmoid'))
+	model.add(Dense(1, input_dim=num_features, activation='softmax'))
 
-	model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
+	model.compile(loss='binary_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
 	model.fit(feat_train, lab_train, epochs=20, batch_size=128)
 	score = model.evaluate(feat_test, lab_test, batch_size=128)
 
