@@ -113,7 +113,9 @@ def feedforward_test(feat_df, lab_df, label_col_idx=0):
 	features, label = feat_df.dropna(axis=0, how='all'), shift_label(lab_df.loc[:, lab_name]).dropna()
 	feat_train, feat_test, lab_train, lab_test = get_train_test_split(features, label, train_ratio=.5)
 
-	logging.info('label name: {name}, label space: {space}'.format(name=lab_name, space=str(label.unique())))
+	logging.info('DATA DESCRIPTION')
+	logging.info('label name: {name}, label space: {space}, label priors: {prior}'
+		.format(name=lab_name, space=str(label.unique()), prior=str(label.value_counts(normalize=True, sort=True))))
 	logging.info('num features: {}'.format(num_features))
 
 	model = Sequential()
@@ -121,10 +123,10 @@ def feedforward_test(feat_df, lab_df, label_col_idx=0):
 	model.add(Dense(1, input_dim=num_features, activation='tanh'))
 	model.compile(loss='binary_crossentropy', optimizer='sgd', metrics=['accuracy'])
 
-	model.fit(feat_train, lab_train, epochs=20, batch_size=128)
+	model.fit(x=feat_train, y=lab_train, epochs=20, batch_size=128)
 	score = model.evaluate(feat_test, lab_test, batch_size=128)
 
-	print('layer[0] weights: {}'.format(str(model.layers[0].get_weights())))
+	print('layer[0] weights: \n{weights}'.format(weights=str(model.layers[0].get_weights())))
 	print('summary: {summary}'.format(summary=str(model.summary())))
 	print('score: {score}'.format(score=str(score)))
 
