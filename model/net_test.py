@@ -114,7 +114,7 @@ def feedforward_test(feat_df, lab_df, label_col_idx=0):
 	feat_train, feat_test, lab_train, lab_test = get_train_test_split(features, label, train_ratio=.5)
 
 	logging.info('DATA DESCRIPTION')
-	logging.info('label name: {name}, label space: {space}, label priors: {prior}'
+	logging.info('label name: {name}\n label priors: {prior}'
 		.format(name=lab_name, space=str(label.unique()), prior=str(label.value_counts(normalize=True, sort=True))))
 	logging.info('num features: {}'.format(num_features))
 
