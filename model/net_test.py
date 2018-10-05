@@ -83,8 +83,8 @@ def net_test(argv):
 			final_labs = prep_labels(labels, types=['bool'])
 			final_labs = delayed(lambda df: df.loc[:, chained_filter(df.columns, labs_filter)])(final_labs) # EOD, FBEOD, FB
 			
-			sc = delayed(feedforward_test)(final_feats, final_labs, label_col_idx=target_col_idx)
-			print(sc.compute())
+			res = delayed(feedforward_test)(final_feats, final_labs, label_col_idx=target_col_idx)
+			res = sc.compute()
 
 
 def is_alignment_needed(df, ratio_max=.25):
@@ -110,22 +110,23 @@ def align_first_last(df):
 
 def feedforward_test(feat_df, lab_df, label_col_idx=0):
 	lab_name, num_features = lab_df.columns[label_col_idx], feat_df.shape[1]
-	lab_ser = shift_label(lab_df.loc[:, lab_name])
+	features, label = feat_df.dropna(axis=0, how='all'), shift_label(lab_df.loc[:, lab_name]).dropna()
+	feat_train, feat_test, lab_train, lab_test = get_train_test_split(features, label, train_ratio=.5)
 
-	feat_train, feat_test, lab_train, lab_test = get_train_test_split(feat_df.dropna(axis=0, how='all'), lab_ser.dropna())
-
-	logging.info('label name: {name}, label space: {space}'.format(name=lab_name, space=str(lab_ser.unique())))
+	logging.info('label name: {name}, label space: {space}'.format(name=lab_name, space=str(label.unique())))
 	logging.info('num features: {}'.format(num_features))
 
 	model = Sequential()
 	model.add(Dense(num_features, input_dim=num_features, activation='tanh'))
 	model.add(Dense(1, input_dim=num_features, activation='tanh'))
-
 	model.compile(loss='binary_crossentropy', optimizer='sgd', metrics=['accuracy'])
+
 	model.fit(feat_train, lab_train, epochs=20, batch_size=128)
-	print(model.summary())
-	print('first layer output weights:', str(model.layers[0].get_weights()))
 	score = model.evaluate(feat_test, lab_test, batch_size=128)
+
+	print('layer[0] weights: {}'.format(str(model.layers[0].get_weights())))
+	print('summary: {}'.format(str(model.summary())))
+	print('score: {score}'.format(str(score=score)))
 
 	return score
 
