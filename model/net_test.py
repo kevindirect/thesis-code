@@ -114,12 +114,11 @@ def feedforward_test(feat_df, lab_df, label_col_idx=0):
 
 	feat_train, feat_test, lab_train, lab_test = get_train_test_split(feat_df.dropna(axis=0, how='all'), lab_ser.dropna())
 
-	logging.info('label name: ' +str(lab_name))
+	logging.info('label name: {name}, label space: {space}'.format(name=lab_name, space=str(lab_ser.unique())))
 	logging.info('num features: {}'.format(num_features))
 
 	model = Sequential()
-	model.add(Dense(num_features*2, input_dim=num_features, activation='tanh'))
-	model.add(Dense(num_features, input_dim=num_features*2, activation='tanh'))
+	model.add(Dense(num_features, input_dim=num_features, activation='tanh'))
 	model.add(Dense(1, input_dim=num_features, activation='tanh'))
 
 	model.compile(loss='binary_crossentropy', optimizer='sgd', metrics=['accuracy'])
