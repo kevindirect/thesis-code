@@ -83,8 +83,8 @@ def net_test(argv):
 			final_labs = prep_labels(labels, types=['bool'])
 			final_labs = delayed(lambda df: df.loc[:, chained_filter(df.columns, labs_filter)])(final_labs) # EOD, FBEOD, FB
 			
-			res = delayed(feedforward_test)(final_feats, final_labs, label_col_idx=target_col_idx)
-			res = sc.compute()
+			ff_test = delayed(feedforward_test)(final_feats, final_labs, label_col_idx=target_col_idx)
+			ff_test.compute()
 
 
 def is_alignment_needed(df, ratio_max=.25):
