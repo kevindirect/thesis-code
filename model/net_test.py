@@ -115,7 +115,7 @@ def feedforward_test(feat_df, lab_df, label_col_idx=0):
 
 	logging.info('DATA DESCRIPTION')
 	logging.info('label name: {name}\n label priors: {prior}'
-		.format(name=lab_name, space=str(label.unique()), prior=str(label.value_counts(normalize=True, sort=True))))
+		.format(name=lab_name, space=str(label.unique()), prior=str(label.value_counts(normalize=True, sort=True).T)))
 	logging.info('num features: {}'.format(num_features))
 
 	model = Sequential()
