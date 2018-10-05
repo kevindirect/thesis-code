@@ -114,7 +114,7 @@ def feedforward_test(feat_df, lab_df, label_col_idx=0):
 	feat_train, feat_test, lab_train, lab_test = get_train_test_split(features, label, train_ratio=.5)
 
 	logging.info('DATA DESCRIPTION')
-	logging.info('label description: \n{}'.format(label.value_counts(normalize=True, sort=True).to_frame().T))
+	logging.info('label description: {}'.format(label.value_counts(normalize=True, sort=True).to_frame().T))
 	logging.info('num features: {}'.format(num_features))
 
 	model = Sequential()
@@ -122,8 +122,8 @@ def feedforward_test(feat_df, lab_df, label_col_idx=0):
 	model.add(Dense(1, input_dim=num_features, activation='tanh'))
 	model.compile(loss='binary_crossentropy', optimizer='sgd', metrics=['accuracy'])
 
-	model.fit(x=feat_train, y=lab_train, epochs=20, batch_size=128)
-	score = model.evaluate(feat_test, lab_test, batch_size=128)
+	model.fit(x=feat_train, y=lab_train, epochs=20, batch_size=10)
+	score = model.evaluate(feat_test, lab_test, batch_size=10)
 
 	print('layer[0] weights: \n{weights}'.format(weights=str(model.layers[0].get_weights())))
 	print('summary: {summary}'.format(summary=str(model.summary())))
