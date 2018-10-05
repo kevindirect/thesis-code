@@ -125,7 +125,7 @@ def feedforward_test(feat_df, lab_df, label_col_idx=0):
 	model.compile(loss='binary_crossentropy', optimizer='sgd', metrics=['accuracy'])
 	model.fit(feat_train, lab_train, epochs=20, batch_size=128)
 	print(model.summary())
-	print('first layer output weights:', str(model.layers[0].output.get_weights()))
+	print('first layer output weights:', str(model.layers[0].get_weights()))
 	score = model.evaluate(feat_test, lab_test, batch_size=128)
 
 	return score
