@@ -118,9 +118,8 @@ def feedforward_test(feat_df, lab_df, label_col_idx=0):
 	logging.info('num features: {}'.format(num_features))
 
 	model = Sequential()
-	model.add(Dense(num_features*2, input_dim=num_features, activation='sigmoid'))
-	model.add(Dense(num_features*2, input_dim=num_features*2, activation='sigmoid'))
-	model.add(Dense(num_features, input_dim=num_features*2, activation='sigmoid'))
+	model.add(Dense(num_features*2, input_dim=num_features, activation='tanh'))
+	model.add(Dense(num_features, input_dim=num_features*2, activation='tanh'))
 	model.add(Dense(1, input_dim=num_features, activation='tanh'))
 
 	model.compile(loss='binary_crossentropy', optimizer='sgd', metrics=['accuracy', 'categorical_accuracy'])
