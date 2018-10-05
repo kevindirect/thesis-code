@@ -3,17 +3,20 @@
 import sys
 import os
 import logging
+from collections import Mapping
 
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from numba import jit, vectorize
+# import pygraphviz as pgv
+from graphviz import Digraph
 
 from common_util import search_df, get_subset, benchmark
 from data.data_api import DataAPI
 from recon.common import dum
 
 
+""" ********** PANEL DATA VISUALIZATION ********** """
 def plot_dist(col_name):
 	series = data[col_name].dropna().sort_values(inplace=False)
 	mean = np.mean(series)
@@ -279,3 +282,108 @@ def plot_hist_df(df, column=None, separate_by=None, num_bins=10, **kwargs):
 # 			low_clip=(-1.0, 0.0, .001),
 # 			high_clip=(.0, 1.0, .001),
 # 			show_class=('all', 'up', 'down', 'sideways'));
+
+
+""" ********** GRAPH VISUALIZATION ********** """
+# def dict_to_graph(dictionary, graph_name='graph', landscape='false', node_shape='circle', node_color='black', edge_color='red', layout_prog=None):
+# 	"""
+# 	Return a pygraphviz graph representation of the passed dictionary
+
+# 	Args:
+# 		dictionary (dict): dictionary to translate
+# 		graph_name (str): graph name
+# 		node_shape (str): node shape
+# 		node_color (str): node color
+# 		edge_color (str): edge color
+# 		layout_prog (str, optional): layout program within ['neato'|'dot'|'twopi'|'circo'|'fdp'|'nop']
+
+# 	Returns:
+# 		pygraphviz AGraph type representation of dictionary 
+# 	"""
+# 	graph = pgv.AGraph(dictionary, landscape=landscape)
+# 	graph.graph_attr['label']=graph_name
+# 	graph.node_attr['shape']=node_shape
+# 	graph.node_attr['color']=node_color
+# 	graph.edge_attr['color']=edge_color
+# 	if (layout_prog is not None):
+# 		graph.layout(prog=layout_prog)
+
+# 	return graph
+
+# def dict_to_graph(dictionary):
+# 	# Empty directed graph
+# 	graph = Digraph()
+
+# 	# Iterate through the layers
+# 	p_idx = 1
+# 	queue = list(dictionary.items())
+# 	while (queue):
+# 		parent, children = queue.pop()
+# 		graph.node(p_idx, label=parent)
+# 		c_idx = p_idx + 1
+# 		for child, grandchild in children.items():
+# 			graph.node(c_idx, label=child)
+# 			graph.edge([p_idx, c_idx])
+# 			c_idx += 1
+# 			if isinstance(grandchild, dict):
+# 				queue.append((child, grandchild))
+# 		p_idx = c_idx
+# 	return graph
+
+
+# def dict_to_graph(dictionary):
+# 	graph = Digraph() # Empty directed graph
+
+# 	# BFS through the layers
+# 	p_idx = 1
+# 	queue = list(dictionary.items())
+# 	while (queue):
+# 		parent, children = queue.pop()
+# 		graph.node(str(p_idx), label=parent)
+# 		c_idx = p_idx + 1
+# 		for child, grandchild in children.items():
+# 			graph.node(str(c_idx), label=child)
+# 			graph.edge(head_name=str(c_idx), tail_name=str(p_idx))
+# 			c_idx += 1
+# 			if isinstance(grandchild, Mapping):
+# 				queue.append((child, grandchild))
+# 		p_idx = c_idx
+# 	return graph
+
+# def dict_to_tree(dictionary):
+# 	def add_children(root, children, graph, node_offset=0):
+# 		root_id, root_label = root
+# 		graph.node(str(root_id), label=str(root_label))
+# 		for child_offset, child in enumerate(children, 1):
+# 			child_id = node_offset + child_offset
+# 			graph.node(str(child_id), label=str(child))
+# 			graph.edge(head_name=str(child_id), tail_name=str(root_id))
+
+# 		for parent, child in children.items():
+# 			if (isinstace(grandchildren, Mapping)):
+# 				add_children((child_id, child), grandchildren, graph, offset=)
+
+# 		# graph.node(str(root_id), label=root)
+# 		# for parent, child in subdict.items():
+# 		# 	graph.node(str(child_id), label=child)
+# 		# 	graph.edge(head_name=str(child_id), tail_name=str(root_id))
+# 		# 	child_id += 1
+
+
+# 	graph = Digraph() # Empty directed graph
+
+# 	# BFS through the layers
+# 	p_idx = 1
+# 	queue = list(dictionary.items())
+# 	while (queue):
+# 		parent, children = queue.pop()
+# 		graph.node(str(p_idx), label=parent)
+# 		c_idx = p_idx + 1
+# 		for child, grandchild in children.items():
+# 			graph.node(str(c_idx), label=child)
+# 			graph.edge(head_name=str(c_idx), tail_name=str(p_idx))
+# 			c_idx += 1
+# 			if isinstance(grandchild, Mapping):
+# 				queue.append((child, grandchild))
+# 		p_idx = c_idx
+# 	return graph
