@@ -125,8 +125,8 @@ def feedforward_test(feat_df, lab_df, label_col_idx=0):
 	score = model.evaluate(feat_test, lab_test, batch_size=128)
 
 	print('layer[0] weights: {}'.format(str(model.layers[0].get_weights())))
-	print('summary: {}'.format(str(model.summary())))
-	print('score: {score}'.format(str(score=score)))
+	print('summary: {summary}'.format(summary=str(model.summary())))
+	print('score: {score}'.format(score=str(score)))
 
 	return score
 
