@@ -111,18 +111,19 @@ def align_first_last(df):
 def feedforward_test(feat_df, lab_df, label_col_idx=0):
 	lab_name, num_features = lab_df.columns[label_col_idx], feat_df.shape[1]
 	features, label = feat_df.dropna(axis=0, how='all'), shift_label(lab_df.loc[:, lab_name]).dropna()
+	label[label==-1] = 0
 	feat_train, feat_test, lab_train, lab_test = get_train_test_split(features, label, train_ratio=.8)
 
 	logging.info('DATA DESCRIPTION')
-	logging.info('label description: {}'.format(label.value_counts(normalize=True, sort=True).to_frame().T))
+	logging.info('label description: \n{}'.format(label.value_counts(normalize=True, sort=True).to_frame().T))
 	logging.info('num features: {}'.format(num_features))
 
-	opt = SGD(lr=0.0000001, momentum=0.0, decay=0.0, nesterov=False)
+	opt = SGD(lr=0.0001, momentum=0.0, decay=0.0, nesterov=False)
 	# opt = keras.optimizers.RMSprop(lr=0.001, rho=0.9, epsilon=None, decay=0.0)
 	model = Sequential()
-	model.add(Dense(num_features, input_dim=num_features, activation='tanh', kernel_initializer='glorot_uniform', bias_initializer='zeros',
+	model.add(Dense(num_features, input_dim=num_features, activation='sigmoid', kernel_initializer='glorot_uniform', bias_initializer='zeros',
 		kernel_regularizer=None, bias_regularizer=None))
-	model.add(Dense(1,			  input_dim=num_features, activation='tanh', kernel_initializer='glorot_uniform', bias_initializer='zeros'))
+	model.add(Dense(1,			  input_dim=num_features, activation='sigmoid', kernel_initializer='glorot_uniform', bias_initializer='zeros'))
 	model.compile(loss='binary_crossentropy', optimizer=opt, metrics=['accuracy'])
 
 	print('BEFORE')
