@@ -117,13 +117,15 @@ def feedforward_test(feat_df, lab_df, label_col_idx=0):
 	logging.info('label description: {}'.format(label.value_counts(normalize=True, sort=True).to_frame().T))
 	logging.info('num features: {}'.format(num_features))
 
+	opt = keras.optimizers.SGD(lr=0.0001, momentum=0.0, decay=0.0, nesterov=False)
+	# opt = keras.optimizers.RMSprop(lr=0.001, rho=0.9, epsilon=None, decay=0.0)
 	model = Sequential()
 	model.add(Dense(num_features, input_dim=num_features, activation='tanh'))
 	model.add(Dense(1, input_dim=num_features, activation='tanh'))
-	model.compile(loss='binary_crossentropy', optimizer='sgd', metrics=['accuracy'])
+	model.compile(loss='binary_crossentropy', optimizer=opt, metrics=['accuracy'])
 
-	model.fit(x=feat_train, y=lab_train, epochs=20, batch_size=40)
-	score = model.evaluate(feat_test, lab_test, batch_size=40)
+	model.fit(x=feat_train, y=lab_train, epochs=20, batch_size=128)
+	score = model.evaluate(feat_test, lab_test, batch_size=128)
 
 	for idx, layer in enumerate(model.layers):
 		print('layer[{idx}] weights: \n{weights}'.format(idx=idx, weights=str(layer.get_weights())))
