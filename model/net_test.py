@@ -124,9 +124,14 @@ def feedforward_test(feat_df, lab_df, label_col_idx=0):
 	model.add(Dense(1, input_dim=num_features, activation='tanh'))
 	model.compile(loss='binary_crossentropy', optimizer=opt, metrics=['accuracy'])
 
+	print('BEFORE')
+	for idx, layer in enumerate(model.layers):
+		print('layer[{idx}] weights: \n{weights}'.format(idx=idx, weights=str(layer.get_weights())))
+
 	model.fit(x=feat_train, y=lab_train, epochs=20, batch_size=128)
 	score = model.evaluate(feat_test, lab_test, batch_size=128)
 
+	print('AFTER')
 	for idx, layer in enumerate(model.layers):
 		print('layer[{idx}] weights: \n{weights}'.format(idx=idx, weights=str(layer.get_weights())))
 	print('summary: {summary}'.format(summary=str(model.summary())))
