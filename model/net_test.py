@@ -111,7 +111,7 @@ def align_first_last(df):
 def feedforward_test(feat_df, lab_df, label_col_idx=0):
 	lab_name, num_features = lab_df.columns[label_col_idx], feat_df.shape[1]
 	features, label = feat_df.dropna(axis=0, how='all'), shift_label(lab_df.loc[:, lab_name]).dropna()
-	feat_train, feat_test, lab_train, lab_test = get_train_test_split(features, label, train_ratio=.5)
+	feat_train, feat_test, lab_train, lab_test = get_train_test_split(features, label, train_ratio=.8)
 
 	logging.info('DATA DESCRIPTION')
 	logging.info('label description: {}'.format(label.value_counts(normalize=True, sort=True).to_frame().T))
@@ -122,10 +122,11 @@ def feedforward_test(feat_df, lab_df, label_col_idx=0):
 	model.add(Dense(1, input_dim=num_features, activation='tanh'))
 	model.compile(loss='binary_crossentropy', optimizer='sgd', metrics=['accuracy'])
 
-	model.fit(x=feat_train, y=lab_train, epochs=20, batch_size=10)
-	score = model.evaluate(feat_test, lab_test, batch_size=10)
+	model.fit(x=feat_train, y=lab_train, epochs=20, batch_size=40)
+	score = model.evaluate(feat_test, lab_test, batch_size=40)
 
-	print('layer[0] weights: \n{weights}'.format(weights=str(model.layers[0].get_weights())))
+	for idx, layer in enumerate(model.layers):
+		print('layer[{idx}] weights: \n{weights}'.format(idx=idx, weights=str(layer.get_weights())))
 	print('summary: {summary}'.format(summary=str(model.summary())))
 	print('score: {score}'.format(score=str(score)))
 
