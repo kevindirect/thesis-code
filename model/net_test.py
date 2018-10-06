@@ -12,7 +12,7 @@ import pandas as pd
 from dask import delayed, compute, visualize
 from keras.models import Sequential
 from keras.layers import Dense, Activation
-
+from keras.optimizers import SGD, RMSprop, Adadelta, Adam, Adamax, Nadam
 from common_util import RECON_DIR, JSON_SFX_LEN, DT_CAL_DAILY_FREQ, get_cmd_args, reindex_on_time_mask, gb_transpose, filter_cols_below, dump_df, load_json, outer_join, list_get_dict, chained_filter, benchmark
 from model.common import DATASET_DIR, FILTERSET_DIR, EXPECTED_NUM_HOURS, default_dataset, default_filterset, default_nt_filter, default_target_col_idx
 from recon.dataset_util import prep_dataset, prep_labels, gen_group
@@ -117,7 +117,7 @@ def feedforward_test(feat_df, lab_df, label_col_idx=0):
 	logging.info('label description: {}'.format(label.value_counts(normalize=True, sort=True).to_frame().T))
 	logging.info('num features: {}'.format(num_features))
 
-	opt = keras.optimizers.SGD(lr=0.0001, momentum=0.0, decay=0.0, nesterov=False)
+	opt = SGD(lr=0.0001, momentum=0.0, decay=0.0, nesterov=False)
 	# opt = keras.optimizers.RMSprop(lr=0.001, rho=0.9, epsilon=None, decay=0.0)
 	model = Sequential()
 	model.add(Dense(num_features, input_dim=num_features, activation='tanh'))
