@@ -123,6 +123,7 @@ def feedforward_test(feat_df, lab_df, label_col_idx=0):
 	model = Sequential()
 	model.add(Dense(num_features, input_dim=num_features, activation='tanh', kernel_initializer='glorot_uniform', bias_initializer='zeros',
 		kernel_regularizer=None, bias_regularizer=None))
+	model.add(Droupout(.2))
 	model.add(Dense(1,			  input_dim=num_features, activation='tanh', kernel_initializer='glorot_uniform', bias_initializer='zeros'))
 	model.compile(loss='binary_crossentropy', optimizer=opt, metrics=['accuracy'])
 
