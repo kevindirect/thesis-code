@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 from dask import delayed, compute, visualize
 from keras.models import Sequential
-from keras.layers import Dense, Activation, Droupout
+from keras.layers import Dense, Activation, Dropout
 from keras.optimizers import SGD, RMSprop, Adadelta, Adam, Adamax, Nadam
 from common_util import RECON_DIR, JSON_SFX_LEN, DT_CAL_DAILY_FREQ, get_cmd_args, reindex_on_time_mask, gb_transpose, filter_cols_below, dump_df, load_json, outer_join, list_get_dict, chained_filter, benchmark
 from model.common import DATASET_DIR, FILTERSET_DIR, EXPECTED_NUM_HOURS, default_dataset, default_filterset, default_nt_filter, default_target_col_idx
