@@ -111,7 +111,7 @@ def list_compare(master, other):
 		master (list): 
 		other (list): 
 	
-	Return:
+	Returns:
 		String describing relationship of lists
 	"""
 	master_set = set(master)
@@ -394,6 +394,19 @@ left_join = lambda a,b: a.join(b, how='left', sort=True)
 right_join = lambda a,b: a.join(b, how='right', sort=True)
 inner_join = lambda a,b: a.join(b, how='inner', sort=True)
 outer_join = lambda a,b: a.join(b, how='outer', sort=True)
+
+def index_intersection(*pd_idx):
+	"""
+	Return the common intersection of all passed pandas index objects.
+	"""
+	return reduce(lambda idx, oth: idx.intersection(oth), pd_idx)
+
+def pd_common_index_rows(*pd_obj):
+	"""
+	Take the intersection of pandas object indices and return each object's common indexed rows.
+	"""
+	common_index = index_intersection(*(obj.index for obj in pd_obj))
+	return (obj.loc[common_index] for obj in pd_obj)
 
 def df_count(df):
 	return df.count(axis=0)
