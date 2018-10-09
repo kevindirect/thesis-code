@@ -137,7 +137,11 @@ def feedforward_test(feat_df, lab_df, label_col_idx=0):
 	opt = SGD(lr=0.0001, momentum=0.00001, decay=0.0, nesterov=False)
 	# opt = RMSprop(lr=0.0001, rho=0.99, epsilon=None, decay=0.0)
 	model = Sequential()
-	model.add(Dense(num_features, input_dim=num_features, activation='tanh', kernel_initializer='glorot_uniform', bias_initializer='zeros',
+	model.add(Dense(num_features*2, input_dim=num_features, activation='tanh', kernel_initializer='glorot_uniform', bias_initializer='zeros',
+		kernel_regularizer=None, bias_regularizer=None))
+	model.add(Dense(num_features*2, input_dim=num_features*2, activation='tanh', kernel_initializer='glorot_uniform', bias_initializer='zeros',
+		kernel_regularizer=None, bias_regularizer=None))
+	model.add(Dense(num_features, input_dim=num_features*2, activation='tanh', kernel_initializer='glorot_uniform', bias_initializer='zeros',
 		kernel_regularizer=None, bias_regularizer=None))
 	model.add(Dense(1, input_dim=num_features, activation='tanh', kernel_initializer='glorot_uniform', bias_initializer='zeros'))
 	model.compile(loss='binary_crossentropy', optimizer=opt, metrics=['accuracy'])
