@@ -129,7 +129,7 @@ def feedforward_test(feat_df, lab_df, label_col_idx=0):
 
 	# label[label==-1] = 0
 	logging.info('DATA DESCRIPTION')
-	logging.info('label description: \n{}'.format(label.value_counts(normalize=True, sort=True).to_frame().T))
+	logging.info('label[{name}]: \n{vc}'.format(name=lab_name, vc=label.value_counts(normalize=True, sort=True).to_frame().T))
 	logging.info('num features: {}'.format(num_features))
 
 	feat_train, feat_test, lab_train, lab_test = get_train_test_split(features, label, train_ratio=.8)
@@ -141,25 +141,29 @@ def feedforward_test(feat_df, lab_df, label_col_idx=0):
 		kernel_regularizer=None, bias_regularizer=None))
 	model.add(Dense(num_features*2, input_dim=num_features*2, activation='tanh', kernel_initializer='glorot_uniform', bias_initializer='zeros',
 		kernel_regularizer=None, bias_regularizer=None))
+	model.add(Dropout(.2))
 	model.add(Dense(num_features, input_dim=num_features*2, activation='tanh', kernel_initializer='glorot_uniform', bias_initializer='zeros',
 		kernel_regularizer=None, bias_regularizer=None))
 	model.add(Dense(1, input_dim=num_features, activation='tanh', kernel_initializer='glorot_uniform', bias_initializer='zeros'))
 	model.compile(loss='binary_crossentropy', optimizer=opt, metrics=['accuracy'])
 
-	print('BEFORE')
-	for idx, layer in enumerate(model.layers):
-		print('layer[{idx}] weights: \n{weights}'.format(idx=idx, weights=str(layer.get_weights())))
+	logging.info('BEFORE')
+	if (in_debug_mode()):
+		for idx, layer in enumerate(model.layers):
+			logging.debug('layer[{idx}] weights: \n{weights}'.format(idx=idx, weights=str(layer.get_weights())))
 
 	model.fit(x=feat_train, y=lab_train, epochs=20, batch_size=128)
 	score = model.evaluate(feat_test, lab_test, batch_size=128)
-	forecast = model.predict(feat_test, batch_size=128)
 
-	print('AFTER')
-	for idx, layer in enumerate(model.layers):
-		print('layer[{idx}] weights: \n{weights}'.format(idx=idx, weights=str(layer.get_weights())))
+	logging.info('AFTER')
 	print('summary: {summary}'.format(summary=str(model.summary())))
 	print('{metrics}: {score}'.format(metrics=str(model.metrics_names), score=str(score)))
-	logging.debug('actual: {actual} \nforecast: {forecast}'.format(actual=str(lab_test), forecast=str(forecast.T[0])))
+
+	if (in_debug_mode()):
+		for idx, layer in enumerate(model.layers):
+			logging.debug('layer[{idx}] weights: \n{weights}'.format(idx=idx, weights=str(layer.get_weights())))
+		forecast = model.predict(feat_test, batch_size=128)
+		logging.debug('actual: {actual} \nforecast: {forecast}'.format(actual=str(lab_test), forecast=str(forecast.T[0])))
 
 	return score
 
