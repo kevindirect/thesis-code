@@ -13,7 +13,7 @@ from dask import delayed, compute, visualize
 from keras.models import Sequential
 from keras.layers import Dense, Activation, Dropout
 from keras.optimizers import SGD, RMSprop, Adadelta, Adam, Adamax, Nadam
-from common_util import RECON_DIR, JSON_SFX_LEN, DT_CAL_DAILY_FREQ, get_cmd_args, reindex_on_time_mask, gb_transpose, filter_cols_below, dump_df, load_json, outer_join, list_get_dict, chained_filter, benchmark
+from common_util import RECON_DIR, JSON_SFX_LEN, DT_CAL_DAILY_FREQ, get_cmd_args, reindex_on_time_mask, gb_transpose, pd_common_index_rows, filter_cols_below, dump_df, load_json, outer_join, list_get_dict, chained_filter, benchmark
 from model.common import DATASET_DIR, FILTERSET_DIR, EXPECTED_NUM_HOURS, default_dataset, default_filterset, default_nt_filter, default_target_col_idx
 from recon.dataset_util import prep_dataset, prep_labels, gen_group
 from recon.model_util import get_train_test_split, gen_time_series_split
@@ -76,41 +76,57 @@ def net_test(argv):
 
 			reindexed = delayed(reindex_on_time_mask)(features, row_masks)
 			transposed = delayed(gb_transpose)(reindexed.loc[:, ['pba_avgPrice']])
-			cleaned = delayed(filter_cols_below)(transposed)
-			to_align = delayed(is_alignment_needed)(cleaned)
-			final_feats = delayed(lambda df, align: df if (not align) else align_first_last(transposed))(cleaned, to_align)
+			filtered = delayed(filter_cols_below)(transposed)
+			aligned = delayed(align_first_last)(filtered)
+			pruned = delayed(prune_nulls)(aligned)
 
-			final_labs = prep_labels(labels, types=['bool'])
-			final_labs = delayed(lambda df: df.loc[:, chained_filter(df.columns, labs_filter)])(final_labs) # EOD, FBEOD, FB
+			prepped_labels = prep_labels(labels, types=['bool'])
+			filtered_labels = delayed(lambda df: df.loc[:, chained_filter(df.columns, labs_filter)])(prepped_labels) # EOD, FBEOD, FB
 			
-			ff_test = delayed(feedforward_test)(final_feats, final_labs, label_col_idx=target_col_idx)
+			ff_test = delayed(feedforward_test)(pruned, filtered_labels, label_col_idx=target_col_idx)
 			ff_test.compute()
 
-
-def is_alignment_needed(df, ratio_max=.25):
-	count_df = df.count()
-	return count_df.size > EXPECTED_NUM_HOURS and abs(count_df.iloc[0] - count_df.iloc[-1]) > ratio_max*count_df.max()
-
-def align_first_last(df):
+def align_first_last(df, ratio_max=.25):
 	"""
 	Return df where non-overlapping subsets have first or last column set to null, align them and remove the redundant column.
+
+	Args:
+		df (pd.DataFrame): dataframe of multiple columns
+		ratio_max (float): multiplier of the maximum count of all columns, whose product is used as a threshold for the alignment condition.
+
+	Returns:
+		Aligned and filtered dataframe if alignment is needed, otherwise return the original dataframe.
 	"""
-	cnt_df = df.count()
-	first_hr, last_hr = cnt_df.index[0], cnt_df.index[-1]
-	firstnull = df[df[first_hr].isnull() & ~df[last_hr].isnull()]
-	lastnull = df[~df[first_hr].isnull() & df[last_hr].isnull()]
+	def fl_alignment_needed(df, ratio_max=ratio_max):
+		count_df = df.count()
+		return count_df.size > EXPECTED_NUM_HOURS and abs(count_df.iloc[0] - count_df.iloc[-1]) > ratio_max*count_df.max()
 
-	# The older format is changed to match the latest one
-	if (firstnull.index[-1] > lastnull.index[-1]): 		# Changed lastnull subset to firstnull
-		df.loc[~df[first_hr].isnull() & df[last_hr].isnull(), :] = lastnull.shift(periods=1, axis=1)
-	elif (firstnull.index[-1] < lastnull.index[-1]):	# Changed firstnull subset to lastnull
-		df.loc[df[first_hr].isnull() & ~df[last_hr].isnull(), :] = firstnull.shift(periods=-1, axis=1)
+	if (fl_alignment_needed(df)):
+		cnt_df = df.count()
+		first_hr, last_hr = cnt_df.index[0], cnt_df.index[-1]
+		firstnull = df[df[first_hr].isnull() & ~df[last_hr].isnull()]
+		lastnull = df[~df[first_hr].isnull() & df[last_hr].isnull()]
 
-	return filter_cols_below(df)
+		# The older format is changed to match the temporally latest one
+		if (firstnull.index[-1] > lastnull.index[-1]): 		# Changed lastnull subset to firstnull
+			df.loc[~df[first_hr].isnull() & df[last_hr].isnull(), :] = lastnull.shift(periods=1, axis=1)
+		elif (firstnull.index[-1] < lastnull.index[-1]):	# Changed firstnull subset to lastnull
+			df.loc[df[first_hr].isnull() & ~df[last_hr].isnull(), :] = firstnull.shift(periods=-1, axis=1)
+
+		return filter_cols_below(df)
+	else:
+		return df
+
+def prune_nulls(df, method='ffill'):
+	if (method=='ffill'):
+		return df.dropna(axis=0, how='all').fillna(axis=1, method='ffill', limit=3).dropna(axis=0, how='any')
+	elif (method=='drop'):
+		return df.dropna(axis=0, how='any')
 
 def feedforward_test(feat_df, lab_df, label_col_idx=0):
 	lab_name, num_features = lab_df.columns[label_col_idx], feat_df.shape[1]
-	features, label = feat_df.dropna(axis=0, how='all'), shift_label(lab_df.loc[:, lab_name]).dropna()
+	features, label = pd_common_index_rows(feat_df.dropna(axis=0, how='all'), shift_label(lab_df.loc[:, lab_name]).dropna())
+
 	# label[label==-1] = 0
 	logging.info('DATA DESCRIPTION')
 	logging.info('label description: \n{}'.format(label.value_counts(normalize=True, sort=True).to_frame().T))
@@ -118,8 +134,8 @@ def feedforward_test(feat_df, lab_df, label_col_idx=0):
 
 	feat_train, feat_test, lab_train, lab_test = get_train_test_split(features, label, train_ratio=.8)
 
-	# opt = SGD(lr=0.0001, momentum=0.00001, decay=0.0, nesterov=False)
-	opt = RMSprop(lr=0.0001, rho=0.99, epsilon=None, decay=0.0)
+	opt = SGD(lr=0.0001, momentum=0.00001, decay=0.0, nesterov=False)
+	# opt = RMSprop(lr=0.0001, rho=0.99, epsilon=None, decay=0.0)
 	model = Sequential()
 	model.add(Dense(num_features, input_dim=num_features, activation='tanh', kernel_initializer='glorot_uniform', bias_initializer='zeros',
 		kernel_regularizer=None, bias_regularizer=None))
@@ -139,7 +155,7 @@ def feedforward_test(feat_df, lab_df, label_col_idx=0):
 		print('layer[{idx}] weights: \n{weights}'.format(idx=idx, weights=str(layer.get_weights())))
 	print('summary: {summary}'.format(summary=str(model.summary())))
 	print('{metrics}: {score}'.format(metrics=str(model.metrics_names), score=str(score)))
-	print('\nactual: {actual} \nforecast: {forecast}'.format(actual=str(lab_test), forecast=str(forecast)))
+	print('actual: {actual} \nforecast: {forecast}'.format(actual=str(lab_test), forecast=str(forecast)))
 
 	return score
 
