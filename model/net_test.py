@@ -154,8 +154,8 @@ def feedforward_test(feat_df, lab_df, label_col_idx=0):
 	for idx, layer in enumerate(model.layers):
 		print('layer[{idx}] weights: \n{weights}'.format(idx=idx, weights=str(layer.get_weights())))
 	print('summary: {summary}'.format(summary=str(model.summary())))
-	print('{metrics}: {score}'.format(metrics=str(model.metrics_names), score=str(score)))
-	print('actual: {actual} \nforecast: {forecast}'.format(actual=str(lab_test), forecast=str(forecast)))
+	logging.debug('{metrics}: {score}'.format(metrics=str(model.metrics_names), score=str(score)))
+	logging.debug('actual: {actual} \nforecast: {forecast}'.format(actual=str(lab_test), forecast=str(forecast.T[0])))
 
 	return score
 
