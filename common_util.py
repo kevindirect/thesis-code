@@ -102,7 +102,7 @@ def get0(lst):
 
 def getcon(lst, string):
 	"""
-	Return sublist of items containing string.
+	Return sublist of items containing string, if only one match return it as a singleton.
 	"""
 	return get0(list(filter(lambda el: string in el, lst)))
 
