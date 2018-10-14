@@ -92,6 +92,9 @@ def flatten2D(list2D):
 	return list(chain(*list2D))
 
 def get0(lst):
+	"""
+	Return first element if the list has length one, else return the list.
+	"""
 	if (len(lst)==1):
 		return lst[0]
 	else:
