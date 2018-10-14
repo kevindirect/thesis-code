@@ -634,6 +634,13 @@ def gb_transpose(df, agg_freq=DT_CAL_DAILY_FREQ, col_freq='hour'):
 
 	return gbt
 
+"""String"""
+def string_df_join_to_ser(df, join_str='_'):
+	"""
+	Concatenate a dataframe of strings horizontally (across columns) and return the result as a series.
+	"""
+	return df.apply(lambda ser: join_str.join(ser.tolist()), axis=1)
+
 """Numpy"""
 def abs_df(df):
 	"""
@@ -699,8 +706,8 @@ def is_empty_df(df, count_nans=False, how='all', **kwargs):
 	else:
 		return df.dropna(axis=0, how=how, **kwargs).empty
 
-is_df = lambda candidate: isinstance(candidate, pd.DataFrame)
-is_ser = lambda candidate: isinstance(candidate, pd.Series)
+is_df = lambda pd_obj: isinstance(pd_obj, pd.DataFrame)
+is_ser = lambda pd_obj: isinstance(pd_obj, pd.Series)
 
 def assert_equal_pandas(df1, df2, **kwargs):
 	are_frames = is_df(df1) and is_df(df2)
