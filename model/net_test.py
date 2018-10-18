@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 from dask import delayed, compute, visualize
 from keras.models import Sequential
-from keras.layers import Dense, Activation, Dropout
+from keras.layers import Dense, Activation, Dropout, LSTM
 from keras.optimizers import SGD, RMSprop, Adadelta, Adam, Adamax, Nadam
 from common_util import RECON_DIR, JSON_SFX_LEN, DT_CAL_DAILY_FREQ, get_cmd_args, in_debug_mode, reindex_on_time_mask, gb_transpose, pd_common_index_rows, filter_cols_below, dump_df, load_json, outer_join, list_get_dict, chained_filter, benchmark
 from model.common import DATASET_DIR, FILTERSET_DIR, EXPECTED_NUM_HOURS, default_dataset, default_filterset, default_nt_filter, default_target_col_idx
@@ -144,8 +144,49 @@ def feedforward_test(feat_df, lab_df, label_col_idx=0):
 	model.add(Dropout(.2))
 	model.add(Dense(num_features, input_dim=num_features*2, activation='tanh', kernel_initializer='glorot_uniform', bias_initializer='zeros',
 		kernel_regularizer=None, bias_regularizer=None))
-	model.add(Dense(1, input_dim=num_features, activation='tanh', kernel_initializer='glorot_uniform', bias_initializer='zeros'))
+	model.add(Dense(1, input_dim=num_features, activation='softmax', kernel_initializer='glorot_uniform', bias_initializer='zeros'))
 	model.compile(loss='binary_crossentropy', optimizer=opt, metrics=['accuracy'])
+
+	logging.info('BEFORE')
+	if (in_debug_mode()):
+		for idx, layer in enumerate(model.layers):
+			logging.debug('layer[{idx}] weights: \n{weights}'.format(idx=idx, weights=str(layer.get_weights())))
+
+	model.fit(x=feat_train, y=lab_train, epochs=50, batch_size=128)
+	score = model.evaluate(feat_test, lab_test, batch_size=128)
+
+	logging.info('AFTER')
+	print('summary: {summary}'.format(summary=str(model.summary())))
+	print('{metrics}: {score}'.format(metrics=str(model.metrics_names), score=str(score)))
+
+	if (in_debug_mode()):
+		for idx, layer in enumerate(model.layers):
+			logging.debug('layer[{idx}] weights: \n{weights}'.format(idx=idx, weights=str(layer.get_weights())))
+		forecast = model.predict(feat_test, batch_size=128)
+		logging.debug('actual: {actual} \nforecast: {forecast}'.format(actual=str(lab_test), forecast=str(forecast.T[0])))
+
+	return score
+
+
+def rnn_test(feat_df, lab_df, label_col_idx=0):
+	lab_name, num_features = lab_df.columns[label_col_idx], feat_df.shape[1]
+	features, label = pd_common_index_rows(feat_df.dropna(axis=0, how='all'), shift_label(lab_df.loc[:, lab_name]).dropna())
+
+	# label[label==-1] = 0
+	logging.info('DATA DESCRIPTION')
+	logging.info('label[{name}]: \n{vc}'.format(name=lab_name, vc=label.value_counts(normalize=True, sort=True).to_frame().T))
+	logging.info('num features: {}'.format(num_features))
+
+	feat_train, feat_test, lab_train, lab_test = get_train_test_split(features, label, train_ratio=.8)
+
+	model = Sequential()
+	model.add(LSTM(input_shape = (EMB_SIZE,), input_dim=EMB_SIZE, output_dim=HIDDEN_RNN, return_sequences=True))
+	model.add(LSTM(input_shape = (EMB_SIZE,), input_dim=EMB_SIZE, output_dim=HIDDEN_RNN, return_sequences=False))
+	model.add(Dense(2))
+	model.add(Activation('softmax'))
+	model.compile(optimizer='adam', 
+				  loss='binary_crossentropy', 
+				  metrics=['accuracy'])
 
 	logging.info('BEFORE')
 	if (in_debug_mode()):
@@ -166,6 +207,7 @@ def feedforward_test(feat_df, lab_df, label_col_idx=0):
 		logging.debug('actual: {actual} \nforecast: {forecast}'.format(actual=str(lab_test), forecast=str(forecast.T[0])))
 
 	return score
+
 
 
 if __name__ == '__main__':
