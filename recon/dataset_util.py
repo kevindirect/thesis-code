@@ -17,7 +17,7 @@ from data.access_util import df_getters as dg, col_subsetters2 as cs2
 from recon.common import DATASET_DIR
 from recon.label_util import apply_label_mask, eod_fct, default_fct, fastbreak_fct, confidence_fct, fastbreak_confidence_fct
 
-
+no_constraint = lambda *a: True
 asset_match = lambda a, b: a[0]==b[0]
 src_match = lambda a, b: a[2]==b[2]
 
@@ -34,7 +34,8 @@ def gen_group(dataset, group=['features', 'labels', 'row_masks'], constraint=flr
 	Args:
 		dataset (dict): dictionary returned by prep_dataset
 		group (list): data partitions to include in generator
-		constraint (lambda): constraint of data partition paths, must have as many arguments as items in group
+		constraint (lambda, optional): constraint of data partition paths, must have as many arguments as items in group
+			(if None is passed, no constraint is used and full cartesian product of groups are yielded)
 
 	Yields:
 		Pair of paths and dataframes ordered by the specifed group list
@@ -42,6 +43,8 @@ def gen_group(dataset, group=['features', 'labels', 'row_masks'], constraint=flr
 		Example:
 			gen_group(dataset, group=['features', 'labels'], constraint=asset_match) -> yields feature label pairs where the first items of their paths match
 	"""
+	if (constaint is None):
+		constraint = no_constraint
 
 	parts = [dataset[part]['paths'] for part in group]
 	pathgen = filter(lambda combo: constraint(*combo), product(*parts))
