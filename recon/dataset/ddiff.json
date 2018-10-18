@@ -3,5 +3,6 @@
 		["ffracdiff", "dffracdiff"],
 		["diff", "ddiff"]
 	],
-	"labels": "labels.json"
+	"labels": "labels.json",
+	"row_masks": "row_masks.json"
 }

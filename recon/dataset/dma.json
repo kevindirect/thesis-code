@@ -2,5 +2,6 @@
 	"features": [
 		["ma", "dma"]
 	],
-	"labels": "labels.json"
+	"labels": "labels.json",
+	"row_masks": "row_masks.json"
 }
