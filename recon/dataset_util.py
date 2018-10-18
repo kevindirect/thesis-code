@@ -43,7 +43,7 @@ def gen_group(dataset, group=['features', 'labels', 'row_masks'], constraint=flr
 		Example:
 			gen_group(dataset, group=['features', 'labels'], constraint=asset_match) -> yields feature label pairs where the first items of their paths match
 	"""
-	if (constaint is None):
+	if (constraint is None):
 		constraint = no_constraint
 
 	parts = [dataset[part]['paths'] for part in group]
