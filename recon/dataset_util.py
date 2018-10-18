@@ -11,7 +11,7 @@ from itertools import product
 import pandas as pd
 from dask import delayed
 
-from common_util import DT_HOURLY_FREQ, DT_CAL_DAILY_FREQ, df_dti_index_to_date, inner_join, outer_join, list_get_dict, list_set_dict, remove_dups_list
+from common_util import DT_HOURLY_FREQ, DT_CAL_DAILY_FREQ, load_json, df_dti_index_to_date, inner_join, outer_join, list_get_dict, list_set_dict, remove_dups_list
 from data.data_api import DataAPI
 from data.access_util import df_getters as dg, col_subsetters2 as cs2
 from recon.common import DATASET_DIR
@@ -49,13 +49,15 @@ def gen_group(dataset, group=['features', 'labels', 'row_masks'], constraint=flr
 
 	yield from zip(pathgen, datagen)
 
-def prep_dataset(dataset_dict, assets=None, filters_map=None):
+def prep_dataset(dataset_dict, assets=None, filters_map=None, dataset_dir=DATASET_DIR):
 	"""
 	Return the tree of lazy loaded data specified by dataset_dict, asset list, and filter mapping.
 	"""
 	dataset = {}
 
 	for name, accessors in dataset_dict.items():
+		if (isinstance(accessors, str)): # Dataset entry depends on another dataset, key in this and other must match
+			accessors = load_json(accessors, dir_path=dataset_dir)[name]
 		filters = filters_map[name] if (filters_map is not None and name in filters_map) else None
 		dataset[name] = prep_data(accessors, assets=assets, filters=filters)
 

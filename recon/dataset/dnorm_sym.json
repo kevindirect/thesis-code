@@ -3,10 +3,6 @@
 		["norm", "dnorm"],
 		["sym", "sym"]
 	],
-	"labels": [
-		["labels", "itb_mvp"]
-	],
-	"row_masks": [
-		["raw", "id_rm"]
-	]
+	"labels": "labels.json",
+	"row_masks": "row_masks.json"
 }

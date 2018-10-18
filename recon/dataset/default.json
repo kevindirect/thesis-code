@@ -1,9 +1,0 @@
-{
-	"features": [
-		["ma", "dma"],
-		["sym", "sym"]
-	],
-	"labels": [
-		["labels", "itb_mvp"]
-	]
-}

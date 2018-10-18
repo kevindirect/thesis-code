@@ -1,0 +1,6 @@
+{
+	"features": [
+		["ma", "dma"]
+	],
+	"labels": "labels.json"
+}

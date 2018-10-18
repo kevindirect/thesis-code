@@ -1,10 +1,7 @@
 {
 	"features": [
-		["srf", "drl"],
 		["ffracdiff", "dffracdiff"],
 		["diff", "ddiff"]
 	],
-	"labels": [
-		["labels", "itb_mvp"]
-	]
+	"labels": "labels.json"
 }
