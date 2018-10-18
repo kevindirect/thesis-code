@@ -21,10 +21,8 @@ def eod_fct(label_df, col=0, eod_thresh=(0, 0)):
 		Return the simple end of day forecast of an expanding return
 	"""
 	if (isinstance(col, int)):
-		col_name = label_df.columns[0]
+		col_name = label_df.columns[col]
 	elif (isinstance(col, str)):
-		col_name = col
-	else:
 		col_name = col
 
 	lbl = label_df[col_name].copy()
