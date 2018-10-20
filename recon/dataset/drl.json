@@ -2,6 +2,5 @@
 	"features": [
 		["srf", "drl"]
 	],
-	"labels": "labels.json",
-	"row_masks": "row_masks.json"
+	"labels": "labels.json"
 }
