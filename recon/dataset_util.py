@@ -116,12 +116,14 @@ def prep_labels(label_df, types=['bool', 'int']):
 	label_groups = []
 
 	if ('bool' in types):
-		eod = delayed(eod_fct)(gb_label_df).add_suffix('_eod')
+		eod0 = delayed(eod_fct)(gb_label_df, eod_thresh=0).add_suffix('_eod(0%)')
+		eod1 = delayed(eod_fct)(gb_label_df, eod_thresh=.01).add_suffix('_eod(1%)')
+		eod2 = delayed(eod_fct)(gb_label_df, eod_thresh=.02).add_suffix('_eod(2%)')
 		fbeod = delayed(apply_label_mask)(gb_label_df, default_fct).add_suffix('_fbeod')
 		fb = delayed(apply_label_mask)(gb_label_df, fastbreak_fct).add_suffix('_fb')
 		conf = delayed(apply_label_mask)(gb_label_df, confidence_fct).add_suffix('_conf')
 		fbconf = delayed(apply_label_mask)(gb_label_df, fastbreak_confidence_fct).add_suffix('_fbconf')
-		label_groups.extend((eod, fbeod, fb, conf, fbconf))
+		label_groups.extend((eod0, eod1, eod2, fbeod, fb, conf, fbconf))
 
 	if ('int' in types):
 		vel = delayed(apply_label_mask)(gb_label_df, partial(fastbreak_fct, velocity=True)).add_suffix('_vel')
