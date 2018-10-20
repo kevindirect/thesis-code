@@ -11,7 +11,7 @@ from itertools import product
 import pandas as pd
 from dask import delayed
 
-from common_util import DT_HOURLY_FREQ, DT_CAL_DAILY_FREQ, load_json, df_dti_index_to_date, inner_join, outer_join, list_get_dict, list_set_dict, remove_dups_list
+from common_util import DT_HOURLY_FREQ, DT_CAL_DAILY_FREQ, load_json, best_match, df_dti_index_to_date, inner_join, outer_join, list_get_dict, list_set_dict, remove_dups_list
 from data.data_api import DataAPI
 from data.access_util import df_getters as dg, col_subsetters2 as cs2
 from recon.common import DATASET_DIR
@@ -24,8 +24,6 @@ src_match = lambda a, b: a[2]==b[2]
 flr_asset_match = lambda fp, lp, rp: asset_match(fp, lp) and asset_match(fp, rp)
 flr_src_match = lambda fp, lp, rp: src_match(fp, rp)
 flr_constraint = lambda fp, lp, rp: flr_asset_match(fp, lp, rp) and flr_src_match(fp, lp, rp)
-
-data_from_paths = lambda dataset, group, paths: tuple(list_get_dict(dataset[part]['dfs'], paths[i]) for i, part in enumerate(group))
 
 def gen_group(dataset, group=['features', 'labels', 'row_masks'], constraint=flr_constraint):
 	"""
@@ -47,10 +45,9 @@ def gen_group(dataset, group=['features', 'labels', 'row_masks'], constraint=flr
 		constraint = no_constraint
 
 	parts = [dataset[part]['paths'] for part in group]
-	pathgen = filter(lambda combo: constraint(*combo), product(*parts))
-	datagen = map(partial(data_from_paths, dataset, group), pathgen)
 
-	yield from zip(pathgen, datagen)
+	for paths in filter(lambda combo: constraint(*combo), product(*parts)):
+		yield paths, tuple(list_get_dict(dataset[part]['dfs'], paths[i]) for i, part in enumerate(group))
 
 def prep_dataset(dataset_dict, assets=None, filters_map=None, dataset_dir=DATASET_DIR):
 	"""
