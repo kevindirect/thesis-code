@@ -15,15 +15,26 @@ UP, DOWN, SIDEWAYS = 1, -1, 0
 
 
 """ ********** FORECAST MASKS ********** """
-def eod_fct(label_df, col=0, eod_thresh=(0, 0)):
+def eod_fct(label_df, col=0, eod_thresh=0.0):
 	"""
 	EOD (End of Day) Forecast:
 		Return the simple end of day forecast of an expanding return
+
+	Args:
+		label_df:
+		col:
+		eod_thresh (numeric or (numeric, numeric)):
 	"""
 	if (isinstance(col, int)):
 		col_name = label_df.columns[col]
 	elif (isinstance(col, str)):
 		col_name = col
+
+	if (isinstance(eod_thresh, tuple) and len(eod_thresh)==1):
+		eod_thresh = eod_thresh[0]
+
+	if (isinstance(eod_thresh, float) or isinstance(eod_thresh, int)):
+		eod_thresh = (-abs(eod_thresh)/2, abs(eod_thresh)/2)
 
 	lbl = label_df[col_name].copy()
 	lbl[lbl > eod_thresh[1]] = UP
