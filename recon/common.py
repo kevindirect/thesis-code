@@ -27,7 +27,7 @@ dum = 0
 default_pipefile = 'pipe.json'
 default_cv_file = 'cv_kfold.json'
 default_gta_dataset = 'drl.json'
-default_gta_test = 'default_gta.json'
+default_gta_test = 'corr_count.json'
 
 
 # PACKAGE UTIL FUNCTIONS
