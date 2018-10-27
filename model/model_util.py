@@ -6,6 +6,7 @@ import logging
 
 import numpy as np
 import pandas as pd
+from dask import delayed
 
 from common_util import filter_cols_below
 from model.common import EXPECTED_NUM_HOURS
@@ -47,3 +48,25 @@ def prune_nulls(df, method='ffill'):
 		return df.dropna(axis=0, how='all').fillna(axis=1, method='ffill', limit=3).dropna(axis=0, how='any')
 	elif (method=='drop'):
 		return df.dropna(axis=0, how='any')
+
+def prepare_transpose_data(features_df, row_masks_df, feat_select_filter):
+	"""
+	Return delayed object to produce intraday to daily transposed data.
+	"""
+	reindexed_feats = delayed(reindex_on_time_mask)(features_df, row_masks_df)
+	selected_feats = delayed(lambda df: df.loc[:, chained_filter(df.columns, feat_select_filter)])(reindexed_feats)
+	transposed_feats = delayed(gb_transpose)(selected_feats)
+	filtered_feats = delayed(filter_cols_below)(transposed_feats)
+	aligned_feats = delayed(align_first_last)(filtered_feats)
+	pruned_feats = delayed(prune_nulls)(aligned_feats)
+
+	return pruned_feats
+
+def prepare_masked_labels(labels_df, label_types, label_filter):
+	"""
+	Return label masked and column filtered dataframe of label series.
+	"""
+	prepped_labels = prep_labels(labels_df, types=label_types)
+	filtered_labels = delayed(lambda df: df.loc[:, chained_filter(df.columns, label_filter)])(prepped_labels) # EOD, FBEOD, FB
+
+	return filtered_labels

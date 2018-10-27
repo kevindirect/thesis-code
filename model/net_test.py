@@ -16,7 +16,7 @@ from keras.optimizers import SGD, RMSprop, Adadelta, Adam, Adamax, Nadam
 
 from common_util import RECON_DIR, JSON_SFX_LEN, DT_CAL_DAILY_FREQ, get_cmd_args, in_debug_mode, reindex_on_time_mask, gb_transpose, pd_common_index_rows, filter_cols_below, dump_df, load_json, outer_join, list_get_dict, chained_filter, benchmark
 from model.common import DATASET_DIR, FILTERSET_DIR, default_dataset, default_filterset, default_nt_filter, default_target_col_idx
-from model.model_util import align_first_last, prune_nulls
+from model.model_util import prepare_transpose_data, prepare_masked_labels
 from recon.dataset_util import prep_dataset, prep_labels, gen_group
 from recon.split_util import get_train_test_split, gen_time_series_split
 from recon.label_util import shift_label
@@ -49,7 +49,15 @@ def net_test(argv):
 	logging.debug('lpaths: ' +str(dataset['labels']['paths']))
 	logging.debug('rmpaths: ' +str(dataset['row_masks']['paths']))
 
-	labs_filter = [
+	feats_filter = [{
+		"exact": ["pba_avgPrice"],
+		"startswith": [],
+		"endswith": [],
+		"regex": [],
+		"exclude": None
+	}]
+
+	labs_filter = [ # EOD, FBEOD, FB
 	{
 		"exact": [],
 		"startswith": ["pba_"],
@@ -76,16 +84,10 @@ def net_test(argv):
 			logging.info('lpaths: ' +str(lpaths))
 			logging.info('rpaths: ' +str(rpaths))
 
-			reindexed = delayed(reindex_on_time_mask)(features, row_masks)
-			transposed = delayed(gb_transpose)(reindexed.loc[:, ['pba_avgPrice']])
-			filtered = delayed(filter_cols_below)(transposed)
-			aligned = delayed(align_first_last)(filtered)
-			pruned = delayed(prune_nulls)(aligned)
-
-			prepped_labels = prep_labels(labels, types=['bool'])
-			filtered_labels = delayed(lambda df: df.loc[:, chained_filter(df.columns, labs_filter)])(prepped_labels) # EOD, FBEOD, FB
+			final_feats = prepare_transpose_data(features, row_masks, feats_filter)
+			final_labels = prepare_masked_labels(labels, types=['bool'], labs_filter)
 			
-			ff_test = delayed(feedforward_test)(pruned, filtered_labels, label_col_idx=target_col_idx)
+			ff_test = delayed(feedforward_test)(final_feats, final_labels, label_col_idx=target_col_idx)
 			ff_test.compute()
 
 
