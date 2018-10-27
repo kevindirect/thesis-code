@@ -68,7 +68,7 @@ def prepare_masked_labels(labels_df, label_types, label_filter):
 	Return label masked and column filtered dataframe of label series.
 	"""
 	prepped_labels = prep_labels(labels_df, types=label_types)
-	tz_fixed_labels = delayed(df_dti_index_to_date)(new_tz='UTC')
-	filtered_labels = delayed(lambda df: df.loc[:, chained_filter(df.columns, label_filter)])(prepped_labels) # EOD, FBEOD, FB
+	tz_fixed_labels = delayed(df_dti_index_to_date)(prepped_labels, new_tz='UTC')
+	filtered_labels = delayed(lambda df: df.loc[:, chained_filter(df.columns, label_filter)])(tz_fixed_labels) # EOD, FBEOD, FB
 
 	return filtered_labels
