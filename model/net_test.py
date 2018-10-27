@@ -15,7 +15,8 @@ from keras.layers import Dense, Activation, Dropout, LSTM
 from keras.optimizers import SGD, RMSprop, Adadelta, Adam, Adamax, Nadam
 
 from common_util import RECON_DIR, JSON_SFX_LEN, DT_CAL_DAILY_FREQ, get_cmd_args, in_debug_mode, reindex_on_time_mask, gb_transpose, pd_common_index_rows, filter_cols_below, dump_df, load_json, outer_join, list_get_dict, chained_filter, benchmark
-from model.common import DATASET_DIR, FILTERSET_DIR, EXPECTED_NUM_HOURS, default_dataset, default_filterset, default_nt_filter, default_target_col_idx
+from model.common import DATASET_DIR, FILTERSET_DIR, default_dataset, default_filterset, default_nt_filter, default_target_col_idx
+from model.model_util import align_first_last, prune_nulls
 from recon.dataset_util import prep_dataset, prep_labels, gen_group
 from recon.split_util import get_train_test_split, gen_time_series_split
 from recon.label_util import shift_label
@@ -87,42 +88,6 @@ def net_test(argv):
 			ff_test = delayed(feedforward_test)(pruned, filtered_labels, label_col_idx=target_col_idx)
 			ff_test.compute()
 
-def align_first_last(df, ratio_max=.25):
-	"""
-	Return df where non-overlapping subsets have first or last column set to null, align them and remove the redundant column.
-
-	Args:
-		df (pd.DataFrame): dataframe of multiple columns
-		ratio_max (float): multiplier of the maximum count of all columns, whose product is used as a threshold for the alignment condition.
-
-	Returns:
-		Aligned and filtered dataframe if alignment is needed, otherwise return the original dataframe.
-	"""
-	def fl_alignment_needed(df, ratio_max=ratio_max):
-		count_df = df.count()
-		return count_df.size > EXPECTED_NUM_HOURS and abs(count_df.iloc[0] - count_df.iloc[-1]) > ratio_max*count_df.max()
-
-	if (fl_alignment_needed(df)):
-		cnt_df = df.count()
-		first_hr, last_hr = cnt_df.index[0], cnt_df.index[-1]
-		firstnull = df[df[first_hr].isnull() & ~df[last_hr].isnull()]
-		lastnull = df[~df[first_hr].isnull() & df[last_hr].isnull()]
-
-		# The older format is changed to match the temporally latest one
-		if (firstnull.index[-1] > lastnull.index[-1]): 		# Changed lastnull subset to firstnull
-			df.loc[~df[first_hr].isnull() & df[last_hr].isnull(), :] = lastnull.shift(periods=1, axis=1)
-		elif (firstnull.index[-1] < lastnull.index[-1]):	# Changed firstnull subset to lastnull
-			df.loc[df[first_hr].isnull() & ~df[last_hr].isnull(), :] = firstnull.shift(periods=-1, axis=1)
-
-		return filter_cols_below(df)
-	else:
-		return df
-
-def prune_nulls(df, method='ffill'):
-	if (method=='ffill'):
-		return df.dropna(axis=0, how='all').fillna(axis=1, method='ffill', limit=3).dropna(axis=0, how='any')
-	elif (method=='drop'):
-		return df.dropna(axis=0, how='any')
 
 def feedforward_test(feat_df, lab_df, label_col_idx=0):
 	lab_name, num_features = lab_df.columns[label_col_idx], feat_df.shape[1]
@@ -208,7 +173,6 @@ def rnn_test(feat_df, lab_df, label_col_idx=0):
 		logging.debug('actual: {actual} \nforecast: {forecast}'.format(actual=str(lab_test), forecast=str(forecast.T[0])))
 
 	return score
-
 
 
 if __name__ == '__main__':
