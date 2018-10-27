@@ -423,12 +423,12 @@ def df_value_count(df, axis=0):
 	return df.apply(lambda ser: ser.value_counts(), axis=axis)
 
 """Datetime"""
-def df_dti_index_to_date(df, new_freq=DT_CAL_DAILY_FREQ, new_tz=None):
+def df_dti_index_to_date(df, new_freq=DT_CAL_DAILY_FREQ, new_tz=False):
 	"""
 	Convert DataFrame's DatetimeIndex index to solely a date component, set new frequency if specified.
 	"""
-	index_name = df.index.name    
-	timezone = new_tz if (new_tz is not None) else df.index.tz
+	index_name = df.index.name
+	timezone = new_tz if (new_tz!=False) else df.index.tz
 	df.index = pd.DatetimeIndex(df.index.normalize().date).rename(index_name)
 	if (new_freq is not None):
 		df = df.asfreq(new_freq)
