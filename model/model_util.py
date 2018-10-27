@@ -50,18 +50,19 @@ def prune_nulls(df, method='ffill'):
 	elif (method=='drop'):
 		return df.dropna(axis=0, how='any')
 
-def prepare_transpose_data(features_df, row_masks_df, feat_select_filter):
+def prepare_transpose_data(features_df, row_masks_df, feat_select_filter, new_timezone='UTC'):
 	"""
 	Return delayed object to produce intraday to daily transposed data.
 	"""
-	reindexed_feats = delayed(reindex_on_time_mask)(features_df, row_masks_df)
-	selected_feats = delayed(lambda df: df.loc[:, chained_filter(df.columns, feat_select_filter)])(reindexed_feats)
-	transposed_feats = delayed(gb_transpose)(selected_feats)
-	filtered_feats = delayed(filter_cols_below)(transposed_feats)
-	aligned_feats = delayed(align_first_last)(filtered_feats)
-	pruned_feats = delayed(prune_nulls)(aligned_feats)
+	reindexed = delayed(reindex_on_time_mask)(features_df, row_masks_df)
+	selected = delayed(lambda df: df.loc[:, chained_filter(df.columns, feat_select_filter)])(reindexed)
+	transposed = delayed(gb_transpose)(selected)
+	timezone_fixed = delayed(df_dti_index_to_date)(transposed)
+	filtered = delayed(filter_cols_below)(timezone_fixed)
+	aligned = delayed(align_first_last)(filtered)
+	pruned = delayed(prune_nulls)(aligned)
 
-	return pruned_feats
+	return pruned
 
 def prepare_masked_labels(labels_df, label_types, label_filter):
 	"""
