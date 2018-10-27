@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from dask import delayed
 
-from common_util import chained_filter, filter_cols_below, reindex_on_time_mask, gb_transpose
+from common_util import df_dti_index_to_date, chained_filter, filter_cols_below, reindex_on_time_mask, gb_transpose
 from model.common import EXPECTED_NUM_HOURS
 from recon.dataset_util import prep_labels
 
