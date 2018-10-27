@@ -17,7 +17,7 @@ from data.access_util import df_getters as dg, col_subsetters2 as cs2
 from recon.common import dum
 from recon.feat_util import gen_cluster_feats
 from recon.label_util import gen_label_dfs, default_fct, fastbreak_fct, confidence_fct, fastbreak_confidence_fct
-from recon.model_util import get_train_test_split
+from recon.split_util import get_train_test_split
 
 
 def test(argv):
