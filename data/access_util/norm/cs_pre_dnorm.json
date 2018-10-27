@@ -3,14 +3,14 @@
 		"all": null,
 		"subsets": {
 			"raw_pba": {
-				"exact": ["pba_open", "pba_close", "pba_avgPrice", "pba_numTrades"],
+				"exact": ["pba_open", "pba_high", "pba_low", "pba_close", "pba_avgPrice", "pba_numTrades"],
 				"startswith": [],
 				"endswith": [],
 				"regex": [],
 				"exclude": null
 			},
 			"raw_vol": {
-				"exact": ["vol_open", "vol_close", "vol_avgPrice", "vol_numTrades"],
+				"exact": ["vol_open", "vol_high", "vol_low", "vol_close", "vol_avgPrice", "vol_numTrades"],
 				"startswith": [],
 				"endswith": [],
 				"regex": [],
@@ -55,14 +55,14 @@
 		"all": null,
 		"subsets": {
 			"raw_pba": {
-				"exact": ["pba_open", "pba_close", "pba_avgPrice", "pba_numTrades"],
+				"exact": ["pba_open", "pba_high", "pba_low", "pba_close", "pba_avgPrice", "pba_numTrades"],
 				"startswith": [],
 				"endswith": [],
 				"regex": [],
 				"exclude": null
 			},
 			"raw_vol": {
-				"exact": ["vol_open", "vol_close", "vol_avgPrice", "vol_numTrades"],
+				"exact": ["vol_open", "vol_high", "vol_low", "vol_close", "vol_avgPrice", "vol_numTrades"],
 				"startswith": [],
 				"endswith": [],
 				"regex": [],
