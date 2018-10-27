@@ -12,6 +12,16 @@ from common_util import RECON_DIR
 from recon.common import dum
 
 
+""" ********** VALUE REMAP ********** """
+def ternary_to_binary(feats, lab):
+	"""
+	Given a dataset labelled within {-1, 0, 1}, split into
+	two binary sets within {0, 1} to represent zero and nonzero values.
+	"""
+	pass # TODO
+
+
+
 """ ********** TRAIN/TEST SPLITS ********** """
 def get_train_test_split(feats, lab, train_ratio=.8, to_np=True):
 	"""
