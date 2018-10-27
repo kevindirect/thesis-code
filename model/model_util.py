@@ -57,7 +57,7 @@ def prepare_transpose_data(features_df, row_masks_df, feat_select_filter, new_ti
 	reindexed = delayed(reindex_on_time_mask)(features_df, row_masks_df)
 	selected = delayed(lambda df: df.loc[:, chained_filter(df.columns, feat_select_filter)])(reindexed)
 	transposed = delayed(gb_transpose)(selected)
-	timezone_fixed = delayed(df_dti_index_to_date)(transposed)
+	timezone_fixed = delayed(df_dti_index_to_date)(transposed, new_tz=new_timezone)
 	filtered = delayed(filter_cols_below)(timezone_fixed)
 	aligned = delayed(align_first_last)(filtered)
 	pruned = delayed(prune_nulls)(aligned)
