@@ -85,7 +85,7 @@ def net_test(argv):
 			logging.info('rpaths: ' +str(rpaths))
 
 			final_feats = prepare_transpose_data(features, row_masks, feats_filter)
-			final_labels = prepare_masked_labels(labels, types=['bool'], labs_filter)
+			final_labels = prepare_masked_labels(labels, ['bool'], labs_filter)
 			
 			ff_test = delayed(feedforward_test)(final_feats, final_labels, label_col_idx=target_col_idx)
 			ff_test.compute()
