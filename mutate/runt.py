@@ -65,7 +65,7 @@ def get_row_mask_keychain(original_keychain, all_mask_keys):
 	Return mask keychain that best corresponds to original_keychain
 	"""
 	assert(len(original_keychain)==len(all_mask_keys))
-	mapped = [best_match(key, all_mask_keys[idx], alt_maps={'thresh': 'raw'}) for idx, key in enumerate(original_keychain)]
+	mapped = [best_match(key, all_mask_keys[idx], alt_maps={'thresh': 'raw', 'raw_trmi_v2': 'raw_pba', 'raw_trmi_v3': 'raw_pba'}) for idx, key in enumerate(original_keychain)]
 	return mapped
 
 def process_step(step_info, date_range):
