@@ -86,7 +86,7 @@ def net_test(argv):
 
 			final_feats = prepare_transpose_data(features, row_masks, feats_filter)
 			final_labels = prepare_masked_labels(labels, ['bool'], labs_filter)
-			print('final_feats', final_feats.compute().dropna(axis=0, how='all')
+			print('final_feats', final_feats.compute().dropna(axis=0, how='all'))
 			print('final_feats idx', final_feats.compute().dropna(axis=0, how='all').index)
 			print('final_labels', shift_label(final_labels.compute().iloc[:, 0]))
 			print('final_labels idx', shift_label(final_labels.compute().iloc[:, 0]).index)
