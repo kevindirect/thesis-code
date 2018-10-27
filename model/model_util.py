@@ -50,19 +50,19 @@ def prune_nulls(df, method='ffill'):
 	elif (method=='drop'):
 		return df.dropna(axis=0, how='any')
 
-def prepare_transpose_data(features_df, row_masks_df, feat_select_filter, new_timezone='UTC'):
+def prepare_transpose_data(features_df, row_masks_df, feat_select_filter):
 	"""
 	Return delayed object to produce intraday to daily transposed data.
 	"""
 	reindexed = delayed(reindex_on_time_mask)(features_df, row_masks_df)
 	selected = delayed(lambda df: df.loc[:, chained_filter(df.columns, feat_select_filter)])(reindexed)
 	transposed = delayed(gb_transpose)(selected)
-	timezone_fixed = delayed(df_dti_index_to_date)(transposed, new_tz=new_timezone)
-	filtered = delayed(filter_cols_below)(timezone_fixed)
+	filtered = delayed(filter_cols_below)(transposed)
 	aligned = delayed(align_first_last)(filtered)
 	pruned = delayed(prune_nulls)(aligned)
+	timezone_fixed = delayed(df_dti_index_to_date)(pruned, new_tz=None)
 
-	return pruned
+	return timezone_fixed
 
 def prepare_masked_labels(labels_df, label_types, label_filter):
 	"""
@@ -70,5 +70,6 @@ def prepare_masked_labels(labels_df, label_types, label_filter):
 	"""
 	prepped_labels = prep_labels(labels_df, types=label_types)
 	filtered_labels = delayed(lambda df: df.loc[:, chained_filter(df.columns, label_filter)])(prepped_labels) # EOD, FBEOD, FB
+	timezone_fixed = delayed(df_dti_index_to_date)(filtered_labels, new_tz=None)
 
-	return filtered_labels
+	return timezone_fixed
