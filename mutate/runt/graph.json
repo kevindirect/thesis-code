@@ -22,6 +22,9 @@
 		"dr",
 		"dma",
 		"ddiff",
-		"dffracdiff"
+		"dffracdiff",
+		"diff",
+		"dnorm",
+		"sym"
 	]
 }
