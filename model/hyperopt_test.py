@@ -140,6 +140,8 @@ def one_layer_lstm(features, labels, params):
 					validation_data=(feat_test, lab_test),
 					shuffle=False)
 
+		logging.warn(history)
+
 		return {'loss': history.history['val_loss'], 'status': STATUS_OK}
 
 	except:
