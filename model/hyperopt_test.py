@@ -122,7 +122,7 @@ def hyperopt_test(argv):
 
 def one_layer_lstm(features, labels, params):
 
-	feat_train, feat_test, lab_train, lab_test = get_train_test_split(features.values, to_categorical(label.values), train_ratio=.8, to_np=False)
+	feat_train, feat_test, lab_train, lab_test = get_train_test_split(features.values, to_categorical(labels.values), train_ratio=.8, to_np=False)
 
 	try:
 		main_input = Input(shape=(feat_train.shape[0],), name='main_input')
