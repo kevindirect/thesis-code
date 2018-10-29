@@ -22,11 +22,12 @@ dum = 0
 
 
 # PACKAGE DEFAULTS
-default_dataset = 'dnorm_sym.json'
-default_filterset = 'default_dnorm_sym.json'
+default_dataset = 'dnorm_raw.json'
 default_filter = ["0"]
 default_nt_filter = ["1"]
+default_opt_filter = ["1", "2"]
 default_target_col_idx = 0
+default_target_idx = [0, 1, 2]
 
 # PACKAGE UTIL FUNCTIONS
 

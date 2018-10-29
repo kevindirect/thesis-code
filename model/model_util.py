@@ -50,13 +50,15 @@ def prune_nulls(df, method='ffill'):
 	elif (method=='drop'):
 		return df.dropna(axis=0, how='any')
 
-def prepare_transpose_data(features_df, row_masks_df, feat_select_filter):
+def prepare_transpose_data(feature_df, row_masks_df):
 	"""
 	Return delayed object to produce intraday to daily transposed data.
+
+	Args:
+		feature_df (pd.DataFrame): one series intraday dataframe
 	"""
-	reindexed = delayed(reindex_on_time_mask)(features_df, row_masks_df)
-	selected = delayed(lambda df: df.loc[:, chained_filter(df.columns, feat_select_filter)])(reindexed)
-	transposed = delayed(gb_transpose)(selected)
+	reindexed = delayed(reindex_on_time_mask)(feature_df, row_masks_df)
+	transposed = delayed(gb_transpose)(reindexed)
 	filtered = delayed(filter_cols_below)(transposed)
 	aligned = delayed(align_first_last)(filtered)
 	pruned = delayed(prune_nulls)(aligned)
