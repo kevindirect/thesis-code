@@ -117,7 +117,7 @@ def hyperopt_test(argv):
 
 				trials = Trials()
 				best = fmin(partial(one_layer_lstm, f, l), one_layer_lstm_space, algo=tpe.suggest, max_evals=50, trials=trials)
-				print('best: {}'.format(best.compute()))
+				print('best: {}'.format(best))
 
 
 def one_layer_lstm(features, labels, params):
