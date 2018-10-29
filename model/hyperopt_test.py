@@ -4,6 +4,7 @@ import sys
 import os
 from os import sep
 from os.path import splitext
+from itertools import product
 from functools import partial, reduce
 import logging
 
@@ -13,7 +14,7 @@ from dask import delayed, compute, visualize
 from hyperopt import fmin, tpe, hp, STATUS_OK, Trials
 from keras.utils.np_utils import to_categorical
 from keras.models import Model
-from keras.layers import Merge, Input, concatenate, Dense, Activation, Dropout, LSTM, Convolution1D, MaxPooling1D, GlobalAveragePooling1D, GlobalMaxPooling1D, RepeatVector, AveragePooling1D
+from keras.layers import Input, concatenate, Dense, Activation, Dropout, LSTM, Convolution1D, MaxPooling1D, AveragePooling1D, GlobalAveragePooling1D, GlobalMaxPooling1D, RepeatVector
 from keras.layers.core import Dense, Dropout, Activation, Flatten, Permute, Reshape
 from keras.layers.recurrent import LSTM, GRU, SimpleRNN
 from keras.layers.wrappers import Bidirectional, TimeDistributed
@@ -110,7 +111,7 @@ def hyperopt_test(argv):
 
 			for feat_idx, label_idx in product(*dataset_grid.values()):
 				final_feature = prepare_transpose_data(features.iloc[:, [feat_idx]], row_masks).dropna(axis=0, how='all')
-				final_label = delayed(shift_label)(final_labels.iloc[:, target_idx]).dropna()
+				final_label = delayed(shift_label)(masked_labels.iloc[:, target_idx]).dropna()
 				final_common = delayed(pd_common_index_rows)(final_feature, final_label)
 				f, l = final_common.compute()
 
