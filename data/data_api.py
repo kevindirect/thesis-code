@@ -130,10 +130,12 @@ class DataAPI:
 			entry['id'], is_new = cls.get_id(entry)
 			entry['name'] = cls.get_name(entry)
 			entry['dir'] = cls.get_path(entry)
+			dump_location = path_pfx+entry['dir']
+			makedir_if_not_exists(dump_location)
 
-			makedir_if_not_exists(entry['dir'])
 			with benchmark('', suppress=True) as b:
-				entry['size'] = dump_df(df, entry['name'], dir_path=path_pfx+entry['dir'])
+				logging.warn('dest {}'.format(dump_location))
+				entry['size'] = dump_df(df, entry['name'], dir_path=dump_location)
 			entry['dumptime'] = round(b.time, 2)
 			entry['hash'] = sum(hash_pandas_object(df))
 			addition = pd.DataFrame(columns=DR_COLS, index=[entry['id']])
