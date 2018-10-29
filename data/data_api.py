@@ -134,7 +134,7 @@ class DataAPI:
 			makedir_if_not_exists(dump_location)
 
 			with benchmark('', suppress=True) as b:
-				logging.warn('dest {}'.format(dump_location))
+				logging.debug('dest {}'.format(dump_location))
 				entry['size'] = dump_df(df, entry['name'], dir_path=dump_location)
 			entry['dumptime'] = round(b.time, 2)
 			entry['hash'] = sum(hash_pandas_object(df))
