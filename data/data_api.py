@@ -123,7 +123,7 @@ class DataAPI:
 			return load_rec_df
 
 		@classmethod
-		def dump(cls, df, entry, update_record=False):
+		def dump(cls, df, entry, path_pfx=DATA_DIR, update_record=False):
 			"""
 			XXX - break this down and make it more elegant
 			"""
@@ -133,7 +133,7 @@ class DataAPI:
 
 			makedir_if_not_exists(entry['dir'])
 			with benchmark('', suppress=True) as b:
-				entry['size'] = dump_df(df, entry['name'], dir_path=entry['dir'])
+				entry['size'] = dump_df(df, entry['name'], dir_path=path_pfx+entry['dir'])
 			entry['dumptime'] = round(b.time, 2)
 			entry['hash'] = sum(hash_pandas_object(df))
 			addition = pd.DataFrame(columns=DR_COLS, index=[entry['id']])
