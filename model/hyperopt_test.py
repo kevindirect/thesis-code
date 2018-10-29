@@ -34,9 +34,9 @@ from recon.split_util import get_train_test_split, gen_time_series_split
 from recon.label_util import shift_label
 
 
-def opt_test(argv):
+def hyperopt_test(argv):
 	cmd_arg_list = ['dataset=', 'filterset=', 'idxfilters=', 'assets=', 'target_idx=', 'visualize']
-	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name='opt_test')
+	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name='hyperopt_test')
 	dataset_name = cmd_input['dataset='] if (cmd_input['dataset='] is not None) else default_dataset
 	filterset_name = cmd_input['filterset='] if (cmd_input['filterset='] is not None) else '_'.join(['default', dataset_name])
 	filter_idxs = str_to_list(cmd_input['idxfilters=']) if (cmd_input['idxfilters='] is not None) else default_opt_filter
@@ -148,4 +148,4 @@ def one_layer_lstm(features, labels, params):
 
 if __name__ == '__main__':
 	with benchmark('time to finish') as b:
-		opt_test(sys.argv[1:])
+		hyperopt_test(sys.argv[1:])
