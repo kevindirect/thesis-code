@@ -1,0 +1,7 @@
+{
+	"features": [
+		["sym", "sym_raw_ohlca"]
+	],
+	"labels": "labels.json",
+	"row_masks": "row_masks.json"
+}

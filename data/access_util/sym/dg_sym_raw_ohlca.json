@@ -1,0 +1,32 @@
+{
+	"dzn_gau": {
+		"all": {
+			"stage": "mutate",
+			"mutate_type": "sym",
+			"raw_cat": "us_equity_index"
+		},
+		"subsets": {
+			"raw_pba": {
+				"desc": ["raw_pba_dzn_gau(2)", "raw_pba_dzn_gau(3)", "raw_pba_dzn_gau(4)", "raw_pba_dzn_gau(8)"]
+			},
+			"raw_vol": {
+				"desc": ["raw_vol_dzn_gau(2)", "raw_vol_dzn_gau(3)", "raw_vol_dzn_gau(4)", "raw_vol_dzn_gau(8)"]
+			}
+		}
+	},
+	"dmx_uni": {
+		"all": {
+			"stage": "mutate",
+			"mutate_type": "sym",
+			"raw_cat": "us_equity_index"
+		},
+		"subsets": {
+			"raw_pba": {
+				"desc": ["raw_pba_dmx_uni(2)", "raw_pba_dmx_uni(3)", "raw_pba_dmx_uni(4)", "raw_pba_dmx_uni(8)"]
+			},
+			"raw_vol": {
+				"desc": ["raw_vol_dmx_uni(2)", "raw_vol_dmx_uni(3)", "raw_vol_dmx_uni(4)", "raw_vol_dmx_uni(8)"]
+			}
+		}
+	}
+}

@@ -1,0 +1,7 @@
+{
+	"features": [
+		["norm", "dnorm_raw_ohlca"]
+	],
+	"labels": "labels.json",
+	"row_masks": "row_masks.json"
+}

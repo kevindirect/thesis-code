@@ -80,6 +80,9 @@ quote_it = lambda string: '\'' +string +'\''
 
 wrap_parens = lambda string: '(' +string +')'
 
+def str_to_list(string, delimiter=',', cast_to=str):
+	return list(map(cast_to, map(str.strip, string.split(delimiter))))
+
 """Datetime"""
 dt_now = lambda: datetime.now()
 str_now = lambda: dt_now().strftime(DT_FMT_YMD_HMS)
