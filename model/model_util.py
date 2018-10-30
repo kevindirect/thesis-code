@@ -75,3 +75,10 @@ def prepare_masked_labels(labels_df, label_types, label_filter):
 	timezone_fixed = delayed(df_dti_index_to_date)(filtered_labels, new_tz=None)
 
 	return timezone_fixed
+
+
+def hyperopt_trials_to_df(trials):
+	"""
+	Convert a hyperopt trials object to a pandas DataFrame and return it.
+	"""
+	pass

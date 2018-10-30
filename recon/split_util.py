@@ -30,23 +30,23 @@ def pd_binary_clip(pd_obj, thresh=0, return_abs=True):
 
 
 """ ********** TRAIN/TEST SPLITS ********** """
-def get_train_test_split(feats, lab, train_ratio=.8, to_np=True):
+def get_train_test_split(feats, lab, test_ratio=.8, to_np=True):
 	"""
 	Return a basic train/test split.
 
 	Args:
 		feats (pd.DataFrame or ndarray): features dataframe
 		lab (pd.Series or ndarray): label series
-		train_ratio (float ∈ [0, 1]): proportion of total data used for training 
+		test_ratio (float ∈ [0, 1]): proportion of total data used for test 
 		to_np (bool): boolean determines whether to convert input to numpy types
 
 	Returns:
 		Tuple of (feats_train, feats_test, lab_train, lab_test)
 	"""
 	if (to_np):
-		return train_test_split(feats.values, lab.values, train_size=train_ratio, shuffle=False)
+		return train_test_split(feats.values, lab.values, test_size=test_ratio, shuffle=False)
 	else:
-		return train_test_split(feats, lab, train_size=train_ratio, shuffle=False)
+		return train_test_split(feats, lab, test_size=test_ratio, shuffle=False)
 
 def gen_time_series_split(feats, lab, num_splits=5, max_train=None):
 	tscv = TimeSeriesSplit(n_splits=num_splits, max_train_size=max_train)
