@@ -13,13 +13,20 @@ from recon.common import dum
 
 
 """ ********** VALUE REMAP ********** """
-def ternary_to_binary(feats, lab):
+def pd_binary_clip(pd_obj, thresh=0, return_abs=True):
 	"""
-	Given a dataset labelled within {-1, 0, 1}, split into
-	two binary sets within {0, 1} to represent zero and nonzero values.
+	Given a pd_obj split it into two by clipping above and below threshold and returning
+	the two result pd_objects.
 	"""
-	pass # TODO
+	keep_above = pd_obj.clip(lower=thresh, upper=None)
+	keep_below = pd_obj.clip(lower=None, upper=thresh)
 
+	if (return_abs):
+		if (thresh < 0):
+			keep_above = keep_above.abs()
+		keep_below = keep_below.abs()
+
+	return keep_above, keep_below
 
 
 """ ********** TRAIN/TEST SPLITS ********** """
