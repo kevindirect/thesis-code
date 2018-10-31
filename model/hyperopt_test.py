@@ -20,7 +20,7 @@ from model.common import DATASET_DIR, FILTERSET_DIR, default_dataset, default_op
 from model.model_util import prepare_transpose_data, prepare_masked_labels
 from model.models.OneLayerBinaryLSTM import OneLayerBinaryLSTM
 from recon.dataset_util import prep_dataset, prep_labels, gen_group
-from recon.split_util import get_train_test_split, gen_time_series_split
+from recon.split_util import get_train_test_split, pd_binary_clip
 from recon.label_util import shift_label
 
 
@@ -92,12 +92,14 @@ def hyperopt_test(argv):
 
 			for feat_idx, label_idx in product(*dataset_grid.values()):
 				final_feature = prepare_transpose_data(features.iloc[:, [feat_idx]], row_masks).dropna(axis=0, how='all')
-				final_label = delayed(shift_label)(masked_labels.iloc[:, target_idx]).dropna()
-				final_common = delayed(pd_common_index_rows)(final_feature, final_label)
-				f, l = final_common.compute()
+				shifted_label = delayed(shift_label)(masked_labels.iloc[:, target_idx]).dropna()
+				pos_label, neg_label = delayed(pd_binary_clip)(shifted_label)
+
+				final_common = delayed(pd_common_index_rows)(final_feature, pos_label, neg_label)
+				f, lpos, lneg = final_common.compute()
 
 				mod = OneLayerBinaryLSTM()
-				obj = mod.make_const_data_objective(f, l)
+				obj = mod.make_const_data_objective(f, lpos, lneg)
 				trials = Trials()
 				best = fmin(obj, mod.get_space(), algo=tpe.suggest, max_evals=50, trials=trials)
 				print('best: {}'.format(best))

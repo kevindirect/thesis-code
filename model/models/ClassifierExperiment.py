@@ -40,7 +40,7 @@ class ClassifierExperiment:
 		"""
 		pass
 
-	def fit_model(self, params, model, feat_train, lab_train, feat_val=None, lab_val=None, shuffle=False, val_split=.25):
+	def fit_model(self, params, model, feat_train, lab_train, feat_val=None, lab_val=None, val_split=.25, shuffle=False):
 		"""
 		Fit the model and return the computed losses.
 		"""
@@ -54,7 +54,7 @@ class ClassifierExperiment:
 
 		return history.history['val_loss'] # TODO fix this
 
-	def make_const_data_objective(self, features, labels, retain_holdout=True, shuffle=False, test_ratio=.25):
+	def make_const_data_objective(self, features, labels, retain_holdout=True, test_ratio=.25, shuffle=False):
 		"""
 		Return an objective function that hyperopt can use for the given features and labels.
 		"""
@@ -73,9 +73,9 @@ class ClassifierExperiment:
 				compiled = self.make_model(params, features.shape[0])
 
 				if (retain_holdout):
-					results = self.fit_model(params, compiled, feat_train, lab_train, shuffle=shuffle, val_split=test_ratio)
+					results = self.fit_model(params, compiled, feat_train, lab_train, val_split=test_ratio, shuffle=shuffle)
 				else:
-					results = self.fit_model(params, compiled, feat_train, lab_train, lab_train, lab_test, shuffle=shuffle, val_split=test_ratio)
+					results = self.fit_model(params, compiled, feat_train, lab_train, lab_train, lab_test, val_split=test_ratio, shuffle=shuffle)
 
 				return {'loss': results, 'status': STATUS_OK}
 
@@ -85,7 +85,7 @@ class ClassifierExperiment:
 
 		return objective
 
-	def make_var_data_objective(self, raw_features, raw_labels, features_fn, labels_fn, retain_holdout=True, shuffle=False, test_ratio=.25):
+	def make_var_data_objective(self, raw_features, raw_labels, features_fn, labels_fn, retain_holdout=True, test_ratio=.25, shuffle=False):
 		"""
 		Return an objective function that hyperopt can use that can search over features and labels along with the hyperparameters.
 		"""
@@ -94,7 +94,7 @@ class ClassifierExperiment:
 			Standard classifier objective function to minimize.
 			"""
 			features, labels = features_fn(raw_features, params), labels_fn(raw_labels, params)
-			return self.make_const_objective(features, labels, retain_holdout=retain_holdout, shuffle=shuffle, test_ratio=test_ratio)
+			return self.make_const_objective(features, labels, retain_holdout=retain_holdout, test_ratio=test_ratio, shuffle=shuffle)
 
 		return objective
 

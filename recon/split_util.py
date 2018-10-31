@@ -30,7 +30,7 @@ def pd_binary_clip(pd_obj, thresh=0, return_abs=True):
 
 
 """ ********** TRAIN/TEST SPLITS ********** """
-def get_train_test_split(feats, lab, test_ratio=.8, to_np=True):
+def get_train_test_split(feats, lab, test_ratio=.8, to_np=True, shuffle=False):
 	"""
 	Return a basic train/test split.
 
@@ -44,9 +44,9 @@ def get_train_test_split(feats, lab, test_ratio=.8, to_np=True):
 		Tuple of (feats_train, feats_test, lab_train, lab_test)
 	"""
 	if (to_np):
-		return train_test_split(feats.values, lab.values, test_size=test_ratio, shuffle=False)
+		return train_test_split(feats.values, lab.values, test_size=test_ratio, shuffle=shuffle)
 	else:
-		return train_test_split(feats, lab, test_size=test_ratio, shuffle=False)
+		return train_test_split(feats, lab, test_size=test_ratio, shuffle=shuffle)
 
 def gen_time_series_split(feats, lab, num_splits=5, max_train=None):
 	tscv = TimeSeriesSplit(n_splits=num_splits, max_train_size=max_train)

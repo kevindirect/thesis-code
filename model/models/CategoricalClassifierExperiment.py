@@ -27,7 +27,7 @@ class CategoricalClassifierExperiment(ClassifierExperiment):
 		}
 		super(CategoricalClassifierExperiment, self).__init__({**default_space, **other_space})
 
-	def make_const_data_objective(self, features, labels, retain_holdout=True, shuffle=False, test_ratio=.25):
+	def make_const_data_objective(self, features, labels, retain_holdout=True, test_ratio=.25, shuffle=False):
 		"""
 		Return an objective function that hyperopt can use for the given features and labels.
 		"""
@@ -41,9 +41,9 @@ class CategoricalClassifierExperiment(ClassifierExperiment):
 				compiled = self.make_model(params, features.shape[0])
 
 				if (retain_holdout):
-					results = self.fit_model(params, compiled, feat_train, lab_train, shuffle=shuffle, val_split=test_ratio)
+					results = self.fit_model(params, compiled, feat_train, lab_train, val_split=test_ratio, shuffle=shuffle)
 				else:
-					results = self.fit_model(params, compiled, feat_train, lab_train, lab_train, lab_test, shuffle=shuffle, val_split=test_ratio)
+					results = self.fit_model(params, compiled, feat_train, lab_train, lab_train, lab_test, val_split=test_ratio, shuffle=shuffle)
 
 				return {'loss': results, 'status': STATUS_OK}
 
