@@ -49,7 +49,9 @@ class ClassifierExperiment:
 
 		for name, idx in params_idx.items():
 			hp_obj = self.space[name]
-			if (hp_obj.name == 'switch'): # indicates an hp.choice object
+			hp_obj_type = hp_obj.name
+
+			if (hp_obj_type == 'switch'): # Indicates an hp.choice object
 				choice_list = hp_obj.pos_args[1:]
 				chosen = choice_list[idx]._obj
 				if (isinstance(chosen, str) or isinstance(chosen, int) or isinstance(chosen, float)):
@@ -59,6 +61,9 @@ class ClassifierExperiment:
 						params_dict[name] = chosen.__name__
 					except:
 						params_dict[name] = str(chosen)
+
+			elif (hp_obj_type == 'float'): # Indicates a hp sampled value
+				params_dict[name] = idx
 
 		return params_dict
 
