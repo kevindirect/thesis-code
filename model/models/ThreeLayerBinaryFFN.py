@@ -31,7 +31,7 @@ class ThreeLayerBinaryFFN(BinaryClassifierExperiment):
 			'layer3_size': hp.choice('layer3_size', [8, 16, 32, 64, 128]),
 			'activation': hp.choice('activation', ['relu', 'sigmoid', 'tanh', 'linear'])
 		}
-		super(OneLayerBinaryLSTM, self).__init__({**default_space, **other_space})
+		super(ThreeLayerBinaryFFN, self).__init__({**default_space, **other_space})
 
 	def make_model(self, params, input_shape):
 		# Define model
