@@ -104,7 +104,7 @@ class ClassifierExperiment:
 			Standard classifier objective function to minimize.
 			"""
 			try:
-				compiled = self.make_model(params, features.shape[0])
+				compiled = self.make_model(params, features.shape[1])
 
 				if (retain_holdout):
 					results = self.fit_model(params, compiled, feat_train, lab_train, val_split=test_ratio, shuffle=shuffle)

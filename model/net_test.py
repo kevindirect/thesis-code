@@ -17,8 +17,10 @@ from keras.optimizers import SGD, RMSprop, Adadelta, Adam, Adamax, Nadam
 from common_util import RECON_DIR, JSON_SFX_LEN, DT_CAL_DAILY_FREQ, get_cmd_args, in_debug_mode, pd_common_index_rows, load_json, benchmark
 from model.common import DATASET_DIR, FILTERSET_DIR, default_dataset, default_nt_filter, default_target_col_idx
 from model.model_util import prepare_transpose_data, prepare_masked_labels
+from model.models.ThreeLayerBinaryFFN import ThreeLayerBinaryFFN
+from model.models.OneLayerBinaryLSTM import OneLayerBinaryLSTM
 from recon.dataset_util import prep_dataset, prep_labels, gen_group
-from recon.split_util import get_train_test_split, gen_time_series_split
+from recon.split_util import get_train_test_split, pd_binary_clip
 from recon.label_util import shift_label
 
 
@@ -73,6 +75,21 @@ def net_test(argv):
 		"exclude": None
 	}]
 
+	ThreeLayerBinaryFFN_params = {
+		'opt': RMSprop,
+		'lr': 0.001,
+		'epochs': 50,
+		'batch_size':128,
+		'output_activation': 'tanh',
+		'loss': 'binary_crossentropy',
+		'layer1_size': 64,
+		'layer1_dropout': .6,
+		'layer2_size': 32,
+		'layer2_dropout': .4,
+		'layer3_size': 16,
+		'activation': 'sigmoid'
+	}
+
 	final_dfs = {}
 	if (run_compute):
 		logging.info('executing...')
@@ -85,9 +102,23 @@ def net_test(argv):
 			logging.info('rpaths: ' +str(rpaths))
 
 			final_feats = prepare_transpose_data(features, row_masks, feats_filter)
-			final_labels = prepare_masked_labels(labels, ['bool'], labs_filter)
-			ff_test = delayed(feedforward_test)(final_feats, final_labels, label_col_idx=target_col_idx)
-			ff_test.compute()
+			masked_labels = prepare_masked_labels(labels, ['bool'], labs_filter)
+			shifted_label = delayed(shift_label)(masked_labels.iloc[:, target_col_idx]).dropna()
+			pos_label, neg_label = delayed(pd_binary_clip, nout=2)(shifted_label)
+			final_common = delayed(pd_common_index_rows)(final_feature, pos_label, neg_label)
+			f, lpos, lneg = final_common.compute()
+
+			mod = delayed(ThreeLayerBinaryFFN)()
+			obj = delayed(mod.make_const_data_objective)(final_feats, lpos)
+			res = obj(ThreeLayerBinaryFFN_params).compute()
+			print('pos inference: ', res)
+
+			mod = delayed(ThreeLayerBinaryFFN)()
+			obj = delayed(mod.make_const_data_objective)(final_feats, lneg)
+			res = obj(ThreeLayerBinaryFFN_params).compute()
+			print('neg dir: ', res)
+			# ff_test = delayed(feedforward_test)(final_feats, final_labels, label_col_idx=target_col_idx)
+			# ff_test.compute()
 
 
 def feedforward_test(feat_df, lab_df, label_col_idx=0):
