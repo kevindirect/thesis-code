@@ -101,7 +101,7 @@ def net_test(argv):
 			logging.info('lpaths: ' +str(lpaths))
 			logging.info('rpaths: ' +str(rpaths))
 
-			final_feats = prepare_transpose_data(features, row_masks, feats_filter)
+			final_feats = prepare_transpose_data(features.loc[:, ['pba_avgPrice']], row_masks)
 			masked_labels = prepare_masked_labels(labels, ['bool'], labs_filter)
 			shifted_label = delayed(shift_label)(masked_labels.iloc[:, target_col_idx]).dropna()
 			pos_label, neg_label = delayed(pd_binary_clip, nout=2)(shifted_label)
