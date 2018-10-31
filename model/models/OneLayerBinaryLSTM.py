@@ -14,8 +14,8 @@ from keras.layers import Input, Dense, Activation, Dropout, LSTM, GRU
 from keras.layers import LSTM, GRU
 from keras.layers import Convolution1D, MaxPooling1D, AveragePooling1D, GlobalAveragePooling1D, GlobalMaxPooling1D, RepeatVector
 
-from common_util import MODEL_DIR, MODELS_DIR
-from model.common import ERROR_CODE
+from common_util import MODEL_DIR
+from model.common import MODELS_DIR, ERROR_CODE
 from model.models.BinaryClassifierExperiment import BinaryClassifierExperiment
 
 
