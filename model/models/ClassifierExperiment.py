@@ -109,7 +109,7 @@ class ClassifierExperiment:
 				if (retain_holdout):
 					results = self.fit_model(params, compiled, feat_train, lab_train, val_split=test_ratio, shuffle=shuffle)
 				else:
-					results = self.fit_model(params, compiled, feat_train, lab_train, lab_train, lab_test, val_split=test_ratio, shuffle=shuffle)
+					results = self.fit_model(params, compiled, feat_train, lab_train, feat_test, lab_test, val_split=test_ratio, shuffle=shuffle)
 
 				return {'loss': results, 'status': STATUS_OK}
 
