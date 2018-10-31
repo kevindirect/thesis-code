@@ -9,6 +9,7 @@ import logging
 import numpy as np
 import pandas as pd
 from hyperopt import hp, STATUS_OK
+from keras.callbacks import Callback, BaseLogger, History, EarlyStopping, TensorBoard, ReduceLROnPlateau, CSVLogger, LambdaCallback
 from keras.optimizers import SGD, RMSprop, Adam, Nadam
 
 from common_util import MODEL_DIR
@@ -30,6 +31,8 @@ class ClassifierExperiment:
 			'batch_size': hp.choice('batch_size', [64, 128, 256])
 		}
 		self.space = {**default_space, **other_space}
+		self.history = History()
+		# self.reduce_lr = ReduceLROnPlateau(monitor='val_acc', factor=0.9, patience=30, verbose=1, mode='min', min_lr=0.000001) # TODO - try this out on fit function
 		self.bad_trials = 0
 
 	def get_space(self):
@@ -69,15 +72,16 @@ class ClassifierExperiment:
 		"""
 		Fit the model and return the computed losses.
 		"""
-		history = model.fit(feat_train, lab_train, 
+		results = model.fit(feat_train, lab_train, 
 						epochs=params['epochs'], 
 						batch_size=params['batch_size'], 
+						callbacks = [self.history],
 						verbose=1, 
 						validation_split=val_split, # Overriden if validation data is not None
 						validation_data=(feat_val, lab_val) if (not (feat_val is None or lab_val is None)) else None, 
 						shuffle=shuffle)
 
-		return history.history['val_loss'] # TODO fix this
+		return results.History['val_loss'] # TODO fix this
 
 	def make_const_data_objective(self, features, labels, retain_holdout=True, test_ratio=.25, shuffle=False):
 		"""
