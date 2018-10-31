@@ -23,7 +23,7 @@ class BinaryClassifierExperiment(ClassifierExperiment):
 	def __init__(self, other_space={}):
 		default_space = {
 			'output_activation' : hp.choice('output_activation', ['sigmoid', 'exponential', 'elu', 'tanh']),
-			'loss': hp.choice('loss', [losses.binary_crossentropy, losses.hinge, losses.squared_hinge, losses.kullback_leibler_divergence])
+			'loss': hp.choice('loss', ['binary_crossentropy', 'hinge', 'squared_hinge', 'kullback_leibler_divergence'])
 		}
 		super(BinaryClassifierExperiment, self).__init__({**default_space, **other_space})
 
@@ -48,6 +48,7 @@ class BinaryClassifierExperiment(ClassifierExperiment):
 				return {'loss': results, 'status': STATUS_OK}
 
 			except:
+				self.bad_trials += 1
 				logging.error('Error ocurred during experiment')
 				return {'loss': ERROR_CODE, 'status': STATUS_OK}
 

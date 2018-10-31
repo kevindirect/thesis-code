@@ -69,12 +69,12 @@ def hyperopt_test(argv):
 
 	dataset_grid = {
 		'feat_idx': [0, 1, 2, 3, 4],
-		'label_idx': [0, 1, 2]
+		'label_idx': target_idx
 	}
 
 	dataset_space = {
 		'feat_idx': hp.choice('feat_idx', [0, 1, 2, 3, 4]),
-		'label_idx': hp.choice('label_idx', [0, 1, 2])
+		'label_idx': hp.choice('label_idx', target_idx)
 	}
 
 	if (run_compute):
@@ -92,20 +92,34 @@ def hyperopt_test(argv):
 
 			for feat_idx, label_idx in product(*dataset_grid.values()):
 				final_feature = prepare_transpose_data(features.iloc[:, [feat_idx]], row_masks).dropna(axis=0, how='all')
-				shifted_label = delayed(shift_label)(masked_labels.iloc[:, target_idx]).dropna()
-				pos_label, neg_label = delayed(pd_binary_clip)(shifted_label)
-
+				shifted_label = delayed(shift_label)(masked_labels.iloc[:, label_idx]).dropna()
+				pos_label, neg_label = delayed(pd_binary_clip, nout=2)(shifted_label)
 				final_common = delayed(pd_common_index_rows)(final_feature, pos_label, neg_label)
 				f, lpos, lneg = final_common.compute()
 
-				mod = OneLayerBinaryLSTM()
-				obj = mod.make_const_data_objective(f, lpos, lneg)
-				trials = Trials()
-				best = fmin(obj, mod.get_space(), algo=tpe.suggest, max_evals=50, trials=trials)
-				print('best: {}'.format(best))
+				logging.info('pos dir model experiment')
+				run_trials(OneLayerBinaryLSTM, f, lpos)
+
+				logging.info('neg dir model experiment')
+				run_trials(OneLayerBinaryLSTM, f, lneg)
 
 			# mod = OneLayerLSTM(dataset_space)
-			# obj = mod.make_var_data_objective(features, labels)
+			# obj = mod.make_var_data_objective(features, labels
+
+def run_trials(model, features, label):
+	mod = model()
+	obj = mod.make_const_data_objective(features, label)
+	trials = Trials()
+	best = fmin(obj, mod.get_space(), algo=tpe.suggest, max_evals=50, trials=trials)
+	best_params = mod.params_idx_to_name(best)
+	bad = mod.get_bad_trials()
+
+	print('best idx: {}'.format(best))
+	print('best params: {}'.format(best_params))
+	if (bad > 0):
+		print('bad trials: {}'.format(mod.get_bad_trials()))
+
+	return best_params
 
 
 if __name__ == '__main__':

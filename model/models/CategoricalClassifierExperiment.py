@@ -23,7 +23,7 @@ class CategoricalClassifierExperiment(ClassifierExperiment):
 	def __init__(self, other_space={}):
 		default_space = {
 			'output_activation' : hp.choice('output_activation', ['softmax']),
-			'loss': hp.choice('loss', [losses.categorical_crossentropy, losses.sparse_categorical_crossentropy, losses.categorical_hinge, losses.cosine_proximity])
+			'loss': hp.choice('loss', ['categorical_crossentropy', 'sparse_categorical_crossentropy', 'categorical_hinge', 'cosine_proximity'])
 		}
 		super(CategoricalClassifierExperiment, self).__init__({**default_space, **other_space})
 
@@ -48,6 +48,7 @@ class CategoricalClassifierExperiment(ClassifierExperiment):
 				return {'loss': results, 'status': STATUS_OK}
 
 			except:
+				self.bad_trials += 1
 				logging.error('Error ocurred during experiment')
 				return {'loss': ERROR_CODE, 'status': STATUS_OK}
 

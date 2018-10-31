@@ -30,9 +30,34 @@ class ClassifierExperiment:
 			'batch_size': hp.choice('batch_size', [64, 128, 256])
 		}
 		self.space = {**default_space, **other_space}
+		self.bad_trials = 0
 
 	def get_space(self):
 		return self.space
+
+	def get_bad_trials(self):
+		return self.bad_trials
+
+	def params_idx_to_name(self, params_idx):
+		"""
+		Loop over params_idx dictionary and map indexes to parameter values in hyperspace dictionary.
+		"""
+		params_dict = {}
+
+		for name, idx in params_idx.items():
+			hp_obj = self.space[name]
+			if (hp_obj.name == 'switch'): # indicates an hp.choice object
+				choice_list = hp_obj.pos_args[1:]
+				chosen = choice_list[idx]._obj
+				if (isinstance(chosen, str) or isinstance(chosen, int) or isinstance(chosen, float)):
+					params_dict[name] = chosen
+				else:
+					try:
+						params_dict[name] = chosen.__name__
+					except:
+						params_dict[name] = str(chosen)
+
+		return params_dict
 
 	def make_model(self, params, input_shape):
 		"""
@@ -80,6 +105,7 @@ class ClassifierExperiment:
 				return {'loss': results, 'status': STATUS_OK}
 
 			except:
+				self.bad_trials += 1
 				logging.error('Error ocurred during experiment')
 				return {'loss': ERROR_CODE, 'status': STATUS_OK}
 
