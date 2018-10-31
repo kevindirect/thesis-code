@@ -1,4 +1,6 @@
-# Kevin Patel
+"""
+Kevin Patel
+"""
 
 import sys
 import os
@@ -12,24 +14,11 @@ import numpy as np
 import pandas as pd
 from dask import delayed, compute, visualize
 from hyperopt import fmin, tpe, hp, STATUS_OK, Trials
-from keras.utils.np_utils import to_categorical
-from keras.models import Model
-from keras.layers import Input, concatenate, Dense, Activation, Dropout, LSTM, Convolution1D, MaxPooling1D, AveragePooling1D, GlobalAveragePooling1D, GlobalMaxPooling1D, RepeatVector
-from keras.layers.core import Dense, Dropout, Activation, Flatten, Permute, Reshape
-from keras.layers.recurrent import LSTM, GRU, SimpleRNN
-from keras.layers.wrappers import Bidirectional, TimeDistributed
-from keras.layers.normalization import BatchNormalization
-from keras.layers.advanced_activations import *
-from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, CSVLogger
-from keras.optimizers import RMSprop, Adam, SGD, Nadam
-from keras.initializers import *
-from keras.constraints import *
-from keras import regularizers
-from keras import losses
 
-from common_util import RECON_DIR, JSON_SFX_LEN, DT_CAL_DAILY_FREQ, str_to_list, get_cmd_args, in_debug_mode, pd_common_index_rows, load_json, benchmark
+from common_util import MODEL_DIR, RECON_DIR, JSON_SFX_LEN, DT_CAL_DAILY_FREQ, str_to_list, get_cmd_args, in_debug_mode, pd_common_index_rows, load_json, benchmark
 from model.common import DATASET_DIR, FILTERSET_DIR, default_dataset, default_opt_filter, default_target_idx
 from model.model_util import prepare_transpose_data, prepare_masked_labels
+from model.models.OneLayerBinaryLSTM import OneLayerBinaryLSTM
 from recon.dataset_util import prep_dataset, prep_labels, gen_group
 from recon.split_util import get_train_test_split, gen_time_series_split
 from recon.label_util import shift_label
@@ -88,14 +77,6 @@ def hyperopt_test(argv):
 		'label_idx': hp.choice('label_idx', [0, 1, 2])
 	}
 
-	one_layer_lstm_space = {
-		'layer1_size': hp.choice('layer1_size', [8, 16, 32, 64, 128]),
-		'lr': hp.choice('lr',[0.01, 0.001, 0.0001]),
-		'activation': hp.choice('activation', ['relu', 'sigmoid', 'tanh', 'linear']),
-		'output_activation' : hp.choice('output_activation', ['softmax', 'sigmoid', 'tanh']),
-		'loss': hp.choice('loss', [losses.categorical_crossentropy])
-	}
-
 	if (run_compute):
 		logging.info('executing...')
 		for paths, dfs in gen_group(dataset):
@@ -103,9 +84,9 @@ def hyperopt_test(argv):
 			fpaths, lpaths, rpaths = paths
 			features, labels, row_masks = dfs
 			asset = fpaths[0]
-			logging.info('fpaths: ' +str(fpaths))
-			logging.info('lpaths: ' +str(lpaths))
-			logging.info('rpaths: ' +str(rpaths))
+			logging.info('fpaths: {}'.format(str(fpaths)))
+			logging.info('lpaths: {}'.format(str(lpaths)))
+			logging.info('rpaths: {}'.format(str(rpaths)))
 
 			masked_labels = prepare_masked_labels(labels, ['bool'], labs_filter)
 
@@ -115,38 +96,14 @@ def hyperopt_test(argv):
 				final_common = delayed(pd_common_index_rows)(final_feature, final_label)
 				f, l = final_common.compute()
 
+				mod = OneLayerLSTM()
+				obj = mod.make_const_data_objective(f, l)
 				trials = Trials()
-				best = fmin(partial(one_layer_lstm, f, l), one_layer_lstm_space, algo=tpe.suggest, max_evals=50, trials=trials)
+				best = fmin(obj, mod.get_space(), algo=tpe.suggest, max_evals=50, trials=trials)
 				print('best: {}'.format(best))
 
-
-def one_layer_lstm(features, labels, params):
-
-	feat_train, feat_test, lab_train, lab_test = get_train_test_split(features.values, to_categorical(labels.values), train_ratio=.8, to_np=False)
-
-	try:
-		main_input = Input(shape=(feat_train.shape[0],), name='main_input')
-		x = LSTM(params['layer1_size'], activation=params['activation'])(main_input)
-		output = Dense(1, activation = params['output_activation'], name='output')(x)
-		final_model = Model(inputs=[main_input], outputs=[output])
-		opt = Adam(lr=params['lr'])
-
-		final_model.compile(optimizer=opt,  loss=params['loss'])
-
-		model_results = final_model.fit(feat_train, lab_train, 
-					epochs=5, 
-					batch_size=256, 
-					verbose=1, 
-					validation_data=(feat_test, lab_test),
-					shuffle=False)
-
-		logging.warn(history)
-
-		return {'loss': history.history['val_loss'], 'status': STATUS_OK}
-
-	except:
-		logging.error('Error ocurred during experiment')
-		return {'loss': 999999, 'status': STATUS_OK}
+			# mod = OneLayerLSTM(dataset_space)
+			# obj = mod.make_var_data_objective(features, labels)
 
 
 if __name__ == '__main__':

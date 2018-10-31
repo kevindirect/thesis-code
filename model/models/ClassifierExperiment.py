@@ -2,7 +2,19 @@
 Kevin Patel
 """
 
-ERROR_CODE = 999999
+import sys
+import os
+import logging
+
+import numpy as np
+import pandas as pd
+from hyperopt import hp, STATUS_OK
+from keras.optimizers import SGD, RMSprop, Adam, Nadam
+
+from common_util import MODEL_DIR, MODELS_DIR
+from model.common import ERROR_CODE
+from recon.split_util import get_train_test_split
+
 
 class ClassifierExperiment:
 	"""
@@ -12,7 +24,7 @@ class ClassifierExperiment:
 
 	def __init__(self, other_space={}):
 		default_space = {
-			'opt': hp.choice('opt', [RMSProp, Adam, Nadam]),
+			'opt': hp.choice('opt', [SGD, RMSprop, Adam, Nadam]),
 			'lr': hp.choice('lr', [0.01, 0.02, 0.001, 0.0001]),
 			'epochs': hp.choice('epochs', [5, 20, 50, 100]),
 			'batch_size': hp.choice('batch_size', [64, 128, 256])

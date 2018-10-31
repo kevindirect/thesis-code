@@ -2,8 +2,25 @@
 Kevin Patel
 """
 
+import sys
+import os
+import logging
+
+import numpy as np
+import pandas as pd
+from hyperopt import hp, STATUS_OK
+from keras.models import Model
+from keras.layers import Input, Dense, Activation, Dropout, LSTM, GRU
+from keras.layers import LSTM, GRU
+from keras.layers import Convolution1D, MaxPooling1D, AveragePooling1D, GlobalAveragePooling1D, GlobalMaxPooling1D, RepeatVector
+
+from common_util import MODEL_DIR, MODELS_DIR
+from model.common import ERROR_CODE
+from model.models.BinaryClassifierExperiment import BinaryClassifierExperiment
+
+
 class OneLayerBinaryLSTM(BinaryClassifierExperiment):
-	"""One layer binary classifier LSTM."""
+	"""One layer binary LSTM classifier."""
 
 	def __init__(self, other_space={}):
 		default_space = {
