@@ -80,7 +80,7 @@ class ClassifierExperiment:
 		results = model.fit(feat_train, lab_train, 
 						epochs=params['epochs'], 
 						batch_size=params['batch_size'], 
-						callbacks = [self.history],
+						callbacks=[self.history],
 						verbose=1, 
 						validation_split=val_split, # Overriden if validation data is not None
 						validation_data=(feat_val, lab_val) if (not (feat_val is None or lab_val is None)) else None, 
