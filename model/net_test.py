@@ -109,12 +109,12 @@ def net_test(argv):
 			f, lpos, lneg = final_common.compute()
 
 			mod = delayed(ThreeLayerBinaryFFN)()
-			obj = delayed(mod.make_const_data_objective)(final_feats, lpos)
+			obj = delayed(mod.make_const_data_objective)(f, lpos)
 			res = obj(ThreeLayerBinaryFFN_params).compute()
 			print('pos inference: ', res)
 
 			mod = delayed(ThreeLayerBinaryFFN)()
-			obj = delayed(mod.make_const_data_objective)(final_feats, lneg)
+			obj = delayed(mod.make_const_data_objective)(f, lneg)
 			res = obj(ThreeLayerBinaryFFN_params).compute()
 			print('neg dir: ', res)
 			# ff_test = delayed(feedforward_test)(final_feats, final_labels, label_col_idx=target_col_idx)
