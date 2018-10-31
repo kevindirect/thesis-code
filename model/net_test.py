@@ -76,18 +76,29 @@ def net_test(argv):
 	}]
 
 	ThreeLayerBinaryFFN_params = {
-		'opt': RMSprop,
+		'opt': SGD,
 		'lr': 0.001,
 		'epochs': 50,
 		'batch_size':128,
-		'output_activation': 'tanh',
+		'output_activation': 'sigmoid',
 		'loss': 'binary_crossentropy',
 		'layer1_size': 64,
 		'layer1_dropout': .6,
 		'layer2_size': 32,
 		'layer2_dropout': .4,
 		'layer3_size': 16,
-		'activation': 'sigmoid'
+		'activation': 'tanh'
+	}
+
+	OneLayerBinaryLSTM = {
+		'opt': RMSprop,
+		'lr': 0.001,
+		'epochs': 50,
+		'batch_size':128,
+		'output_activation': 'sigmoid',
+		'loss': 'binary_crossentropy',
+		'layer1_size': 32,
+		'activation': 'tanh'
 	}
 
 	final_dfs = {}
@@ -108,15 +119,17 @@ def net_test(argv):
 			final_common = delayed(pd_common_index_rows)(final_feature, pos_label, neg_label)
 			f, lpos, lneg = final_common.compute()
 
-			mod = delayed(ThreeLayerBinaryFFN)()
-			obj = delayed(mod.make_const_data_objective)(f, lpos)
-			res = obj(ThreeLayerBinaryFFN_params).compute()
-			print('pos inference: ', res)
+			params = ThreeLayerBinaryFFN_params
+			exp = delayed(ThreeLayerBinaryFFN)()
+			mod = delayed(exp.make_const_data_objective)(f, lpos)
+			res = delayed(mod)(params).compute()
+			print('pos dir: ', res)
 
-			mod = delayed(ThreeLayerBinaryFFN)()
-			obj = delayed(mod.make_const_data_objective)(f, lneg)
-			res = obj(ThreeLayerBinaryFFN_params).compute()
+			exp = delayed(ThreeLayerBinaryFFN)()
+			mod = delayed(exp.make_const_data_objective)(f, lneg)
+			res = delayed(mod)(params).compute()
 			print('neg dir: ', res)
+
 			# ff_test = delayed(feedforward_test)(final_feats, final_labels, label_col_idx=target_col_idx)
 			# ff_test.compute()
 
