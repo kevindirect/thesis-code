@@ -30,11 +30,13 @@ class OneLayerBinaryLSTM(BinaryClassifierExperiment):
 		super(OneLayerBinaryLSTM, self).__init__({**default_space, **other_space})
 
 	def make_model(self, params, input_shape):
-		main_input = Input(shape=input_shape, name='main_input')
-		x = LSTM(params['layer1_size'], activation=params['activation'])(main_input)
-		output = Dense(1, activation = params['output_activation'], name='output')(x)
-		final_model = Model(inputs=[main_input], outputs=[output])
-		opt = params['opt'](lr=params['lr'])
-		model = final_model.compile(optimizer=opt, loss=params['loss'])
+		# Define model
+		inputs = Input(shape=input_shape, name='inputs')
+		layer_one = LSTM(params['layer1_size'], activation=params['activation'])(inputs)
+		output = Dense(1, activation=params['output_activation'], name='output')(layer_one)
+
+		# Compile model
+		final_model = Model(inputs=inputs, outputs=output)
+		model = final_model.compile(optimizer=params['opt'](lr=params['lr']), loss=params['loss'])
 
 		return model
