@@ -96,7 +96,7 @@ def hyperopt_test(argv):
 				final_common = delayed(pd_common_index_rows)(final_feature, final_label)
 				f, l = final_common.compute()
 
-				mod = OneLayerLSTM()
+				mod = OneLayerBinaryLSTM()
 				obj = mod.make_const_data_objective(f, l)
 				trials = Trials()
 				best = fmin(obj, mod.get_space(), algo=tpe.suggest, max_evals=50, trials=trials)
