@@ -121,15 +121,16 @@ def net_test(argv):
 			params = ThreeLayerBinaryFFN_params
 			p_res = test_model(ThreeLayerBinaryFFN, params, f, lpos)
 			n_res = test_model(ThreeLayerBinaryFFN, params, f, lneg)
-			print("pos loss: {pos_loss}".format(pos_loss=p_res.compute()))
-			print("neg loss: {neg_loss}".format(neg_loss=n_res.compute()))
+			print("pos loss: {pos_loss}".format(pos_loss=p_res))
+			print("neg loss: {neg_loss}".format(neg_loss=n_res))
 
 
 def test_model(model_exp, params, feats, label, test_ratio=.25, shuffle=False):
 	feat_train, feat_test, lab_train, lab_test = delayed(get_train_test_split, nout=4)(feats, label, test_ratio=test_ratio, shuffle=shuffle)
 	exp = delayed(model_exp)()
-	mod = delayed(exp.make_model)(params, feats.shape[1])
-	fit = delayed(exp.fit_model)(params, mod, feat_train, lab_train, feat_val=feat_test, lab_val=lab_test, val_split=test_ratio, shuffle=shuffle)
+	mod = delayed(exp.make_model)(params, feats.shape[1]).compute()
+	fit = exp.fit_model(params, mod, feat_train, lab_train, feat_val=feat_test, lab_val=lab_test, val_split=test_ratio, shuffle=shuffle)
+	# fit = delayed(exp.fit_model)(params, mod, feat_train, lab_train, feat_val=feat_test, lab_val=lab_test, val_split=test_ratio, shuffle=shuffle)
 	return fit
 
 
