@@ -107,8 +107,8 @@ def hyperopt_test(argv):
 			# mod = OneLayerLSTM(dataset_space)
 			# obj = mod.make_var_data_objective(features, labels
 
-def run_trials(model, features, label):
-	mod = model()
+def run_trials(model_exp, features, label):
+	mod = model_exp()
 	obj = mod.make_const_data_objective(features, label)
 	trials = Trials()
 	best = fmin(obj, mod.get_space(), algo=tpe.suggest, max_evals=50, trials=trials)
