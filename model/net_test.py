@@ -17,7 +17,7 @@ from keras.layers import Dense, Activation, Dropout, LSTM
 from keras.optimizers import SGD, RMSprop, Adadelta, Adam, Adamax, Nadam
 
 from common_util import RECON_DIR, JSON_SFX_LEN, DT_CAL_DAILY_FREQ, get_cmd_args, in_debug_mode, pd_common_index_rows, load_json, benchmark
-from model.common import DATASET_DIR, FILTERSET_DIR, default_dataset, default_nt_filter, default_target_col_idx
+from model.common import DATASET_DIR, FILTERSET_DIR, TEST_RATIO, VAL_RATIO, default_dataset, default_nt_filter, default_target_col_idx
 from model.model_util import prepare_transpose_data, prepare_masked_labels
 from model.models.ThreeLayerBinaryFFN import ThreeLayerBinaryFFN
 from model.models.OneLayerBinaryLSTM import OneLayerBinaryLSTM
@@ -126,13 +126,13 @@ def test_model_with_labels(params, model_exp, feats, labels_dict):
 			.format(mean=np.mean(val_acc), min=np.min(val_acc), max=np.max(val_acc), last=val_acc[-1]))
 
 
-def test_model(params, model_exp, feats, label, val_data=None, test_ratio=.2, shuffle=False):
+def test_model(params, model_exp, feats, label, val_data=None, test_ratio=TEST_RATIO, val_ratio=VAL_RATIO, shuffle=False):
 	feat_train, feat_test, lab_train, lab_test = get_train_test_split(feats, label, test_ratio=test_ratio, shuffle=shuffle)
 	trn = (feat_train, lab_train)
 	val = (feat_test, lab_test) if (val_data is not None) else None
 	exp = model_exp()
 	mod = exp.make_model(params, (feats.shape[1],))
-	fit = exp.fit_model(params, mod, trn, val_data=val, val_split=test_ratio, shuffle=shuffle)
+	fit = exp.fit_model(params, mod, trn, val_data=val, val_split=val_ratio, shuffle=shuffle)
 	return fit
 
 
