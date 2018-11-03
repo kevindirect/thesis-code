@@ -45,7 +45,7 @@ class BinaryClassifierExperiment(ClassifierExperiment):
 				else:
 					results = self.fit_model(params, compiled, (feat_train, lab_train), val_data=(feat_test, lab_test), val_split=test_ratio, shuffle=shuffle)
 
-				return {'loss': results, 'status': STATUS_OK}
+				return {'loss': results['history']['val_loss'][-1], 'status': STATUS_OK}
 
 			except:
 				self.bad_trials += 1

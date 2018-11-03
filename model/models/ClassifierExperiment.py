@@ -31,7 +31,7 @@ class ClassifierExperiment:
 			'batch_size': hp.choice('batch_size', [64, 128, 256])
 		}
 		self.space = {**default_space, **other_space}
-		self.metrics = ['accuracy']
+		self.metrics = []
 		self.history = History()
 		# self.reduce_lr = ReduceLROnPlateau(monitor='val_acc', factor=0.9, patience=30, verbose=1, mode='min', min_lr=0.000001) # TODO - try this out on fit function
 		self.bad_trials = 0
@@ -76,10 +76,9 @@ class ClassifierExperiment:
 
 	def fit_model(self, params, model, train_data, val_data=None, val_split=.25, shuffle=False):
 		"""
-		Fit the model and return the computed losses.
+		Fit the model and return a dictionary describing the training and test results.
 		"""
-		feat_train, lab_train = train_data
-		results = model.fit(*train_data, 
+		stats = model.fit(*train_data, 
 						epochs=params['epochs'], 
 						batch_size=params['batch_size'], 
 						callbacks=[self.history],
@@ -88,7 +87,12 @@ class ClassifierExperiment:
 						validation_data=val_data if (val_data is not None) else None, 
 						shuffle=shuffle)
 
-		return results # TODO fix this
+		return {
+			'model': stats['model'],
+			'params': stats['params'],
+			'val_data': stats['validation_data'],
+			'history': stats['history']
+		}
 
 	def make_const_data_objective(self, features, labels, retain_holdout=True, test_ratio=.25, shuffle=False):
 		"""
@@ -113,7 +117,7 @@ class ClassifierExperiment:
 				else:
 					results = self.fit_model(params, compiled, (feat_train, lab_train), val_data=(feat_test, lab_test), val_split=test_ratio, shuffle=shuffle)
 
-				return {'loss': results, 'status': STATUS_OK}
+				return {'loss': results['history']['val_loss'][-1], 'status': STATUS_OK}
 
 			except:
 				self.bad_trials += 1
