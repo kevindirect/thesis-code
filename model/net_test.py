@@ -116,24 +116,21 @@ def net_test(argv):
 			masked_labels = prepare_masked_labels(labels, ['bool'], labs_filter)
 			shifted_label = delayed(shift_label)(masked_labels.iloc[:, target_col_idx]).dropna()
 			pos_label, neg_label = delayed(pd_binary_clip, nout=2)(shifted_label)
-			final_common = delayed(pd_common_index_rows)(final_feature, pos_label, neg_label)
-			f, lpos, lneg = final_common.compute()
+			f, lpos, lneg = delayed(pd_common_index_rows, nout=3)(final_feature, pos_label, neg_label)
 
 			params = ThreeLayerBinaryFFN_params
 			p_res = test_model(ThreeLayerBinaryFFN, params, f, lpos)
 			n_res = test_model(ThreeLayerBinaryFFN, params, f, lneg)
-			print("pos loss: {pos_loss}".format(pos_loss=p_res))
-			print("neg loss: {neg_loss}".format(neg_loss=n_res))
-			# ff_test = delayed(feedforward_test)(final_feats, final_labels, label_col_idx=target_col_idx)
-			# ff_test.compute()
+			print("pos loss: {pos_loss}".format(pos_loss=p_res.compute()))
+			print("neg loss: {neg_loss}".format(neg_loss=n_res.compute()))
 
 
 def test_model(model_exp, params, feats, label, test_ratio=.25, shuffle=False):
-	feat_train, feat_test, lab_train, lab_test = get_train_test_split(feats, label, test_ratio=test_ratio, shuffle=shuffle)
+	feat_train, feat_test, lab_train, lab_test = delayed(get_train_test_split, nout=4)(feats, label, test_ratio=test_ratio, shuffle=shuffle)
 	exp = delayed(ThreeLayerBinaryFFN)()
 	mod = delayed(exp.make_model)(params, feats.shape[1])
 	fit = delayed(exp.fit_model)(params, mod, feat_train, lab_train, feat_val=feat_test, lab_val=lab_test, val_split=test_ratio, shuffle=shuffle)
-	return fit.compute()
+	return fit
 
 
 # def feedforward_test(feat_df, lab_df, label_col_idx=0):
