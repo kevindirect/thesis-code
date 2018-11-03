@@ -1,4 +1,6 @@
-# Kevin Patel
+"""
+Kevin Patel
+"""
 
 import sys
 import os
@@ -116,7 +118,8 @@ def net_test(argv):
 def test_model_with_labels(params, model_exp, feats, labels_dict):
 	for label_name, label in labels_dict.items():
 		loss = test_model(params, model_exp, feats, label).__dict__
-		print("{label_name} loss: {loss}".format(label_name=label_name, loss=loss))
+		print("{label_name} loss: {loss}".format(label_name=label_name, loss=loss.__dict__))
+		print("{label_name} loss: {loss}".format(label_name=label_name, loss=dir(loss)))
 
 
 def test_model(params, model_exp, feats, label, test_ratio=.25, shuffle=False):
