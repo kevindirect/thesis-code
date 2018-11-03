@@ -113,8 +113,8 @@ def net_test(argv):
 			test_model_with_labels(ThreeLayerBinaryFFN_params, ThreeLayerBinaryFFN, f, {'pos': lpos, 'neg':lneg})
 
 
-def test_model_with_labels(params, model_exp, feats, **labels):
-	for label_name, label in labels.items():
+def test_model_with_labels(params, model_exp, feats, labels_dict):
+	for label_name, label in labels_dict.items():
 		loss = test_model(params, model_exp, feats, label)
 		print("{label_name} loss: {loss}".format(label_name=label_name, loss=loss))
 
