@@ -88,7 +88,7 @@ class ClassifierExperiment:
 						validation_data=val_data if (val_data is not None) else None, 
 						shuffle=shuffle)
 
-		return results.History['val_loss'] # TODO fix this
+		return results # TODO fix this
 
 	def make_const_data_objective(self, features, labels, retain_holdout=True, test_ratio=.25, shuffle=False):
 		"""
