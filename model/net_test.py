@@ -118,8 +118,12 @@ def net_test(argv):
 def test_model_with_labels(params, model_exp, feats, labels_dict):
 	for label_name, label in labels_dict.items():
 		results = test_model(params, model_exp, feats, label)
-		print("{label_name} val_loss: {val_loss}, val_acc: {val_acc}"
-			.format(label_name=label_name, val_loss=results['history']['val_loss'][-1], val_acc=results['history']['val_acc'][-1]))
+		val_loss, val_acc = results['history']['val_loss'], results['history']['val_acc']
+		print(label_name)
+		print('val_loss mean, min, max, last: {mean}, {min}, {max}, {last}'
+			.format(mean=np.mean(val_loss), min=np.min(val_loss), max=np.max(val_loss), last=val_loss[-1]))
+		print(' val_acc mean, min, max, last: {mean}, {min}, {max}, {last}'
+			.format(mean=np.mean(val_acc), min=np.min(val_acc), max=np.max(val_acc), last=val_acc[-1]))
 
 
 def test_model(params, model_exp, feats, label, val_data=None, test_ratio=.2, shuffle=False):
