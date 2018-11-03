@@ -36,7 +36,7 @@ class OneLayerBinaryLSTM(BinaryClassifierExperiment):
 		output = Dense(1, activation=params['output_activation'], name='output')(layer_one)
 
 		# Compile model
-		final_model = Model(inputs=inputs, outputs=output)
-		model = final_model.compile(optimizer=params['opt'](lr=params['lr']), loss=params['loss'])
+		model = Model(inputs=inputs, outputs=output)
+		model.compile(optimizer=params['opt'](lr=params['lr']), loss=params['loss'], metrics=self.metrics)
 
 		return model
