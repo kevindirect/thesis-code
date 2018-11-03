@@ -21,6 +21,8 @@ DATASET_DIR = RECON_DIR +'dataset' +sep
 FILTERSET_DIR = RECON_DIR +'filterset' +sep
 MODELS_DIR = MODEL_DIR +'models' +sep
 EXPECTED_NUM_HOURS = 8
+TEST_RATIO = .2
+VAL_RATIO = .25
 ERROR_CODE = 999999
 dum = 0
 
