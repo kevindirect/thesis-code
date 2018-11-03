@@ -88,10 +88,10 @@ class ClassifierExperiment:
 						shuffle=shuffle)
 
 		return {
-			'model': stats['model'],
-			'params': stats['params'],
-			'val_data': stats['validation_data'],
-			'history': stats['history']
+			'model': stats.model,
+			'params': stats.params,
+			'val_data': stats.validation_data,
+			'history': stats.history
 		}
 
 	def make_const_data_objective(self, features, labels, retain_holdout=True, test_ratio=.25, shuffle=False):
