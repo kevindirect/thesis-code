@@ -95,7 +95,7 @@ def net_test(argv):
 		'layer3_size': 16,
 		'loss': 'kullback_leibler_divergence',
 		'lr': 0.01,
-		'opt': 'Nadam',
+		'opt': Nadam,
 		'output_activation': 'elu'
 	}
 
@@ -110,7 +110,7 @@ def net_test(argv):
 		'layer3_size': 32,
 		'loss': 'kullback_leibler_divergence',
 		'lr': 0.02,
-		'opt': 'Nadam',
+		'opt': Nadam,
 		'output_activation': 'sigmoid'
 	}
 
