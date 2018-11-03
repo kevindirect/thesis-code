@@ -118,6 +118,7 @@ def net_test(argv):
 def test_model_with_labels(params, model_exp, feats, labels_dict):
 	for label_name, label in labels_dict.items():
 		results = test_model(params, model_exp, feats, label)
+		print(results)
 		print("{label_name} val_loss: {val_loss}, val_acc: {val_acc}"
 			.format(label_name=label_name, val_loss=results['history']['val_loss'][-1], val_acc=results['history']['val_acc'][-1]))
 
