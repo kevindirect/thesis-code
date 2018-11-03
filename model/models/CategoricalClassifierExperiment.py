@@ -31,8 +31,8 @@ class CategoricalClassifierExperiment(ClassifierExperiment):
 		"""
 		Return an objective function that hyperopt can use for the given features and labels.
 		"""
-		labels_1hot = pd.get_dummies(labels, drop_first=False)
-		feat_train, feat_test, lab_train, lab_test = get_train_test_split(features, labels_1hot, test_ratio=test_ratio, shuffle=shuffle)
+		labels = pd.get_dummies(labels, drop_first=False) # One hot encode
+		feat_train, feat_test, lab_train, lab_test = get_train_test_split(features, labels, test_ratio=test_ratio, shuffle=shuffle)
 
 		def objective(params):
 			"""
