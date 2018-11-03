@@ -84,6 +84,36 @@ def net_test(argv):
 		'activation': 'tanh'
 	}
 
+	ThreeLayerBinaryFFN_params_best = {
+		'activation': 'relu',
+		'batch_size': 64,
+		'epochs': 50,
+		'layer1_dropout': 0.48321,
+		'layer1_size': 16,
+		'layer2_dropout': 0.37406,
+		'layer2_size': 16,
+		'layer3_size': 16,
+		'loss': 'kullback_leibler_divergence',
+		'lr': 0.01,
+		'opt': 'Nadam',
+		'output_activation': 'elu'
+	}
+
+	ThreeLayerBinaryFFN_params_best2 = {
+		'activation': 'linear',
+		'batch_size': 64,
+		'epochs': 50,
+		'layer1_dropout': 0.45524,
+		'layer1_size': 16,
+		'layer2_dropout': 0.65692,
+		'layer2_size': 16,
+		'layer3_size': 32,
+		'loss': 'kullback_leibler_divergence',
+		'lr': 0.02,
+		'opt': 'Nadam',
+		'output_activation': 'sigmoid'
+	}
+
 	OneLayerBinaryLSTM_params = {
 		'opt': RMSprop,
 		'lr': 0.001,
@@ -112,7 +142,7 @@ def net_test(argv):
 			pos_label, neg_label = delayed(pd_binary_clip, nout=2)(shifted_label)
 			f, lpos, lneg = delayed(pd_common_index_rows, nout=3)(final_feature, pos_label, neg_label).compute()
 
-			test_model_with_labels(ThreeLayerBinaryFFN_params, ThreeLayerBinaryFFN, f, {'pos': lpos, 'neg':lneg})
+			test_model_with_labels(ThreeLayerBinaryFFN_params_best, ThreeLayerBinaryFFN, f, {'pos': lpos, 'neg':lneg})
 
 
 def test_model_with_labels(params, model_exp, feats, labels_dict):
