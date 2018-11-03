@@ -116,7 +116,7 @@ def net_test(argv):
 			masked_labels = prepare_masked_labels(labels, ['bool'], labs_filter)
 			shifted_label = delayed(shift_label)(masked_labels.iloc[:, target_col_idx]).dropna()
 			pos_label, neg_label = delayed(pd_binary_clip, nout=2)(shifted_label)
-			f, lpos, lneg = delayed(pd_common_index_rows, nout=3)(final_feature, pos_label, neg_label)
+			f, lpos, lneg = delayed(pd_common_index_rows, nout=3)(final_feature, pos_label, neg_label).compute()
 
 			params = ThreeLayerBinaryFFN_params
 			p_res = test_model(ThreeLayerBinaryFFN, params, f, lpos)
