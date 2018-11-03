@@ -45,6 +45,6 @@ class ThreeLayerBinaryFFN(BinaryClassifierExperiment):
 
 		# Compile model
 		final_model = Model(inputs=inputs, outputs=output)
-		model = final_model.compile(optimizer=params['opt'](lr=params['lr']), loss=params['loss'])
+		model = final_model.compile(optimizer=params['opt'](lr=params['lr']), loss=params['loss'], metrics=self.metrics)
 
 		return model
