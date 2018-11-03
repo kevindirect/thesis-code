@@ -31,7 +31,7 @@ class ClassifierExperiment:
 			'batch_size': hp.choice('batch_size', [64, 128, 256])
 		}
 		self.space = {**default_space, **other_space}
-		self.metrics = []
+		self.metrics = ['accuracy']
 		self.history = History()
 		# self.reduce_lr = ReduceLROnPlateau(monitor='val_acc', factor=0.9, patience=30, verbose=1, mode='min', min_lr=0.000001) # TODO - try this out on fit function
 		self.bad_trials = 0
