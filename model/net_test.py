@@ -93,7 +93,7 @@ def net_test(argv):
 		'layer2_dropout': 0.37406,
 		'layer2_size': 16,
 		'layer3_size': 16,
-		'loss': 'kullback_leibler_divergence',
+		'loss': 'binary_crossentropy',
 		'lr': 0.01,
 		'opt': Nadam,
 		'output_activation': 'elu'
@@ -108,7 +108,7 @@ def net_test(argv):
 		'layer2_dropout': 0.65692,
 		'layer2_size': 16,
 		'layer3_size': 32,
-		'loss': 'kullback_leibler_divergence',
+		'loss': 'binary_crossentropy',
 		'lr': 0.02,
 		'opt': Nadam,
 		'output_activation': 'sigmoid'
