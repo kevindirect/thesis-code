@@ -46,18 +46,10 @@ def net_test(argv):
 	logging.info('assets: ' +str('all' if (assets==None) else ', '.join(assets)))
 	logging.info('dataset: {} {} df(s)'.format(len(dataset['features']['paths']), dataset_name[:-JSON_SFX_LEN]))
 	logging.info('filter: {} [{}]'.format(filterset_name[:-JSON_SFX_LEN], str(', '.join(filter_idxs))))
-	logging.debug('filterset: ' +str(filterset))
-	logging.debug('fpaths: ' +str(dataset['features']['paths']))
-	logging.debug('lpaths: ' +str(dataset['labels']['paths']))
-	logging.debug('rmpaths: ' +str(dataset['row_masks']['paths']))
-
-	feats_filter = [{
-		"exact": ["pba_avgPrice"],
-		"startswith": [],
-		"endswith": [],
-		"regex": [],
-		"exclude": None
-	}]
+	logging.debug('filterset: {}'.format(filterset))
+	logging.debug('fpaths: {}'.format(dataset['features']['paths']))
+	logging.debug('lpaths: {}'.format(dataset['labels']['paths']))
+	logging.debug('rpaths: {}'.format(dataset['row_masks']['paths']))
 
 	labs_filter = [ # EOD, FBEOD, FB
 	{
@@ -90,7 +82,7 @@ def net_test(argv):
 		'activation': 'tanh'
 	}
 
-	OneLayerBinaryLSTM = {
+	OneLayerBinaryLSTM_params = {
 		'opt': RMSprop,
 		'lr': 0.001,
 		'epochs': 50,
@@ -108,9 +100,9 @@ def net_test(argv):
 			fpaths, lpaths, rpaths = paths
 			features, labels, row_masks = dfs
 			asset = fpaths[0]
-			logging.info('fpaths: ' +str(fpaths))
-			logging.info('lpaths: ' +str(lpaths))
-			logging.info('rpaths: ' +str(rpaths))
+			logging.info('fpaths: {}'.format(fpaths))
+			logging.info('lpaths: {}'.format(lpaths))
+			logging.info('rpaths: {}'.format(rpaths))
 
 			final_feature = prepare_transpose_data(features.loc[:, ['pba_avgPrice']], row_masks)
 			masked_labels = prepare_masked_labels(labels, ['bool'], labs_filter)
@@ -118,105 +110,21 @@ def net_test(argv):
 			pos_label, neg_label = delayed(pd_binary_clip, nout=2)(shifted_label)
 			f, lpos, lneg = delayed(pd_common_index_rows, nout=3)(final_feature, pos_label, neg_label).compute()
 
-			params = ThreeLayerBinaryFFN_params
-			p_res = test_model(ThreeLayerBinaryFFN, params, f, lpos)
-			n_res = test_model(ThreeLayerBinaryFFN, params, f, lneg)
-			print("pos loss: {pos_loss}".format(pos_loss=p_res.compute()))
-			print("neg loss: {neg_loss}".format(neg_loss=n_res.compute()))
+			test_model_with_labels(ThreeLayerBinaryFFN_params, ThreeLayerBinaryFFN, f, {'pos': lpos, 'neg':lneg})
 
 
-def test_model(model_exp, params, feats, label, test_ratio=.25, shuffle=False):
+def test_model_with_labels(params, model_exp, feats, **labels):
+	for label_name, label in labels.items():
+		loss = test_model(params, model_exp, feats, label)
+		print("{label_name} loss: {loss}".format(label_name=label_name, loss=loss))
+
+
+def test_model(params, model_exp, feats, label, test_ratio=.25, shuffle=False):
 	feat_train, feat_test, lab_train, lab_test = get_train_test_split(feats, label, test_ratio=test_ratio, shuffle=shuffle)
 	exp = model_exp()
 	mod = exp.make_model(params, (feats.shape[1],))
 	fit = exp.fit_model(params, mod, (feat_train, lab_train), val_data=(feat_test, lab_test), val_split=test_ratio, shuffle=shuffle)
 	return fit
-
-
-# def feedforward_test(feat_df, lab_df, label_col_idx=0):
-# 	lab_name, num_features = lab_df.columns[label_col_idx], feat_df.shape[1]
-# 	features, label = pd_common_index_rows(feat_df.dropna(axis=0, how='all'), shift_label(lab_df.loc[:, lab_name]).dropna())
-
-# 	# label[label==-1] = 0
-# 	logging.info('DATA DESCRIPTION')
-# 	logging.info('label[{name}]: \n{vc}'.format(name=lab_name, vc=label.value_counts(normalize=True, sort=True).to_frame().T))
-# 	logging.info('num features: {}'.format(num_features))
-
-# 	feat_train, feat_test, lab_train, lab_test = get_train_test_split(features, label, train_ratio=.8)
-
-# 	opt = SGD(lr=0.0001, momentum=0.00001, decay=0.0, nesterov=False)
-# 	# opt = RMSprop(lr=0.0001, rho=0.99, epsilon=None, decay=0.0)
-# 	model = Sequential()
-# 	model.add(Dense(num_features*2, input_dim=num_features, activation='tanh', kernel_initializer='glorot_uniform', bias_initializer='zeros',
-# 		kernel_regularizer=None, bias_regularizer=None))
-# 	model.add(Dense(num_features*2, input_dim=num_features*2, activation='tanh', kernel_initializer='glorot_uniform', bias_initializer='zeros',
-# 		kernel_regularizer=None, bias_regularizer=None))
-# 	model.add(Dropout(.2))
-# 	model.add(Dense(num_features, input_dim=num_features*2, activation='tanh', kernel_initializer='glorot_uniform', bias_initializer='zeros',
-# 		kernel_regularizer=None, bias_regularizer=None))
-# 	model.add(Dense(1, input_dim=num_features, activation='softmax', kernel_initializer='glorot_uniform', bias_initializer='zeros'))
-# 	model.compile(loss='binary_crossentropy', optimizer=opt, metrics=['accuracy'])
-
-# 	logging.info('BEFORE')
-# 	if (in_debug_mode()):
-# 		for idx, layer in enumerate(model.layers):
-# 			logging.debug('layer[{idx}] weights: \n{weights}'.format(idx=idx, weights=str(layer.get_weights())))
-
-# 	model.fit(x=feat_train, y=lab_train, epochs=50, batch_size=128)
-# 	score = model.evaluate(feat_test, lab_test, batch_size=128)
-
-# 	logging.info('AFTER')
-# 	print('summary: {summary}'.format(summary=str(model.summary())))
-# 	print('{metrics}: {score}'.format(metrics=str(model.metrics_names), score=str(score)))
-
-# 	if (in_debug_mode()):
-# 		for idx, layer in enumerate(model.layers):
-# 			logging.debug('layer[{idx}] weights: \n{weights}'.format(idx=idx, weights=str(layer.get_weights())))
-# 		forecast = model.predict(feat_test, batch_size=128)
-# 		logging.debug('actual: {actual} \nforecast: {forecast}'.format(actual=str(lab_test), forecast=str(forecast.T[0])))
-
-# 	return score
-
-
-# def rnn_test(feat_df, lab_df, label_col_idx=0):
-# 	lab_name, num_features = lab_df.columns[label_col_idx], feat_df.shape[1]
-# 	features, label = pd_common_index_rows(feat_df.dropna(axis=0, how='all'), shift_label(lab_df.loc[:, lab_name]).dropna())
-
-# 	# label[label==-1] = 0
-# 	logging.info('DATA DESCRIPTION')
-# 	logging.info('label[{name}]: \n{vc}'.format(name=lab_name, vc=label.value_counts(normalize=True, sort=True).to_frame().T))
-# 	logging.info('num features: {}'.format(num_features))
-
-# 	feat_train, feat_test, lab_train, lab_test = get_train_test_split(features, label, train_ratio=.8)
-
-# 	model = Sequential()
-# 	model.add(LSTM(input_shape = (EMB_SIZE,), input_dim=EMB_SIZE, output_dim=HIDDEN_RNN, return_sequences=True))
-# 	model.add(LSTM(input_shape = (EMB_SIZE,), input_dim=EMB_SIZE, output_dim=HIDDEN_RNN, return_sequences=False))
-# 	model.add(Dense(2))
-# 	model.add(Activation('softmax'))
-# 	model.compile(optimizer='adam', 
-# 				  loss='binary_crossentropy', 
-# 				  metrics=['accuracy'])
-
-# 	logging.info('BEFORE')
-# 	if (in_debug_mode()):
-# 		for idx, layer in enumerate(model.layers):
-# 			logging.debug('layer[{idx}] weights: \n{weights}'.format(idx=idx, weights=str(layer.get_weights())))
-
-# 	model.fit(x=feat_train, y=lab_train, epochs=20, batch_size=128)
-# 	score = model.evaluate(feat_test, lab_test, batch_size=128)
-
-# 	logging.info('AFTER')
-# 	print('summary: {summary}'.format(summary=str(model.summary())))
-# 	print('{metrics}: {score}'.format(metrics=str(model.metrics_names), score=str(score)))
-
-# 	if (in_debug_mode()):
-# 		for idx, layer in enumerate(model.layers):
-# 			logging.debug('layer[{idx}] weights: \n{weights}'.format(idx=idx, weights=str(layer.get_weights())))
-# 		forecast = model.predict(feat_test, batch_size=128)
-# 		logging.debug('actual: {actual} \nforecast: {forecast}'.format(actual=str(lab_test), forecast=str(forecast.T[0])))
-
-# 	return score
 
 
 if __name__ == '__main__':
