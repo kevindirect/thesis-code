@@ -74,17 +74,18 @@ class ClassifierExperiment:
 		"""
 		pass
 
-	def fit_model(self, params, model, feat_train, lab_train, feat_val=None, lab_val=None, val_split=.25, shuffle=False):
+	def fit_model(self, params, model, train_data, val_data=None, val_split=.25, shuffle=False):
 		"""
 		Fit the model and return the computed losses.
 		"""
-		results = model.fit(feat_train, lab_train, 
+		feat_train, lab_train = train_data
+		results = model.fit(*train_data, 
 						epochs=params['epochs'], 
 						batch_size=params['batch_size'], 
 						callbacks=[self.history],
 						verbose=1, 
 						validation_split=val_split, # Overriden if validation data is not None
-						validation_data=(feat_val, lab_val) if (not (feat_val is None or lab_val is None)) else None, 
+						validation_data=val_data if (val_data is not None) else None, 
 						shuffle=shuffle)
 
 		return results.History['val_loss'] # TODO fix this
@@ -108,9 +109,9 @@ class ClassifierExperiment:
 				compiled = self.make_model(params, (features.shape[1],))
 
 				if (retain_holdout):
-					results = self.fit_model(params, compiled, feat_train, lab_train, val_split=test_ratio, shuffle=shuffle)
+					results = self.fit_model(params, compiled, (feat_train, lab_train), val_data=None, val_split=test_ratio, shuffle=shuffle)
 				else:
-					results = self.fit_model(params, compiled, feat_train, lab_train, feat_test, lab_test, val_split=test_ratio, shuffle=shuffle)
+					results = self.fit_model(params, compiled, (feat_train, lab_train), val_data=(feat_test, lab_test), val_split=test_ratio, shuffle=shuffle)
 
 				return {'loss': results, 'status': STATUS_OK}
 
@@ -130,7 +131,7 @@ class ClassifierExperiment:
 			Standard classifier objective function to minimize.
 			"""
 			features, labels = features_fn(raw_features, params), labels_fn(raw_labels, params)
-			return self.make_const_objective(features, labels, retain_holdout=retain_holdout, test_ratio=test_ratio, shuffle=shuffle)
+			return self.make_const_data_objective(features, labels, retain_holdout=retain_holdout, test_ratio=test_ratio, shuffle=shuffle)
 
 		return objective
 
