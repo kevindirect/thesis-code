@@ -122,7 +122,7 @@ def test_model_with_labels(params, model_exp, feats, labels_dict):
 			.format(label_name=label_name, val_loss=results['history']['val_loss'][-1], val_acc=results['history']['val_acc'][-1]))
 
 
-def test_model(params, model_exp, feats, label, val_data=None, test_ratio=.25, shuffle=False):
+def test_model(params, model_exp, feats, label, val_data=None, test_ratio=.2, shuffle=False):
 	feat_train, feat_test, lab_train, lab_test = get_train_test_split(feats, label, test_ratio=test_ratio, shuffle=shuffle)
 	trn = (feat_train, lab_train)
 	val = (feat_test, lab_test) if (val_data is not None) else None
