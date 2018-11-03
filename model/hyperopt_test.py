@@ -118,7 +118,7 @@ def run_trials(model_exp, features, label):
 	print('best idx: {}'.format(best))
 	print('best params: {}'.format(best_params))
 	if (bad > 0):
-		print('bad trials: {}'.format(mod.get_bad_trials()))
+		print('bad trials: {}'.format(bad))
 
 	return best_params
 

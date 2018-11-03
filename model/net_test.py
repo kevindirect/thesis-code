@@ -129,7 +129,7 @@ def test_model(model_exp, params, feats, label, test_ratio=.25, shuffle=False):
 	feat_train, feat_test, lab_train, lab_test = get_train_test_split(feats, label, test_ratio=test_ratio, shuffle=shuffle)
 	exp = model_exp()
 	mod = exp.make_model(params, (feats.shape[1],))
-	fit = exp.fit_model(params, mod, feat_train, lab_train, feat_val=feat_test, lab_val=lab_test, val_split=test_ratio, shuffle=shuffle)
+	fit = exp.fit_model(params, mod, (feat_train, lab_train), val_data=(feat_test, lab_test), val_split=test_ratio, shuffle=shuffle)
 	return fit
 
 
