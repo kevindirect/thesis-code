@@ -118,16 +118,17 @@ def net_test(argv):
 def test_model_with_labels(params, model_exp, feats, labels_dict):
 	for label_name, label in labels_dict.items():
 		results = test_model(params, model_exp, feats, label)
-		print(results)
 		print("{label_name} val_loss: {val_loss}, val_acc: {val_acc}"
 			.format(label_name=label_name, val_loss=results['history']['val_loss'][-1], val_acc=results['history']['val_acc'][-1]))
 
 
-def test_model(params, model_exp, feats, label, test_ratio=.25, shuffle=False):
+def test_model(params, model_exp, feats, label, val_data=None, test_ratio=.25, shuffle=False):
 	feat_train, feat_test, lab_train, lab_test = get_train_test_split(feats, label, test_ratio=test_ratio, shuffle=shuffle)
+	trn = (feat_train, lab_train)
+	val = (feat_test, lab_test) if (val_data is not None) else None
 	exp = model_exp()
 	mod = exp.make_model(params, (feats.shape[1],))
-	fit = exp.fit_model(params, mod, (feat_train, lab_train), val_data=(feat_test, lab_test), val_split=test_ratio, shuffle=shuffle)
+	fit = exp.fit_model(params, mod, trn, val_data=val, val_split=test_ratio, shuffle=shuffle)
 	return fit
 
 
