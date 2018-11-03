@@ -47,10 +47,10 @@ def hyperopt_test(argv):
 	logging.info('assets: ' +str('all' if (assets==None) else ', '.join(assets)))
 	logging.info('dataset: {} {} df(s)'.format(len(dataset['features']['paths']), dataset_name[:-JSON_SFX_LEN]))
 	logging.info('filter: {} [{}]'.format(filterset_name[:-JSON_SFX_LEN], str(', '.join(filter_idxs))))
-	logging.debug('filterset: ' +str(filterset))
-	logging.debug('fpaths: ' +str(dataset['features']['paths']))
-	logging.debug('lpaths: ' +str(dataset['labels']['paths']))
-	logging.debug('rmpaths: ' +str(dataset['row_masks']['paths']))
+	logging.debug('filterset: {}'.format(filterset))
+	logging.debug('fpaths: {}'.format(dataset['features']['paths']))
+	logging.debug('lpaths: {}'.format(dataset['labels']['paths']))
+	logging.debug('rpaths: {}'.format(dataset['row_masks']['paths']))
 
 	labs_filter = [ # EOD, FBEOD, FB
 	{
@@ -95,8 +95,7 @@ def hyperopt_test(argv):
 				final_feature = prepare_transpose_data(features.iloc[:, [feat_idx]], row_masks).dropna(axis=0, how='all')
 				shifted_label = delayed(shift_label)(masked_labels.iloc[:, label_idx]).dropna()
 				pos_label, neg_label = delayed(pd_binary_clip, nout=2)(shifted_label)
-				final_common = delayed(pd_common_index_rows)(final_feature, pos_label, neg_label)
-				f, lpos, lneg = final_common.compute()
+				f, lpos, lneg = delayed(pd_common_index_rows, nout=3)(final_feature, pos_label, neg_label).compute()
 
 				logging.info('pos dir model experiment')
 				run_trials(ThreeLayerBinaryFFN, f, lpos)
@@ -104,16 +103,14 @@ def hyperopt_test(argv):
 				logging.info('neg dir model experiment')
 				run_trials(ThreeLayerBinaryFFN, f, lneg)
 
-			# mod = OneLayerLSTM(dataset_space)
-			# obj = mod.make_var_data_objective(features, labels
 
 def run_trials(model_exp, features, label):
-	mod = model_exp()
-	obj = mod.make_const_data_objective(features, label)
+	exp = model_exp()
 	trials = Trials()
-	best = fmin(obj, mod.get_space(), algo=tpe.suggest, max_evals=50, trials=trials)
-	best_params = mod.params_idx_to_name(best)
-	bad = mod.get_bad_trials()
+	obj = exp.make_const_data_objective(features, label)
+	best = fmin(obj, exp.get_space(), algo=tpe.suggest, max_evals=50, trials=trials)
+	best_params = exp.params_idx_to_name(best)
+	bad = exp.get_bad_trials()
 
 	print('best idx: {}'.format(best))
 	print('best params: {}'.format(best_params))
