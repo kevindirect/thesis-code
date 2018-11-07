@@ -12,8 +12,6 @@ import logging
 import numpy as np
 import pandas as pd
 from dask import delayed, compute, visualize
-from keras.models import Sequential
-from keras.layers import Dense, Activation, Dropout, LSTM
 from keras.optimizers import SGD, RMSprop, Adadelta, Adam, Adamax, Nadam
 
 from common_util import RECON_DIR, JSON_SFX_LEN, DT_CAL_DAILY_FREQ, get_cmd_args, in_debug_mode, pd_common_index_rows, load_json, benchmark
