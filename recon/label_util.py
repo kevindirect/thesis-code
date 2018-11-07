@@ -169,3 +169,33 @@ def apply_label_mask(lab_df, forecast_mask, normalize_idx=True):
 		lab_fct_df.index = lab_fct_df.index.normalize()
 
 	return lab_fct_df
+
+
+""" ********** LABEL EXTRACTION PREPARATION FUNCTIONS ********** """
+def prep_labels(label_df, types=['bool', 'int']):
+	"""
+	Take label df and apply masks to produce df of label series.
+	"""
+	gb_label_df = delayed(lambda d: d.groupby(pd.Grouper(freq=DT_CAL_DAILY_FREQ)).last())(label_df)
+	label_groups = []
+
+	if ('bool' in types):
+		eod0 = delayed(eod_fct)(gb_label_df, eod_thresh=0).add_suffix('_eod(0%)')
+		eod1 = delayed(eod_fct)(gb_label_df, eod_thresh=.01).add_suffix('_eod(1%)')
+		eod2 = delayed(eod_fct)(gb_label_df, eod_thresh=.02).add_suffix('_eod(2%)')
+		fbeod = delayed(apply_label_mask)(gb_label_df, default_fct).add_suffix('_fbeod')
+		fb = delayed(apply_label_mask)(gb_label_df, fastbreak_fct).add_suffix('_fb')
+		conf = delayed(apply_label_mask)(gb_label_df, confidence_fct).add_suffix('_conf')
+		fbconf = delayed(apply_label_mask)(gb_label_df, fastbreak_confidence_fct).add_suffix('_fbconf')
+		label_groups.extend((eod0, eod1, eod2, fbeod, fb, conf, fbconf))
+
+	if ('int' in types):
+		vel = delayed(apply_label_mask)(gb_label_df, partial(fastbreak_fct, velocity=True)).add_suffix('_vel')
+		mag = delayed(apply_label_mask)(gb_label_df, partial(confidence_fct, magnitude=True)).add_suffix('_mag')
+		mom = delayed(apply_label_mask)(gb_label_df, partial(fastbreak_confidence_fct, momentum=True)).add_suffix('_mom')
+		label_groups.extend((vel, mag, mom))
+
+	labels = delayed(reduce)(outer_join, label_groups)
+	labels = delayed(df_dti_index_to_date)(labels)
+
+	return labels
