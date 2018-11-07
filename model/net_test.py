@@ -19,7 +19,6 @@ from model.common import DATASET_DIR, FILTERSET_DIR, TEST_RATIO, VAL_RATIO, defa
 from model.model_util import prepare_transpose_data, prepare_masked_labels
 from model.model.ThreeLayerBinaryFFN import ThreeLayerBinaryFFN
 from model.model.OneLayerBinaryLSTM import OneLayerBinaryLSTM
-from recon.label_util import prep_labels
 from recon.dataset_util import prep_dataset, gen_group
 from recon.split_util import get_train_test_split, pd_binary_clip
 from recon.label_util import shift_label

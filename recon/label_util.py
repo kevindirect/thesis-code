@@ -171,7 +171,7 @@ def apply_label_mask(lab_df, forecast_mask, normalize_idx=True):
 	return lab_fct_df
 
 
-""" ********** LABEL EXTRACTION PREPARATION FUNCTIONS ********** """
+""" ********** LABEL EXTRACTION / PREPARATION FUNCTIONS ********** """
 def prep_labels(label_df, types=['bool', 'int']):
 	"""
 	Take label df and apply masks to produce df of label series.
