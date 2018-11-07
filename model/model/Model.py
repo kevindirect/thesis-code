@@ -9,6 +9,7 @@ import logging
 import numpy as np
 import pandas as pd
 from hyperopt import hp, STATUS_OK
+from keras.callbacks import Callback, BaseLogger, History, EarlyStopping, TensorBoard, ReduceLROnPlateau, CSVLogger, LambdaCallback
 
 from common_util import MODEL_DIR
 from model.common import MODELS_DIR, ERROR_CODE, TEST_RATIO, VAL_RATIO
