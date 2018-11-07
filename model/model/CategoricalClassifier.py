@@ -13,7 +13,7 @@ from keras import losses
 
 from common_util import MODEL_DIR
 from model.common import MODELS_DIR, ERROR_CODE, TEST_RATIO, VAL_RATIO
-from model.models.Classifier import Classifier
+from model.model.Classifier import Classifier
 from recon.split_util import get_train_test_split
 
 

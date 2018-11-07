@@ -18,8 +18,8 @@ from hyperopt import fmin, tpe, hp, STATUS_OK, Trials
 from common_util import MODEL_DIR, RECON_DIR, JSON_SFX_LEN, DT_CAL_DAILY_FREQ, str_to_list, get_cmd_args, in_debug_mode, pd_common_index_rows, load_json, benchmark
 from model.common import DATASET_DIR, FILTERSET_DIR, default_dataset, default_opt_filter, default_target_idx
 from model.model_util import prepare_transpose_data, prepare_masked_labels
-from model.models.ThreeLayerBinaryFFN import ThreeLayerBinaryFFN
-from model.models.OneLayerBinaryLSTM import OneLayerBinaryLSTM
+from model.model.ThreeLayerBinaryFFN import ThreeLayerBinaryFFN
+from model.model.OneLayerBinaryLSTM import OneLayerBinaryLSTM
 from recon.dataset_util import prep_dataset, prep_labels, gen_group
 from recon.split_util import get_train_test_split, pd_binary_clip
 from recon.label_util import shift_label

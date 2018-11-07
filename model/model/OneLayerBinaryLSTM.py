@@ -16,7 +16,7 @@ from keras.layers import Convolution1D, MaxPooling1D, AveragePooling1D, GlobalAv
 
 from common_util import MODEL_DIR
 from model.common import MODELS_DIR, ERROR_CODE
-from model.models.BinaryClassifier import BinaryClassifier
+from model.model.BinaryClassifier import BinaryClassifier
 
 
 class OneLayerBinaryLSTM(BinaryClassifier):
