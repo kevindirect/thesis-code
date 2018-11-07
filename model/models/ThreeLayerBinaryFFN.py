@@ -16,10 +16,10 @@ from keras.layers import Convolution1D, MaxPooling1D, AveragePooling1D, GlobalAv
 
 from common_util import MODEL_DIR
 from model.common import MODELS_DIR, ERROR_CODE
-from model.models.BinaryClassifierExperiment import BinaryClassifierExperiment
+from model.models.BinaryClassifier import BinaryClassifier
 
 
-class ThreeLayerBinaryFFN(BinaryClassifierExperiment):
+class ThreeLayerBinaryFFN(BinaryClassifier):
 	"""Three layer binary Feed Forward Network classifier."""
 
 	def __init__(self, other_space={}):
