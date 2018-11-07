@@ -19,7 +19,7 @@ from common_util import RECON_DIR, MODEL_DIR
 # PACKAGE CONSTANTS
 DATASET_DIR = RECON_DIR +'dataset' +sep
 FILTERSET_DIR = RECON_DIR +'filterset' +sep
-MODELS_DIR = MODEL_DIR +'models' +sep
+MODELS_DIR = MODEL_DIR +'model' +sep
 EXPECTED_NUM_HOURS = 8
 TEST_RATIO = .2
 VAL_RATIO = .25
