@@ -27,7 +27,7 @@ class CategoricalClassifier(Classifier):
 		}
 		super(CategoricalClassifier, self).__init__({**default_space, **other_space})
 
-	def make_const_data_objective(self, features, labels, retain_holdout=True, test_ratio=TEST_RATIO, val_ratio=VAL_RATIO, shuffle=False):
+	def make_const_data_objective(self, features, labels, loss_type='val_loss', retain_holdout=True, test_ratio=TEST_RATIO, val_ratio=VAL_RATIO, shuffle=False):
 		"""
 		Return an objective function that hyperopt can use for the given features and labels.
 		"""
@@ -53,7 +53,7 @@ class CategoricalClassifier(Classifier):
 					logging.debug('val_acc mean, min, max, last: {mean}, {min}, {max}, {last}'
 						.format(mean=np.mean(val_acc), min=np.min(val_acc), max=np.max(val_acc), last=val_acc[-1]))
 
-				return {'loss': results['history']['val_loss'][-1], 'status': STATUS_OK}
+				return {'loss': results['history'][loss_type][-1], 'status': STATUS_OK}
 
 			except:
 				self.bad_trials += 1

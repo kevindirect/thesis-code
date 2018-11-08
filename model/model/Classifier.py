@@ -29,7 +29,7 @@ class Classifier(Model):
 		super(Classifier, self).__init__({**default_space, **other_space})
 		self.metrics = ['accuracy']
 
-	def make_const_data_objective(self, features, labels, retain_holdout=True, test_ratio=TEST_RATIO, val_ratio=VAL_RATIO, shuffle=False):
+	def make_const_data_objective(self, features, labels, loss_type='val_loss', retain_holdout=True, test_ratio=TEST_RATIO, val_ratio=VAL_RATIO, shuffle=False):
 		"""
 		Return an objective function that hyperopt can use for the given features and labels.
 		"""
@@ -57,7 +57,7 @@ class Classifier(Model):
 					logging.debug('val_acc mean, min, max, last: {mean}, {min}, {max}, {last}'
 						.format(mean=np.mean(val_acc), min=np.min(val_acc), max=np.max(val_acc), last=val_acc[-1]))
 
-				return {'loss': results['history']['val_loss'][-1], 'status': STATUS_OK}
+				return {'loss': results['history'][loss_type][-1], 'status': STATUS_OK}
 
 			except:
 				self.bad_trials += 1
@@ -66,7 +66,7 @@ class Classifier(Model):
 
 		return objective
 
-	def make_var_data_objective(self, raw_features, raw_labels, features_fn, labels_fn, retain_holdout=True, test_ratio=TEST_RATIO, val_ratio=VAL_RATIO, shuffle=False):
+	def make_var_data_objective(self, raw_features, raw_labels, features_fn, labels_fn, loss_type='val_loss', retain_holdout=True, test_ratio=TEST_RATIO, val_ratio=VAL_RATIO, shuffle=False):
 		"""
 		Return an objective function that hyperopt can use that can search over features and labels along with the hyperparameters.
 		"""
@@ -75,7 +75,7 @@ class Classifier(Model):
 			Standard classifier objective function to minimize.
 			"""
 			features, labels = features_fn(raw_features, params), labels_fn(raw_labels, params)
-			return self.make_const_data_objective(features, labels, retain_holdout=retain_holdout, test_ratio=test_ratio, val_ratio=val_ratio, shuffle=shuffle)
+			return self.make_const_data_objective(features, labels, loss_type=loss_type, retain_holdout=retain_holdout, test_ratio=test_ratio, val_ratio=val_ratio, shuffle=shuffle)
 
 		return objective
 
