@@ -17,8 +17,9 @@
 			"dnorm",
 			"sym"
 		],
-		"lbl": [
-			"reteod"
+		"lbleod": [
+			"reteod",
+			"lbleod"
 		]
 	},
 	"visited": [

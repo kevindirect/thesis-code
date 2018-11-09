@@ -1,0 +1,21 @@
+{
+	"meta": {
+		"name": "lbleod",
+		"mtype_from": "rec_fmt",
+		"rec_fmt": "lbleod({thresh:.0%})",
+		"var_fmt": "grid",
+		"res_freq": "cal_daily",
+		"info": "simple finite time horizon label"
+	},
+	"fn": {
+		"ser_fn": "threshlbl",
+		"df_fn": "rt",
+		"freq": null
+	},
+	"var": {
+		"thresh": [0, 0.01, 0.02]
+	},
+	"rm": null,
+	"src": ["ret", "reteod"],
+	"dst": ["lbl", "lbleod"]
+}

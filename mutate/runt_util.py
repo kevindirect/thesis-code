@@ -8,11 +8,11 @@ import logging
 import numpy as np
 import pandas as pd
 
-from common_util import DT_HOURLY_FREQ, DT_BIZ_DAILY_FREQ, DT_CAL_DAILY_FREQ, get_custom_biz_freq
+from common_util import DT_HOURLY_FREQ, DT_BIZ_DAILY_FREQ, DT_CAL_DAILY_FREQ, get_custom_biz_freq, is_real_num
 from mutate.common import STANDARD_DAY_LEN
 from mutate.pattern_util import gaussian_breakpoints, uniform_breakpoints, get_sym_list, symbolize_value
 from mutate.fracdiff import get_weights
-
+# from mutate.label_util import 
 
 """ ********** APPLY FUNCTIONS ********** """
 def apply_rt_df(df, ser_transform_fn, freq=None, dna=True):	# regular transform
@@ -96,6 +96,48 @@ def symbolize(sym_type, num_sym, numeric_symbols=True):
 	return lambda ser: ser.transform(encoder)
 
 
+""" ********** LABEL EXTRACTION ********** """
+UP, DOWN, SIDEWAYS = 1, -1, 0
+
+def threshold_labelizer(thresh):
+	"""
+	Return a function that returns a threshold labelizer
+
+	Args:
+		thresh (float or (float, float)): threshold or thresholds for labelization
+			If it is a single threshold, it will be translated to: (-abs(float)/2, abs(float)/2).
+			If not, thresholds[0] <= thresholds[0] must be the case.
+			where:	val <= interval[0] maps to DOWN
+					val >= interval[1] maps to UP
+					interval[0] < val < interval[1] maps to SIDEWAYS
+	"""
+	def fth_label(ser):
+		threshes = (-abs(thresh)/2, abs(thresh)/2) if (is_real_num(thresh)) else thresh
+		thresholded = ser.copy(deep=True)
+
+		thresholded[thresholded <= threshes[0]] = DOWN
+		thresholded[thresholded >= threshes[1]] = UP
+		thresholded[~pd.isnull(thresholded) & ~thresholded.isin((UP, DOWN))] = SIDEWAYS
+
+		return thresholded.dropna()
+
+	return fth_label
+
+
+def mask_labellizer(label_type, mask_type):
+	"""
+	Return a function that takes a label_df and returns labels or targets according to a masking type.
+
+	Args:
+		label_type ('label' | 'target'): integer label or real number target
+		mask_type (str): Specific mask type to extract from label_df
+
+	Return:
+		labellizer function
+	"""
+	pass
+
+
 """ ********** FILTERS ********** """
 def single_row_filter(specifier):
 	if (specifier == 'f'):
@@ -114,7 +156,8 @@ RUNT_FN_TRANSLATOR = {
 	"ma": moving_average,
 	"norm": normalize,
 	"sym": symbolize,
-	"srf": single_row_filter
+	"srf": single_row_filter,
+	"threshlbl": threshold_labelizer
 }
 
 RUNT_TYPE_TRANSLATOR = {
