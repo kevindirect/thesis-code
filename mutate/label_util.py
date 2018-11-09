@@ -117,7 +117,7 @@ def get_base_labels(df_columns):
 
 make_sw_dict = lambda sw: {"exact": [], "startswith": [sw], "endswith": [], "regex": [], "exclude": None}
 
-def gen_label_dfs(lab_dict, lab_paths, asset_name, forecast_mask=default_fct):
+def gen_label_dfs(lab_dict, lab_paths, asset_name, forecast_mask=fastbreak_eod_fct):
 
 	for lab_path in filter(lambda lab_path: lab_path[0]==asset_name, lab_paths):
 		lab_df = list_get_dict(lab_dict, lab_path)
@@ -158,7 +158,7 @@ def prep_labels(label_df, types=['bool', 'int']):
 		eod0 = delayed(eod_fct)(gb_label_df, eod_thresh=0).add_suffix('_eod(0%)')
 		eod1 = delayed(eod_fct)(gb_label_df, eod_thresh=.01).add_suffix('_eod(1%)')
 		eod2 = delayed(eod_fct)(gb_label_df, eod_thresh=.02).add_suffix('_eod(2%)')
-		fbeod = delayed(apply_label_mask)(gb_label_df, default_fct).add_suffix('_fbeod')
+		fbeod = delayed(apply_label_mask)(gb_label_df, fastbreak_eod_fct).add_suffix('_fbeod')
 		fb = delayed(apply_label_mask)(gb_label_df, fastbreak_fct).add_suffix('_fb')
 		conf = delayed(apply_label_mask)(gb_label_df, confidence_fct).add_suffix('_conf')
 		fbconf = delayed(apply_label_mask)(gb_label_df, fastbreak_confidence_fct).add_suffix('_fbconf')
