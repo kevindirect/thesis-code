@@ -12,7 +12,7 @@ from common_util import DT_HOURLY_FREQ, DT_BIZ_DAILY_FREQ, DT_CAL_DAILY_FREQ, ge
 from mutate.common import STANDARD_DAY_LEN
 from mutate.pattern_util import gaussian_breakpoints, uniform_breakpoints, get_sym_list, symbolize_value
 from mutate.fracdiff import get_weights
-# from mutate.label_util import 
+from mutate.label_util import UP, DOWN, SIDEWAYS, fastbreak_eod_fct, fastbreak_fct, confidence_fct, fastbreak_confidence_fct
 
 """ ********** APPLY FUNCTIONS ********** """
 def apply_rt_df(df, ser_transform_fn, freq=None, dna=True):	# regular transform
@@ -97,21 +97,19 @@ def symbolize(sym_type, num_sym, numeric_symbols=True):
 
 
 """ ********** LABEL EXTRACTION ********** """
-UP, DOWN, SIDEWAYS = 1, -1, 0
-
-def threshold_labelizer(thresh):
+def threshold_sign_discretizer(thresh):
 	"""
-	Return a function that returns a threshold labelizer
+	Return a function that returns a sign discretizer
 
 	Args:
-		thresh (float or (float, float)): threshold or thresholds for labelization
+		thresh (float or (float, float)): threshold or thresholds for sign binning
 			If it is a single threshold, it will be translated to: (-abs(float)/2, abs(float)/2).
 			If not, thresholds[0] <= thresholds[0] must be the case.
 			where:	val <= interval[0] maps to DOWN
 					val >= interval[1] maps to UP
 					interval[0] < val < interval[1] maps to SIDEWAYS
 	"""
-	def fth_label(ser):
+	def thresh_sign_binner(ser):
 		threshes = (-abs(thresh)/2, abs(thresh)/2) if (is_real_num(thresh)) else thresh
 		thresholded = ser.copy(deep=True)
 
@@ -121,8 +119,17 @@ def threshold_labelizer(thresh):
 
 		return thresholded.dropna()
 
-	return fth_label
+	return thresh_sign_binner
 
+FCT_MASK_MAP = {
+	'fbeod': fastbreak_eod_fct,
+	'fb': fastbreak_fct,
+	'conf': confidence_fct,
+	'fbconf': fastbreak_confidence_fct,
+	'vel': partial(fastbreak_fct, velocity=True),
+	'mag': partial(confidence_fct, magnitude=True),
+	'mom': partial(fastbreak_confidence_fct, momentum=True),
+}
 
 def mask_labellizer(label_type, mask_type):
 	"""
@@ -157,7 +164,7 @@ RUNT_FN_TRANSLATOR = {
 	"norm": normalize,
 	"sym": symbolize,
 	"srf": single_row_filter,
-	"threshlbl": threshold_labelizer
+	"threshsign": threshold_sign_discretizer
 }
 
 RUNT_TYPE_TRANSLATOR = {

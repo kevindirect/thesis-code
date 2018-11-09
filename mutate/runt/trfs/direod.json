@@ -1,14 +1,14 @@
 {
 	"meta": {
-		"name": "lbleod",
+		"name": "direod",
 		"mtype_from": "rec_fmt",
-		"rec_fmt": "lbleod({thresh:.0%})",
+		"rec_fmt": "direod({thresh:.0%})",
 		"var_fmt": "grid",
 		"res_freq": "cal_daily",
 		"info": "simple finite time horizon label"
 	},
 	"fn": {
-		"ser_fn": "threshlbl",
+		"ser_fn": "threshsign",
 		"df_fn": "rt",
 		"freq": null
 	},
@@ -17,5 +17,5 @@
 	},
 	"rm": null,
 	"src": ["ret", "reteod"],
-	"dst": ["lbl", "lbleod"]
+	"dst": ["dir", "direod"]
 }
