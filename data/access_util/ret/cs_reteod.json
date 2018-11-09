@@ -1,0 +1,35 @@
+{
+	"reteod": {
+		"all": null,
+		"subsets": {
+			"pba_oc_return": {
+				"exact": ["pba_oc_return_fth_of_xwhole"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			"pba_oa_return": {
+				"exact": ["pba_oa_return_fth_of_xwhole"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			"vol_oc_return": {
+				"exact": ["vol_oc_return_fth_of_xwhole"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			"vol_oa_return": {
+				"exact": ["vol_oa_return_fth_of_xwhole"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			}
+		}
+	}
+}

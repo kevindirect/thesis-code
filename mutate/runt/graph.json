@@ -16,6 +16,9 @@
 			"diff",
 			"dnorm",
 			"sym"
+		],
+		"lbl": [
+			"reteod"
 		]
 	},
 	"visited": [

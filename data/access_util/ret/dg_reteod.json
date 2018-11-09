@@ -1,8 +1,8 @@
 {
-	"itb_fth_of_xwhole": {
+	"reteod": {
 		"all": {
 			"stage": "mutate",
-			"mutate_type": "itb",
+			"mutate_type": "reteod",
 			"raw_cat": "us_equity_index"
 		},
 		"subsets": {

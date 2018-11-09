@@ -1,0 +1,21 @@
+{
+	"meta": {
+		"name": "reteod",
+		"mtype_from": "rec_fmt",
+		"rec_fmt": "reteod",
+		"var_fmt": "grid",
+		"res_freq": "cal_daily",
+		"info": "daily return"
+	},
+	"fn": {
+		"ser_fn": "srf",
+		"df_fn": "gagg",
+		"freq": "cal_daily"
+	},
+	"var": {
+		"specifier": ["l"]
+	},
+	"rm": null,
+	"src": ["ret", "reti"],
+	"dst": ["ret", "reteod"]
+}
