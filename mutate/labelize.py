@@ -149,7 +149,7 @@ def make_labels(base_df, base_rec, return_groups, label_info):
 		# 	label_df_list.append(itb.add_prefix(pfx))
 
 		# JOIN
-		entry = make_label_entry(ret_designator, 'mutate_label', base_rec)
+		entry = make_label_entry(ret_designator, 'mutate_itb', base_rec)
 		labels_df = reduce(left_join, [ret_df] + label_df_list)
 		rec_lab_tups.append((entry, labels_df))
 
@@ -197,7 +197,7 @@ def gen_labels(base_df, base_rec, return_groups, label_info):
 					label_df_list.append(itb.add_prefix(pfx_scl))
 
 		# JOIN
-		entry = make_label_entry(ret_designator, 'mutate_label', base_rec)
+		entry = make_label_entry(ret_designator, 'mutate_itb', base_rec)
 		labels_df = reduce(left_join, [ret_df] + label_df_list)
 		yield (entry, labels_df)
 
@@ -227,7 +227,7 @@ def make_label_entry(desc, hist, base_rec):
 		'root': base_rec.root,
 		'basis': base_rec.name,
 		'stage': 'mutate',
-		'mutate_type': 'label',
+		'mutate_type': 'itb',
 		'raw_cat': base_rec.raw_cat,
 		'hist': '->'.join([str(base_rec.hist), hist]),
 		'desc': desc

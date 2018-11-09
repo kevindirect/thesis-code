@@ -7,6 +7,7 @@ import sys
 from os import sep, path, makedirs, walk, listdir, rmdir
 from os.path import dirname, basename, realpath, normpath, exists, isfile, getsize, join as path_join
 from json import load, dump, dumps
+import numbers
 import operator
 import getopt
 from contextlib import suppress
@@ -236,6 +237,8 @@ def get_variants(mappings, fmt='grid'):
 def zdiv(top, bottom, zdiv_ret=0):
 	return top/bottom if (bottom != 0) else zdiv_ret
 
+def is_real_num(val):
+	return isinstance(val, numbers.Real)
 
 """ ********** FS AND GENERAL IO UTILS ********** """
 get_script_dir = lambda: dirname(realpath(sys.argv[0])) +sep
