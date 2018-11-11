@@ -180,7 +180,7 @@ class DataAPI:
 	def get_df_from_rec(cls, rec, col_subsetter=None, path_pfx=DATA_DIR, **kwargs):
 		selected = load_df(rec.name, dir_path=path_pfx+rec.dir, dti_freq=rec.freq, **kwargs)
 		if (col_subsetter is not None):
-			return selected[chained_filter(selected.columns, col_subsetter)]
+			return selected.loc[:, chained_filter(selected.columns, col_subsetter)]
 
 	@classmethod
 	def load_from_dg(cls, df_getter, col_subsetter=None, separators=['root'], how='subsets', subset=None, **kwargs):
@@ -228,7 +228,7 @@ class DataAPI:
 					df_path = seps + sd_path + [rec.desc] if (add_desc_as_path_identifier) else seps + sd_path
 
 					result_paths.append(df_path)
-					filtered_df = df if (sd_cs[1] is None) else df[chained_filter(df.columns, sd_cs[1])]
+					filtered_df = df if (sd_cs[1] is None) else df.loc[:, chained_filter(df.columns, sd_cs[1])]
 					list_set_dict(result, df_path, filtered_df)
 					list_set_dict(recs, df_path, rec)
 

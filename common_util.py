@@ -270,12 +270,12 @@ def col_iter(two_d_list):
 The following are functions that return string mapping functions based on rule and handling parameters.
 String mapping functions map a sequence of strings to a single string. Useful for naming new data columns.
 """
-def concat_map(delimiter='_'):
+def concat_map(delimiter='_', **kwargs):
 	return lambda *strings: delimiter.join(strings)
 
 first_letter_concat = lambda lst: "".join((string[0] for string in lst))
 
-def substr_ad_map(check_fn=all_equal, accord_fn=first_element, discord_fn=first_letter_concat, delimiter='_'):
+def substr_ad_map(check_fn=all_equal, accord_fn=first_element, discord_fn=first_letter_concat, delimiter='_', **kwargs):
 	"""
 	Map a sequence of strings to one string by handling accordances or discordances in substrings.
 	Assumes all strings in the sequence have an equal number of delimited substrings.
