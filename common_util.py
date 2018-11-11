@@ -13,7 +13,7 @@ import getopt
 from contextlib import suppress
 from difflib import SequenceMatcher
 from collections import defaultdict, OrderedDict, ChainMap
-from itertools import product, chain, tee
+from itertools import product, chain, tee, islice, chain, zip_longest
 from functools import reduce, partial, wraps
 from datetime import datetime
 from timeit import default_timer
@@ -94,6 +94,12 @@ def remove_dups_list(lst):
 
 def flatten2D(list2D):
 	return list(chain(*list2D))
+
+def all_equal(lst):
+	first_item = lst[0]
+	return all(element==first_item for element in lst)
+
+first_element = lambda lst: lst[0]
 
 def get0(lst):
 	"""
@@ -233,12 +239,68 @@ def get_variants(mappings, fmt='grid'):
 
 	return variants
 
+"""Iterator"""
+def group_iter(iterable, n=2, fill_value=None):
+	"""
+	Iterates over fixed length, non-overlapping windows
+	"""
+	# grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx"
+	args = [iter(iterable)] * n
+	yield from zip_longest(*args, fillvalue=fill_value)
+
+def window_iter(iterable, n=2):
+	"""Returns a sliding window (of width n) over data from the iterable"""
+	"""	s -> (s0,s1,...s[n-1]), (s1,s2,...,sn), ... """
+	it = iter(iterable)
+	result = tuple(islice(it, n))
+	if len(result) == n:
+		yield result
+	for elem in it:
+		result = result[1:] + (elem,)
+		yield result
+
+def col_iter(two_d_list):
+	"""
+	Iterates over columns of a two dimensional list
+	"""
+	yield from group_iter(chain.from_iterable(zip(*two_d_list)), n=len(two_d_list))
+
+"""String Mappers"""
+"""
+The following are functions that return string mapping functions based on rule and handling parameters.
+String mapping functions map a sequence of strings to a single string. Useful for naming new data columns.
+"""
+def concat_map(delimiter='_'):
+	return lambda *strings: delimiter.join(strings)
+
+first_letter_concat = lambda lst: "".join((string[0] for string in lst))
+
+def substr_ad_map(check_fn=all_equal, accord_fn=first_element, discord_fn=first_letter_concat, delimiter='_'):
+	"""
+	Map a sequence of strings to one string by handling accordances or discordances in substrings.
+	Assumes all strings in the sequence have an equal number of delimited substrings.
+	"""
+	def mapper(*strings):
+		output = []
+		str_row_vectors = [string.split(delimiter) for string in strings]
+
+		for col in col_iter(str_row_vectors):
+			substr = accord_fn(col) if (check_fn(col)) else discord_fn(col)
+			output.append(substr)
+
+		return delimiter.join(output)
+
+	return mapper
+
 """Math"""
 def zdiv(top, bottom, zdiv_ret=0):
 	return top/bottom if (bottom != 0) else zdiv_ret
 
 def is_real_num(val):
 	return isinstance(val, numbers.Real)
+
+null_fn = lambda: None
+
 
 """ ********** FS AND GENERAL IO UTILS ********** """
 get_script_dir = lambda: dirname(realpath(sys.argv[0])) +sep
