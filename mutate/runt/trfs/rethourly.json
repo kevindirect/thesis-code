@@ -1,0 +1,22 @@
+{
+	"meta": {
+		"name": "rethourly",
+		"mtype_from": "rec_fmt",
+		"rec_fmt": "rethourly({ret_type})",
+		"var_fmt": "grid",
+		"res_freq": "hourly",
+		"info": "hourly return or spread"
+	},
+	"fn": {
+		"ser_fn": "ret",
+		"df_fn": "btw",
+		"col_fn": "sami",
+		"freq": "hourly"
+	},
+	"var": {
+		"ret_type": ["return", "logret"]
+	},
+	"rm": null,
+	"src": ["raw", "raw_pairs"],
+	"dst": ["ret", "rethourly"]
+}

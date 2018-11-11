@@ -12,7 +12,7 @@ from common_util import MUTATE_DIR, DT_HOURLY_FREQ, DT_CAL_DAILY_FREQ, load_json
 from data.data_api import DataAPI
 from data.access_util import df_getters as dg, col_subsetters2 as cs2
 from mutate.common import default_runt_dir_name, default_trfs_dir_name
-from mutate.runt_util import RUNT_FN_TRANSLATOR, RUNT_TYPE_TRANSLATOR, RUNT_FREQ_TRANSLATOR
+from mutate.runt_util import RUNT_FN_TRANSLATOR, RUNT_TYPE_TRANSLATOR, RUNT_NMAP_TRANSLATOR, RUNT_FREQ_TRANSLATOR
 
 
 def run_transforms(argv):
@@ -74,6 +74,7 @@ def process_step(step_info, date_range):
 	# Loading transform, apply, and frequency settings
 	ser_fn = RUNT_FN_TRANSLATOR[fn['ser_fn']]
 	rtype_fn = RUNT_TYPE_TRANSLATOR[fn['df_fn']]
+	col_fn = RUNT_NMAP_TRANSLATOR[fn['col_fn']]
 	freq = RUNT_FREQ_TRANSLATOR[fn['freq']]
 	res_freq = RUNT_FREQ_TRANSLATOR[meta['res_freq']]
 
@@ -114,7 +115,7 @@ def process_step(step_info, date_range):
 
 		# Running variants of the transform
 		for variant in variants:
-			runted_df = rtype_fn(src_df, ser_fn(**variant), freq)
+			runted_df = rtype_fn(src_df, ser_fn(**variant), freq, col_fn())
 			desc_sfx = meta['rec_fmt'].format(**variant)
 			desc_pfx = get_desc_pfx(key_chain, src_rec)
 			desc = '_'.join([desc_pfx, desc_sfx])

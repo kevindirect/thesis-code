@@ -9,6 +9,7 @@
 	"fn": {
 		"ser_fn": "diff",
 		"df_fn": "gbt",
+		"col_fn": null,
 		"freq": "cal_daily"
 	},
 	"var": {

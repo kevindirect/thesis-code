@@ -10,6 +10,7 @@
 	"fn": {
 		"ser_fn": "ffracdiff",
 		"df_fn": "rt",
+		"col_fn": null,
 		"freq": "cal_daily"
 	},
 	"var": {

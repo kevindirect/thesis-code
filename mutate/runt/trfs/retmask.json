@@ -1,0 +1,22 @@
+{
+	"meta": {
+		"name": "retmask",
+		"mtype_from": "rec_fmt",
+		"rec_fmt": "retmask({mask_type})",
+		"var_fmt": "grid",
+		"res_freq": "cal_daily",
+		"info": "intraday triple barrier masked return"
+	},
+	"fn": {
+		"ser_fn": "",
+		"df_fn": "rt",
+		"col_fn": null,
+		"freq": null
+	},
+	"var": {
+		"mask_type": ["fbeod", "fb", "conf", "fbconf"]
+	},
+	"rm": null,
+	"src": ["itb", "itb_mvp"],
+	"dst": ["ret", "retmask"]
+}

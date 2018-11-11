@@ -9,6 +9,7 @@
 	"fn": {
 		"ser_fn": "sym",
 		"df_fn": "rt",
+		"col_fn": null,
 		"freq": null
 	},
 	"var": {

@@ -9,6 +9,7 @@
 	"fn": {
 		"ser_fn": null,
 		"df_fn": null,
+		"col_fn": null,
 		"freq": null
 	},
 	"var": {},

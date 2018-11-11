@@ -5,11 +5,12 @@
 		"rec_fmt": "direod({thresh:.0%})",
 		"var_fmt": "grid",
 		"res_freq": "cal_daily",
-		"info": "simple finite time horizon label"
+		"info": "daily return direction"
 	},
 	"fn": {
 		"ser_fn": "threshsign",
 		"df_fn": "rt",
+		"col_fn": null,
 		"freq": null
 	},
 	"var": {

@@ -1,4 +1,6 @@
-# Kevin Patel
+"""
+Kevin Patel
+"""
 
 import sys
 import os
@@ -8,29 +10,61 @@ import logging
 import numpy as np
 import pandas as pd
 
-from common_util import DT_HOURLY_FREQ, DT_BIZ_DAILY_FREQ, DT_CAL_DAILY_FREQ, get_custom_biz_freq, is_real_num
+from common_util import DT_HOURLY_FREQ, DT_BIZ_DAILY_FREQ, DT_CAL_DAILY_FREQ, null_fn, get_custom_biz_freq, window_iter, col_iter, all_equal, is_real_num
+from common_util import concat_map, substr_ad_map, all_equal, first_element, first_letter_concat
 from mutate.common import STANDARD_DAY_LEN
 from mutate.pattern_util import gaussian_breakpoints, uniform_breakpoints, get_sym_list, symbolize_value
 from mutate.fracdiff import get_weights
 from mutate.label_util import UP, DOWN, SIDEWAYS, fastbreak_eod_fct, fastbreak_fct, confidence_fct, fastbreak_confidence_fct
 
 """ ********** APPLY FUNCTIONS ********** """
-def apply_rt_df(df, ser_transform_fn, freq=None, dna=True):	# regular transform
+def apply_rt_df(df, ser_transform_fn, freq, name_map_fn, dna=True):	# regular transform
 	res = df.transform(ser_transform_fn)
 	return res.dropna(axis=0, how='all') if (dna) else res
 
-def apply_gbt_df(df, ser_transform_fn, agg_freq, dna=True):	# groupby transform
+def apply_gbt_df(df, ser_transform_fn, agg_freq, name_map_fn, dna=True):	# groupby transform
 	res = df.groupby(pd.Grouper(freq=agg_freq)).transform(ser_transform_fn)
 	return res.dropna(axis=0, how='all') if (dna) else res
 
-def apply_gagg_df(df, ser_agg_fn, agg_freq, dna=True):		# groupby aggregation
+def apply_gagg_df(df, ser_agg_fn, agg_freq, name_map_fn, dna=True):		# groupby aggregation
 	res = df.groupby(pd.Grouper(freq=agg_freq)).agg(ser_agg_fn)
 	return res.dropna(axis=0, how='all') if (dna) else res
+
+def apply_btw_df(df, binary_apply_fn, freq, name_map_fn, dna=True):	# binary transform window function
+	res = pd.DataFrame(index=df.index)
+	for col_a, col_b in window_iter(df.columns):
+		res[name_map_fn(col_a, col_b)] = binary_apply_fn(df[col_a], df[col_b])
+	return res.dropna(axis=0, how='all') if (dna) else res
+
+
+""" ********** NAME MAPPER FUNCTIONS ********** """
+substr_ad_initial_map = partial(substr_ad_map, check_fn=all_equal, accord_fn=first_element, discord_fn=first_letter_concat)
 
 
 """ ********** TRANSFORMS ********** """
 def difference(num_periods):
 	return lambda ser: ser.diff(periods=num_periods)
+
+RETURN_FUN_MAP = {
+	"spread": (lambda slow_ser, fast_ser: fast_ser - slow_ser),
+	"return": (lambda slow_ser, fast_ser: (fast_ser / slow_ser) - 1),
+	"logret": (lambda slow_ser, fast_ser: np.log(fast_ser / slow_ser))
+}
+
+def returnize(ret_type):
+	"""
+	Spread, regular return, or log return.
+	"""
+	return RETURN_FUN_MAP[ret_type]
+
+def expanding_returnize(ret_type):
+	"""
+	Spread, regular return, or log return.
+	"""
+	def ret(slow_ser, fast_ser):
+		first_slow = gb['slow'].transform(pd.Series.first, org_freq)
+		derived[_cname('xwhole')] = RETURN_FUN_MAP[ret_type](fast_ser, first_slow)
+	return RETURN_FUN_MAP[ret_type]
 
 def expanding_fracdiff(d, size, thresh):
 	"""
@@ -131,6 +165,20 @@ FCT_MASK_MAP = {
 	'mom': partial(fastbreak_confidence_fct, momentum=True),
 }
 
+def mask_return(label_type, mask_type):
+	"""
+	Return a function that takes a label_df and returns labels or targets according to a masking type.
+
+	Args:
+		label_type ('label' | 'target'): integer label or real number target
+		mask_type (str): Specific mask type to extract from label_df
+
+	Return:
+		labellizer function
+	"""
+	pass
+
+
 def mask_labellizer(label_type, mask_type):
 	"""
 	Return a function that takes a label_df and returns labels or targets according to a masking type.
@@ -158,6 +206,7 @@ def single_row_filter(specifier):
 """ ********** JSON-STR-TO-CODE TRANSLATORS ********** """
 RUNT_FN_TRANSLATOR = {
 	"diff": difference,
+	"ret": returnize,
 	"efracdiff": expanding_fracdiff,
 	"ffracdiff": fixed_fracdiff,
 	"ma": moving_average,
@@ -170,7 +219,14 @@ RUNT_FN_TRANSLATOR = {
 RUNT_TYPE_TRANSLATOR = {
 	"rt": apply_rt_df,
 	"gbt": apply_gbt_df,
-	"gagg": apply_gagg_df
+	"gagg": apply_gagg_df,
+	"btw": apply_btw_df
+}
+
+RUNT_NMAP_TRANSLATOR = {
+	"cm": concat_map,
+	"sami": substr_ad_initial_map,
+	None: null_fn
 }
 
 RUNT_FREQ_TRANSLATOR = {
