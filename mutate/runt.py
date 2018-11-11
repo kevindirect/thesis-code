@@ -115,7 +115,7 @@ def process_step(step_info, date_range):
 
 		# Running variants of the transform
 		for variant in variants:
-			runted_df = rtype_fn(src_df, ser_fn(**variant), freq, col_fn())
+			runted_df = rtype_fn(src_df, ser_fn(**variant), freq, col_fn(**variant))
 			desc_sfx = meta['rec_fmt'].format(**variant)
 			desc_pfx = get_desc_pfx(key_chain, src_rec)
 			desc = '_'.join([desc_pfx, desc_sfx])
