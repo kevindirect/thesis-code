@@ -2,10 +2,10 @@
 	"meta": {
 		"name": "rethourly",
 		"mtype_from": "rec_fmt",
-		"rec_fmt": "rethourly({ret_type})",
+		"rec_fmt": "{ret_type}hourly",
 		"var_fmt": "grid",
 		"res_freq": "hourly",
-		"info": "hourly return or spread"
+		"info": "hourly return, logreturn, or spread"
 	},
 	"fn": {
 		"ser_fn": "ret",
@@ -14,7 +14,7 @@
 		"freq": "hourly"
 	},
 	"var": {
-		"ret_type": ["return", "logret"]
+		"ret_type": ["ret"]
 	},
 	"rm": null,
 	"src": ["raw", "raw_pairs"],

@@ -47,7 +47,7 @@ def difference(num_periods):
 
 RETURN_FUN_MAP = {
 	"spread": (lambda slow_ser, fast_ser: fast_ser - slow_ser),
-	"return": (lambda slow_ser, fast_ser: (fast_ser / slow_ser) - 1),
+	"ret": (lambda slow_ser, fast_ser: (fast_ser / slow_ser) - 1),
 	"logret": (lambda slow_ser, fast_ser: np.log(fast_ser / slow_ser))
 }
 
