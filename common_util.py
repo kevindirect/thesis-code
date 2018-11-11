@@ -905,7 +905,7 @@ def get_subset(str_list, qualifier_dict):
 	"""
 	selected = []
 
-	selected.extend([string for string in str_list if string in qualifier_dict['exact']])
+	selected.extend([string for string in qualifier_dict['exact'] if string in str_list])
 	selected.extend([string for string in str_list if string.startswith(tuple(qualifier_dict['startswith']))])
 	selected.extend([string for string in str_list if string.endswith(tuple(qualifier_dict['endswith']))])
 	selected.extend([string for string in str_list if any(re.match(rgx, string) for rgx in qualifier_dict['regex'])])
