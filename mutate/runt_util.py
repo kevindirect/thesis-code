@@ -17,6 +17,7 @@ from mutate.pattern_util import gaussian_breakpoints, uniform_breakpoints, get_s
 from mutate.fracdiff import get_weights
 from mutate.label_util import UP, DOWN, SIDEWAYS, fastbreak_eod_fct, fastbreak_fct, confidence_fct, fastbreak_confidence_fct
 
+
 """ ********** APPLY FUNCTIONS ********** """
 def apply_rt_df(df, ser_transform_fn, freq, name_map_fn, dna=True):	# regular transform
 	res = df.transform(ser_transform_fn)
@@ -57,14 +58,17 @@ def returnize(ret_type):
 	"""
 	return RETURN_FUN_MAP[ret_type]
 
-def expanding_returnize(ret_type):
+def expanding_returnize(ret_type, agg_freq='cal_daily'):
 	"""
-	Spread, regular return, or log return.
+	Expanding spread, regular return, or log return.
 	"""
-	def ret(slow_ser, fast_ser):
-		first_slow = gb['slow'].transform(pd.Series.first, org_freq)
-		derived[_cname('xwhole')] = RETURN_FUN_MAP[ret_type](fast_ser, first_slow)
-	return RETURN_FUN_MAP[ret_type]
+	agg_freq = RUNT_FREQ_TRANSLATOR[agg_freq]
+
+	def retx(slow_ser, fast_ser):
+		first_slow = slow_ser.dropna().groupby(pd.Grouper(freq=agg_freq)).transform(single_row_filter('f'))
+		return RETURN_FUN_MAP[ret_type](first_slow, fast_ser.dropna())
+
+	return retx
 
 def expanding_fracdiff(d, size, thresh):
 	"""
@@ -196,9 +200,15 @@ def mask_labellizer(label_type, mask_type):
 """ ********** FILTERS ********** """
 def single_row_filter(specifier):
 	if (specifier == 'f'):
-		return lambda ser: ser.loc[ser.first_valid_index()] if (ser.first_valid_index() is not None) else None
+		def first_only(ser):
+			first = ser.first_valid_index()
+			return ser.loc[first] if (first is not None) else None
+		return first_only
 	elif (specifier == 'l'):
-		return lambda ser: ser.loc[ser.last_valid_index()] if (ser.last_valid_index() is not None) else None
+		def last_only(ser):
+			last = ser.last_valid_index()
+			return ser.loc[last] if (last is not None) else None
+		return last_only
 	elif (isinstance(specifier, int)):
 		return lambda ser: ser.nth(specifier)
 
@@ -207,6 +217,7 @@ def single_row_filter(specifier):
 RUNT_FN_TRANSLATOR = {
 	"diff": difference,
 	"ret": returnize,
+	"retx": expanding_returnize,
 	"efracdiff": expanding_fracdiff,
 	"ffracdiff": fixed_fracdiff,
 	"ma": moving_average,

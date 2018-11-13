@@ -6,17 +6,23 @@
 			"raw_cat": "us_equity_index"
 		},
 		"subsets": {
-			"pba_oc_return": {
-				"desc": ["pba_oc_return_fth_of_xwhole_reteod_direod(0%)", "pba_oc_return_fth_of_xwhole_reteod_direod(1%)", "pba_oc_return_fth_of_xwhole_reteod_direod(2%)"]
+			"raw_pba_oc_retxeod_reteod_direod": {
+				"desc": ["raw_pba_oc_retxeod_reteod_direod(0%)", "raw_pba_oc_retxeod_reteod_direod(1%)", "raw_pba_oc_retxeod_reteod_direod(2%)"]
 			},
-			"pba_oa_return": {
-				"desc": ["pba_oa_return_fth_of_xwhole_reteod_direod(0%)", "pba_oa_return_fth_of_xwhole_reteod_direod(1%)", "pba_oa_return_fth_of_xwhole_reteod_direod(2%)"]
+			"raw_pba_oa_retxeod_reteod_direod": {
+				"desc": ["raw_pba_oa_retxeod_reteod_direod(0%)", "raw_pba_oa_retxeod_reteod_direod(1%)", "raw_pba_oa_retxeod_reteod_direod(2%)"]
 			},
-			"vol_oc_return": {
-				"desc": ["vol_oc_return_fth_of_xwhole_reteod_direod(0%)", "vol_oc_return_fth_of_xwhole_reteod_direod(1%)", "vol_oc_return_fth_of_xwhole_reteod_direod(2%)"]
+			"raw_pba_lh_retxeod_reteod_direod": {
+				"desc": ["raw_pba_lh_retxeod_reteod_direod(0%)", "raw_pba_lh_retxeod_reteod_direod(1%)", "raw_pba_lh_retxeod_reteod_direod(2%)"]
 			},
-			"vol_oa_return": {
-				"desc": ["vol_oa_return_fth_of_xwhole_reteod_direod(0%)", "vol_oa_return_fth_of_xwhole_reteod_direod(1%)", "vol_oa_return_fth_of_xwhole_reteod_direod(2%)"]
+			"raw_vol_oc_retxeod_reteod_direod": {
+				"desc": ["raw_vol_oc_retxeod_reteod_direod(0%)", "raw_vol_oc_retxeod_reteod_direod(1%)", "raw_vol_oc_retxeod_reteod_direod(2%)"]
+			},
+			"raw_vol_oa_retxeod_reteod_direod": {
+				"desc": ["raw_vol_oa_retxeod_reteod_direod(0%)", "raw_vol_oa_retxeod_reteod_direod(1%)", "raw_vol_oa_retxeod_reteod_direod(2%)"]
+			},
+			"raw_vol_lh_retxeod_reteod_direod": {
+				"desc": ["raw_vol_lh_retxeod_reteod_direod(0%)", "raw_vol_lh_retxeod_reteod_direod(1%)", "raw_vol_lh_retxeod_reteod_direod(2%)"]
 			}
 		}
 	}

@@ -18,9 +18,12 @@
 			"sym"
 		],
 		"ret": [
-			"rethourly"
+			"rethourly",
+			"retxeod"
 		],
 		"direod": [
+			"rethourly",
+			"retxeod",
 			"reteod",
 			"direod"
 		]

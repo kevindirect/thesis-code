@@ -2,29 +2,43 @@
 	"reteod": {
 		"all": null,
 		"subsets": {
-			"pba_oc_return": {
-				"exact": ["pba_oc_return_fth_of_xwhole"],
+			"raw_pba_oc_retxeod_reteod": {
+				"exact": ["pba_oc"],
 				"startswith": [],
 				"endswith": [],
 				"regex": [],
 				"exclude": null
 			},
-			"pba_oa_return": {
-				"exact": ["pba_oa_return_fth_of_xwhole"],
+			"raw_pba_oa_retxeod_reteod": {
+				"exact": ["pba_oa"],
 				"startswith": [],
 				"endswith": [],
 				"regex": [],
 				"exclude": null
 			},
-			"vol_oc_return": {
-				"exact": ["vol_oc_return_fth_of_xwhole"],
+			"raw_pba_lh_retxeod_reteod": {
+				"exact": ["pba_lh"],
 				"startswith": [],
 				"endswith": [],
 				"regex": [],
 				"exclude": null
 			},
-			"vol_oa_return": {
-				"exact": ["vol_oa_return_fth_of_xwhole"],
+			"raw_vol_oc_retxeod_reteod": {
+				"exact": ["vol_oc"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			"raw_vol_oa_retxeod_reteod": {
+				"exact": ["vol_oa"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			"raw_vol_lh_retxeod_reteod": {
+				"exact": ["vol_lh"],
 				"startswith": [],
 				"endswith": [],
 				"regex": [],

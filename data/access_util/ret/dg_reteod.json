@@ -6,17 +6,23 @@
 			"raw_cat": "us_equity_index"
 		},
 		"subsets": {
-			"pba_oc_return": {
-				"desc": "pba_oc_return_fth_of_xwhole_reteod"
+			"raw_pba_oc_retxeod_reteod": {
+				"desc": "raw_pba_oc_retxeod_reteod"
 			},
-			"pba_oa_return": {
-				"desc": "pba_oa_return_fth_of_xwhole_reteod"
+			"raw_pba_oa_retxeod_reteod": {
+				"desc": "raw_pba_oa_retxeod_reteod"
 			},
-			"vol_oc_return": {
-				"desc": "vol_oc_return_fth_of_xwhole_reteod"
+			"raw_pba_lh_retxeod_reteod": {
+				"desc": "raw_pba_lh_retxeod_reteod"
 			},
-			"vol_oa_return": {
-				"desc": "vol_oa_return_fth_of_xwhole_reteod"
+			"raw_vol_oc_retxeod_reteod": {
+				"desc": "raw_vol_oc_retxeod_reteod"
+			},
+			"raw_vol_oa_retxeod_reteod": {
+				"desc": "raw_vol_oa_retxeod_reteod"
+			},
+			"raw_vol_lh_retxeod_reteod": {
+				"desc": "raw_vol_lh_retxeod_reteod"
 			}
 		}
 	}

@@ -299,7 +299,7 @@ def zdiv(top, bottom, zdiv_ret=0):
 def is_real_num(val):
 	return isinstance(val, numbers.Real)
 
-null_fn = lambda: None
+null_fn = lambda *args, **kwargs: None
 
 
 """ ********** FS AND GENERAL IO UTILS ********** """

@@ -17,6 +17,6 @@
 		"specifier": ["l"]
 	},
 	"rm": null,
-	"src": ["ret", "reti"],
+	"src": ["ret", "retxeod"],
 	"dst": ["ret", "reteod"]
 }
