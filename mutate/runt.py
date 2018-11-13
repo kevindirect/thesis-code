@@ -43,7 +43,7 @@ def run_transforms(argv):
 	logging.info('running task graph...')
 	for path_name, path in graph['paths'].items():
 		for step in path:
-			logging.info('step: ' +str(step))
+			logging.info('step: {step}'.format(step=str(step)))
 			if (runt_all or step not in graph['visited']):
 				step_info = fill_defaults(trfs[step], trf_defaults)
 				process_step(step_info, date_range)
@@ -90,12 +90,12 @@ def process_step(step_info, date_range):
 	# Loading input data
 	src_dg, src_cs = list_get_dict(dg, src), list_get_dict(cs2, src)
 	src_paths, src_recs, src_dfs = DataAPI.load_from_dg(src_dg, src_cs)
-	logging.debug('src_paths[0] ' +str(src_paths[0]))
-	logging.debug('src_paths[-1] ' +str(src_paths[-1]))
+	logging.debug('src_paths[0] {}'.format(str(src_paths[0])))
+	logging.debug('src_paths[-1] {}'.format(str(src_paths[-1])))
 
 	# Run transforms on inputs
 	for key_chain in src_paths:
-		logging.info('data: ' +str('_'.join(key_chain)))
+		logging.info('data: {}'.format(str('_'.join(key_chain))))
 		src_rec, src_df = list_get_dict(src_recs, key_chain), list_get_dict(src_dfs, key_chain)
 		src_df = src_df.loc[search_df(src_df, date_range), :].dropna(axis=0, how='all')
 
@@ -104,14 +104,14 @@ def process_step(step_info, date_range):
 			rm_key_chain = get_row_mask_keychain(key_chain, rm_keys)
 			rm_df = list_get_dict(rm_dfs, rm_key_chain).dropna()
 			not_in_src = rm_df.index.difference(src_df.index)
-			logging.debug('row mask: ' +str('_'.join(rm_key_chain)))
+			logging.debug('row mask: {}'.format(str('_'.join(rm_key_chain))))
 			if (len(not_in_src)>0):
-				logging.debug('rm_idx - src_idx: ' +str(not_in_src))
+				logging.debug('rm_idx - src_idx: {}'.format(str(not_in_src)))
 				src_df = src_df.loc[src_df.index & rm_df.index, :].dropna(axis=0, how='all')
 			else:
 				src_df = src_df.loc[rm_df.index, :].dropna(axis=0, how='all')
 
-		logging.debug('pre_transform: ' +str(src_df))
+		logging.debug('pre_transform: {}'.format(str(src_df)))
 
 		# Running variants of the transform
 		for variant in variants:
@@ -123,8 +123,8 @@ def process_step(step_info, date_range):
 			if (meta['mtype_from']=='name'):       mutate_type = meta['name']
 			elif (meta['mtype_from']=='rec_fmt'):  mutate_type = desc_sfx
 
-			logging.info('dumping ' +desc +'...')
-			logging.debug('post_transform: ' +str(runted_df))
+			logging.info('dumping {desc}...'.format(desc=desc))
+			logging.debug('post_transform: {}'.format(str(runted_df)))
 			entry = make_runt_entry(desc, res_freq, mutate_type, src_rec)
 			if (is_empty_df(runted_df)):
 				logging.error(runted_df)
