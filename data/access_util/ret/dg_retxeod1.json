@@ -1,0 +1,53 @@
+{
+	"retxeod": {
+		"all": {
+			"stage": "mutate",
+			"mutate_type": ["retxeod(0.25%)", "retxeod(0.50%)", "retxeod(1.00%)", "retxeod(1.50%)", "retxeod(2.00%)"],
+			"raw_cat": "us_equity_index"
+		},
+		"subsets": {
+			"raw_pba_oc_retxeod": {
+				"desc": ["raw_pba_oc_retxeod(0.25%)",
+						"raw_pba_oc_retxeod(0.50%)",
+						"raw_pba_oc_retxeod(1.00%)",
+						"raw_pba_oc_retxeod(1.50%)",
+						"raw_pba_oc_retxeod(2.00%)"]
+			},
+			"raw_pba_oa_retxeod": {
+				"desc": ["raw_pba_oa_retxeod(0.25%)",
+						"raw_pba_oa_retxeod(0.50%)",
+						"raw_pba_oa_retxeod(1.00%)",
+						"raw_pba_oa_retxeod(1.50%)",
+						"raw_pba_oa_retxeod(2.00%)"]
+			},
+			"raw_pba_lh_retxeod": {
+				"desc": ["raw_pba_lh_retxeod(0.25%)",
+						"raw_pba_lh_retxeod(0.50%)",
+						"raw_pba_lh_retxeod(1.00%)",
+						"raw_pba_lh_retxeod(1.50%)",
+						"raw_pba_lh_retxeod(2.00%)"]
+			},
+			"raw_vol_oc_retxeod": {
+				"desc": ["raw_vol_oc_retxeod(0.25%)",
+						"raw_vol_oc_retxeod(0.50%)",
+						"raw_vol_oc_retxeod(1.00%)",
+						"raw_vol_oc_retxeod(1.50%)",
+						"raw_vol_oc_retxeod(2.00%)"]
+			},
+			"raw_vol_oa_retxeod": {
+				"desc": ["raw_vol_oa_retxeod(0.25%)",
+						"raw_vol_oa_retxeod(0.50%)",
+						"raw_vol_oa_retxeod(1.00%)",
+						"raw_vol_oa_retxeod(1.50%)",
+						"raw_vol_oa_retxeod(2.00%)"]
+			},
+			"raw_vol_lh_retxeod": {
+				"desc": ["raw_vol_lh_retxeod(0.25%)",
+						"raw_vol_lh_retxeod(0.50%)",
+						"raw_vol_lh_retxeod(1.00%)",
+						"raw_vol_lh_retxeod(1.50%)",
+						"raw_vol_lh_retxeod(2.00%)"]
+			}
+		}
+	}
+}

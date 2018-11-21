@@ -10,6 +10,7 @@ from json import load, dump, dumps
 import numbers
 import operator
 import getopt
+import collections.abc
 from contextlib import suppress
 from difflib import SequenceMatcher
 from collections import defaultdict, OrderedDict, ChainMap
@@ -70,6 +71,25 @@ DT_BIZ_HOURLY_FREQ = 'BH'
 DT_FMT_YMD =  '%Y-%m-%d'
 DT_FMT_YMD_HM = '%Y-%m-%d %H:%M'
 DT_FMT_YMD_HMS = '%Y-%m-%d %H:%M:%S'
+
+"""Type"""
+def is_type(obj, *types):
+	return any([isinstance(obj, tp) for tp in types])
+
+def isnt(obj):
+	return is_type(obj, NoneType)
+
+def is_real_num(obj):
+	return is_type(obj, numbers.Real)
+
+def is_seq(obj):
+	return is_type(obj, collections.abc.Sequence)
+
+def is_df(obj):
+	return is_type(obj, pd.DataFrame)
+
+def is_ser(obj):
+	return is_type(obj, pd.Series)
 
 """String"""
 """
@@ -239,6 +259,19 @@ def get_variants(mappings, fmt='grid'):
 
 	return variants
 
+"""Function"""
+def compose(*fns):
+	"""
+	Perform function composition of passed functions, performed on input in the order they are passed.
+	"""
+	def composed(*args, **kwargs):
+		val = fns[0](*args, **kwargs)
+		for fn in fns[1:]:
+			val = fn(val)
+		return val
+
+	return composed
+
 """Iterator"""
 def group_iter(iterable, n=2, fill_value=None):
 	"""
@@ -296,9 +329,7 @@ def substr_ad_map(check_fn=all_equal, accord_fn=first_element, discord_fn=first_
 def zdiv(top, bottom, zdiv_ret=0):
 	return top/bottom if (bottom != 0) else zdiv_ret
 
-def is_real_num(val):
-	return isinstance(val, numbers.Real)
-
+identity_fn = lambda val, *args, **kwargs: val
 null_fn = lambda *args, **kwargs: None
 
 
@@ -399,6 +430,43 @@ def remove_empty_dirs(root_dir_path):
 				rmdir(path_join(path, subdir))
 
 
+""" ********** NUMPY GENERAL UTILS ********** """
+def filter_null(arr):
+	"""
+	Return numpy array with all nulls removed.
+	Also with pandas series.
+	"""
+	return arr[~pd.isnull(arr)]		# Filter None, NaN, and NaT values
+
+def arr_nonzero(arr, ret_idx=False, idx_shf=1):
+	"""
+	Return the the nonzero indices or values if they exists in the array.
+	
+	Args:
+		arr (np.array): 1d numpy array
+		ret_idx (bool): boolean to control returning indices or values
+		idx_shf (int ∈ ℤ): value to shift indices by, if found. Only relevant if ret_idx is True.
+			This is done to retain the meaning of zero as 'no non-zero value found'.
+			The indices correspond to the array after null value removal and shifting by idx_shf.
+
+	Returns:
+		None -> The array was all nulls
+		0    -> The non-null values were all zero
+		[ℕ]	 -> The first n non-zero values or their indices shifted by idx_shf
+	"""
+	non_null = filter_null(arr)
+	non_zero_ids = np.flatnonzero(non_null)
+
+	if (non_null.size == 0):
+		return None
+	elif (non_zero_ids.size == 0):
+		return 0
+	elif (ret_idx):
+		return non_zero_ids + idx_shf
+	else:
+		return np.take(non_null, non_zero_ids)
+
+
 """ ********** PANDAS IO UTILS ********** """
 def load_df(fname, dir_path=None, data_format=DF_DATA_FMT, subset=None, dti_freq=None):
 	"""
@@ -490,6 +558,65 @@ def df_value_count(df, axis=0):
 	"""
 	return df.apply(lambda ser: ser.value_counts(), axis=axis)
 
+def ser_range_center_clip_tup(ser, range_tuple, out_val=0, inclusive=False):
+	"""
+	Return ser with values within threshold range set to out_val.
+	The reverse of pd.Series.clip.
+
+	Args:
+		ser (pd.Series): series to center clip
+		thresh ((float, float)): thresholds for sign binning
+
+	Returns:
+		thresholded pd.Series
+	"""
+	out = ser.copy(deep=True)
+	out.loc[~pd.isnull(out) & out.between(range_tuple[0], range_tuple[1], inclusive=inclusive)] = out_val
+	return out
+
+def ser_range_center_clip_df(ser, range_df, out_val=0, inclusive=False):
+	"""
+	Return ser with values within range_df set to out_val.
+
+	Args:
+		ser (pd.Series): series to center clip
+		range_df (pd.DataFrame): threshold df for center clipping between the range of the first and second columns.
+
+	Returns:
+		thresholded pd.Series
+	"""
+	out = ser.copy(deep=True)
+	out.loc[pd.isnull(range_df.iloc[:, 0]) | pd.isnull(range_df.iloc[:, 1])] = None
+	out.loc[~pd.isnull(out) & out.between(range_df.iloc[:, 0], range_df.iloc[:, 1], inclusive=inclusive)] = out_val
+	return out
+
+def ser_range_center_clip(ser, thresh=None, out_val=0, inclusive=False):
+	"""
+	Return ser with values within threshold range set to out_val.
+	The reverse of pd.Series.clip.
+
+	Args:
+		ser (pd.Series): series to center clip
+		thresh (pd.DataFrame or float or (float, float)): thresholds for sign binning
+			If it is a single threshold, it will be translated to: (-abs(float)/2, abs(float)/2).
+			If not, thresholds[0] <= thresholds[1] must be the case.
+			where interval[0] < val < interval[1] maps to out_val
+
+	Returns:
+		thresholded pd.Series
+	"""
+	if (is_real_num(thresh) and thresh!=0):
+		thresh = (-abs(thresh)/2, abs(thresh)/2) if (is_real_num(thresh)) else thresh
+
+	if (is_seq(thresh)):
+		out = ser_range_center_clip_tup(ser, range_tuple=thresh, out_val=out_val, inclusive=inclusive)
+	elif (is_df(thresh)):
+		out = ser_range_center_clip_df(ser, range_df=thresh, out_val=out_val, inclusive=inclusive)
+	else:
+		out = ser
+
+	return out
+
 """Datetime"""
 def df_dti_index_to_date(df, new_freq=DT_CAL_DAILY_FREQ, new_tz=False):
 	"""
@@ -523,6 +650,38 @@ def get_missing_dt(ser, ref=DT_BIZ_DAILY_FREQ):
 	df_biz_days = pd.DatetimeIndex(df_biz_days)
 
 	return biz_days.difference(df_biz_days)
+
+def pd_slot_shift(pd_obj, periods=1, freq=DT_CAL_DAILY_FREQ):
+	"""
+	Return time series "slot index" shifted over by number of aggregation periods, where
+	freq must be larger than the original frequency of the time series.
+
+	This function was needed because pandas shifts according to frequency types, not by
+	available "slots" in the index.
+
+	This problem can be solved by custom frequencies, but this method is faster and simpler.
+
+	Args:
+		pd_obj (pd.Series or pd.DataFrame): pandas object to slot shift
+		periods (int): number of periods (in freq units) to slot shift
+		freq (str): shift frequency
+
+	Returns:
+		shifted pandas object
+	"""
+	# Save original index
+	idx = pd_obj.dropna(axis=0, how='all').index.copy(deep=True)
+
+	# Downsample to freq using 'last' resample method
+	dnsampled = pd_obj.dropna(axis=0, how='all').resample(freq, axis=0, closed='left', label='left').last().dropna(axis=0, how='all')
+
+	# Shift over by periods amount
+	shifted = dnsampled.shift(periods=periods, freq=None, axis=0).dropna(axis=0, how='all')
+
+	# Upsample / reindex back to original index
+	reindexed = shifted.reindex(index=idx, method='ffill')
+
+	return reindexed
 
 def get_custom_biz_freq(ser, ref=DT_BIZ_DAILY_FREQ):
 	"""
@@ -711,14 +870,20 @@ def string_df_join_to_ser(df, join_str='_'):
 	"""
 	return df.apply(lambda ser: join_str.join(ser.tolist()), axis=1)
 
+"""Transforms"""
+def pd_abs(pd_obj):
+	"""
+	Absolute value of all numeric items in pandas DataFrame or Series.
+	"""
+	return pd_obj.transform(lambda p: p.abs() if p.dtype.kind in 'iufc' else p)
+
+def abs_pd(pd_obj): # XXX - deprecated
+	"""
+	Absolute value of all numeric items in pandas DataFrame or Series.
+	"""
+	return pd_obj.transform(lambda p: p.abs() if p.dtype.kind in 'iufc' else p)
+
 """Numpy"""
-def abs_df(df):
-	"""
-	Apply absolute value to all numeric items in pandas DataFrame.
-	"""
-	return df.apply(lambda x: x.abs() if x.dtype.kind in 'iufc' else x)
-
-
 def pd_to_np(fn):
 	"""
 	Return function with all pandas typed arguments converted to their numpy counterparts.
@@ -770,14 +935,17 @@ def get_nmost_nulled_cols_df(df, n=5, keep_counts=False):
 
 	return nsmall if (keep_counts) else list(nsmall.index)
 
-def is_empty_df(df, count_nans=False, how='all', **kwargs):
+def pd_is_empty(pd_obj, count_nans=False, how='all', **kwargs):
+	if (count_nans):
+		return pd_obj.empty
+	else:
+		return pd_obj.dropna(axis=0, how=how, **kwargs).empty
+
+def is_empty_df(df, count_nans=False, how='all', **kwargs): # XXX - deprecated
 	if (count_nans):
 		return df.empty
 	else:
 		return df.dropna(axis=0, how=how, **kwargs).empty
-
-is_df = lambda pd_obj: isinstance(pd_obj, pd.DataFrame)
-is_ser = lambda pd_obj: isinstance(pd_obj, pd.Series)
 
 def assert_equal_pandas(df1, df2, **kwargs):
 	are_frames = is_df(df1) and is_df(df2)

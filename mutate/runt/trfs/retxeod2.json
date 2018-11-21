@@ -1,0 +1,25 @@
+{
+	"meta": {
+		"name": "retxeod2",
+		"mtype_from": "rec_fmt",
+		"rec_fmt": "{ret_type}xeod({thresh_scalar}*{stat_type},1)",
+		"var_fmt": "grid",
+		"res_freq": "hourly",
+		"info": "expanding daily return with variable threshold"
+	},
+	"fn": {
+		"ser_fn": "vretx",
+		"df_fn": "btw",
+		"col_fn": "sami",
+		"freq": "hourly"
+	},
+	"var": {
+		"ret_type": ["ret"],
+		"stat_type": ["avg", "std", "max", "min"],
+		"thresh_scalar": [0.5, 1, 2],
+		"agg_freq": ["cal_daily"]
+	},
+	"rm": ["raw", "id_rm"],
+	"src": ["raw", "raw_pairs"],
+	"dst": ["ret", "retxeod2"]
+}

@@ -16,7 +16,7 @@
 	"var": {
 		"ret_type": ["ret"]
 	},
-	"rm": null,
+	"rm": ["raw", "id_rm"],
 	"src": ["raw", "raw_pairs"],
 	"dst": ["ret", "rethourly"]
 }

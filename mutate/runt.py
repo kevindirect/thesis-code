@@ -60,12 +60,24 @@ def fill_defaults(step_info, defaults):
 	if (step_info['src'] is None): step_info['src'] = defaults['src']
 	return step_info
 
+ROW_MASK_ALT_MAPS = {
+	'thresh': 'raw',
+	'raw_trmi_v2': 'raw_pba',
+	'raw_trmi_v3': 'raw_pba',
+	"raw_pba_oc": 'raw_pba',
+	"raw_pba_oa": 'raw_pba',
+	"raw_pba_lh": 'raw_pba',
+	"raw_vol_oc": 'raw_vol',
+	"raw_vol_oa": 'raw_vol',
+	"raw_vol_lh": 'raw_vol'
+}
+
 def get_row_mask_keychain(original_keychain, all_mask_keys):
 	"""
 	Return mask keychain that best corresponds to original_keychain
 	"""
 	assert(len(original_keychain)==len(all_mask_keys))
-	mapped = [best_match(key, all_mask_keys[idx], alt_maps={'thresh': 'raw', 'raw_trmi_v2': 'raw_pba', 'raw_trmi_v3': 'raw_pba'}) for idx, key in enumerate(original_keychain)]
+	mapped = [best_match(key, all_mask_keys[idx], alt_maps=ROW_MASK_ALT_MAPS) for idx, key in enumerate(original_keychain)]
 	return mapped
 
 def process_step(step_info, date_range):

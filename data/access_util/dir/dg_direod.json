@@ -2,27 +2,27 @@
 	"direod": {
 		"all": {
 			"stage": "mutate",
-			"mutate_type": ["direod(0%)", "direod(1%)", "direod(2%)"],
+			"mutate_type": "direod",
 			"raw_cat": "us_equity_index"
 		},
 		"subsets": {
-			"raw_pba_oc_retxeod_reteod_direod": {
-				"desc": ["raw_pba_oc_retxeod_reteod_direod(0%)", "raw_pba_oc_retxeod_reteod_direod(1%)", "raw_pba_oc_retxeod_reteod_direod(2%)"]
+			"raw_pba_oc_retxeod_direod": {
+				"desc": "raw_pba_oc_retxeod_direod"
 			},
-			"raw_pba_oa_retxeod_reteod_direod": {
-				"desc": ["raw_pba_oa_retxeod_reteod_direod(0%)", "raw_pba_oa_retxeod_reteod_direod(1%)", "raw_pba_oa_retxeod_reteod_direod(2%)"]
+			"raw_pba_oa_retxeod_direod": {
+				"desc": "raw_pba_oa_retxeod_direod"
 			},
-			"raw_pba_lh_retxeod_reteod_direod": {
-				"desc": ["raw_pba_lh_retxeod_reteod_direod(0%)", "raw_pba_lh_retxeod_reteod_direod(1%)", "raw_pba_lh_retxeod_reteod_direod(2%)"]
+			"raw_pba_lh_retxeod_direod": {
+				"desc": "raw_pba_lh_retxeod_direod"
 			},
-			"raw_vol_oc_retxeod_reteod_direod": {
-				"desc": ["raw_vol_oc_retxeod_reteod_direod(0%)", "raw_vol_oc_retxeod_reteod_direod(1%)", "raw_vol_oc_retxeod_reteod_direod(2%)"]
+			"raw_vol_oc_retxeod_direod": {
+				"desc": "raw_vol_oc_retxeod_direod"
 			},
-			"raw_vol_oa_retxeod_reteod_direod": {
-				"desc": ["raw_vol_oa_retxeod_reteod_direod(0%)", "raw_vol_oa_retxeod_reteod_direod(1%)", "raw_vol_oa_retxeod_reteod_direod(2%)"]
+			"raw_vol_oa_retxeod_direod": {
+				"desc": "raw_vol_oa_retxeod_direod"
 			},
-			"raw_vol_lh_retxeod_reteod_direod": {
-				"desc": ["raw_vol_lh_retxeod_reteod_direod(0%)", "raw_vol_lh_retxeod_reteod_direod(1%)", "raw_vol_lh_retxeod_reteod_direod(2%)"]
+			"raw_vol_lh_retxeod_direod": {
+				"desc": "raw_vol_lh_retxeod_direod"
 			}
 		}
 	}

@@ -1,11 +1,11 @@
 {
 	"meta": {
-		"name": "retxeod",
+		"name": "retxeod1",
 		"mtype_from": "rec_fmt",
-		"rec_fmt": "{ret_type}xeod",
+		"rec_fmt": "{ret_type}xeod({thresh:.2%})",
 		"var_fmt": "grid",
 		"res_freq": "hourly",
-		"info": "expanding daily return, logreturn, or spread"
+		"info": "expanding daily return with nonzero threshold"
 	},
 	"fn": {
 		"ser_fn": "retx",
@@ -15,9 +15,9 @@
 	},
 	"var": {
 		"ret_type": ["ret"],
-		"thresh": [null]
+		"thresh": [2.5e-3, 5e-3, 1e-2, 1.5e-2, 2e-2]
 	},
 	"rm": ["raw", "id_rm"],
 	"src": ["raw", "raw_pairs"],
-	"dst": ["ret", "retxeod"]
+	"dst": ["ret", "retxeod1"]
 }

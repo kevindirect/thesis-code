@@ -1,11 +1,11 @@
 {
 	"meta": {
-		"name": "direod",
+		"name": "dirfbxeod2",
 		"mtype_from": "rec_fmt",
-		"rec_fmt": "direod",
+		"rec_fmt": "dirfbxeod",
 		"var_fmt": "grid",
 		"res_freq": "cal_daily",
-		"info": "daily return direction"
+		"info": "daily first break return direction with threshold"
 	},
 	"fn": {
 		"ser_fn": "srf",
@@ -14,10 +14,10 @@
 		"freq": "cal_daily"
 	},
 	"var": {
-		"specifier": ["l"],
+		"specifier": ["fnz"],
 		"map_fn": ["sgn"]
 	},
 	"rm": null,
-	"src": ["ret", "retxeod"],
-	"dst": ["dir", "direod"]
+	"src": ["ret", "retxeod2"],
+	"dst": ["dir", "dirfbxeod2"]
 }
