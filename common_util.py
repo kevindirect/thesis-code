@@ -125,7 +125,7 @@ def get0(lst):
 	"""
 	Return first element if the list has length one, else return the list.
 	"""
-	if (len(lst)==1):
+	if (len(lst) == 1):
 		return lst[0]
 	else:
 		return lst
@@ -180,7 +180,7 @@ def best_match(original_key, candidates, alt_maps=None):
 	"""
 	if (original_key in candidates):		# exact match
 		return original_key
-	elif(len(candidates)==1):				# unchanging
+	elif(len(candidates) == 1):				# unchanging
 		return candidates[0]
 	elif (alt_maps is not None):			# mapped match
 		alt_keys = [original_key.replace(old, new) for old, new in alt_maps.items() if (old in original_key)]
@@ -438,13 +438,14 @@ def filter_null(arr):
 	"""
 	return arr[~pd.isnull(arr)]		# Filter None, NaN, and NaT values
 
-def arr_nonzero(arr, ret_idx=False, idx_shf=1):
+def arr_nonzero(arr, ret_idx=False, idx_norm=False, idx_shf=1):
 	"""
 	Return the the nonzero indices or values if they exists in the array.
 	
 	Args:
 		arr (np.array): 1d numpy array
 		ret_idx (bool): boolean to control returning indices or values
+		idx_norm (bool): If returning an index, whether to normalize to [0, 1] range
 		idx_shf (int ∈ ℤ): value to shift indices by, if found. Only relevant if ret_idx is True.
 			This is done to retain the meaning of zero as 'no non-zero value found'.
 			The indices correspond to the array after null value removal and shifting by idx_shf.
@@ -462,7 +463,8 @@ def arr_nonzero(arr, ret_idx=False, idx_shf=1):
 	elif (non_zero_ids.size == 0):
 		return 0
 	elif (ret_idx):
-		return non_zero_ids + idx_shf
+		indices = non_zero_ids + idx_shf
+		return indices / non_null.size if (idx_norm) else indices
 	else:
 		return np.take(non_null, non_zero_ids)
 
@@ -488,7 +490,7 @@ def load_df(fname, dir_path=None, data_format=DF_DATA_FMT, subset=None, dti_freq
 				'parquet': partial(pd.read_parquet, columns=subset)
 			}.get(data_format)(fpath)
 
-			if (data_format=='feather'):
+			if (data_format == 'feather'):
 				df = df.set_index('id')
 
 			if (dti_freq is not None):
