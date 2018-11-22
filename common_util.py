@@ -329,6 +329,18 @@ def substr_ad_map(check_fn=all_equal, accord_fn=first_element, discord_fn=first_
 def zdiv(top, bottom, zdiv_ret=0):
 	return top/bottom if (bottom != 0) else zdiv_ret
 
+def apply_nz_nn(fn):
+	"""
+	Return modified function where fn is only applied if the value is non zero and non null.
+	"""
+	def func(val):
+		if (val is None or val == 0):
+			return val
+		else:
+			return fn(val)
+	return func
+
+one_minus = lambda val: 1 - val
 identity_fn = lambda val, *args, **kwargs: val
 null_fn = lambda *args, **kwargs: None
 
