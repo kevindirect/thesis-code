@@ -12,7 +12,7 @@ import pandas as pd
 from numba import jit
 
 from common_util import DT_HOURLY_FREQ, DT_BIZ_DAILY_FREQ, DT_CAL_DAILY_FREQ, compose, null_fn, identity_fn, get_custom_biz_freq, window_iter, col_iter, all_equal, is_real_num
-from common_util import ser_range_center_clip, pd_slot_shift, concat_map, substr_ad_map, all_equal, first_element, first_letter_concat, arr_nonzero
+from common_util import ser_range_center_clip, pd_slot_shift, concat_map, substr_ad_map, all_equal, first_element, first_letter_concat, arr_nonzero, apply_nz_nn, one_minus
 from mutate.common import STANDARD_DAY_LEN
 from mutate.pattern_util import gaussian_breakpoints, uniform_breakpoints, get_sym_list, symbolize_value
 from mutate.fracdiff import get_weights
@@ -217,6 +217,7 @@ def symbolize(sym_type, num_sym, numeric_symbols=True):
 
 """ ********** FILTERS ********** """
 DEFAULT_RET_IDX = False 	# Default to return value instead of index
+DEFAULT_IDX_NORM = False	# Default to return index value instead of normalized score
 DEFAULT_FNZ_IDX_SHF = 1		# Default to return index shifted by +1
 
 def first_only(ser, ret_idx=DEFAULT_RET_IDX):
@@ -227,8 +228,8 @@ def first_only(ser, ret_idx=DEFAULT_RET_IDX):
 	else:
 		return ser.loc[idx]
 
-def first_nonzero(ser, ret_idx=DEFAULT_RET_IDX):
-	idx = arr_nonzero(ser.values, ret_idx=ret_idx, idx_shf=DEFAULT_FNZ_IDX_SHF)
+def first_nonzero(ser, ret_idx=DEFAULT_RET_IDX, idx_norm=DEFAULT_IDX_NORM):
+	idx = arr_nonzero(ser.values, ret_idx=ret_idx, idx_norm=idx_norm, idx_shf=DEFAULT_FNZ_IDX_SHF)
 
 	if (not isinstance(idx, np.ndarray) and (idx is None or idx == 0)):
 		return idx
@@ -252,11 +253,13 @@ def nth_only(ser, ret_idx=DEFAULT_RET_IDX):
 SRF_SPECIFIER = {
 	'f': first_only,
 	'fnz': first_nonzero,
+	'fnzin': partial(first_nonzero, ret_idx=True, idx_norm=True),
 	'l': last_only,
 	None: nth_only
 }
 
 SRF_MAP_FN = {
+	'nz_inv': apply_nz_nn(one_minus),
 	'sgn': sign,
 	None: identity_fn
 }
