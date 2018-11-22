@@ -1,5 +1,6 @@
-# Kevin Patel
-
+"""
+Kevin Patel
+"""
 import sys
 import os
 import logging
@@ -12,6 +13,7 @@ from common_util import DT_CAL_DAILY_FREQ, remove_dups_list, list_get_dict, get_
 from mutate.common import dum
 from mutate.label import LABEL_SFX_LEN
 
+# Most of the functions in this module are deprecated
 
 """ ********** DIRECTION SYMBOLS ********** """
 UP, DOWN, SIDEWAYS = 1, -1, 0
@@ -24,6 +26,14 @@ def fastbreak_eod_fct(label_df, name_pfx=''):
 		The label is the sign of the first thresh break, otherwise the label is the EOD sign change
 	"""
 	return label_df
+
+
+def fastbreak_fct(ser, thresh):
+	"""
+	Default Forecast (Fast Break + EOD):
+		The label is the sign of the first thresh break, otherwise the label is the EOD sign change
+	"""
+	ser[ser > thresh]
 
 
 def break_fct(label_df, name_pfx='', lower_bound=None, upper_bound=None):
@@ -108,34 +118,41 @@ def fastbreak_confidence_fct(label_df, name_pfx='', momentum=False):
 	return fb
 
 
-""" ********** LABELUTIL FUNCTIONS ********** """
-def shift_label(label_ser, shift_periods=-1):
-	return label_ser.dropna().shift(periods=shift_periods, freq=None, axis=0).dropna().astype(int)
+""" ********** FORECAST APPLY ********** """
+def extract_mask_field(lab_df, mask_field='mag', normalize_idx=True):
+	extracted_df = pd.DataFrame(index=lab_df.index)
 
-def get_base_labels(df_columns):
-	return remove_dups_list([col_name[:-LABEL_SFX_LEN] for col_name in df_columns])
+	logging.debug('base_labels: '.format(', '.join(get_base_labels(lab_df.columns[1:]))))
+	logging.debug('all cols: {}'.format(', '.join(lab_df.columns)))
 
-make_sw_dict = lambda sw: {"exact": [], "startswith": [sw], "endswith": [], "regex": [], "exclude": None}
+	label_col_sel = {base_label: get_subset(lab_df.columns[1:], make_sw_search_dict(base_label))
+		for base_label in get_base_labels(lab_df.columns[1:])}
+	logging.debug(label_col_sel)
 
-def gen_label_dfs(lab_dict, lab_paths, asset_name, forecast_mask=fastbreak_eod_fct):
+	# Iterate through all thresholded variations of this base label
+	for base_label, base_label_cols in label_col_sel.items():
+		logging.debug('base label: {}'.format(base_label))
+		dir_col_name = '_'.join([base_label, mask_field])
+		extracted_df = lab_df[dir_col_name].dropna(axis=0, how='all')
 
-	for lab_path in filter(lambda lab_path: lab_path[0]==asset_name, lab_paths):
-		lab_df = list_get_dict(lab_dict, lab_path)
-		yield apply_label_mask(lab_df, forecast_mask=forecast_mask)
+	if (normalize_idx):
+		lab_fct_df.index = lab_fct_df.index.normalize()
+
+	return lab_fct_df
 
 def apply_label_mask(lab_df, forecast_mask, normalize_idx=True):
 	lab_fct_df = pd.DataFrame(index=lab_df.index)
 
-	logging.debug('base_labels: ' +', '.join(get_base_labels(lab_df.columns[1:])))
-	logging.debug('all cols: ' +', '.join(lab_df.columns))
+	logging.debug('base_labels: '.format(', '.join(get_base_labels(lab_df.columns[1:]))))
+	logging.debug('all cols: {}'.format(', '.join(lab_df.columns)))
 
-	label_col_sel = {base_label: get_subset(lab_df.columns[1:], make_sw_dict(base_label))
+	label_col_sel = {base_label: get_subset(lab_df.columns[1:], make_sw_search_dict(base_label))
 		for base_label in get_base_labels(lab_df.columns[1:])}
 	logging.debug(label_col_sel)
 
-	# Iterate through all thresholded variations of this label
+	# Iterate through all thresholded variations of this base label
 	for base_label, base_label_cols in label_col_sel.items():
-		logging.debug('base label: ' +base_label)
+		logging.debug('base label: {}'.format(base_label))
 		dir_col_name = '_'.join([base_label, 'dir'])
 		fct_df = forecast_mask(lab_df[base_label_cols].dropna(axis=0, how='all'), name_pfx=base_label)
 		lab_fct_df[dir_col_name] = fct_df[dir_col_name].dropna()
@@ -145,8 +162,18 @@ def apply_label_mask(lab_df, forecast_mask, normalize_idx=True):
 
 	return lab_fct_df
 
+make_sw_search_dict = lambda sw: {"exact": [], "startswith": [sw], "endswith": [], "regex": [], "exclude": None}
 
-""" ********** LABEL EXTRACTION / PREPARATION FUNCTIONS ********** """
+def get_base_labels(df_columns):
+	return remove_dups_list([col_name[:-LABEL_SFX_LEN] for col_name in df_columns])
+
+
+""" ********** LABEL POST PROCESSING ********** """
+def shift_label(label_ser, shift_periods=-1):
+	return label_ser.dropna().shift(periods=shift_periods, freq=None, axis=0).dropna().astype(int)
+
+
+# """ ********** LABEL EXTRACTION / PREPARATION FUNCTIONS ********** """
 def prep_labels(label_df, types=['bool', 'int']):
 	"""
 	Take label df and apply masks to produce df of label series.

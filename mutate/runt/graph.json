@@ -1,40 +1,32 @@
 {
-	"paths": {
-		"dma": [
-			"dr",
-			"dma"
-		],
-		"ddiff": [
-			"dr",
-			"ddiff"
-		],
-		"dffracdiff": [
-			"dr",
-			"dffracdiff"
-		],
-		"sym": [
-			"diff",
-			"dnorm",
-			"sym"
-		],
-		"ret": [
-			"rethourly",
-			"retxeod"
-		],
-		"direod": [
-			"rethourly",
-			"retxeod",
-			"reteod",
-			"direod"
-		]
-	},
-	"visited": [
+	"dma": [
 		"dr",
-		"dma",
-		"ddiff",
-		"dffracdiff",
+		"dma"
+	],
+	"ddiff": [
+		"dr",
+		"ddiff"
+	],
+	"dffracdiff": [
+		"dr",
+		"dffracdiff"
+	],
+	"sym": [
 		"diff",
 		"dnorm",
 		"sym"
+	],
+	"rethourly": [
+		"rethourly"
+	],
+	"direod": [
+		"retxeod", "retxeod1", "retxeod2",
+		"reteod", "reteod1", "reteod2",
+		"direod", "direod1", "direod2"
+	],
+	"dirfbxeod": [
+		"retxeod", "retxeod1", "retxeod2",
+		"retfbxeod", "retfbxeod1", "retfbxeod2",
+		"dirfbxeod", "dirfbxeod1", "dirfbxeod2"
 	]
 }

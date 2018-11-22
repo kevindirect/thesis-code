@@ -33,6 +33,7 @@ def run_transforms(argv):
 
 	trf_defaults = load_json('trf_defaults.json', dir_path=runt_dir)
 	graph = load_json('graph.json', dir_path=runt_dir)
+	visited = load_json('visited.json', dir_path=runt_dir)
 	trfs = {}
 
 	logging.info('loading step settings...')
@@ -41,17 +42,17 @@ def run_transforms(argv):
 		trfs[trf['meta']['name']] = trf
 
 	logging.info('running task graph...')
-	for path_name, path in graph['paths'].items():
+	for path_name, path in graph.items():
 		for step in path:
 			logging.info('step: {step}'.format(step=str(step)))
-			if (runt_all or step not in graph['visited']):
+			if (runt_all or step not in visited):
 				step_info = fill_defaults(trfs[step], trf_defaults)
 				process_step(step_info, date_range)
 
-				if (step not in graph['visited']):
-					graph['visited'].append(step)
-					logging.info('dumping updated graph json...')
-					dump_json(graph, 'graph.json', dir_path=runt_dir)
+				if (step not in visited):
+					visited.append(step)
+					logging.info('updating visited...')
+					dump_json(visited, 'visited.json', dir_path=runt_dir)
 			else:
 				logging.info('already completed, skipping...')
 
