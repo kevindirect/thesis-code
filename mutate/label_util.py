@@ -13,7 +13,7 @@ from common_util import DT_CAL_DAILY_FREQ, remove_dups_list, list_get_dict, get_
 from mutate.common import dum
 from mutate.label import LABEL_SFX_LEN
 
-# Most of the functions in this module are deprecated
+# All functions in this module are deprecated
 
 """ ********** DIRECTION SYMBOLS ********** """
 UP, DOWN, SIDEWAYS = 1, -1, 0
@@ -166,11 +166,6 @@ make_sw_search_dict = lambda sw: {"exact": [], "startswith": [sw], "endswith": [
 
 def get_base_labels(df_columns):
 	return remove_dups_list([col_name[:-LABEL_SFX_LEN] for col_name in df_columns])
-
-
-""" ********** LABEL POST PROCESSING ********** """
-def shift_label(label_ser, shift_periods=-1):
-	return label_ser.dropna().shift(periods=shift_periods, freq=None, axis=0).dropna().astype(int)
 
 
 # """ ********** LABEL EXTRACTION / PREPARATION FUNCTIONS ********** """

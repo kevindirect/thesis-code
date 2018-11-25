@@ -665,6 +665,14 @@ def get_missing_dt(ser, ref=DT_BIZ_DAILY_FREQ):
 
 	return biz_days.difference(df_biz_days)
 
+def ser_shift(ser, shift_periods=-1, cast_to_int=True):
+	"""
+	Return shifted series, null dropped before and after.
+	Used mainly for preparing upshifted time series labels.
+	"""
+	shifted = ser.dropna().shift(periods=shift_periods, freq=None, axis=0).dropna()
+	return shifted.astype(int) if (cast_to_int) else shifted
+
 def pd_slot_shift(pd_obj, periods=1, freq=DT_CAL_DAILY_FREQ):
 	"""
 	Return time series "slot index" shifted over by number of aggregation periods, where
