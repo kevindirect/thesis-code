@@ -253,7 +253,7 @@ def nth_only(ser, ret_idx=DEFAULT_RET_IDX):
 SRF_SPECIFIER = {
 	'f': first_only,
 	'fnz': first_nonzero,
-	'fnzin': partial(first_nonzero, ret_idx=True, idx_norm=True),
+	'fnzi_normed': partial(first_nonzero, ret_idx=True, idx_norm=True),
 	'l': last_only,
 	None: nth_only
 }

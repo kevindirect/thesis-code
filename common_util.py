@@ -476,7 +476,7 @@ def arr_nonzero(arr, ret_idx=False, idx_norm=False, idx_shf=1):
 		return 0
 	elif (ret_idx):
 		indices = non_zero_ids + idx_shf
-		return indices / non_null.size if (idx_norm) else indices
+		return indices / (non_null.size + idx_shf) if (idx_norm) else indices
 	else:
 		return np.take(non_null, non_zero_ids)
 

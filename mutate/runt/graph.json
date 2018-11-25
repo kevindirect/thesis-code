@@ -16,17 +16,18 @@
 		"dnorm",
 		"sym"
 	],
-	"rethourly": [
+	"hourly": [
 		"rethourly"
 	],
-	"direod": [
+	"eod": [
 		"retxeod", "retxeod1", "retxeod2",
 		"reteod", "reteod1", "reteod2",
 		"direod", "direod1", "direod2"
 	],
-	"dirfbxeod": [
+	"fbxeod": [
 		"retxeod", "retxeod1", "retxeod2",
 		"retfbxeod", "retfbxeod1", "retfbxeod2",
-		"dirfbxeod", "dirfbxeod1", "dirfbxeod2"
+		"dirfbxeod", "dirfbxeod1", "dirfbxeod2",
+		"brkfbxeod1", "brkfbxeod2"
 	]
 }
