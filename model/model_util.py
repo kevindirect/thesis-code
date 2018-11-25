@@ -10,9 +10,10 @@ from dask import delayed
 
 from common_util import df_dti_index_to_date, chained_filter, filter_cols_below, reindex_on_time_mask, gb_transpose
 from model.common import EXPECTED_NUM_HOURS
-from recon.label_util import prep_labels
+from mutate.label_util import prep_labels
 
 
+""" ********** DATA PREPARATION ********** """
 def align_first_last(df, ratio_max=.25):
 	"""
 	Return df where non-overlapping subsets have first or last column set to null, align them and remove the redundant column.
@@ -66,15 +67,53 @@ def prepare_transpose_data(feature_df, row_masks_df):
 
 	return timezone_fixed
 
+def prepare_labels(labels_df, label_types, label_filter):
+	"""
+	Return label masked and column filtered dataframe of label series.
+	"""
+	timezone_fixed = delayed(df_dti_index_to_date)(labels_df, new_tz=None)
+
+	return timezone_fixed
+
 def prepare_masked_labels(labels_df, label_types, label_filter):
 	"""
 	Return label masked and column filtered dataframe of label series.
+	XXX - Deprecated
 	"""
 	prepped_labels = prep_labels(labels_df, types=label_types)
 	filtered_labels = delayed(lambda df: df.loc[:, chained_filter(df.columns, label_filter)])(prepped_labels) # EOD, FBEOD, FB
 	timezone_fixed = delayed(df_dti_index_to_date)(filtered_labels, new_tz=None)
 
 	return timezone_fixed
+
+def yield_data(dataset, feat_prep_fn, label_prep_fn, how='ser_to_ser'):
+	"""
+	Yield data from the dataset.
+	This function is used to perform a grid search through the data.
+
+	Args:
+		dataset: a dataset (recursive dictionary of data returned by prep_dataset)
+		feat_prep_fn: transform to run on the feature column
+		label_prep_fn: transform to run on the label column
+		how ('ser_to_ser' | 'df_to_ser' | 'ser_to_df')
+
+	"""
+	for paths, dfs in gen_group(dataset):
+		fpaths, lpaths, rpaths = paths
+		features, labels, row_masks = dfs
+
+		logging.debug('fpaths: {}'.format(str(fpaths)))
+		logging.debug('lpaths: {}'.format(str(lpaths)))
+		logging.debug('rpaths: {}'.format(str(rpaths)))
+
+		masked_labels = prepare_masked_labels(labels, ['bool'], labs_filter)
+
+		for feat_col, label_col in product(features.columns, masked_labels.columns):
+			feature = feat_prep_fn(features.loc[:, [feat_col]], row_masks).dropna(axis=0, how='all')
+			label = delayed(label_prep_fn)(masked_labels.loc[:, label_col]).dropna()
+			
+			yield feature, label
+
 
 
 def hyperopt_trials_to_df(trials):

@@ -22,8 +22,6 @@ from model.models.ThreeLayerBinaryFFN import ThreeLayerBinaryFFN
 from model.models.OneLayerBinaryLSTM import OneLayerBinaryLSTM
 from recon.dataset_util import prep_dataset, prep_labels, gen_group
 from recon.split_util import get_train_test_split, pd_binary_clip
-from recon.label_util import shift_label
-
 
 def run_exp(argv):
 	cmd_arg_list = ['exp_list=']
@@ -34,8 +32,6 @@ def run_exp(argv):
 		experiment = exp()
 		experiment.run_trials()
 		experiment.
-
-
 
 def run_trials(model_exp, features, label):
 	exp = model_exp()

@@ -13,7 +13,7 @@ from common_util import DT_CAL_DAILY_FREQ, remove_dups_list, list_get_dict, get_
 from mutate.common import dum
 from mutate.label import LABEL_SFX_LEN
 
-# All functions in this module are deprecated
+# XXX - All functions in this module are deprecated
 
 """ ********** DIRECTION SYMBOLS ********** """
 UP, DOWN, SIDEWAYS = 1, -1, 0

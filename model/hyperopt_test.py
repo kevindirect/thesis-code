@@ -15,14 +15,13 @@ import pandas as pd
 from dask import delayed, compute, visualize
 from hyperopt import fmin, tpe, hp, STATUS_OK, Trials
 
-from common_util import MODEL_DIR, RECON_DIR, JSON_SFX_LEN, DT_CAL_DAILY_FREQ, str_to_list, get_cmd_args, in_debug_mode, pd_common_index_rows, load_json, benchmark
+from common_util import MODEL_DIR, RECON_DIR, JSON_SFX_LEN, DT_CAL_DAILY_FREQ, str_to_list, get_cmd_args, in_debug_mode, pd_common_index_rows, ser_shift, load_json, benchmark
 from model.common import DATASET_DIR, FILTERSET_DIR, default_dataset, default_opt_filter, default_target_idx
 from model.model_util import prepare_transpose_data, prepare_masked_labels
 from model.model.ThreeLayerBinaryFFN import ThreeLayerBinaryFFN
 from model.model.OneLayerBinaryLSTM import OneLayerBinaryLSTM
 from recon.dataset_util import prep_dataset, gen_group
 from recon.split_util import get_train_test_split, pd_binary_clip
-from recon.label_util import shift_label
 
 
 def hyperopt_test(argv):
@@ -93,7 +92,7 @@ def hyperopt_test(argv):
 
 			for feat_idx, label_idx in product(*dataset_grid.values()):
 				final_feature = prepare_transpose_data(features.iloc[:, [feat_idx]], row_masks).dropna(axis=0, how='all')
-				shifted_label = delayed(shift_label)(masked_labels.iloc[:, label_idx]).dropna()
+				shifted_label = delayed(ser_shift)(masked_labels.iloc[:, label_idx]).dropna()
 				pos_label, neg_label = delayed(pd_binary_clip, nout=2)(shifted_label)
 				f, lpos, lneg = delayed(pd_common_index_rows, nout=3)(final_feature, pos_label, neg_label).compute()
 
