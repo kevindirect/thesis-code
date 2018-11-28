@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from dask import delayed
 
-from common_util import identity_fn, df_dti_index_to_date, filter_cols_below, reindex_on_time_mask, gb_transpose, chained_filter
+from common_util import identity_fn, pd_dti_index_to_date, filter_cols_below, reindex_on_time_mask, gb_transpose, ser_shift, chained_filter
 from model.common import EXPECTED_NUM_HOURS
 from recon.dataset_util import gen_group
 from mutate.label_util import prep_labels
@@ -67,13 +67,12 @@ def prepare_transpose_data_d(feature_df, row_masks_df):
 	filtered = delayed(filter_cols_below)(transposed)
 	aligned = delayed(align_first_last)(filtered)
 	pruned = delayed(prune_nulls)(aligned)
-	timezone_fixed = delayed(df_dti_index_to_date)(pruned, new_tz=None)
+	timezone_fixed = delayed(pd_dti_index_to_date)(pruned, new_tz=None)
 
 	return timezone_fixed
 
 def prepare_transpose_data(feature_df, row_masks_df):
 	"""
-	Return delayed object to produce intraday to daily transposed data.
 	Converts an intraday single column DataFrame into a daily multi column DataFrame.
 
 	Args:
@@ -84,10 +83,12 @@ def prepare_transpose_data(feature_df, row_masks_df):
 	filtered = filter_cols_below(transposed)
 	aligned = align_first_last(filtered)
 	pruned = prune_nulls(aligned)
-	timezone_fixed = df_dti_index_to_date(pruned, new_tz=None)
+	timezone_fixed = pd_dti_index_to_date(pruned, new_tz=None)
 
 	return timezone_fixed
 
+def prepare_label_data(label_ser):
+	return compose(partial(pd_dti_index_to_date, new_tz=None), ser_shift)
 
 def prepare_masked_labels(labels_df, label_types, label_filter):
 	"""
@@ -96,7 +97,7 @@ def prepare_masked_labels(labels_df, label_types, label_filter):
 	"""
 	prepped_labels = prep_labels(labels_df, types=label_types)
 	filtered_labels = delayed(lambda df: df.loc[:, chained_filter(df.columns, label_filter)])(prepped_labels) # EOD, FBEOD, FB
-	timezone_fixed = delayed(df_dti_index_to_date)(filtered_labels, new_tz=None)
+	timezone_fixed = delayed(pd_dti_index_to_date)(filtered_labels, new_tz=None)
 
 	return timezone_fixed
 
