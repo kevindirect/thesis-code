@@ -11,7 +11,8 @@ from itertools import product
 import pandas as pd
 from dask import delayed
 
-from common_util import DT_HOURLY_FREQ, DT_CAL_DAILY_FREQ, load_json, best_match, df_dti_index_to_date, inner_join, outer_join, list_get_dict, list_set_dict, remove_dups_list
+from common_util import DT_HOURLY_FREQ, DT_CAL_DAILY_FREQ, load_json, best_match, df_dti_index_to_date, inner_join, outer_join
+from common_util import NestedDefaultDict, list_get_dict, list_set_dict, remove_dups_list
 from data.data_api import DataAPI
 from data.access_util import df_getters as dg, col_subsetters2 as cs2
 from recon.common import DATASET_DIR
@@ -43,10 +44,10 @@ def gen_group(dataset, group=['features', 'labels', 'row_masks'], constraint=flr
 	if (constraint is None):
 		constraint = no_constraint
 
-	parts = [dataset[part]['paths'] for part in group]
+	parts = [list(dataset[part]['dfs'].keys()) for part in group]
 
 	for paths in filter(lambda combo: constraint(*combo), product(*parts)):
-		yield paths, tuple(list_get_dict(dataset[part]['dfs'], paths[i]) for i, part in enumerate(group))
+		yield paths, tuple(dataset[part]['dfs'][paths[i]] for i, part in enumerate(group))
 
 def prep_dataset(dataset_dict, assets=None, filters_map=None, dataset_dir=DATASET_DIR):
 	"""
@@ -54,45 +55,26 @@ def prep_dataset(dataset_dict, assets=None, filters_map=None, dataset_dir=DATASE
 	"""
 	dataset = {}
 
-	for name, accessors in dataset_dict.items():
+	for partition, accessors in dataset_dict.items():
 		if (isinstance(accessors, str)): # Dataset entry depends on another dataset, key in this and other must match
-			accessors = load_json(accessors, dir_path=dataset_dir)[name]
-		filters = filters_map[name] if (filters_map is not None and name in filters_map) else None
-		dataset[name] = prep_data(accessors, assets=assets, filters=filters)
+			accessors = load_json(accessors, dir_path=dataset_dir)[partition]
+		filters = filters_map[partition] if (filters_map is not None and partition in filters_map) else None
+		dataset[partition] = prep_data(accessors, assets=assets, filters=filters)
 
 	return dataset
 
 def prep_data(accessors, assets=None, filters=None):
-	au_dg, au_cs = list_get_dict(dg, accessors[0]), list_get_dict(cs2, accessors[0])
-	paths, recs, dfs = DataAPI.lazy_load(au_dg, au_cs)
+	recs, dfs = NestedDefaultDict(), NestedDefaultDict()
 
-	if (assets is not None):
-		paths = list(filter(lambda p: p[0] in assets, paths))
-	if (filters is not None):
-		paths = list(filter(partial(filters_match, filter_lists=filters), paths))
+	for au in accessors:
+		for path, rec, df in DataAPI.lazy_yield(list_get_dict(dg, au), list_get_dict(cs2, au)):
+			if ((assets is None or path[0] in assets) and filters_match(path, filter_lists=filters)):
+				recs[path], dfs[path] = rec, df
 
-	data = {'paths': paths, 'recs': recs, 'dfs': dfs}
-
-	# For data sourced from multiple data accessors
-	if (len(accessors) > 1):
-		for au in accessors[1:]:
-			au_dg, au_cs = list_get_dict(dg, au), list_get_dict(cs2, au)
-			paths, recs, dfs = DataAPI.lazy_load(au_dg, au_cs)
-
-			if (assets is not None):
-				paths = list(filter(lambda p: p[0] in assets, paths))
-			if (filters is not None):
-				paths = list(filter(partial(filters_match, filter_lists=filters), paths))
-
-			data['paths'].extend(paths)
-			for path in paths:
-				rec, df = list_get_dict(recs, path), list_get_dict(dfs, path)
-				list_set_dict(data['recs'], path, rec)
-				list_set_dict(data['dfs'], path, df)
-
-	# Assert there are no duplicates
-	assert(len(remove_dups_list([''.join(lst) for lst in data['paths']]))==len(data['paths']))
-	return data
+	# Assert there are no duplicate path keys
+	assert(len(remove_dups_list([''.join(lst) for lst in recs.keys()]))==len(recs))
+	assert(len(remove_dups_list([''.join(lst) for lst in dfs.keys()]))==len(dfs))
+	return {'recs': recs, 'dfs': dfs}
 
 def filters_match(item, filter_lists=None):
 	def filter_match(item, filter_list):
