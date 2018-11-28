@@ -183,34 +183,34 @@ class DataAPI:
 			return selected.loc[:, chained_filter(selected.columns, col_subsetter)]
 
 	@classmethod
+	def get_search_dicts(cls, end_dg, end_cs=None, how='subsets', subset=None):
+		"""
+		Convenience function to construct the search dict (optionally col subsetter dict) based on the how parameter.
+		"""
+		if (how == 'all'):
+			cs_dict = None if (end_cs is None) else end_cs['all']
+			return {'all': (end_dg['all'], cs_dict)}
+
+		elif (how == 'subsets'):
+			ss_dict = {}
+
+			if (isinstance(subset, list)):
+				subsets_dict = {key: val for key, val in end_dg['subsets'].items() if (key in subset)}
+			else:
+				subsets_dict = end_dg['subsets'] # all subsets
+
+			for s_name, s_dict in subsets_dict.items():
+				cs_dict = None if (end_cs is None) else end_cs['subsets'][s_name]
+				ss_dict[s_name] = (dict(end_dg['all'], **s_dict), cs_dict)
+
+			return ss_dict
+
+	@classmethod
 	def load_from_dg(cls, df_getter, col_subsetter=None, separators=['root'], how='subsets', subset=None, **kwargs):
 		"""
 		Load data using a df_getter dictionary, and col_subsetter dictionary (optional)
 		By default separates the search by root at the bottom level.
 		"""
-
-		def construct_search_subset_dict(end_dg, end_cs=None, how=how, subset=subset):
-			"""
-			Convenience function to construct the search dict (optionally col subsetter dict) based on the how parameter.
-			"""
-			if (how == 'all'):
-				cs_dict = None if (end_cs is None) else end_cs['all']
-				return {'all': (end_dg['all'], cs_dict)}
-
-			elif (how == 'subsets'):
-				ss_dict = {}
-
-				if (isinstance(subset, list)):
-					subsets_dict = {key: val for key, val in end_dg['subsets'].items() if (key in subset)}
-				else:
-					subsets_dict = end_dg['subsets'] # all subsets
-
-				for s_name, s_dict in subsets_dict.items():
-					cs_dict = None if (end_cs is None) else end_cs['subsets'][s_name]
-					ss_dict[s_name] = (dict(end_dg['all'], **s_dict), cs_dict)
-
-				return ss_dict
-
 		hit_bottom = lambda val: any(key in val for key in ['all', 'subsets'])
 		paths_to_end = list(dict_path(df_getter, stop_cond=hit_bottom))
 		result, recs = recursive_dict(), recursive_dict()
@@ -219,7 +219,7 @@ class DataAPI:
 		for edg_path, edg in paths_to_end:
 			ecs = None if (col_subsetter is None) else list_get_dict(col_subsetter, edg_path)
 
-			for sd_name, sd_cs in construct_search_subset_dict(edg, end_cs=ecs).items():
+			for sd_name, sd_cs in cls.get_search_dicts(edg, end_cs=ecs, how=how, subset=subset).items():
 				sd_path = edg_path + [sd_name]
 				add_desc_as_path_identifier = True if ('desc' in sd_cs[0] and isinstance(sd_cs[0]['desc'], list)) else False
 
@@ -240,28 +240,6 @@ class DataAPI:
 		"""
 		Return paths, rec dicts, and df dicts identically to load_from_dg, but defer final loading of DataFrames using dask.delayed.
 		"""
-		def get_search_dicts(end_dg, end_cs=None, how=how, subset=subset):
-			"""
-			Convenience function to construct the search dict (optionally col subsetter dict) based on the how parameter.
-			"""
-			if (how == 'all'):
-				cs_dict = None if (end_cs is None) else end_cs['all']
-				return {'all': (end_dg['all'], cs_dict)}
-
-			elif (how == 'subsets'):
-				ss_dict = {}
-
-				if (isinstance(subset, list)):
-					subsets_dict = {key: val for key, val in end_dg['subsets'].items() if (key in subset)}
-				else:
-					subsets_dict = end_dg['subsets'] # all subsets
-
-				for s_name, s_dict in subsets_dict.items():
-					cs_dict = None if (end_cs is None) else end_cs['subsets'][s_name]
-					ss_dict[s_name] = (dict(end_dg['all'], **s_dict), cs_dict)
-
-				return ss_dict
-
 		hit_bottom = lambda val: any(key in val for key in ['all', 'subsets'])
 		end_paths = list(dict_path(df_getter, stop_cond=hit_bottom))
 		result, recs = recursive_dict(), recursive_dict()
@@ -269,7 +247,7 @@ class DataAPI:
 
 		for end_path, end_dg in end_paths:
 			end_cs = None if (col_subsetter is None) else list_get_dict(col_subsetter, end_path)
-			search_dicts = get_search_dicts(end_dg, end_cs=end_cs)
+			search_dicts = cls.get_search_dicts(end_dg, end_cs=end_cs, how=how, subset=subset)
 
 			for name, search_dict_col_subsetter in search_dicts.items():
 				path = end_path + [name]
@@ -286,6 +264,31 @@ class DataAPI:
 					list_set_dict(recs, df_path, rec)
 
 		return result_paths, recs, result
+
+	@classmethod
+	def lazy_yield(cls, df_getter, col_subsetter, separators=['root'], how='subsets', subset=None, **kwargs):
+		"""
+		Yield paths, rec dicts, and df dicts, but defer final loading of DataFrames using dask.delayed.
+		"""
+		hit_bottom = lambda val: any(key in val for key in ['all', 'subsets'])
+		end_paths = list(dict_path(df_getter, stop_cond=hit_bottom))
+
+		for end_path, end_dg in end_paths:
+			end_cs = None if (col_subsetter is None) else list_get_dict(col_subsetter, end_path)
+			search_dicts = cls.get_search_dicts(end_dg, end_cs=end_cs, how=how, subset=subset)
+
+			for name, search_dict_col_subsetter in search_dicts.items():
+				path = end_path + [name]
+				search_dict, sd_col_subsetter = search_dict_col_subsetter
+
+				# If desc is in search_dict and refers to a list of desc values, use these to distinguish items
+				desc_in_path = True if ('desc' in search_dict and isinstance(search_dict['desc'], list)) else False
+
+				for rec in cls.get_rec_matches(search_dict):
+					seps = [getattr(rec, separator) for separator in separators]
+					df_path = seps + path + [rec.desc] if (desc_in_path) else seps + path
+
+					yield df_path, rec, delayed(cls.get_df_from_rec)(rec, sd_col_subsetter)
 
 	@classmethod
 	def get_record_view(cls):
