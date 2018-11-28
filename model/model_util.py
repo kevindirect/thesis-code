@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from dask import delayed
 
-from common_util import identity_fn, pd_dti_index_to_date, filter_cols_below, reindex_on_time_mask, gb_transpose, ser_shift, chained_filter
+from common_util import identity_fn, compose, pd_dti_index_to_date, filter_cols_below, reindex_on_time_mask, gb_transpose, ser_shift, chained_filter
 from model.common import EXPECTED_NUM_HOURS
 from recon.dataset_util import gen_group
 from mutate.label_util import prep_labels
