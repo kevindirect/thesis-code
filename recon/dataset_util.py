@@ -5,7 +5,6 @@ Kevin Patel
 import sys
 import os
 import logging
-from functools import partial, reduce
 from itertools import product
 
 import pandas as pd
