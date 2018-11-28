@@ -423,6 +423,18 @@ def compose(*fns):
 
 	return composed
 
+def dcompose(*fns):
+	"""
+	Perform delayed function composition of passed functions, performed on input in the order they are passed.
+	"""
+	def dcomposed(*args, **kwargs):
+		val = delayed(fns[0])(*args, **kwargs)
+		for fn in fns[1:]:
+			val = delayed(fn)(val)
+		return val
+
+	return dcomposed
+
 """Iterator"""
 def group_iter(iterable, n=2, fill_value=None):
 	"""
@@ -785,6 +797,7 @@ def ser_range_center_clip(ser, thresh=None, out_val=0, inclusive=False):
 """Datetime"""
 def df_dti_index_to_date(df, new_freq=DT_CAL_DAILY_FREQ, new_tz=False):
 	"""
+	XXX - deprecated
 	Convert DataFrame's DatetimeIndex index to solely a date component, set new frequency if specified.
 	"""
 	index_name = df.index.name
@@ -793,6 +806,17 @@ def df_dti_index_to_date(df, new_freq=DT_CAL_DAILY_FREQ, new_tz=False):
 	if (new_freq is not None):
 		df = df.asfreq(new_freq)
 	return df.tz_localize(timezone)
+
+def pd_dti_index_to_date(pd_obj, new_freq=DT_CAL_DAILY_FREQ, new_tz=False):
+	"""
+	Convert pandas object DatetimeIndex index to solely a date component, set new frequency if specified.
+	"""
+	index_name = pd_obj.index.name
+	timezone = new_tz if (new_tz!=False) else pd_obj.index.tz
+	pd_obj.index = pd.DatetimeIndex(pd_obj.index.normalize().date).rename(index_name)
+	if (new_freq is not None):
+		pd_obj = pd_obj.asfreq(new_freq)
+	return pd_obj.tz_localize(timezone)
 
 def series_to_dti(ser, fmt=DT_FMT_YMD_HM, utc=True, exact=True, freq=DT_HOURLY_FREQ):
 	"""
