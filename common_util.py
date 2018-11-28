@@ -13,7 +13,7 @@ import getopt
 import collections.abc
 from contextlib import suppress
 from difflib import SequenceMatcher
-from collections import defaultdict, OrderedDict, ChainMap
+from collections import defaultdict, MutableMapping, OrderedDict, ChainMap
 from itertools import product, chain, tee, islice, chain, zip_longest
 from functools import reduce, partial, wraps
 from datetime import datetime
@@ -194,6 +194,156 @@ def best_match(original_key, candidates, alt_maps=None):
 		return match_key
 
 """Dict"""
+class NestedDefaultDict(MutableMapping):
+	"""
+	Nested Default Dictionary class.
+	Defines a nested dictionary where arbitrary key lists are accomodated by instantiating default_dicts if that key list does not exist.
+	Implements a dict-like interface.
+
+	Will not hold a NestedDefaultDict as a value, if this is attempted the other NestedDefaultDict will be grafted to this one.
+	Empty NestedDefaultDict objects cannot be grafted on to this one.
+	"""
+	KEY_END = '.'
+
+	def __init__(self, keychains=None, tree=None, *args, **kwargs):
+		"""
+		NDD constructor.
+
+		Args:
+			keychains (list): paths to all leaves in tree
+			tree (defaultdict): value tree, recursive defaultdict of defaultdicts
+		"""
+		recursive_dict = lambda: defaultdict(recursive_dict)
+		self.keychains = [] if (keychains is None) else keychains
+		self.tree = recursive_dict() if (keychains is None) else tree
+
+	def empty(self):
+		"""
+		Return whether or not NDD is empty.
+		"""
+		return len(self.keychains) == 0
+
+	def keys(self):
+		"""
+		Yield from sorted iterator of keychains.
+		"""
+		yield from sorted(self.keychains)
+
+	def values(self):
+		"""
+		Yield from values in order of keychains.
+		"""
+		for key in self.keys():
+			yield self.__getitem__(key)
+
+	def items(self):
+		"""
+		Yield from key value pairs in order of keychains.
+		"""
+		for key in self.keys():
+			yield key, self.__getitem__(key)
+
+	def childkeys(self, key):
+		"""
+		Yield all child keychains of a keychain.
+		This will also return the original key if it exists in the set of keychains (non-proper superset).
+		"""
+		yield from filter(lambda k: k[:len(key)]==key, self.keys())
+
+	def __setitem__(self, key, value):
+		"""
+		Set an item in the object.
+		If the value to set is a NestedDefaultDict, then it will be grafted on at the specified location,
+		overwriting the old branch.
+
+		Args:
+			key (list): list of keys
+			value (any): value to set
+
+		Returns:
+			None
+
+		Raises:
+			ValueError if the proposed key contains a reserved string
+		"""
+		if (NestedDefaultDict.KEY_END in key):
+			raise ValueError("Cannot use \'{}\' in a valid keychain, this string is reserved".format(NestedDefaultDict.KEY_END))
+
+		if (isinstance(value, NestedDefaultDict) or isinstance(value, defaultdict)):
+			for childkey in self.childkeys(key):										# Remove old branch
+				self.__delitem__(childkey)
+			reduce(operator.getitem, key[:-1], self.tree)[key[-1]] = value.tree 		# Graft other NDD
+			for k, v in value.items():
+				self.__setitem__(key+k, v)
+		else:
+			reduce(operator.getitem, key, self.tree)[NestedDefaultDict.KEY_END] = value
+			if (not key in self.keychains):
+				self.keychains.append(key)
+
+	def __getitem__(self, key):
+		"""
+		Get an item.
+
+		Args:
+			key (list): list of keys
+
+		Returns:
+			item
+
+		Raises:
+			ValueError if the key doesn't exist
+		"""
+		if key in self.keychains:
+			return reduce(operator.getitem, key, self.tree)[NestedDefaultDict.KEY_END]
+		else:
+			raise ValueError("Attempted key doesn\'t exist")
+
+	def __delitem__(self, key):
+		"""
+		Delete an item.
+		Only deletes that exact key and item: if ['a', 'b', 'c'] and ['a', 'b', 'c', 'd'] exists and the key ['a', 'b', 'c'] is deleted,
+		then ['a', 'b', 'c'] will continue to exist.
+
+		Args:
+			key (list): list of keys
+
+		Returns:
+			None
+
+		Raises:
+			ValueError if the key doesn't exist
+		"""
+		if key in self.keychains:
+			del reduce(operator.getitem, key, self.tree)[NestedDefaultDict.KEY_END]
+			self.keychains.remove(key)
+		else:
+			raise ValueError("Attempted key doesn\'t exist")
+
+	def __iter__(self):
+		"""
+		Return iterator.
+		"""
+		return self.items()
+
+	def __len__(self):
+		"""
+		Return number of valid keychains.
+		"""
+		return len(self.keychains)
+
+	def __str__(self):
+		"""
+		Returns string representation
+		"""
+		return str(dumps(self.tree, indent=4, sort_keys=True))
+
+	def __repr__(self):
+		"""
+		Echoes class, id, & reproducible representation in the REPL
+		XXX - probably wrong
+		"""
+		return "{}, {}".format(self.keychains, self.tree)
+
 def nice_print_dict(dictionary):
 	print(dumps(dictionary, indent=4, sort_keys=True))
 
@@ -206,6 +356,7 @@ def remove_keys(dictionary, list_keys):
 
 def recursive_dict():
 	"""
+	XXX - Deprecated in favor of NestedDefaultDict
 	Creates a recursive nestable defaultdict.
 
 	In other words, it will automatically create intermediate keys if
