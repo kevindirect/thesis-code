@@ -16,11 +16,11 @@ from dask import delayed, compute, visualize
 from hyperopt import fmin, tpe, hp, STATUS_OK, Trials
 
 from common_util import MODEL_DIR, RECON_DIR, JSON_SFX_LEN, DT_CAL_DAILY_FREQ, str_to_list, get_cmd_args, in_debug_mode, pd_common_index_rows, ser_shift, load_json, benchmark
-from model.common import DATASET_DIR, FILTERSET_DIR, default_dataset, default_opt_filter, default_target_idx
-from model.model_util import prepare_transpose_data, prepare_masked_labels
+from model.common import DATASET_DIR, FILTERSET_DIR, default_dataset, default_opt_filter
+from model.model_util import datagen, prepare_transpose_data
 from model.model.ThreeLayerBinaryFFN import ThreeLayerBinaryFFN
 from model.model.OneLayerBinaryLSTM import OneLayerBinaryLSTM
-from recon.dataset_util import prep_dataset, gen_group
+from recon.dataset_util import prep_dataset
 from recon.split_util import get_train_test_split, pd_binary_clip
 
 
@@ -31,7 +31,6 @@ def hyperopt_test(argv):
 	filterset_name = cmd_input['filterset='] if (cmd_input['filterset='] is not None) else '_'.join(['default', dataset_name])
 	filter_idxs = str_to_list(cmd_input['idxfilters=']) if (cmd_input['idxfilters='] is not None) else default_opt_filter
 	assets = str_to_list(cmd_input['assets=']) if (cmd_input['assets='] is not None) else None
-	target_idx = str_to_list(cmd_input['target_idx='], cast_to=int) if (cmd_input['target_idx='] is not None) else default_target_idx
 	run_compute = True if (cmd_input['visualize'] is None) else False
 
 	dataset_dict = load_json(dataset_name, dir_path=DATASET_DIR)
@@ -43,65 +42,22 @@ def hyperopt_test(argv):
 		filterset.extend(selected)
 	dataset = prep_dataset(dataset_dict, assets=assets, filters_map={'features': filterset})
 
-	logging.info('assets: ' +str('all' if (assets==None) else ', '.join(assets)))
+	logging.info('assets: {}'.format(str('all' if (assets==None) else ', '.join(assets))))
 	logging.info('dataset: {} {} df(s)'.format(len(dataset['features']['paths']), dataset_name[:-JSON_SFX_LEN]))
 	logging.info('filter: {} [{}]'.format(filterset_name[:-JSON_SFX_LEN], str(', '.join(filter_idxs))))
 	logging.debug('filterset: {}'.format(filterset))
-	logging.debug('fpaths: {}'.format(dataset['features']['paths']))
-	logging.debug('lpaths: {}'.format(dataset['labels']['paths']))
-	logging.debug('rpaths: {}'.format(dataset['row_masks']['paths']))
-
-	labs_filter = [ # EOD, FBEOD, FB
-	{
-		"exact": [],
-		"startswith": ["pba_"],
-		"endswith": [],
-		"regex": [],
-		"exclude": None
-	},
-	{
-		"exact": [],
-		"startswith": [],
-		"endswith": ["_eod(0%)", "_eod(1%)", "_eod(2%)", "_fb", "_fbeod"],
-		"regex": [],
-		"exclude": None
-	}]
-
-	dataset_grid = {
-		'feat_idx': [0, 1, 2, 3, 4],
-		'label_idx': target_idx
-	}
-
-	dataset_space = {
-		'feat_idx': hp.choice('feat_idx', [0, 1, 2, 3, 4]),
-		'label_idx': hp.choice('label_idx', target_idx)
-	}
 
 	if (run_compute):
 		logging.info('executing...')
-		for paths, dfs in gen_group(dataset):
-			results = {}
-			fpaths, lpaths, rpaths = paths
-			features, labels, row_masks = dfs
-			asset = fpaths[0]
-			logging.info('fpaths: {}'.format(str(fpaths)))
-			logging.info('lpaths: {}'.format(str(lpaths)))
-			logging.info('rpaths: {}'.format(str(rpaths)))
+		for feature, label in datagen(dataset, feat_prep_fn=prepare_transpose_data, label_prep_fn=delayed(ser_shift)):
+			pos_label, neg_label = delayed(pd_binary_clip, nout=2)(label)
+			f, lpos, lneg = delayed(pd_common_index_rows, nout=3)(feature, pos_label, neg_label).compute()
 
-			masked_labels = prepare_masked_labels(labels, ['bool'], labs_filter)
+			logging.info('pos dir model experiment')
+			run_trials(ThreeLayerBinaryFFN, f, lpos)
 
-			for feat_idx, label_idx in product(*dataset_grid.values()):
-				final_feature = prepare_transpose_data(features.iloc[:, [feat_idx]], row_masks).dropna(axis=0, how='all')
-				shifted_label = delayed(ser_shift)(masked_labels.iloc[:, label_idx]).dropna()
-				pos_label, neg_label = delayed(pd_binary_clip, nout=2)(shifted_label)
-				f, lpos, lneg = delayed(pd_common_index_rows, nout=3)(final_feature, pos_label, neg_label).compute()
-
-				logging.info('pos dir model experiment')
-				run_trials(ThreeLayerBinaryFFN, f, lpos)
-
-				logging.info('neg dir model experiment')
-				run_trials(ThreeLayerBinaryFFN, f, lneg)
-
+			logging.info('neg dir model experiment')
+			run_trials(ThreeLayerBinaryFFN, f, lneg)
 
 def run_trials(model_exp, features, label):
 	exp = model_exp()
