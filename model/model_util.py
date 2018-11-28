@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from dask import delayed
 
-from common_util import identity_fn, compose, pd_dti_index_to_date, filter_cols_below, reindex_on_time_mask, gb_transpose, ser_shift, chained_filter
+from common_util import identity_fn, compose, dcompose, pd_dti_index_to_date, filter_cols_below, reindex_on_time_mask, gb_transpose, ser_shift, chained_filter
 from model.common import EXPECTED_NUM_HOURS
 from recon.dataset_util import gen_group
 from mutate.label_util import prep_labels
@@ -62,14 +62,9 @@ def prepare_transpose_data_d(feature_df, row_masks_df):
 	Args:
 		feature_df (pd.DataFrame): one series intraday dataframe
 	"""
-	reindexed = delayed(reindex_on_time_mask)(feature_df, row_masks_df)
-	transposed = delayed(gb_transpose)(reindexed)
-	filtered = delayed(filter_cols_below)(transposed)
-	aligned = delayed(align_first_last)(filtered)
-	pruned = delayed(prune_nulls)(aligned)
-	timezone_fixed = delayed(pd_dti_index_to_date)(pruned, new_tz=None)
-
-	return timezone_fixed
+	prep_fn = dcompose(reindex_on_time_mask, gb_transpose, filter_cols_below,
+		align_first_last,prune_nulls, partial(pd_dti_index_to_date, new_tz=None))
+	return prep_fn(feature_df, row_masks_df)
 
 def prepare_transpose_data(feature_df, row_masks_df):
 	"""
@@ -78,17 +73,13 @@ def prepare_transpose_data(feature_df, row_masks_df):
 	Args:
 		feature_df (pd.DataFrame): one series intraday dataframe
 	"""
-	reindexed = reindex_on_time_mask(feature_df, row_masks_df)
-	transposed = gb_transpose(reindexed)
-	filtered = filter_cols_below(transposed)
-	aligned = align_first_last(filtered)
-	pruned = prune_nulls(aligned)
-	timezone_fixed = pd_dti_index_to_date(pruned, new_tz=None)
-
-	return timezone_fixed
+	prep_fn = compose(reindex_on_time_mask, gb_transpose, filter_cols_below,
+		align_first_last,prune_nulls, partial(pd_dti_index_to_date, new_tz=None))
+	return prep_fn(feature_df, row_masks_df)
 
 def prepare_label_data(label_ser):
-	return compose(partial(pd_dti_index_to_date, new_tz=None), ser_shift)
+	prep_fn = compose(partial(pd_dti_index_to_date, new_tz=None), ser_shift)
+	return prep_fn(label_ser)
 
 def prepare_masked_labels(labels_df, label_types, label_filter):
 	"""
