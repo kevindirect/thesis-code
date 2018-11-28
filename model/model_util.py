@@ -2,14 +2,17 @@
 
 import sys
 import os
+from functools import partial
+from itertools import product
 import logging
 
 import numpy as np
 import pandas as pd
 from dask import delayed
 
-from common_util import df_dti_index_to_date, chained_filter, filter_cols_below, reindex_on_time_mask, gb_transpose
+from common_util import identity_fn, df_dti_index_to_date, filter_cols_below, reindex_on_time_mask, gb_transpose, chained_filter
 from model.common import EXPECTED_NUM_HOURS
+from recon.dataset_util import gen_group
 from mutate.label_util import prep_labels
 
 
@@ -54,6 +57,7 @@ def prune_nulls(df, method='ffill'):
 def prepare_transpose_data(feature_df, row_masks_df):
 	"""
 	Return delayed object to produce intraday to daily transposed data.
+	Converts an intraday single column DataFrame into a daily multi column DataFrame.
 
 	Args:
 		feature_df (pd.DataFrame): one series intraday dataframe
@@ -67,18 +71,10 @@ def prepare_transpose_data(feature_df, row_masks_df):
 
 	return timezone_fixed
 
-def prepare_labels(labels_df, label_types, label_filter):
-	"""
-	Return label masked and column filtered dataframe of label series.
-	"""
-	timezone_fixed = delayed(df_dti_index_to_date)(labels_df, new_tz=None)
-
-	return timezone_fixed
-
 def prepare_masked_labels(labels_df, label_types, label_filter):
 	"""
-	Return label masked and column filtered dataframe of label series.
 	XXX - Deprecated
+	Return label masked and column filtered dataframe of label series.
 	"""
 	prepped_labels = prep_labels(labels_df, types=label_types)
 	filtered_labels = delayed(lambda df: df.loc[:, chained_filter(df.columns, label_filter)])(prepped_labels) # EOD, FBEOD, FB
@@ -86,16 +82,35 @@ def prepare_masked_labels(labels_df, label_types, label_filter):
 
 	return timezone_fixed
 
-def yield_data(dataset, feat_prep_fn, label_prep_fn, how='ser_to_ser'):
+
+""" ********** DATA GENERATORS ********** """
+def datagen(dataset, feat_prep_fn=identity_fn, label_prep_fn=identity_fn, how='ser_to_ser'):
 	"""
-	Yield data from the dataset.
-	This function is used to perform a grid search through the data.
+	Yield from data generation function.
 
 	Args:
 		dataset: a dataset (recursive dictionary of data returned by prep_dataset)
-		feat_prep_fn: transform to run on the feature column
-		label_prep_fn: transform to run on the label column
+		feat_prep_fn: final transform to run on the feature df/series
+		label_prep_fn: final transform to run on the label df/series
 		how ('ser_to_ser' | 'df_to_ser' | 'ser_to_df')
+
+	"""
+	datagen_fn = {
+		'ser_to_ser': datagen_ser_to_ser,
+		'df_to_ser': datagen_df_to_ser,
+		'df_to_df': datagen_df_to_df
+	}.get(how)
+
+	yield from datagen_fn(dataset, feat_prep_fn, label_prep_fn)
+
+def datagen_ser_to_ser(dataset, feat_prep_fn, label_prep_fn):
+	"""
+	Yield data from the dataset by series product.
+
+	Args:
+		dataset: a dataset (recursive dictionary of data returned by prep_dataset)
+		feat_prep_fn: final transform to run on the feature df/series
+		label_prep_fn: final transform to run on the label df/series
 
 	"""
 	for paths, dfs in gen_group(dataset):
@@ -106,15 +121,59 @@ def yield_data(dataset, feat_prep_fn, label_prep_fn, how='ser_to_ser'):
 		logging.debug('lpaths: {}'.format(str(lpaths)))
 		logging.debug('rpaths: {}'.format(str(rpaths)))
 
-		masked_labels = prepare_masked_labels(labels, ['bool'], labs_filter)
-
-		for feat_col, label_col in product(features.columns, masked_labels.columns):
+		for feat_col, label_col in product(features.columns, labels.columns):
 			feature = feat_prep_fn(features.loc[:, [feat_col]], row_masks).dropna(axis=0, how='all')
-			label = delayed(label_prep_fn)(masked_labels.loc[:, label_col]).dropna()
+			label = label_prep_fn(labels.loc[:, label_col]).dropna(axis=0, how='all')
 			
 			yield feature, label
 
+def datagen_df_to_ser(dataset, feat_prep_fn, label_prep_fn):
+	"""
+	Yield data from the dataset mapping feature df to each label column.
 
+	Args:
+		dataset: a dataset (recursive dictionary of data returned by prep_dataset)
+		feat_prep_fn: final transform to run on the feature df/series
+		label_prep_fn: final transform to run on the label df/series
+
+	"""
+	for paths, dfs in gen_group(dataset):
+		fpaths, lpaths, rpaths = paths
+		features, labels, row_masks = dfs
+
+		logging.debug('fpaths: {}'.format(str(fpaths)))
+		logging.debug('lpaths: {}'.format(str(lpaths)))
+		logging.debug('rpaths: {}'.format(str(rpaths)))
+
+		feature = feat_prep_fn(features, row_masks).dropna(axis=0, how='all')
+
+		for label_col in labels.columns:
+			label = label_prep_fn(labels.loc[:, label_col]).dropna(axis=0, how='all')
+			
+			yield feature, label
+
+def datagen_df_to_df(dataset, feat_prep_fn, label_prep_fn):
+	"""
+	Yield data from the dataset by df product.
+
+	Args:
+		dataset: a dataset (recursive dictionary of data returned by prep_dataset)
+		feat_prep_fn: final transform to run on the feature df/series
+		label_prep_fn: final transform to run on the label df/series
+
+	"""
+	for paths, dfs in gen_group(dataset):
+		fpaths, lpaths, rpaths = paths
+		features, labels, row_masks = dfs
+
+		logging.debug('fpaths: {}'.format(str(fpaths)))
+		logging.debug('lpaths: {}'.format(str(lpaths)))
+		logging.debug('rpaths: {}'.format(str(rpaths)))
+
+		feature = feat_prep_fn(features, row_masks).dropna(axis=0, how='all')
+		label = label_prep_fn(labels).dropna(axis=0, how='all')
+		
+		yield feature, label
 
 def hyperopt_trials_to_df(trials):
 	"""
