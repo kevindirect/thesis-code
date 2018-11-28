@@ -133,7 +133,7 @@ def datagen_ser_to_ser(dataset, feat_prep_fn, label_prep_fn):
 	"""
 	for paths, dfs in gen_group(dataset):
 		fpaths, lpaths, rpaths = paths
-		features, labels, row_masks = dfs
+		features, labels, row_masks = dfs.compute()
 
 		logging.debug('fpaths: {}'.format(str(fpaths)))
 		logging.debug('lpaths: {}'.format(str(lpaths)))
@@ -157,7 +157,7 @@ def datagen_df_to_ser(dataset, feat_prep_fn, label_prep_fn):
 	"""
 	for paths, dfs in gen_group(dataset):
 		fpaths, lpaths, rpaths = paths
-		features, labels, row_masks = dfs
+		features, labels, row_masks = dfs.compute()
 
 		logging.debug('fpaths: {}'.format(str(fpaths)))
 		logging.debug('lpaths: {}'.format(str(lpaths)))
@@ -182,7 +182,7 @@ def datagen_df_to_df(dataset, feat_prep_fn, label_prep_fn):
 	"""
 	for paths, dfs in gen_group(dataset):
 		fpaths, lpaths, rpaths = paths
-		features, labels, row_masks = dfs
+		features, labels, row_masks = dfs.compute()
 
 		logging.debug('fpaths: {}'.format(str(fpaths)))
 		logging.debug('lpaths: {}'.format(str(lpaths)))
