@@ -49,9 +49,9 @@ def hyperopt_test(argv):
 
 	if (run_compute):
 		logging.info('executing...')
-		for feature, label in datagen(dataset, feat_prep_fn=prepare_transpose_data, label_prep_fn=delayed(ser_shift)):
-			pos_label, neg_label = delayed(pd_binary_clip, nout=2)(label)
-			f, lpos, lneg = delayed(pd_common_index_rows, nout=3)(feature, pos_label, neg_label).compute()
+		for feature, label in datagen(dataset, feat_prep_fn=prepare_transpose_data, label_prep_fn=ser_shift):
+			pos_label, neg_label = pd_binary_clip(label)
+			f, lpos, lneg = pd_common_index_rows(feature, pos_label, neg_label)
 
 			logging.info('pos dir model experiment')
 			run_trials(ThreeLayerBinaryFFN, f, lpos)

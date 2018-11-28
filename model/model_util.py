@@ -54,7 +54,7 @@ def prune_nulls(df, method='ffill'):
 	elif (method=='drop'):
 		return df.dropna(axis=0, how='any')
 
-def prepare_transpose_data(feature_df, row_masks_df):
+def prepare_transpose_data_d(feature_df, row_masks_df):
 	"""
 	Return delayed object to produce intraday to daily transposed data.
 	Converts an intraday single column DataFrame into a daily multi column DataFrame.
@@ -70,6 +70,24 @@ def prepare_transpose_data(feature_df, row_masks_df):
 	timezone_fixed = delayed(df_dti_index_to_date)(pruned, new_tz=None)
 
 	return timezone_fixed
+
+def prepare_transpose_data(feature_df, row_masks_df):
+	"""
+	Return delayed object to produce intraday to daily transposed data.
+	Converts an intraday single column DataFrame into a daily multi column DataFrame.
+
+	Args:
+		feature_df (pd.DataFrame): one series intraday dataframe
+	"""
+	reindexed = reindex_on_time_mask(feature_df, row_masks_df)
+	transposed = gb_transpose(reindexed)
+	filtered = filter_cols_below(transposed)
+	aligned = align_first_last(filtered)
+	pruned = prune_nulls(aligned)
+	timezone_fixed = df_dti_index_to_date(pruned, new_tz=None)
+
+	return timezone_fixed
+
 
 def prepare_masked_labels(labels_df, label_types, label_filter):
 	"""
