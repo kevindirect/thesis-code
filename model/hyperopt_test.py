@@ -17,7 +17,7 @@ from hyperopt import fmin, tpe, hp, STATUS_OK, Trials
 
 from common_util import MODEL_DIR, RECON_DIR, JSON_SFX_LEN, DT_CAL_DAILY_FREQ, str_to_list, get_cmd_args, in_debug_mode, pd_common_index_rows, ser_shift, load_json, benchmark
 from model.common import DATASET_DIR, FILTERSET_DIR, default_dataset, default_opt_filter
-from model.model_util import datagen, prepare_transpose_data
+from model.model_util import datagen, prepare_transpose_data, prepare_label_data
 from model.model.ThreeLayerBinaryFFN import ThreeLayerBinaryFFN
 from model.model.OneLayerBinaryLSTM import OneLayerBinaryLSTM
 from recon.dataset_util import prep_dataset
@@ -49,7 +49,7 @@ def hyperopt_test(argv):
 
 	if (run_compute):
 		logging.info('executing...')
-		for feature, label in datagen(dataset, feat_prep_fn=prepare_transpose_data, label_prep_fn=ser_shift):
+		for feature, label in datagen(dataset, feat_prep_fn=prepare_transpose_data, label_prep_fn=prepare_label_data, how='ser_to_ser'):
 			pos_label, neg_label = pd_binary_clip(label)
 			f, lpos, lneg = pd_common_index_rows(feature, pos_label, neg_label)
 
