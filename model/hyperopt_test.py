@@ -43,7 +43,7 @@ def hyperopt_test(argv):
 	dataset = prep_dataset(dataset_dict, assets=assets, filters_map={'features': filterset})
 
 	logging.info('assets: {}'.format(str('all' if (assets==None) else ', '.join(assets))))
-	logging.info('dataset: {} {} df(s)'.format(len(dataset['features']['paths']), dataset_name[:-JSON_SFX_LEN]))
+	logging.info('dataset: {} {} df(s)'.format(len(dataset['features']), dataset_name[:-JSON_SFX_LEN]))
 	logging.info('filter: {} [{}]'.format(filterset_name[:-JSON_SFX_LEN], str(', '.join(filter_idxs))))
 	logging.debug('filterset: {}'.format(filterset))
 
