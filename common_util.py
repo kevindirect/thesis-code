@@ -91,6 +91,12 @@ def is_df(obj):
 def is_ser(obj):
 	return is_type(obj, pd.Series)
 
+def get_class_name(obj):
+	"""
+	Returns the class name of an object.
+	"""
+	return obj.__class__.__name__
+
 """String"""
 """
 Return string with escaped quotes enclosed around it.
