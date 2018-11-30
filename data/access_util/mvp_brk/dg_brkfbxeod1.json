@@ -1,0 +1,25 @@
+{
+	"brkfbxeod": {
+		"all": {
+			"stage": "mutate",
+			"mutate_type": "brkfbxeod",
+			"raw_cat": "us_equity_index"
+		},
+		"subsets": {
+			"raw_pba_oc_retxeod_brkfbxeod": {
+				"desc": ["raw_pba_oc_retxeod(0.25%)_brkfbxeod",
+						"raw_pba_oc_retxeod(0.50%)_brkfbxeod",
+						"raw_pba_oc_retxeod(1.00%)_brkfbxeod",
+						"raw_pba_oc_retxeod(1.50%)_brkfbxeod",
+						"raw_pba_oc_retxeod(2.00%)_brkfbxeod"]
+			},
+			"raw_pba_oa_retxeod_brkfbxeod": {
+				"desc": ["raw_pba_oa_retxeod(0.25%)_brkfbxeod",
+						"raw_pba_oa_retxeod(0.50%)_brkfbxeod",
+						"raw_pba_oa_retxeod(1.00%)_brkfbxeod",
+						"raw_pba_oa_retxeod(1.50%)_brkfbxeod",
+						"raw_pba_oa_retxeod(2.00%)_brkfbxeod"]
+			}
+		}
+	}
+}

@@ -1,0 +1,21 @@
+{
+	"retxeod": {
+		"all": null,
+		"subsets": {
+			"raw_pba_oc_retxeod": {
+				"exact": ["pba_oc"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			"raw_pba_oa_retxeod": {
+				"exact": ["pba_oa"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			}
+		}
+	}
+}
