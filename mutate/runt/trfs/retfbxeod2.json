@@ -5,7 +5,7 @@
 		"rec_fmt": "retfbxeod",
 		"var_fmt": "grid",
 		"res_freq": "cal_daily",
-		"info": "daily first break return with threshold"
+		"info": "daily first break return with variable threshold"
 	},
 	"fn": {
 		"ser_fn": "srf",
