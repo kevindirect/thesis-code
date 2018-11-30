@@ -25,13 +25,12 @@ from recon.split_util import get_train_test_split, pd_binary_clip
 
 
 def hyperopt_test(argv):
-	cmd_arg_list = ['dataset=', 'filterset=', 'idxfilters=', 'assets=', 'target_idx=', 'visualize']
+	cmd_arg_list = ['dataset=', 'filterset=', 'idxfilters=', 'assets=']
 	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name='hyperopt_test')
 	dataset_name = cmd_input['dataset='] if (cmd_input['dataset='] is not None) else default_dataset
 	filterset_name = cmd_input['filterset='] if (cmd_input['filterset='] is not None) else '_'.join(['default', dataset_name])
 	filter_idxs = str_to_list(cmd_input['idxfilters=']) if (cmd_input['idxfilters='] is not None) else default_opt_filter
 	assets = str_to_list(cmd_input['assets=']) if (cmd_input['assets='] is not None) else None
-	run_compute = True if (cmd_input['visualize'] is None) else False
 
 	dataset_dict = load_json(dataset_name, dir_path=DATASET_DIR)
 	filter_dict = load_json(filterset_name, dir_path=FILTERSET_DIR)
@@ -47,17 +46,16 @@ def hyperopt_test(argv):
 	logging.info('filter: {} [{}]'.format(filterset_name[:-JSON_SFX_LEN], str(', '.join(filter_idxs))))
 	logging.debug('filterset: {}'.format(filterset))
 
-	if (run_compute):
-		logging.info('executing...')
-		for feature, label in datagen(dataset, feat_prep_fn=prepare_transpose_data, label_prep_fn=prepare_label_data, how='ser_to_ser'):
-			pos_label, neg_label = pd_binary_clip(label)
-			f, lpos, lneg = pd_common_index_rows(feature, pos_label, neg_label)
+	logging.info('executing...')
+	for feature, label in datagen(dataset, feat_prep_fn=prepare_transpose_data, label_prep_fn=prepare_label_data, how='ser_to_ser'):
+		pos_label, neg_label = pd_binary_clip(label)
+		f, lpos, lneg = pd_common_index_rows(feature, pos_label, neg_label)
 
-			logging.info('pos dir model experiment')
-			run_trials(ThreeLayerBinaryFFN, f, lpos)
+		logging.info('pos dir model experiment')
+		run_trials(ThreeLayerBinaryFFN, f, lpos)
 
-			logging.info('neg dir model experiment')
-			run_trials(ThreeLayerBinaryFFN, f, lneg)
+		logging.info('neg dir model experiment')
+		run_trials(ThreeLayerBinaryFFN, f, lneg)
 
 def run_trials(model_exp, features, label):
 	exp = model_exp()
