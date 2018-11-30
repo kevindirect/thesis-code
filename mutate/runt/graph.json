@@ -26,8 +26,8 @@
 	],
 	"fbxeod": [
 		"retxeod", "retxeod1", "retxeod2",
-		"retfbxeod", "retfbxeod1", "retfbxeod2",
-		"dirfbxeod", "dirfbxeod1", "dirfbxeod2",
+		"retfbxeod1", "retfbxeod2",
+		"dirfbxeod1", "dirfbxeod2",
 		"brkfbxeod1", "brkfbxeod2"
 	]
 }
