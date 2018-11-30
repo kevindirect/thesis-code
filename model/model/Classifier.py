@@ -79,3 +79,15 @@ class Classifier(Model):
 
 		return objective
 
+	def make_ray_objective(self, objective):
+		"""
+		Return an objective function that can be used by ray based on a hyperopt objective.
+		"""
+		def ray_objective(params, reporter):
+			"""
+			Ray objective function requires the passing of the reporter object.
+			Note in the Ray doc examples "params" is called "config".
+			"""
+			return reporter(loss=objective(config)['loss'])
+
+		return ray_objective
