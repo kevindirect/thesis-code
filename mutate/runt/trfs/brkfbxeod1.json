@@ -19,5 +19,5 @@
 	},
 	"rm": null,
 	"src": ["ret", "retxeod1"],
-	"dst": ["dir", "brkfbxeod1"]
+	"dst": ["brk", "brkfbxeod1"]
 }
