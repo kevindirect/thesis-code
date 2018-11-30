@@ -5,7 +5,7 @@
 		"rec_fmt": "retfbxeod",
 		"var_fmt": "grid",
 		"res_freq": "cal_daily",
-		"info": "daily first break return"
+		"info": "daily first break return, just here for completeness (hourly expanding returns are almost never zero)"
 	},
 	"fn": {
 		"ser_fn": "srf",
