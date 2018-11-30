@@ -25,8 +25,10 @@
 		"direod", "direod1", "direod2"
 	],
 	"fbxeod": [
-		"retxeod", "retxeod1", "retxeod2",
+		"retxeod1", "retxeod2",
 		"retfbxeod1", "retfbxeod2",
+		"cretxeod1", "cretxeod2",
+		"cretfbxeod1", "cretfbxeod2",
 		"dirfbxeod1", "dirfbxeod2",
 		"brkfbxeod1", "brkfbxeod2"
 	]

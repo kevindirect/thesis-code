@@ -1,11 +1,11 @@
 {
 	"meta": {
-		"name": "dirfbxeod2",
+		"name": "cretfbxeod2",
 		"mtype_from": "rec_fmt",
-		"rec_fmt": "dirfbxeod",
+		"rec_fmt": "cretfbxeod",
 		"var_fmt": "grid",
 		"res_freq": "cal_daily",
-		"info": "daily first break return direction with variable threshold"
+		"info": "threshold clipped daily first break return with variable threshold"
 	},
 	"fn": {
 		"ser_fn": "srf",
@@ -14,10 +14,9 @@
 		"freq": "cal_daily"
 	},
 	"var": {
-		"specifier": ["fnz"],
-		"map_fn": ["sgn"]
+		"specifier": ["fnz"]
 	},
 	"rm": null,
 	"src": ["cret", "cretxeod2"],
-	"dst": ["dir", "dirfbxeod2"]
+	"dst": ["cret", "cretfbxeod2"]
 }

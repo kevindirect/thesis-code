@@ -1,15 +1,15 @@
 {
-	"dirfbxeod": {
+	"cretxeod": {
 		"all": null,
 		"subsets": {
-			"raw_pba_oc_cretxeod_dirfbxeod": {
+			"raw_pba_oc_cretxeod": {
 				"exact": ["pba_oc"],
 				"startswith": [],
 				"endswith": [],
 				"regex": [],
 				"exclude": null
 			},
-			"raw_pba_oa_cretxeod_dirfbxeod": {
+			"raw_pba_oa_cretxeod": {
 				"exact": ["pba_oa"],
 				"startswith": [],
 				"endswith": [],

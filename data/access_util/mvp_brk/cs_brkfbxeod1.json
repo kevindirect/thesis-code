@@ -2,14 +2,14 @@
 	"brkfbxeod": {
 		"all": null,
 		"subsets": {
-			"raw_pba_oc_retxeod_brkfbxeod": {
+			"raw_pba_oc_cretxeod_brkfbxeod": {
 				"exact": ["pba_oc"],
 				"startswith": [],
 				"endswith": [],
 				"regex": [],
 				"exclude": null
 			},
-			"raw_pba_oa_retxeod_brkfbxeod": {
+			"raw_pba_oa_cretxeod_brkfbxeod": {
 				"exact": ["pba_oa"],
 				"startswith": [],
 				"endswith": [],

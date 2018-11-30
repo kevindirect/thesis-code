@@ -18,6 +18,6 @@
 		"map_fn": ["nz_inv"]
 	},
 	"rm": null,
-	"src": ["ret", "retxeod2"],
+	"src": ["cret", "cretxeod2"],
 	"dst": ["brk", "brkfbxeod2"]
 }

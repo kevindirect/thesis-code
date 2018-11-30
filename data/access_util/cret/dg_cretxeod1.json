@@ -1,0 +1,53 @@
+{
+	"cretxeod": {
+		"all": {
+			"stage": "mutate",
+			"mutate_type": ["cretxeod(0.25%)", "cretxeod(0.50%)", "cretxeod(1.00%)", "cretxeod(1.50%)", "cretxeod(2.00%)"],
+			"raw_cat": "us_equity_index"
+		},
+		"subsets": {
+			"raw_pba_oc_cretxeod": {
+				"desc": ["raw_pba_oc_cretxeod(0.25%)",
+						"raw_pba_oc_cretxeod(0.50%)",
+						"raw_pba_oc_cretxeod(1.00%)",
+						"raw_pba_oc_cretxeod(1.50%)",
+						"raw_pba_oc_cretxeod(2.00%)"]
+			},
+			"raw_pba_oa_cretxeod": {
+				"desc": ["raw_pba_oa_cretxeod(0.25%)",
+						"raw_pba_oa_cretxeod(0.50%)",
+						"raw_pba_oa_cretxeod(1.00%)",
+						"raw_pba_oa_cretxeod(1.50%)",
+						"raw_pba_oa_cretxeod(2.00%)"]
+			},
+			"raw_pba_lh_cretxeod": {
+				"desc": ["raw_pba_lh_cretxeod(0.25%)",
+						"raw_pba_lh_cretxeod(0.50%)",
+						"raw_pba_lh_cretxeod(1.00%)",
+						"raw_pba_lh_cretxeod(1.50%)",
+						"raw_pba_lh_cretxeod(2.00%)"]
+			},
+			"raw_vol_oc_cretxeod": {
+				"desc": ["raw_vol_oc_cretxeod(0.25%)",
+						"raw_vol_oc_cretxeod(0.50%)",
+						"raw_vol_oc_cretxeod(1.00%)",
+						"raw_vol_oc_cretxeod(1.50%)",
+						"raw_vol_oc_cretxeod(2.00%)"]
+			},
+			"raw_vol_oa_cretxeod": {
+				"desc": ["raw_vol_oa_cretxeod(0.25%)",
+						"raw_vol_oa_cretxeod(0.50%)",
+						"raw_vol_oa_cretxeod(1.00%)",
+						"raw_vol_oa_cretxeod(1.50%)",
+						"raw_vol_oa_cretxeod(2.00%)"]
+			},
+			"raw_vol_lh_cretxeod": {
+				"desc": ["raw_vol_lh_cretxeod(0.25%)",
+						"raw_vol_lh_cretxeod(0.50%)",
+						"raw_vol_lh_cretxeod(1.00%)",
+						"raw_vol_lh_cretxeod(1.50%)",
+						"raw_vol_lh_cretxeod(2.00%)"]
+			}
+		}
+	}
+}

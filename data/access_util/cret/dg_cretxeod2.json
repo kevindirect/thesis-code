@@ -1,0 +1,50 @@
+{
+	"cretxeod": {
+		"all": {
+			"stage": "mutate",
+			"mutate_type": ["cretxeod(0.5*avg,1)", "cretxeod(1*avg,1)", "cretxeod(2*avg,1)",
+							"cretxeod(0.5*std,1)", "cretxeod(1*std,1)", "cretxeod(2*std,1)",
+							"cretxeod(0.5*max,1)", "cretxeod(1*max,1)", "cretxeod(2*max,1)",
+							"cretxeod(0.5*min,1)", "cretxeod(1*min,1)", "cretxeod(2*min,1)"],
+			"raw_cat": "us_equity_index"
+		},
+		"subsets": {
+			"raw_pba_oc_cretxeod": {
+				"desc": ["raw_pba_oc_cretxeod(0.5*avg,1)", "raw_pba_oc_cretxeod(1*avg,1)", "raw_pba_oc_cretxeod(2*avg,1)",
+						"raw_pba_oc_cretxeod(0.5*std,1)", "raw_pba_oc_cretxeod(1*std,1)", "raw_pba_oc_cretxeod(2*std,1)",
+						"raw_pba_oc_cretxeod(0.5*max,1)", "raw_pba_oc_cretxeod(1*max,1)", "raw_pba_oc_cretxeod(2*max,1)",
+						"raw_pba_oc_cretxeod(0.5*min,1)", "raw_pba_oc_cretxeod(1*min,1)", "raw_pba_oc_cretxeod(2*min,1)"]
+			},
+			"raw_pba_oa_cretxeod": {
+				"desc": ["raw_pba_oa_cretxeod(0.5*avg,1)", "raw_pba_oa_cretxeod(1*avg,1)", "raw_pba_oa_cretxeod(2*avg,1)",
+						"raw_pba_oa_cretxeod(0.5*std,1)", "raw_pba_oa_cretxeod(1*std,1)", "raw_pba_oa_cretxeod(2*std,1)",
+						"raw_pba_oa_cretxeod(0.5*max,1)", "raw_pba_oa_cretxeod(1*max,1)", "raw_pba_oa_cretxeod(2*max,1)",
+						"raw_pba_oa_cretxeod(0.5*min,1)", "raw_pba_oa_cretxeod(1*min,1)", "raw_pba_oa_cretxeod(2*min,1)"]
+			},
+			"raw_pba_lh_cretxeod": {
+				"desc": ["raw_pba_lh_cretxeod(0.5*avg,1)", "raw_pba_lh_cretxeod(1*avg,1)", "raw_pba_lh_cretxeod(2*avg,1)",
+						"raw_pba_lh_cretxeod(0.5*std,1)", "raw_pba_lh_cretxeod(1*std,1)", "raw_pba_lh_cretxeod(2*std,1)",
+						"raw_pba_lh_cretxeod(0.5*max,1)", "raw_pba_lh_cretxeod(1*max,1)", "raw_pba_lh_cretxeod(2*max,1)",
+						"raw_pba_lh_cretxeod(0.5*min,1)", "raw_pba_lh_cretxeod(1*min,1)", "raw_pba_lh_cretxeod(2*min,1)"]
+			},
+			"raw_vol_oc_cretxeod": {
+				"desc": ["raw_vol_oc_cretxeod(0.5*avg,1)", "raw_vol_oc_cretxeod(1*avg,1)", "raw_vol_oc_cretxeod(2*avg,1)",
+						"raw_vol_oc_cretxeod(0.5*std,1)", "raw_vol_oc_cretxeod(1*std,1)", "raw_vol_oc_cretxeod(2*std,1)",
+						"raw_vol_oc_cretxeod(0.5*max,1)", "raw_vol_oc_cretxeod(1*max,1)", "raw_vol_oc_cretxeod(2*max,1)",
+						"raw_vol_oc_cretxeod(0.5*min,1)", "raw_vol_oc_cretxeod(1*min,1)", "raw_vol_oc_cretxeod(2*min,1)"]
+			},
+			"raw_vol_oa_cretxeod": {
+				"desc": ["raw_vol_oa_cretxeod(0.5*avg,1)", "raw_vol_oa_cretxeod(1*avg,1)", "raw_vol_oa_cretxeod(2*avg,1)",
+						"raw_vol_oa_cretxeod(0.5*std,1)", "raw_vol_oa_cretxeod(1*std,1)", "raw_vol_oa_cretxeod(2*std,1)",
+						"raw_vol_oa_cretxeod(0.5*max,1)", "raw_vol_oa_cretxeod(1*max,1)", "raw_vol_oa_cretxeod(2*max,1)",
+						"raw_vol_oa_cretxeod(0.5*min,1)", "raw_vol_oa_cretxeod(1*min,1)", "raw_vol_oa_cretxeod(2*min,1)"]
+			},
+			"raw_vol_lh_cretxeod": {
+				"desc": ["raw_vol_lh_cretxeod(0.5*avg,1)", "raw_vol_lh_cretxeod(1*avg,1)", "raw_vol_lh_cretxeod(2*avg,1)",
+						"raw_vol_lh_cretxeod(0.5*std,1)", "raw_vol_lh_cretxeod(1*std,1)", "raw_vol_lh_cretxeod(2*std,1)",
+						"raw_vol_lh_cretxeod(0.5*max,1)", "raw_vol_lh_cretxeod(1*max,1)", "raw_vol_lh_cretxeod(2*max,1)",
+						"raw_vol_lh_cretxeod(0.5*min,1)", "raw_vol_lh_cretxeod(1*min,1)", "raw_vol_lh_cretxeod(2*min,1)"]
+			}
+		}
+	}
+}

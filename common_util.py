@@ -741,49 +741,65 @@ def df_value_count(df, axis=0):
 	"""
 	return df.apply(lambda ser: ser.value_counts(), axis=axis)
 
-def ser_range_center_clip_tup(ser, range_tuple, out_val=0, inclusive=False):
+def ser_range_center_clip_tup(ser, range_tuple, inner=0, outer=False, inclusive=False):
 	"""
-	Return ser with values within threshold range set to out_val.
-	The reverse of pd.Series.clip.
+	Return ser with values within threshold range set to inner, and values outside range optionally set
+	to threshold.
 
 	Args:
 		ser (pd.Series): series to center clip
-		thresh ((float, float)): thresholds for sign binning
+		thresh ((-float, float)): thresholds for sign binning
+		inner (any): what values within the range will be clipped to
+		outer (bool): whether or not to clip values outside the range to the threshold
+		inclusive (bool): whether the range is inclusive
 
 	Returns:
 		thresholded pd.Series
 	"""
 	out = ser.copy(deep=True)
-	out.loc[~pd.isnull(out) & out.between(range_tuple[0], range_tuple[1], inclusive=inclusive)] = out_val
+	out.loc[~pd.isnull(out) & out.between(range_tuple[0], range_tuple[1], inclusive=inclusive)] = inner
+	if (outer):
+		out.loc[~pd.isnull(out) & out.lt(inner)] = range_tuple[0]
+		out.loc[~pd.isnull(out) & out.gt(inner)] = range_tuple[1]
 	return out
 
-def ser_range_center_clip_df(ser, range_df, out_val=0, inclusive=False):
+def ser_range_center_clip_df(ser, range_df, inner=0, outer=False, inclusive=False):
 	"""
-	Return ser with values within range_df set to out_val.
+	Return ser with values within range_df set to inner, and values outside range optionally set
+	to threshold.
 
 	Args:
 		ser (pd.Series): series to center clip
 		range_df (pd.DataFrame): threshold df for center clipping between the range of the first and second columns.
+		inner (any): what values within the range will be clipped to
+		outer (bool): whether or not to clip values outside the range to the threshold
+		inclusive (bool): whether the range is inclusive
 
 	Returns:
 		thresholded pd.Series
 	"""
 	out = ser.copy(deep=True)
 	out.loc[pd.isnull(range_df.iloc[:, 0]) | pd.isnull(range_df.iloc[:, 1])] = None
-	out.loc[~pd.isnull(out) & out.between(range_df.iloc[:, 0], range_df.iloc[:, 1], inclusive=inclusive)] = out_val
+	out.loc[~pd.isnull(out) & out.between(range_df.iloc[:, 0], range_df.iloc[:, 1], inclusive=inclusive)] = inner
+	if (outer):
+		out.loc[~pd.isnull(out) & out.lt(inner)] = range_df.iloc[:, 0]
+		out.loc[~pd.isnull(out) & out.gt(inner)] = range_df.iloc[:, 1]
 	return out
 
-def ser_range_center_clip(ser, thresh=None, out_val=0, inclusive=False):
+def ser_range_center_clip(ser, thresh=None, inner=0, outer=False, inclusive=False):
 	"""
-	Return ser with values within threshold range set to out_val.
-	The reverse of pd.Series.clip.
+	Return ser with values within threshold range set to inner, and values outside range optionally set
+	to threshold.
 
 	Args:
 		ser (pd.Series): series to center clip
 		thresh (pd.DataFrame or float or (float, float)): thresholds for sign binning
 			If it is a single threshold, it will be translated to: (-abs(float)/2, abs(float)/2).
 			If not, thresholds[0] <= thresholds[1] must be the case.
-			where interval[0] < val < interval[1] maps to out_val
+			where interval[0] < val < interval[1] maps to inner
+		inner (any not None): what values within the range will be clipped to
+		outer (bool): whether or not to clip values outside the range to the threshold
+		inclusive (bool): whether the range is inclusive
 
 	Returns:
 		thresholded pd.Series
@@ -792,9 +808,9 @@ def ser_range_center_clip(ser, thresh=None, out_val=0, inclusive=False):
 		thresh = (-abs(thresh)/2, abs(thresh)/2) if (is_real_num(thresh)) else thresh
 
 	if (is_seq(thresh)):
-		out = ser_range_center_clip_tup(ser, range_tuple=thresh, out_val=out_val, inclusive=inclusive)
+		out = ser_range_center_clip_tup(ser, range_tuple=thresh, inner=inner, outer=outer, inclusive=inclusive)
 	elif (is_df(thresh)):
-		out = ser_range_center_clip_df(ser, range_df=thresh, out_val=out_val, inclusive=inclusive)
+		out = ser_range_center_clip_df(ser, range_df=thresh, inner=inner, outer=outer, inclusive=inclusive)
 	else:
 		out = ser
 

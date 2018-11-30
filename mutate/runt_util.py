@@ -81,7 +81,7 @@ RETURN_FN_MAP = {
 	"logret": (lambda slow_ser, fast_ser: np.log(fast_ser / slow_ser))
 }
 
-def returnify(ret_type, thresh=None):
+def returnify(ret_type, thresh=None, clip=False):
 	"""
 	Spread, regular return, or log return.
 	"""
@@ -93,15 +93,15 @@ def returnify(ret_type, thresh=None):
 	else:
 		def ret_fn2(slow_ser, fast_ser):
 			ret = ret_fn(slow_ser, fast_ser)
-			return ser_range_center_clip(ret, thresh, out_val=SIDEWAYS, inclusive=False)
+			return ser_range_center_clip(ret, thresh, inner=SIDEWAYS, outer=clip, inclusive=False)
 
 	return ret_fn2
 
-def expanding_returnify(ret_type, thresh=None, agg_freq='cal_daily'):
+def expanding_returnify(ret_type, thresh=None, clip=False, agg_freq='cal_daily'):
 	"""
 	Expanding spread, regular return, or log return.
 	"""
-	ret_fn = returnify(ret_type, thresh)
+	ret_fn = returnify(ret_type, thresh=thresh, outer=clip)
 	agg_freq = RUNT_FREQ_TRANSLATOR[agg_freq]
 
 	def retx(slow_ser, fast_ser):
@@ -110,11 +110,11 @@ def expanding_returnify(ret_type, thresh=None, agg_freq='cal_daily'):
 
 	return retx
 
-def variable_expanding_returnify(ret_type, stat_type, thresh_scalar=1, agg_freq='cal_daily'):
+def variable_expanding_returnify(ret_type, stat_type, clip=False, thresh_scalar=1, agg_freq='cal_daily'):
 	"""
 	Expanding return thresholded on past period statistic.
 	"""
-	ret_fn = expanding_returnify(ret_type, thresh=None, agg_freq=agg_freq)
+	ret_fn = expanding_returnify(ret_type, thresh=None, outer=False, agg_freq=agg_freq)
 	stat_fn = statistic(stat_type, abs_val=True, agg_freq=agg_freq)
 	agg_freq = RUNT_FREQ_TRANSLATOR[agg_freq]
 
@@ -123,7 +123,7 @@ def variable_expanding_returnify(ret_type, stat_type, thresh_scalar=1, agg_freq=
 		stat = stat_fn(ret) * thresh_scalar
 		thresh = pd_slot_shift(pd.DataFrame({0:-stat, 1: stat}, index=ret.index), periods=1, freq=agg_freq)
 		idx = ret.index & thresh.index
-		clipped = ser_range_center_clip(ret.loc[idx], thresh.loc[idx], out_val=SIDEWAYS, inclusive=False)
+		clipped = ser_range_center_clip(ret.loc[idx], thresh.loc[idx], inner=SIDEWAYS, outer=clip, inclusive=False)
 		return clipped
 
 	return vretx
