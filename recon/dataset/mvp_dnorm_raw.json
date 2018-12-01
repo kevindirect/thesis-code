@@ -1,0 +1,7 @@
+{
+	"features": [
+		["mvp_norm", "mvp_dnorm_raw"]
+	],
+	"labels": "mvp_labels.json",
+	"row_masks": "row_masks.json"
+}

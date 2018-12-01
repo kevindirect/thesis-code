@@ -31,7 +31,7 @@ dum = 0
 
 
 # PACKAGE DEFAULTS
-default_dataset = 'dnorm_raw.json'
+default_dataset = 'mvp_dnorm_raw.json'
 default_filter = ["0"]
 default_nt_filter = ["1"]
 default_opt_filter = ["1", "2"]
