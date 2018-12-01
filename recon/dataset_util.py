@@ -24,18 +24,24 @@ flr_asset_match = lambda fp, lp, rp: asset_match(fp, lp) and asset_match(fp, rp)
 flr_src_match = lambda fp, lp, rp: src_match(fp, rp)
 flr_constraint = lambda fp, lp, rp: flr_asset_match(fp, lp, rp) and flr_src_match(fp, lp, rp)
 
-def gen_group(dataset, group=['features', 'labels', 'row_masks'], constraint=flr_constraint):
+
+fltr_asset_match = lambda fp, lp, tp, rp: asset_match(fp, lp) and asset_match(fp, tp) and asset_match(fp, rp)
+fltr_src_match = lambda fp, lp, tp, rp: src_match(fp, rp)
+fltr_constraint = lambda fp, lp, tp, rp: fltr_asset_match(fp, lp, tp, rp) and fltr_src_match(fp, lp, tp, rp)
+
+def gen_group(dataset, group=['features', 'labels', 'row_masks'], out=['dfs'], constraint=flr_constraint):
 	"""
 	Convenience function to yield specified partitions from dataset.
 
 	Args:
 		dataset (dict): dictionary returned by prep_dataset
 		group (list): data partitions to include in generator
+		out (list): what the generator will output, 'dfs' and/or 'recs'
 		constraint (lambda, optional): constraint of data partition paths, must have as many arguments as items in group
 			(if None is passed, no constraint is used and full cartesian product of groups are yielded)
 
 	Yields:
-		Pair of paths and dataframes ordered by the specifed group list
+		Pair of paths and outputs ordered by the specifed group list
 
 		Example:
 			gen_group(dataset, group=['features', 'labels'], constraint=asset_match) -> yields feature label pairs where the first items of their paths match
@@ -43,10 +49,11 @@ def gen_group(dataset, group=['features', 'labels', 'row_masks'], constraint=flr
 	if (constraint is None):
 		constraint = no_constraint
 
-	parts = [list(dataset[part]['dfs'].keys()) for part in group]
+	parts = [list(dataset[part][out[0]].keys()) for part in group] # Can use out[0] becuase keys are guaranteed to be identical aross all outputs
 
 	for paths in filter(lambda combo: constraint(*combo), product(*parts)):
-		yield paths, tuple(dataset[part]['dfs'][paths[i]] for i, part in enumerate(group))
+		outputs = tuple(tuple(dataset[part][output][paths[i]] for i, part in enumerate(group)) for output in out)
+		yield (paths, *outputs)
 
 def prep_dataset(dataset_dict, assets=None, filters_map=None, dataset_dir=DATASET_DIR):
 	"""
