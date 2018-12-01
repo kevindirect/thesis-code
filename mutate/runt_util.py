@@ -101,7 +101,7 @@ def expanding_returnify(ret_type, thresh=None, clip=False, agg_freq='cal_daily')
 	"""
 	Expanding spread, regular return, or log return.
 	"""
-	ret_fn = returnify(ret_type, thresh=thresh, outer=clip)
+	ret_fn = returnify(ret_type, thresh=thresh, clip=clip)
 	agg_freq = RUNT_FREQ_TRANSLATOR[agg_freq]
 
 	def retx(slow_ser, fast_ser):
@@ -114,7 +114,7 @@ def variable_expanding_returnify(ret_type, stat_type, clip=False, thresh_scalar=
 	"""
 	Expanding return thresholded on past period statistic.
 	"""
-	ret_fn = expanding_returnify(ret_type, thresh=None, outer=False, agg_freq=agg_freq)
+	ret_fn = expanding_returnify(ret_type, thresh=None, clip=False, agg_freq=agg_freq)
 	stat_fn = statistic(stat_type, abs_val=True, agg_freq=agg_freq)
 	agg_freq = RUNT_FREQ_TRANSLATOR[agg_freq]
 
