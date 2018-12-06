@@ -21,7 +21,6 @@ DATASET_DIR = RECON_DIR +'dataset' +sep
 FILTERSET_DIR = RECON_DIR +'filterset' +sep
 MODELS_DIR = MODEL_DIR +'model' +sep
 EXP_DIR = MODEL_DIR +'exp' +sep
-RESULT_DIR = MODEL_DIR +'result' +sep
 EXPECTED_NUM_HOURS = 8
 TRIALS_COUNT = 100
 TEST_RATIO = .2
@@ -31,6 +30,8 @@ dum = 0
 
 
 # PACKAGE DEFAULTS
+rayconfig_name = 'ray.json'
+default_model = 'OneBinGRU'
 default_dataset = 'mvp_dnorm_raw.json'
 default_filter = ["0"]
 default_nt_filter = ["1"]
