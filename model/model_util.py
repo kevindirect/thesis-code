@@ -1,5 +1,6 @@
-# Kevin Patel
-
+"""
+Kevin Patel
+"""
 import sys
 import os
 from functools import partial
@@ -14,6 +15,21 @@ from common_util import identity_fn, compose, dcompose, pd_dti_index_to_date, fi
 from model.common import EXPECTED_NUM_HOURS
 from recon.dataset_util import gen_group
 from mutate.label_util import prep_labels
+from model.model.OneBinCNN import OneLayerBinaryCNN
+from model.model.OneBinGRU import OneLayerBinaryGRU
+from model.model.OneBinLCL import OneLayerBinaryLCL
+from model.model.OneBinLSTM import OneLayerBinaryLSTM
+from model.model.ThreeBinFFN import ThreeLayerBinaryFFN
+
+
+""" ********** MODELS ********** """
+BINARY_CLF_MAP = {
+	'OneBinCNN': OneLayerBinaryCNN,
+	'OneBinGRU': OneLayerBinaryGRU,
+	'OneBinLCL': OneLayerBinaryLCL
+	'OneBinLSTM': OneLayerBinaryLSTM,
+	'ThreeBinFFN': ThreeLayerBinaryFFN
+}
 
 
 """ ********** DATA PREPARATION ********** """
@@ -123,19 +139,20 @@ def datagen_ser_to_ser(dataset, feat_prep_fn, label_prep_fn):
 		label_prep_fn: final transform to run on the label df/series
 
 	"""
-	for paths, dfs in gen_group(dataset):
-		fpaths, lpaths, rpaths = paths
-		features, labels, row_masks = (df.compute() for df in dfs)
+	for paths, recs, dfs in gen_group(dataset, out=['recs', 'dfs']):
+		fpath, lpath, rpath = paths
+		frec, lrec, rrec = (rec.compute() for rec in recs)
+		feat_df, lab_df, rm_df = (df.compute() for df in dfs)
 
-		logging.debug('fpaths: {}'.format(str(fpaths)))
-		logging.debug('lpaths: {}'.format(str(lpaths)))
-		logging.debug('rpaths: {}'.format(str(rpaths)))
+		logging.debug('fpath: {}'.format(str(fpath)))
+		logging.debug('lpath: {}'.format(str(lpath)))
+		logging.debug('rpath: {}'.format(str(rpath)))
 
-		for feat_col, label_col in product(features.columns, labels.columns):
-			feature = feat_prep_fn(features.loc[:, [feat_col]], row_masks).dropna(axis=0, how='all')
-			label = label_prep_fn(labels.loc[:, label_col]).dropna(axis=0, how='all')
+		for fcol, lcol in product(feat_df.columns, lab_df.columns):
+			feature = feat_prep_fn(feat_df.loc[:, [fcol]], row_masks).dropna(axis=0, how='all')
+			label = label_prep_fn(lab_df.loc[:, lcol]).dropna(axis=0, how='all')
 			
-			yield feature, label
+			yield fpath, lpath, frec, lrec, fcol, lcol, feature, label
 
 def datagen_df_to_ser(dataset, feat_prep_fn, label_prep_fn):
 	"""
@@ -147,20 +164,21 @@ def datagen_df_to_ser(dataset, feat_prep_fn, label_prep_fn):
 		label_prep_fn: final transform to run on the label df/series
 
 	"""
-	for paths, dfs in gen_group(dataset):
-		fpaths, lpaths, rpaths = paths
-		features, labels, row_masks = dfs
+	for paths, recs, dfs in gen_group(dataset, out=['recs', 'dfs']):
+		fpath, lpath, rpath = paths
+		frec, lrec, rrec = (rec.compute() for rec in recs)
+		feat_df, lab_df, rm_df = (df.compute() for df in dfs)
 
-		logging.debug('fpaths: {}'.format(str(fpaths)))
-		logging.debug('lpaths: {}'.format(str(lpaths)))
-		logging.debug('rpaths: {}'.format(str(rpaths)))
+		logging.debug('fpath: {}'.format(str(fpath)))
+		logging.debug('lpath: {}'.format(str(lpath)))
+		logging.debug('rpath: {}'.format(str(rpath)))
 
-		feature = feat_prep_fn(features, row_masks).dropna(axis=0, how='all')
+		feature = feat_prep_fn(feat_df, rm_df).dropna(axis=0, how='all')
 
-		for label_col in labels.columns:
-			label = label_prep_fn(labels.loc[:, label_col]).dropna(axis=0, how='all')
+		for lcol in lab_df.columns:
+			label = label_prep_fn(lab_df.loc[:, lcol]).dropna(axis=0, how='all')
 			
-			yield feature, label
+			yield fpath, lpath, frec, lrec, lcol, feature, label
 
 def datagen_df_to_df(dataset, feat_prep_fn, label_prep_fn):
 	"""
@@ -172,18 +190,19 @@ def datagen_df_to_df(dataset, feat_prep_fn, label_prep_fn):
 		label_prep_fn: final transform to run on the label df/series
 
 	"""
-	for paths, dfs in gen_group(dataset):
-		fpaths, lpaths, rpaths = paths
-		features, labels, row_masks = dfs
+	for paths, recs, dfs in gen_group(dataset, out=['recs', 'dfs']):
+		fpath, lpath, rpath = paths
+		frec, lrec, rrec = (rec.compute() for rec in recs)
+		feat_df, lab_df, rm_df = (df.compute() for df in dfs)
 
-		logging.debug('fpaths: {}'.format(str(fpaths)))
-		logging.debug('lpaths: {}'.format(str(lpaths)))
-		logging.debug('rpaths: {}'.format(str(rpaths)))
+		logging.debug('fpath: {}'.format(str(fpath)))
+		logging.debug('lpath: {}'.format(str(lpath)))
+		logging.debug('rpath: {}'.format(str(rpath)))
 
-		feature = feat_prep_fn(features, row_masks).dropna(axis=0, how='all')
-		label = label_prep_fn(labels).dropna(axis=0, how='all')
+		feature = feat_prep_fn(feat_df, rm_df).dropna(axis=0, how='all')
+		label = label_prep_fn(lab_df).dropna(axis=0, how='all')
 		
-		yield feature, label
+		yield fpath, lpath, frec, lrec, feature, label
 
 def hyperopt_trials_to_df(trials):
 	"""
