@@ -46,8 +46,8 @@ def ray_test(argv):
 		assert(fpath[0]==lpath[0])
 		logging.info('experiment {}'.format(i))
 		asset = fpath[0]
-		mod_keys = [REPORT_DIR, asset, dataset_name, 'ray', model_name]
-		exp_dir = sep.join(mod_keys + [str(i)])
+		mod_keys = [asset, dataset_name, 'ray', model_name]
+		exp_dir = REPORT_DIR +sep.join(mod_keys + [str(i)])
 		makedir_if_not_exists(exp_dir)
 		pos_label, neg_label = pd_binary_clip(label)
 		f, lpos, lneg = pd_common_index_rows(feature, pos_label, neg_label)
@@ -102,10 +102,10 @@ def ray_test(argv):
 
 	logging.info('dumping experiment index files...')
 	for keys, val in index.items():
-		index_dir = sep.join(keys)
-		logging.info(index_dir)
+		mod_dir = REPORT_DIR +sep.join(keys)
+		logging.info(mod_dir)
 		index_df = pd.DataFrame(val).set_index('index')
-		dump_df(index_df, 'index.csv', dir_path=index_dir, data_format='csv')
+		dump_df(index_df, 'index.csv', dir_path=mod_dir, data_format='csv')
 
 if __name__ == '__main__':
 	with benchmark('time to finish') as b:
