@@ -25,7 +25,7 @@ class Model:
 			'batch_size': hp.choice('batch_size', [64, 128, 256])
 		}
 		self.space = {**default_space, **other_space}
-		self.history = History()
+		self.callbacks = [History]
 		# self.reduce_lr = ReduceLROnPlateau(monitor='val_acc', factor=0.9, patience=30, verbose=1, mode='min', min_lr=0.000001) # TODO - try this out on fit function
 		self.bad_trials = 0
 
@@ -74,7 +74,7 @@ class Model:
 		stats = model.fit(*train_data, 
 						epochs=params['epochs'], 
 						batch_size=params['batch_size'], 
-						callbacks=[self.history],
+						callbacks=[init() for init in self.callbacks],
 						verbose=1, 
 						validation_split=val_split, # Overriden if validation data is not None
 						validation_data=val_data if (val_data is not None) else None, 
