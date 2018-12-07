@@ -25,19 +25,20 @@ def ray_test(argv):
 	cmd_arg_list = ['model=', 'dataset=', 'assets=']
 	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name='ray_test')
 	mod_code = cmd_input['model='] if (cmd_input['model='] is not None) else default_model
-	dataset_name = cmd_input['dataset='] if (cmd_input['dataset='] is not None) else default_dataset
+	dataset_fname = cmd_input['dataset='] if (cmd_input['dataset='] is not None) else default_dataset
 	assets = str_to_list(cmd_input['assets=']) if (cmd_input['assets='] is not None) else None
 
 	mod = BINARY_CLF_MAP[mod_code]()
 	model_name = get_class_name(mod)
-	dataset_dict = load_json(dataset_name, dir_path=DATASET_DIR)
+	dataset_dict = load_json(dataset_fname, dir_path=DATASET_DIR)
 	dataset = prep_dataset(dataset_dict, assets=assets, filters_map=None)
+	dataset_name = dataset_filename[:-JSON_SFX_LEN]
 	rayconfig = load_json(rayconfig_name, dir_path=MODEL_DIR)
 	ray.init(**rayconfig['init'])
 	index = NestedDefaultDict()
 
 	logging.info('model: {}'.format(model_name))
-	logging.info('dataset: {} {} df(s)'.format(len(dataset['features']), dataset_name[:-JSON_SFX_LEN]))
+	logging.info('dataset: {} {} df(s)'.format(len(dataset['features']), dataset_name))
 	logging.info('assets: {}'.format(str('all' if (assets==None) else ', '.join(assets))))
 	logging.info('starting experiment loop')
 
@@ -46,10 +47,8 @@ def ray_test(argv):
 		logging.info('experiment {}'.format(i))
 		asset = fpath[0]
 		mod_keys = [REPORT_DIR, asset, dataset_name, 'ray', model_name]
-		pos_dir = sep.join(mod_keys + ['pos'])
-		neg_dir = sep.join(mod_keys + ['neg'])
-		makedir_if_not_exists(pos_dir)
-		makedir_if_not_exists(neg_dir)
+		exp_dir = sep.join(mod_keys + [str(i)])
+		makedir_if_not_exists(exp_dir)
 		pos_label, neg_label = pd_binary_clip(label)
 		f, lpos, lneg = pd_common_index_rows(feature, pos_label, neg_label)
 		config = {
@@ -59,10 +58,10 @@ def ray_test(argv):
 					"timesteps_total": 100
 				},
 				'trial_resources': {
-					"cpu": 1,
+					"cpu": 4,
 					"gpu": 1
 				},
-				"local_dir": sep.join([pos_dir, str(i)])
+				"local_dir": exp_dir
 			},
 			'neg': {
 				"run": mod.make_ray_objective(mod.make_const_data_objective(f, lneg)),
@@ -70,10 +69,10 @@ def ray_test(argv):
 					"timesteps_total": 100
 				},
 				'trial_resources': {
-					"cpu": 1,
+					"cpu": 4,
 					"gpu": 1
 				},
-				"local_dir": sep.join([neg_dir, str(i)])
+				"local_dir": exp_dir
 			}
 		}
 		row = {
