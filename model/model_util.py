@@ -26,7 +26,7 @@ from model.model.ThreeBinFFN import ThreeLayerBinaryFFN
 BINARY_CLF_MAP = {
 	'OneBinCNN': OneLayerBinaryCNN,
 	'OneBinGRU': OneLayerBinaryGRU,
-	'OneBinLCL': OneLayerBinaryLCL
+	'OneBinLCL': OneLayerBinaryLCL,
 	'OneBinLSTM': OneLayerBinaryLSTM,
 	'ThreeBinFFN': ThreeLayerBinaryFFN
 }
