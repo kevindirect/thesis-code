@@ -9,7 +9,7 @@ import logging
 
 import numpy as np
 import pandas as pd
-from dask import delayed
+from dask import delayed, compute
 
 from common_util import identity_fn, compose, dcompose, pd_dti_index_to_date, filter_cols_below, reindex_on_time_mask, gb_transpose, ser_shift, chained_filter
 from model.common import EXPECTED_NUM_HOURS
@@ -141,7 +141,7 @@ def datagen_ser_to_ser(dataset, feat_prep_fn, label_prep_fn):
 	"""
 	for paths, recs, dfs in gen_group(dataset, out=['recs', 'dfs']):
 		fpath, lpath, rpath = paths
-		frec, lrec, rrec = (rec.compute() for rec in recs)
+		frec, lrec, rrec = recs
 		feat_df, lab_df, rm_df = (df.compute() for df in dfs)
 
 		logging.debug('fpath: {}'.format(str(fpath)))
@@ -166,7 +166,7 @@ def datagen_df_to_ser(dataset, feat_prep_fn, label_prep_fn):
 	"""
 	for paths, recs, dfs in gen_group(dataset, out=['recs', 'dfs']):
 		fpath, lpath, rpath = paths
-		frec, lrec, rrec = (rec.compute() for rec in recs)
+		frec, lrec, rrec = recs
 		feat_df, lab_df, rm_df = (df.compute() for df in dfs)
 
 		logging.debug('fpath: {}'.format(str(fpath)))
@@ -192,7 +192,7 @@ def datagen_df_to_df(dataset, feat_prep_fn, label_prep_fn):
 	"""
 	for paths, recs, dfs in gen_group(dataset, out=['recs', 'dfs']):
 		fpath, lpath, rpath = paths
-		frec, lrec, rrec = (rec.compute() for rec in recs)
+		frec, lrec, rrec = recs
 		feat_df, lab_df, rm_df = (df.compute() for df in dfs)
 
 		logging.debug('fpath: {}'.format(str(fpath)))
