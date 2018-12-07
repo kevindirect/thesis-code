@@ -88,6 +88,6 @@ class Classifier(Model):
 			Ray objective function requires the passing of the reporter object.
 			Note in the Ray doc examples "params" is called "config".
 			"""
-			return reporter(loss=objective(config)['loss'])
+			return reporter(loss=objective(params)['loss'])
 
 		return ray_objective
