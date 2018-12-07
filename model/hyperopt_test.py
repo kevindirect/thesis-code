@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 from hyperopt import fmin, tpe, Trials
 
-from common_util import JSON_SFX_LEN, str_to_list, get_cmd_args, pd_common_index_rows, load_json, benchmark
+from common_util import JSON_SFX_LEN, get_class_name, str_to_list, get_cmd_args, pd_common_index_rows, load_json, benchmark
 from model.common import DATASET_DIR, FILTERSET_DIR, default_model, default_dataset, default_opt_filter
 from model.model_util import BINARY_CLF_MAP, datagen, prepare_transpose_data, prepare_label_data
 from recon.dataset_util import prep_dataset
