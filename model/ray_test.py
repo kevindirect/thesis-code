@@ -14,7 +14,7 @@ from ray.tune import run_experiments, register_trainable
 from ray.tune.schedulers import AsyncHyperBandScheduler
 from ray.tune.suggest import HyperOptSearch
 
-from common_util import MODEL_DIR, REPORT_DIR, JSON_SFX_LEN, NestedDefaultDict, str_now, dump_df, makedir_if_not_exists, str_to_list, get_cmd_args, pd_common_index_rows, load_json, benchmark
+from common_util import MODEL_DIR, REPORT_DIR, JSON_SFX_LEN, NestedDefaultDict, get_class_name, str_now, dump_df, makedir_if_not_exists, str_to_list, get_cmd_args, pd_common_index_rows, load_json, benchmark
 from model.common import DATASET_DIR, rayconfig_name, default_model, default_dataset
 from model.model_util import BINARY_CLF_MAP, datagen, prepare_transpose_data, prepare_label_data
 from recon.dataset_util import prep_dataset
@@ -24,11 +24,12 @@ from recon.split_util import pd_binary_clip
 def ray_test(argv):
 	cmd_arg_list = ['model=', 'dataset=', 'assets=']
 	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name='ray_test')
-	model_name = cmd_input['model='] if (cmd_input['model='] is not None) else default_model
+	mod_code = cmd_input['model='] if (cmd_input['model='] is not None) else default_model
 	dataset_name = cmd_input['dataset='] if (cmd_input['dataset='] is not None) else default_dataset
 	assets = str_to_list(cmd_input['assets=']) if (cmd_input['assets='] is not None) else None
 
-	mod = BINARY_CLF_MAP[model_name]()
+	mod = BINARY_CLF_MAP[mod_code]()
+	model_name = get_class_name(mod)
 	dataset_dict = load_json(dataset_name, dir_path=DATASET_DIR)
 	dataset = prep_dataset(dataset_dict, assets=assets, filters_map=None)
 	rayconfig = load_json(rayconfig_name, dir_path=MODEL_DIR)
