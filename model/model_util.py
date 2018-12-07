@@ -149,7 +149,7 @@ def datagen_ser_to_ser(dataset, feat_prep_fn, label_prep_fn):
 		logging.debug('rpath: {}'.format(str(rpath)))
 
 		for fcol, lcol in product(feat_df.columns, lab_df.columns):
-			feature = feat_prep_fn(feat_df.loc[:, [fcol]], row_masks).dropna(axis=0, how='all')
+			feature = feat_prep_fn(feat_df.loc[:, [fcol]], rm_df).dropna(axis=0, how='all')
 			label = label_prep_fn(lab_df.loc[:, lcol]).dropna(axis=0, how='all')
 			
 			yield fpath, lpath, frec, lrec, fcol, lcol, feature, label
