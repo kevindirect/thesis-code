@@ -32,7 +32,7 @@ def ray_test(argv):
 	model_name = get_class_name(mod)
 	dataset_dict = load_json(dataset_fname, dir_path=DATASET_DIR)
 	dataset = prep_dataset(dataset_dict, assets=assets, filters_map=None)
-	dataset_name = dataset_filename[:-JSON_SFX_LEN]
+	dataset_name = dataset_fname[:-JSON_SFX_LEN]
 	rayconfig = load_json(rayconfig_name, dir_path=MODEL_DIR)
 	ray.init(**rayconfig['init'])
 	index = NestedDefaultDict()
