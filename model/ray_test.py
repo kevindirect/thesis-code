@@ -57,7 +57,7 @@ def ray_test(argv):
 				"stop": {
 					"timesteps_total": 100
 				},
-				'trial_resources'={
+				'trial_resources': {
 					"cpu": 1,
 					"gpu": 1
 				},
@@ -68,7 +68,7 @@ def ray_test(argv):
 				"stop": {
 					"timesteps_total": 100
 				},
-				'trial_resources'={
+				'trial_resources': {
 					"cpu": 1,
 					"gpu": 1
 				},
