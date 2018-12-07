@@ -62,7 +62,7 @@ def ray_test(argv):
 					"cpu": 1,
 					"gpu": 1
 				},
-				"local_dir": sep.join([pos_dir, i])
+				"local_dir": sep.join([pos_dir, str(i)])
 			},
 			'neg': {
 				"run": mod.make_ray_objective(mod.make_const_data_objective(f, lneg)),
@@ -73,7 +73,7 @@ def ray_test(argv):
 					"cpu": 1,
 					"gpu": 1
 				},
-				"local_dir": sep.join([neg_dir, i])
+				"local_dir": sep.join([neg_dir, str(i)])
 			}
 		}
 		row = {
