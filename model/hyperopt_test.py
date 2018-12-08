@@ -24,6 +24,9 @@ def hyperopt_test(argv):
 	assets = str_to_list(cmd_input['assets=']) if (cmd_input['assets='] is not None) else None
 
 	mod = BINARY_CLF_MAP[mod_code]()
+	print(type(mod))
+	print(mod)
+	sys.exit(0)
 	mod_name = get_class_name(mod)
 	dataset_name = dataset_fname[:-JSON_SFX_LEN]
 	dataset_dict = load_json(dataset_fname, dir_path=DATASET_DIR)
