@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 from hyperopt import hp, STATUS_OK
 from keras.models import Model
-from keras.layers import Input, Dense
+from keras.layers import Input, Dense, Dropout
 
 from common_util import MODEL_DIR
 from model.common import MODELS_DIR, ERROR_CODE
