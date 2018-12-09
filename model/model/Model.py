@@ -76,7 +76,7 @@ class Model:
 			model = self.make_model(params, input_shape)
 
 		except Exception as e:
-			logging.error('Error during model creation -> {}'.format(str(e)))
+			logging.error('Error during model creation: {}'.format(str(e)))
 			raise e
 
 		return model
@@ -96,7 +96,7 @@ class Model:
 							shuffle=shuffle)
 
 		except Exception as e:
-			logging.error('Error during model fitting -> {}'.format(str(e)))
+			logging.error('Error during model fitting: {}'.format(str(e)))
 			raise e
 
 		return {
