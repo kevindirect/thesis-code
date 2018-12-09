@@ -21,17 +21,21 @@ class OneLayerBinaryGRU(BinaryClassifier):
 
 	def __init__(self, other_space={}):
 		default_space = {
+			'timesteps': hp.choice('timesteps', [3, 5])
 			'layer1_size': hp.choice('layer1_size', [8, 16, 32, 64, 128]),
 			'activation': hp.choice('activation', ['relu', 'sigmoid', 'tanh', 'linear']),
 			'recurrent_activation': hp.choice('recurrent_activation', ['hard_sigmoid']),
-			'stateful': hp.choice('stateful', [True, False]) # Problem with this?
+			'stateful': hp.choice('stateful', [True, False])
 		}
 		super(OneLayerBinaryGRU, self).__init__({**default_space, **other_space})
 
 	def make_model(self, params, input_shape):
+		# Prepare input shape
+		input_shape = (params['timesteps'],) +input_shape
+
 		# Define model
 		inputs = Input(shape=input_shape, name='inputs')
-		layer_one = GRU(params['layer1_size'], activation=params['activation'], return_sequences=True, return_state=True, recurrent_activation=params['recurrent_activation'], stateful=params['stateful'])(inputs)
+		layer_one = GRU(params['layer1_size'], activation=params['activation'], return_sequences=False, return_state=False, recurrent_activation=params['recurrent_activation'], stateful=params['stateful'])(inputs)
 		output = Dense(1, activation=params['output_activation'], name='output')(layer_one)
 
 		# Compile model
