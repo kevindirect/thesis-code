@@ -64,8 +64,22 @@ class Model:
 	def make_model(self, params, input_shape):
 		"""
 		Define, compile, and return a model over params.
+		Concrete model subclasses must implement this.
 		"""
 		pass
+
+	def get_model(self, params, input_shape):
+		"""
+		Wrapper around make_model that reports/handles errors.
+		"""
+		try:
+			model = self.make_model(params, input_shape)
+
+		except Exception as e:
+			logging.error('Error during model creation -> {}'.format(str(e)))
+			raise e
+
+		return model
 
 	def fit_model(self, params, model, train_data, val_data=None, val_split=VAL_RATIO, shuffle=False):
 		"""
@@ -80,8 +94,9 @@ class Model:
 							validation_split=val_split, # Overriden if validation data is not None
 							validation_data=val_data if (val_data is not None) else None, 
 							shuffle=shuffle)
+
 		except Exception as e:
-			logging.error('Error during model fitting {}'.format(str(e)))
+			logging.error('Error during model fitting -> {}'.format(str(e)))
 			raise e
 
 		return {
