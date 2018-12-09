@@ -24,7 +24,7 @@ class OneLayerBinaryGRU(BinaryClassifier):
 			'layer1_size': hp.choice('layer1_size', [8, 16, 32, 64, 128]),
 			'activation': hp.choice('activation', ['relu', 'sigmoid', 'tanh', 'linear']),
 			'recurrent_activation': hp.choice('recurrent_activation', ['hard_sigmoid']),
-			'stateful': hp.choice('stateful', [True, False])
+			'stateful': hp.choice('stateful', [False]) # Problem with this?
 		}
 		super(OneLayerBinaryGRU, self).__init__({**default_space, **other_space})
 
