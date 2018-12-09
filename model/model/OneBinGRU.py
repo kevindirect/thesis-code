@@ -21,7 +21,7 @@ class OneLayerBinaryGRU(BinaryClassifier):
 
 	def __init__(self, other_space={}):
 		default_space = {
-			'timesteps': hp.choice('timesteps', [3, 5])
+			'timesteps': hp.choice('timesteps', [3, 5]),
 			'layer1_size': hp.choice('layer1_size', [8, 16, 32, 64, 128]),
 			'activation': hp.choice('activation', ['relu', 'sigmoid', 'tanh', 'linear']),
 			'recurrent_activation': hp.choice('recurrent_activation', ['hard_sigmoid']),
