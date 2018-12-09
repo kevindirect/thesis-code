@@ -71,14 +71,18 @@ class Model:
 		"""
 		Fit the model and return a dictionary describing the training and test results.
 		"""
-		stats = model.fit(*train_data, 
-						epochs=params['epochs'], 
-						batch_size=params['batch_size'], 
-						callbacks=[init() for init in self.callbacks],
-						verbose=1, 
-						validation_split=val_split, # Overriden if validation data is not None
-						validation_data=val_data if (val_data is not None) else None, 
-						shuffle=shuffle)
+		try:
+			stats = model.fit(*train_data, 
+							epochs=params['epochs'], 
+							batch_size=params['batch_size'], 
+							callbacks=[init() for init in self.callbacks], 
+							verbose=1, 
+							validation_split=val_split, # Overriden if validation data is not None
+							validation_data=val_data if (val_data is not None) else None, 
+							shuffle=shuffle)
+		except Exception as e:
+			logging.error('Error during model fitting {}'.format(str(e)))
+			raise e
 
 		return {
 			'model': stats.model,

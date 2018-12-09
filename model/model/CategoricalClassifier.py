@@ -57,7 +57,6 @@ class CategoricalClassifier(Classifier):
 
 			except:
 				self.bad_trials += 1
-				logging.error('Error ocurred during experiment')
 				return {'loss': ERROR_CODE, 'status': STATUS_OK}
 
 		return objective
