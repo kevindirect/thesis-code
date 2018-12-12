@@ -29,7 +29,7 @@ def ray_test(argv):
 	assets = str_to_list(cmd_input['assets=']) if (cmd_input['assets='] is not None) else None
 
 	mod = BINARY_CLF_MAP[mod_code]()
-	model_name = get_class_name(mod)
+	mod_name = get_class_name(mod)
 	dataset_dict = load_json(dataset_fname, dir_path=DATASET_DIR)
 	dataset = prep_dataset(dataset_dict, assets=assets, filters_map=None)
 	dataset_name = dataset_fname[:-JSON_SFX_LEN]
@@ -37,7 +37,7 @@ def ray_test(argv):
 	ray.init(**rayconfig['init'])
 	index = NestedDefaultDict()
 
-	logging.info('model: {}'.format(model_name))
+	logging.info('model: {}'.format(mod_name))
 	logging.info('dataset: {} {} df(s)'.format(len(dataset['features']), dataset_name))
 	logging.info('assets: {}'.format(str('all' if (assets==None) else ', '.join(assets))))
 	logging.info('starting experiment loop')
@@ -46,7 +46,7 @@ def ray_test(argv):
 		assert(fpath[0]==lpath[0])
 		logging.info('experiment {}'.format(i))
 		asset = fpath[0]
-		mod_keys = [asset, dataset_name, 'ray', model_name]
+		mod_keys = [asset, dataset_name, 'ray', mod_name]
 		exp_dir = REPORT_DIR +sep.join(mod_keys + [str(i)])
 		makedir_if_not_exists(exp_dir)
 		pos_label, neg_label = pd_binary_clip(label)
