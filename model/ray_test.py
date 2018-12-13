@@ -16,7 +16,8 @@ from ray.tune.suggest import HyperOptSearch
 
 from common_util import MODEL_DIR, REPORT_DIR, JSON_SFX_LEN, NestedDefaultDict, get_class_name, str_now, dump_df, makedir_if_not_exists, str_to_list, get_cmd_args, pd_common_index_rows, load_json, benchmark
 from model.common import DATASET_DIR, rayconfig_name, default_model, default_dataset
-from model.model_util import BINARY_CLF_MAP, datagen, prepare_transpose_data, prepare_label_data
+from model.model_util import BINARY_CLF_MAP
+from model.data_util import datagen, prepare_transpose_data, prepare_label_data
 from recon.dataset_util import prep_dataset
 from recon.split_util import pd_binary_clip
 
