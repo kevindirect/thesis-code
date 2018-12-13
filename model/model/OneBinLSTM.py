@@ -13,10 +13,11 @@ from keras.layers import Input, Dense, LSTM
 
 from common_util import MODEL_DIR
 from model.common import MODELS_DIR, ERROR_CODE
+from model.model.SequentialMixin import SequentialMixin
 from model.model.BinaryClassifier import BinaryClassifier
 
 
-class OneLayerBinaryLSTM(BinaryClassifier):
+class OneLayerBinaryLSTM(SequentialMixin, BinaryClassifier):
 	"""One layer binary long short term memory classifier."""
 
 	def __init__(self, other_space={}):

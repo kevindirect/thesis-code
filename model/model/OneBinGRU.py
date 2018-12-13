@@ -13,15 +13,16 @@ from keras.layers import Input, Dense, GRU
 
 from common_util import MODEL_DIR
 from model.common import MODELS_DIR, ERROR_CODE
+from model.model.SequentialMixin import SequentialMixin
 from model.model.BinaryClassifier import BinaryClassifier
 
 
-class OneLayerBinaryGRU(BinaryClassifier):
+class OneLayerBinaryGRU(SequentialMixin, BinaryClassifier):
 	"""One layer binary gated recurrent unit classifier."""
 
 	def __init__(self, other_space={}):
 		default_space = {
-			'timesteps': hp.choice('timesteps', [3, 5]),
+			'step_size': hp.choice('step_size', [3, 5]), 	# AKA target delay or time delay in RNN research
 			'layer1_size': hp.choice('layer1_size', [8, 16, 32, 64, 128]),
 			'activation': hp.choice('activation', ['relu', 'sigmoid', 'tanh', 'linear']),
 			'recurrent_activation': hp.choice('recurrent_activation', ['hard_sigmoid']),
@@ -31,7 +32,7 @@ class OneLayerBinaryGRU(BinaryClassifier):
 
 	def make_model(self, params, input_shape):
 		# Prepare input shape
-		input_shape = (params['timesteps'],) +input_shape
+		input_shape = (params['step_size'],) +input_shape
 
 		# Define model
 		inputs = Input(shape=input_shape, name='inputs')
