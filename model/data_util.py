@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 from dask import delayed, compute
 
-from common_util import identity_fn, compose, dcompose, pd_dti_index_to_date, filter_cols_below, reindex_on_time_mask, gb_transpose, ser_shift, chained_filter
+from common_util import identity_fn, compose, dcompose, pd_dti_index_to_date, filter_cols_below, reindex_on_time_mask, gb_transpose, ser_shift, pd_common_index_rows, chained_filter
 from model.common import EXPECTED_NUM_HOURS
 from recon.dataset_util import gen_group
 from mutate.label_util import prep_labels
@@ -95,7 +95,7 @@ def prepare_masked_labels(labels_df, label_types, label_filter):
 
 
 """ ********** DATA GENERATORS ********** """
-def datagen(dataset, feat_prep_fn=identity_fn, label_prep_fn=identity_fn, how='ser_to_ser'):
+def datagen(dataset, feat_prep_fn=identity_fn, label_prep_fn=identity_fn, common_prep_fn=pd_common_index_rows, how='ser_to_ser'):
 	"""
 	Yield from data generation function.
 
@@ -112,9 +112,9 @@ def datagen(dataset, feat_prep_fn=identity_fn, label_prep_fn=identity_fn, how='s
 		'df_to_df': datagen_df_to_df
 	}.get(how)
 
-	yield from datagen_fn(dataset, feat_prep_fn, label_prep_fn)
+	yield from datagen_fn(dataset, feat_prep_fn, label_prep_fn, common_prep_fn)
 
-def datagen_ser_to_ser(dataset, feat_prep_fn, label_prep_fn):
+def datagen_ser_to_ser(dataset, feat_prep_fn, label_prep_fn, common_prep_fn):
 	"""
 	Yield data from the dataset by series product.
 
@@ -137,9 +137,9 @@ def datagen_ser_to_ser(dataset, feat_prep_fn, label_prep_fn):
 			feature = feat_prep_fn(feat_df.loc[:, [fcol]], rm_df).dropna(axis=0, how='all')
 			label = label_prep_fn(lab_df.loc[:, lcol]).dropna(axis=0, how='all')
 			
-			yield fpath, lpath, frec, lrec, fcol, lcol, feature, label
+			yield (fpath, lpath, frec, lrec, fcol, lcol, *common_prep_fn(feature, label))
 
-def datagen_df_to_ser(dataset, feat_prep_fn, label_prep_fn):
+def datagen_df_to_ser(dataset, feat_prep_fn, label_prep_fn, common_prep_fn):
 	"""
 	Yield data from the dataset mapping feature df to each label column.
 
@@ -163,9 +163,9 @@ def datagen_df_to_ser(dataset, feat_prep_fn, label_prep_fn):
 		for lcol in lab_df.columns:
 			label = label_prep_fn(lab_df.loc[:, lcol]).dropna(axis=0, how='all')
 			
-			yield fpath, lpath, frec, lrec, lcol, feature, label
+			yield (fpath, lpath, frec, lrec, lcol, *common_prep_fn(feature, label))
 
-def datagen_df_to_df(dataset, feat_prep_fn, label_prep_fn):
+def datagen_df_to_df(dataset, feat_prep_fn, label_prep_fn, common_prep_fn):
 	"""
 	Yield data from the dataset by df product.
 
@@ -187,7 +187,7 @@ def datagen_df_to_df(dataset, feat_prep_fn, label_prep_fn):
 		feature = feat_prep_fn(feat_df, rm_df).dropna(axis=0, how='all')
 		label = label_prep_fn(lab_df).dropna(axis=0, how='all')
 		
-		yield fpath, lpath, frec, lrec, feature, label
+		yield (fpath, lpath, frec, lrec, *common_prep_fn(feature, label))
 
 def hyperopt_trials_to_df(trials):
 	"""
