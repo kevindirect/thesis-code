@@ -10,7 +10,7 @@ import pandas as pd
 from hyperopt import hp, STATUS_OK
 from keras.callbacks import Callback, BaseLogger, History, EarlyStopping, TensorBoard, ReduceLROnPlateau, CSVLogger, LambdaCallback
 
-from common_util import MODEL_DIR
+from common_util import MODEL_DIR, identity_fn
 from model.common import MODELS_DIR, ERROR_CODE, TEST_RATIO, VAL_RATIO
 
 
@@ -61,6 +61,12 @@ class Model:
 
 		return params_dict
 
+	def preproc(self, params, data):
+		"""
+		Apply any final transforms or reshaping to passed data tuple before fitting.
+		"""
+		return identity_fn(data)
+
 	def make_model(self, params, input_shape):
 		"""
 		Define, compile, and return a model over params.
@@ -86,13 +92,13 @@ class Model:
 		Fit the model and return a dictionary describing the training and test results.
 		"""
 		try:
-			stats = model.fit(*train_data, 
+			stats = model.fit(*self.preproc(train_data), 
 							epochs=params['epochs'], 
 							batch_size=params['batch_size'], 
 							callbacks=[init() for init in self.callbacks], 
 							verbose=1, 
 							validation_split=val_split, # Overriden if validation data is not None
-							validation_data=val_data if (val_data is not None) else None, 
+							validation_data=self.preproc(val_data) if (val_data is not None) else None, 
 							shuffle=shuffle)
 
 		except Exception as e:
