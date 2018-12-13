@@ -92,13 +92,13 @@ class Model:
 		Fit the model and return a dictionary describing the training and test results.
 		"""
 		try:
-			stats = model.fit(*self.preproc(train_data), 
+			stats = model.fit(*self.preproc(params, train_data), 
 							epochs=params['epochs'], 
 							batch_size=params['batch_size'], 
 							callbacks=[init() for init in self.callbacks], 
 							verbose=1, 
 							validation_split=val_split, # Overriden if validation data is not None
-							validation_data=self.preproc(val_data) if (val_data is not None) else None, 
+							validation_data=self.preproc(params, val_data) if (val_data is not None) else None, 
 							shuffle=shuffle)
 
 		except Exception as e:
