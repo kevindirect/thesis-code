@@ -30,9 +30,9 @@ class OneLayerBinaryLCL(BinaryClassifier):
 		}
 		super(OneLayerBinaryLCL, self).__init__({**default_space, **other_space})
 
-	def make_model(self, params, input_shape):
+	def make_model(self, params, num_inputs):
 		# Define model
-		inputs = Input(shape=input_shape, name='inputs')
+		inputs = Input(shape=(num_inputs,), name='inputs')
 		layer_one = LocallyConnected1D(params['layer1_size'], params['layer1_kernel_size'], strides=params['layer1_strides'], activation=params['activation'])(inputs)
 
 		if (params['layer1_pooling'] is not None):

@@ -67,19 +67,19 @@ class Model:
 		"""
 		return identity_fn(data)
 
-	def make_model(self, params, input_shape):
+	def make_model(self, params, num_inputs):
 		"""
 		Define, compile, and return a model over params.
 		Concrete model subclasses must implement this.
 		"""
 		pass
 
-	def get_model(self, params, input_shape):
+	def get_model(self, params, num_inputs):
 		"""
 		Wrapper around make_model that reports/handles errors.
 		"""
 		try:
-			model = self.make_model(params, input_shape)
+			model = self.make_model(params, num_inputs)
 
 		except Exception as e:
 			logging.error('Error during model creation: {}'.format(str(e)))

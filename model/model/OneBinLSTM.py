@@ -26,13 +26,13 @@ class OneLayerBinaryLSTM(SequentialMixin, BinaryClassifier):
 			'layer1_size': hp.choice('layer1_size', [8, 16, 32, 64, 128]),
 			'activation': hp.choice('activation', ['relu', 'sigmoid', 'tanh', 'linear']),
 			'recurrent_activation': hp.choice('recurrent_activation', ['hard_sigmoid']),
-			'stateful': hp.choice('stateful', [True, False])
+			'stateful': hp.choice('stateful', [False])
 		}
 		super(OneLayerBinaryLSTM, self).__init__({**default_space, **other_space})
 
-	def make_model(self, params, input_shape):
+	def make_model(self, params, num_inputs):
 		# Define model
-		inputs = Input(shape=input_shape, name='inputs')
+		inputs = Input(shape=(params['step_size'], num_inputs), name='inputs')
 		layer_one = LSTM(params['layer1_size'], activation=params['activation'], recurrent_activation=params['recurrent_activation'], stateful=params['stateful'])(inputs)
 		output = Dense(1, activation=params['output_activation'], name='output')(layer_one)
 

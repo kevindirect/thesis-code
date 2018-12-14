@@ -38,7 +38,7 @@ class BinaryClassifier(Classifier):
 			Standard classifier objective function to minimize.
 			"""
 			try:
-				compiled = self.get_model(params, (features.shape[1],))
+				compiled = self.get_model(params, features.shape[1])
 
 				if (retain_holdout):
 					results = self.fit_model(params, compiled, (feat_train, lab_train), val_data=None, val_split=val_ratio, shuffle=shuffle)
