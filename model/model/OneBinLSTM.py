@@ -33,7 +33,8 @@ class OneLayerBinaryLSTM(SequentialMixin, BinaryClassifier):
 	def make_model(self, params, num_inputs):
 		# Define model
 		inputs = Input(shape=(params['step_size'], num_inputs), name='inputs')
-		layer_one = LSTM(params['layer1_size'], activation=params['activation'], recurrent_activation=params['recurrent_activation'], stateful=params['stateful'])(inputs)
+		layer_one = LSTM(params['layer1_size'], activation=params['activation'], return_sequences=False, return_state=False,
+			recurrent_activation=params['recurrent_activation'], stateful=params['stateful'])(inputs)
 		output = Dense(1, activation=params['output_activation'], name='output')(layer_one)
 
 		# Compile model
