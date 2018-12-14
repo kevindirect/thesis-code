@@ -38,13 +38,12 @@ def hyperopt_test(argv):
 	for fpath, lpath, frec, lrec, fcol, lcol, feature, label in datagen(dataset, feat_prep_fn=prepare_transpose_data, label_prep_fn=prepare_label_data, how='ser_to_ser'):
 		logging.info('(X, y) -> ({fcol}, {lcol})'.format(fcol=fcol, lcol=lcol))
 		pos_label, neg_label = pd_binary_clip(label)
-		f, lpos, lneg = pd_common_index_rows(feature, pos_label, neg_label)
 
 		logging.info('pos dir model experiment')
-		run_trials(mod, f, lpos)
+		run_trials(mod, feature, pos_label)
 
 		logging.info('neg dir model experiment')
-		run_trials(mod, f, lneg)
+		run_trials(mod, feature, neg_label)
 
 def run_trials(model_exp, features, label):
 	exp = model_exp()
