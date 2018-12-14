@@ -11,7 +11,7 @@ import pandas as pd
 from hyperopt import hp, STATUS_OK
 import ray
 from ray.tune import run_experiments, register_trainable
-from ray.tune.schedulers import AsyncHyperBandScheduler
+from ray.tune.schedulers import HyperBandScheduler, AsyncHyperBandScheduler
 from ray.tune.suggest import HyperOptSearch
 
 from common_util import MODEL_DIR, REPORT_DIR, JSON_SFX_LEN, NestedDefaultDict, get_class_name, str_now, dump_df, makedir_if_not_exists, str_to_list, get_cmd_args, pd_common_index_rows, load_json, benchmark
@@ -54,9 +54,9 @@ def ray_test(argv):
 		config = {
 			'pos': {
 				"run": mod.make_ray_objective(mod.make_const_data_objective(feature, pos_label)),
-				"stop": {
-					"timesteps_total": 100
-				},
+				# "stop": {
+				# 	"timesteps_total": 100
+				# },
 				'trial_resources': {
 					"cpu": 4,
 					"gpu": 1
@@ -65,9 +65,9 @@ def ray_test(argv):
 			},
 			'neg': {
 				"run": mod.make_ray_objective(mod.make_const_data_objective(feature, neg_label)),
-				"stop": {
-					"timesteps_total": 100
-				},
+				# "stop": {
+				# 	"timesteps_total": 100
+				# },
 				'trial_resources': {
 					"cpu": 4,
 					"gpu": 1
@@ -88,7 +88,7 @@ def ray_test(argv):
 			'num': 0
 		}
 		algo = HyperOptSearch(mod.get_space(), max_concurrent=4, reward_attr="loss")
-		scheduler = AsyncHyperBandScheduler(reward_attr="loss")
+		scheduler = HyperBandScheduler(reward_attr="loss", max_t=100)
 		row['start'] = str_now() 
 		trials = run_experiments(config, search_alg=algo, scheduler=scheduler, verbose=True)
 		row['end'] = str_now()
