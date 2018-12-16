@@ -3,6 +3,7 @@ Kevin Patel
 """
 import sys
 import os
+from os import sep
 from os.path import basename
 import ssl
 import logging
@@ -21,7 +22,11 @@ def test_mongo(argv):
 
 	rem = load_json(remotefile, dir_path=REPORT_DIR)
 	cnn = rem["uri"].format(**rem["cred"])
-	myclient = pymongo.MongoClient(cnn, ssl=True, ssl_cert_reqs=ssl.CERT_REQUIRED, ssl_certfile=rem["cred"]["cert"], ssl_keyfile=rem["cred"]["key"])
+	certdir = rem["certdir"].format(home=rem["home"])
+	myclient = pymongo.MongoClient(cnn,
+		ssl=True, ssl_cert_reqs=ssl.CERT_REQUIRED,
+		ssl_certfile=sep.join([certdir, rem["cred"]["certfile"]]),
+		ssl_keyfile=sep.join([certdir, rem["cred"]["keyfile"]]))
 
 	mydb = myclient["mydatabase"]
 	print(myclient.list_database_names())

@@ -1,11 +1,13 @@
 {
 	"uri": "mongodb://{username}@{host}:{port}/{db}",
+	"home": "/home/kpatel28",
+	"certdir":"{home}/.ssh/",
 	"cred": {
 		"username": "kevin",
 		"host": "steve.ored.calpoly.edu",
 		"port": 27017,
 		"db": "",
-		"cert": "~/.ssh/id_rsa.pub",
-		"key": "~/.ssh/id_rsa" 
+		"certfile": "id_rsa.pub",
+		"keyfile": "id_rsa" 
 	}
 }
