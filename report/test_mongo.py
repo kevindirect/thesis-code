@@ -21,7 +21,7 @@ def test_mongo(argv):
 
 	rem = load_json(remote_file, dir_path=REPORT_DIR)
 	cnn = rem["uri"].format(**rem["cred"])
-	myclient = pymongo.MongoClient(cnn, ssl=True, ssl_cert_reqs=ssl.CERT_REQUIRED, ssl_ca_certs=rem["cred"]["cert"])
+	myclient = pymongo.MongoClient(cnn, ssl=True, ssl_cert_reqs=ssl.CERT_REQUIRED, ssl_keyfile=rem["cred"]["cert"], ssl_keyfile=rem["cred"]["key"])
 
 	mydb = myclient["mydatabase"]
 	print(myclient.list_database_names())

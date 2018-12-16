@@ -5,6 +5,7 @@
 		"host": "steve.ored.calpoly.edu",
 		"port": 27017,
 		"db": "",
-		"cert": "~/.ssh/id_rsa" 
+		"cert": "~/.ssh/id_rsa.pub",
+		"key": "~/.ssh/id_rsa" 
 	}
 }
