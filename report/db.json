@@ -1,8 +1,7 @@
 {
 	"uri": "mongodb://{host}:{port}/{db}",
 	"uri2": "mongodb://{username}:{pass}@{host}:{port}/{db}",
-	"home": "/home/kpatel28",
-	"certdir":"{home}/.ssh/",
+	"certdir":"~/.ssh/",
 	"cred": {
 		"username": null,
 		"pass": null,
