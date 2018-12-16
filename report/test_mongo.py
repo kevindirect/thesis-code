@@ -24,7 +24,7 @@ def test_mongo(argv):
 	cnn = rem["uri"].format(**rem["cred"])
 	certdir = rem["certdir"].format(home=rem["home"])
 	myclient = pymongo.MongoClient(cnn,
-		ssl=True, ssl_cert_reqs=ssl.CERT_REQUIRED,
+		ssl=True, ssl_cert_reqs=ssl.CERT_NONE,
 		ssl_certfile=sep.join([certdir, rem["cred"]["certfile"]]),
 		ssl_keyfile=sep.join([certdir, rem["cred"]["keyfile"]]))
 
