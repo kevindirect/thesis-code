@@ -15,7 +15,8 @@ from common_util import REPORT_DIR
 
 
 # PACKAGE CONSTANTS
-dum = 0
+remote_file = 'remote.json'
+
 
 # PACKAGE DEFAULTS
 

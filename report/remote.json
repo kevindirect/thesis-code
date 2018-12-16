@@ -1,0 +1,10 @@
+{
+	"uri": "mongodb://{username}@{host}:{port}/{db}",
+	"cred": {
+		"username": "kevin",
+		"host": "steve.ored.calpoly.edu",
+		"port": 27017,
+		"db": "",
+		"cert": "~/.ssh/id_rsa" 
+	}
+}
