@@ -1,10 +1,11 @@
 {
-	"uri": "mongodb://{username}@{host}:{port}/{db}",
+	"uri": "mongodb://{username}:{pass}@{host}:{port}/{db}",
 	"home": "/home/kpatel28",
 	"certdir":"{home}/.ssh/",
 	"cred": {
-		"username": "kevin",
-		"host": "steve.ored.calpoly.edu",
+		"username": "",
+		"pass": "",
+		"host": "localhost",
 		"port": 27017,
 		"db": "",
 		"certfile": "id_rsa.pub",

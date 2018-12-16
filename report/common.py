@@ -15,7 +15,7 @@ from common_util import REPORT_DIR
 
 
 # PACKAGE CONSTANTS
-remotefile = 'remote.json'
+dbfile = 'db.json'
 
 
 # PACKAGE DEFAULTS
