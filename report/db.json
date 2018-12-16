@@ -1,10 +1,11 @@
 {
-	"uri": "mongodb://{username}:{pass}@{host}:{port}/{db}",
+	"uri": "mongodb://{host}:{port}/{db}",
+	"uri2": "mongodb://{username}:{pass}@{host}:{port}/{db}",
 	"home": "/home/kpatel28",
 	"certdir":"{home}/.ssh/",
 	"cred": {
-		"username": "",
-		"pass": "",
+		"username": null,
+		"pass": null,
 		"host": "localhost",
 		"port": 27017,
 		"db": "",
