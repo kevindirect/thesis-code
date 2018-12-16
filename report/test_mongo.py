@@ -21,7 +21,7 @@ def test_mongo(argv):
 	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name=basename(__file__))
 
 	rem = load_json(dbfile, dir_path=REPORT_DIR)
-	cnn = rem["uri"].format(**rem["cred"]) if (rem["cred"]["username"] is not None) else rem["uri2"].format(**rem["cred"])
+	cnn = rem["uri"].format(**rem["cred"]) if (rem["cred"]["username"] is None) else rem["uri2"].format(**rem["cred"])
 	logging.info(cnn)
 	myclient = pymongo.MongoClient(cnn)
 
