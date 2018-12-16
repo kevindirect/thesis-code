@@ -12,7 +12,7 @@ import pandas as pd
 import pymongo
 
 from common_util import REPORT_DIR, JSON_SFX_LEN, DT_CAL_DAILY_FREQ, load_json, str_to_list, get_cmd_args, in_debug_mode, pd_common_index_rows, benchmark
-from model.common import remote_file
+from report.common import remote_file
 
 
 def test_mongo(argv):
