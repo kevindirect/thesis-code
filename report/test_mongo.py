@@ -12,16 +12,16 @@ import pandas as pd
 import pymongo
 
 from common_util import REPORT_DIR, JSON_SFX_LEN, DT_CAL_DAILY_FREQ, load_json, str_to_list, get_cmd_args, in_debug_mode, pd_common_index_rows, benchmark
-from report.common import remote_file
+from report.common import remotefile
 
 
 def test_mongo(argv):
 	cmd_arg_list = []
 	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name=basename(__file__))
 
-	rem = load_json(remote_file, dir_path=REPORT_DIR)
+	rem = load_json(remotefile, dir_path=REPORT_DIR)
 	cnn = rem["uri"].format(**rem["cred"])
-	myclient = pymongo.MongoClient(cnn, ssl=True, ssl_cert_reqs=ssl.CERT_REQUIRED, ssl_keyfile=rem["cred"]["cert"], ssl_keyfile=rem["cred"]["key"])
+	myclient = pymongo.MongoClient(cnn, ssl=True, ssl_cert_reqs=ssl.CERT_REQUIRED, ssl_certfile=rem["cred"]["cert"], ssl_keyfile=rem["cred"]["key"])
 
 	mydb = myclient["mydatabase"]
 	print(myclient.list_database_names())
