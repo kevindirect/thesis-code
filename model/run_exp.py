@@ -17,7 +17,7 @@ from hyperopt import fmin, tpe, hp, STATUS_OK, Trials
 
 from common_util import MODEL_DIR, RECON_DIR, JSON_SFX_LEN, DT_CAL_DAILY_FREQ, str_to_list, get_cmd_args, in_debug_mode, pd_common_index_rows, load_json, benchmark
 from model.common import DATASET_DIR, FILTERSET_DIR, default_dataset, default_opt_filter, default_target_idx
-from model.model_util import prepare_transpose_data, prepare_masked_labels
+from model.model_util import prepare_transpose_data
 from model.models.ThreeLayerBinaryFFN import ThreeLayerBinaryFFN
 from model.models.OneLayerBinaryLSTM import OneLayerBinaryLSTM
 from recon.dataset_util import prep_dataset, prep_labels, gen_group
@@ -28,7 +28,14 @@ def run_exp(argv):
 	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name='run_exp')
 	experiments = cmd_input['exp_list='] if (cmd_input['exp_list='] is not None) else default_exp
 
-	for experiment in exp:
+	for experiment in experiments:
+		# Load experiment
+
+		# Initialize Experiment
+
+		# Run trials
+
+		# Save Results
 		experiment = exp()
 		experiment.run_trials()
 		experiment.
