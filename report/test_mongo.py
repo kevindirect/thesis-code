@@ -3,8 +3,7 @@ Kevin Patel
 """
 import sys
 import os
-from os import sep
-from os.path import basename
+from os.path import basename, expanduser
 import ssl
 import logging
 
@@ -13,25 +12,23 @@ import pandas as pd
 import pymongo
 
 from common_util import REPORT_DIR, JSON_SFX_LEN, DT_CAL_DAILY_FREQ, load_json, str_to_list, get_cmd_args, in_debug_mode, pd_common_index_rows, benchmark
-from report.common import dbfile
+from report.common import DB_DIR
+from report.mongo_server import MongoServer
 
 
 def test_mongo(argv):
 	cmd_arg_list = []
 	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name=basename(__file__))
 
-	rem = load_json(dbfile, dir_path=REPORT_DIR)
-	cnn = rem["uri"].format(**rem["cred"]) if (rem["cred"]["username"] is None) else rem["uri2"].format(**rem["cred"])
-	logging.info(cnn)
-	myclient = pymongo.MongoClient(cnn)
+	with MongoServer() as mongodb:
+		client = mongodb.get_client()
+		dblist = client.list_database_names()
+		print(dblist)
 
-	mydb = myclient["mydatabase"]
-	print(myclient.list_database_names())
-
-	dblist = myclient.list_database_names()
-	if "mydatabase" in dblist:
-		print("The database exists.")
-	
+	try:
+		client.server_info()
+	except:
+		print('Mongo instance is stopped')
 
 
 if __name__ == '__main__':
