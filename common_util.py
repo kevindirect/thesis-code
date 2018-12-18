@@ -6,6 +6,7 @@ Kevin Patel
 import sys
 from os import sep, path, makedirs, walk, listdir, rmdir
 from os.path import dirname, basename, realpath, normpath, exists, isfile, getsize, join as path_join
+import socket
 from json import load, dump, dumps
 import numbers
 import operator
@@ -611,6 +612,19 @@ def remove_empty_dirs(root_dir_path):
 			if not listdir(dir_path):  			# An empty list is False
 				rmdir(path_join(path, subdir))
 
+def get_free_port(host="localhost"):
+	"""
+	Get a free port on the machine.
+	From the MongoBox project: https://github.com/theorm/mongobox
+	"""
+	temp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	temp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+	temp_sock.bind((host, 0))
+	port = temp_sock.getsockname()[1]
+	temp_sock.close()
+	del temp_sock
+	return port
+
 
 """ ********** NUMPY GENERAL UTILS ********** """
 def filter_null(arr):
@@ -634,7 +648,7 @@ def arr_nonzero(arr, ret_idx=False, idx_norm=False, idx_shf=1):
 
 	Returns:
 		None -> The array was all nulls
-		0    -> The non-null values were all zero
+		0	 -> The non-null values were all zero
 		[ℕ]	 -> The first n non-zero values or their indices shifted by idx_shf
 	"""
 	non_null = filter_null(arr)

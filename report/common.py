@@ -15,7 +15,13 @@ from common_util import REPORT_DIR
 
 
 # PACKAGE CONSTANTS
-dbfile = 'db.json'
+MONGOD_BIN = "mongod"
+MONGOD_PORT = 27017
+MONGOD_ARGS = [
+	"--quiet"
+]
+MONGOD_CHECK_ATTEMPTS = 200
+DB_DIR = REPORT_DIR +"db" +sep
 
 
 # PACKAGE DEFAULTS
