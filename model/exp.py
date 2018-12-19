@@ -1,61 +1,83 @@
 """
 Kevin Patel
 """
-
 import sys
 import os
 from os import sep
-from os.path import splitext
-from itertools import product
-from functools import partial, reduce
+from os.path import basename
 import logging
 
-import numpy as np
-import pandas as pd
-from dask import delayed, compute, visualize
-from hyperopt import fmin, tpe, hp, STATUS_OK, Trials
+import ray
+from ray.tune import Experiment, run_experiments, register_trainable
+from ray.tune.schedulers import HyperBandScheduler, AsyncHyperBandScheduler
+from ray.tune.suggest import HyperOptSearch
 
-from common_util import MODEL_DIR, RECON_DIR, JSON_SFX_LEN, DT_CAL_DAILY_FREQ, str_to_list, get_cmd_args, in_debug_mode, pd_common_index_rows, load_json, benchmark
-from model.common import DATASET_DIR, FILTERSET_DIR, default_dataset, default_opt_filter, default_target_idx
-from model.model_util import prepare_transpose_data
-from model.models.ThreeLayerBinaryFFN import ThreeLayerBinaryFFN
-from model.models.OneLayerBinaryLSTM import OneLayerBinaryLSTM
-from recon.dataset_util import prep_dataset, prep_labels, gen_group
-from recon.split_util import get_train_test_split, pd_binary_clip
+from common_util import MODEL_DIR, REPORT_DIR, JSON_SFX_LEN, NestedDefaultDict, get_class_name, now, dt_delta, dump_df, makedir_if_not_exists, str_to_list, get_cmd_args, load_json, benchmark
+from model.common import DATASET_DIR, default_rayconfig_name, default_model, default_dataset, default_ray_trial_resources
+from model.model_util import BINARY_CLF_MAP
+from model.data_util import datagen, prepare_transpose_data, prepare_label_data
+from recon.dataset_util import prep_dataset
+from recon.split_util import pd_binary_clip
 
-def run_exp(argv):
-	cmd_arg_list = ['exp_list=']
-	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name='run_exp')
-	experiments = cmd_input['exp_list='] if (cmd_input['exp_list='] is not None) else default_exp
 
-	for experiment in experiments:
-		# Load experiment
+def exp(argv):
+	cmd_arg_list = ['model=', 'dataset=', 'assets=']
+	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name=basename(__file__))
+	mod_code = cmd_input['model='] if (cmd_input['model='] is not None) else default_model
+	dataset_fname = cmd_input['dataset='] if (cmd_input['dataset='] is not None) else default_dataset
+	assets = str_to_list(cmd_input['assets=']) if (cmd_input['assets='] is not None) else None
 
-		# Initialize Experiment
+	mod = BINARY_CLF_MAP[mod_code]()
+	mod_name = get_class_name(mod)
+	dataset_dict = load_json(dataset_fname, dir_path=DATASET_DIR)
+	dataset = prep_dataset(dataset_dict, assets=assets, filters_map=None)
+	dataset_name = dataset_fname[:-JSON_SFX_LEN]
+	exp_group_name = '{model},{dataset}'.format(model=mod_name, dataset=dataset_name)
 
-		# Run trials
+	rayconfig = load_json(default_rayconfig_name, dir_path=MODEL_DIR)
+	ray.init(**rayconfig['init'])
 
-		# Save Results
-		experiment = exp()
-		experiment.run_trials()
-		experiment.
+	logging.info('model: {}'.format(mod_name))
+	logging.info('dataset: {} {} df(s)'.format(len(dataset['features']), dataset_name))
+	logging.info('assets: {}'.format(str('all' if (assets==None) else ', '.join(assets))))
+	logging.info('constructing {}...'.format(exp_group_name))
+	exp_group = []
 
-def run_trials(model_exp, features, label):
-	exp = model_exp()
-	trials = Trials()
-	obj = exp.make_const_data_objective(features, label)
-	best = fmin(obj, exp.get_space(), algo=tpe.suggest, max_evals=50, trials=trials)
-	best_params = exp.params_idx_to_name(best)
-	bad = exp.get_bad_trials()
+	for fpath, lpath, frec, lrec, fcol, lcol, feature, label in datagen(dataset, feat_prep_fn=prepare_transpose_data, label_prep_fn=prepare_label_data, how='ser_to_ser'):
+		asset = fpath[0]
+		assert(asset==lpath[0])
+		exp_name = '{fdf}[{fcol}],{ldf}[{lcol}]'.format(fdf=frec.desc, fcol=fcol, ldf=lrec.desc, lcol=lcol)
+		logging.info('experiment {exp}: {asset}'.format(exp=exp_name, asset=asset))
+		exp_dir = REPORT_DIR +sep.join([asset, exp_group_name])
+		makedir_if_not_exists(exp_dir)
+		pos_label, neg_label = pd_binary_clip(label)
 
-	print('best idx: {}'.format(best))
-	print('best params: {}'.format(best_params))
-	if (bad > 0):
-		print('bad trials: {}'.format(bad))
+		pos_exp = Experiment('{},pos'.format(exp_name),
+							run=mod.make_ray_objective(mod.make_const_data_objective(feature, pos_label)),
+							stop=None,
+							config=None,	# All config happens within model classes
+							trial_resources=default_ray_trial_resources,
+							num_samples=1,
+							local_dir=exp_dir,
+							trial_name_creator=None,
+							custom_loggers=None,
+							sync_function=None)
+		neg_exp = Experiment('{},neg'.format(exp_name),
+							run=mod.make_ray_objective(mod.make_const_data_objective(feature, neg_label)),
+							stop=None,
+							config=None,	# All config happens within model classes
+							trial_resources=default_ray_trial_resources,
+							num_samples=1,
+							local_dir=exp_dir,
+							trial_name_creator=None,
+							custom_loggers=None,
+							sync_function=None)
+		exp_group.extend([pos_exp, neg_exp])
 
-	return best_params
-
+	logging.info('running {}...'.format(exp_group_name))
+	algo = HyperOptSearch(mod.get_space(), max_concurrent=4, reward_attr='loss')
+	trials = run_experiments(exp_group, search_alg=algo, verbose=True)
 
 if __name__ == '__main__':
 	with benchmark('time to finish') as b:
-		run_exp(sys.argv[1:])
+		exp(sys.argv[1:])
