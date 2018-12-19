@@ -20,7 +20,6 @@ from common_util import RECON_DIR, MODEL_DIR
 DATASET_DIR = RECON_DIR +'dataset' +sep
 FILTERSET_DIR = RECON_DIR +'filterset' +sep
 MODELS_DIR = MODEL_DIR +'model' +sep
-EXP_DIR = MODEL_DIR +'exp' +sep
 EXPECTED_NUM_HOURS = 8
 TRIALS_COUNT = 100
 TEST_RATIO = .2
