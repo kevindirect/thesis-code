@@ -89,8 +89,10 @@ def ray_test(argv):
 		}
 		algo = HyperOptSearch(mod.get_space(), max_concurrent=4, reward_attr="loss")
 		scheduler = HyperBandScheduler(reward_attr="loss", max_t=100)
-		row['start'] = str_now() 
+		row['start'] = str_now()
 		trials = run_experiments(config, search_alg=algo, scheduler=scheduler, verbose=True)
+		print(trials)
+		sys.exit(0)
 		row['end'] = str_now()
 		row['num'] = len(trials)
 		try:
