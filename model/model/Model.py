@@ -21,7 +21,7 @@ class Model:
 	"""
 	def __init__(self, other_space={}):
 		default_space = {
-			'epochs': hp.choice('epochs', [5, 20, 50, 100]),
+			'epochs': hp.choice('epochs', [200]),
 			'batch_size': hp.choice('batch_size', [64, 128, 256])
 		}
 		self.space = {**default_space, **other_space}
