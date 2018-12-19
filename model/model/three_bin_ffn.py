@@ -32,7 +32,7 @@ class ThreeLayerBinaryFFN(BinaryClassifier):
 
 	def make_model(self, params, num_inputs):
 		# Define model
-		inputs = Input(shape=(input_shape,), name='inputs')
+		inputs = Input(shape=(num_inputs,), name='inputs')
 		layer1 = Dense(params['layer1_size'], activation=params['activation'], kernel_initializer='glorot_uniform', bias_initializer='zeros')(inputs)
 		layer1_dropout = Dropout(params['layer1_dropout'])(layer1)
 		layer2 = Dense(params['layer2_size'], activation=params['activation'], kernel_initializer='glorot_uniform', bias_initializer='zeros')(layer1_dropout)
