@@ -13,7 +13,7 @@ from keras.optimizers import SGD, RMSprop, Adam, Nadam
 
 from common_util import MODEL_DIR
 from model.common import MODELS_DIR, ERROR_CODE, TEST_RATIO, VAL_RATIO
-from model.model.model import Model
+from model.model.Model import Model
 from recon.split_util import get_train_test_split
 
 
