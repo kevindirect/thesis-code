@@ -1,6 +1,7 @@
 """
 Kevin Patel
 """
+
 import sys
 import os
 import logging
@@ -10,27 +11,27 @@ import pandas as pd
 from hyperopt import hp, STATUS_OK
 from keras import losses
 
-from common_util import MODEL_DIR, in_debug_mode
+from common_util import MODEL_DIR
 from model.common import MODELS_DIR, ERROR_CODE, TEST_RATIO, VAL_RATIO
-from model.model.Classifier import Classifier
+from model.model.classifier import Classifier
 from recon.split_util import get_train_test_split
 
 
-class BinaryClassifier(Classifier):
-	"""Abstract Base Class of all binary classifiers."""
+class CategoricalClassifier(Classifier):
+	"""Abstract Base Class of all categorical (multi class) classifiers."""
 
 	def __init__(self, other_space={}):
 		default_space = {
-			'output_activation' : hp.choice('output_activation', ['sigmoid', 'exponential', 'elu', 'tanh']),
-			#'loss': hp.choice('loss', ['binary_crossentropy', 'hinge', 'squared_hinge', 'kullback_leibler_divergence'])
-			'loss': hp.choice('loss', ['binary_crossentropy'])	# Setting to binary cross entropy loss only
+			'output_activation' : hp.choice('output_activation', ['softmax']),
+			'loss': hp.choice('loss', ['categorical_crossentropy', 'sparse_categorical_crossentropy', 'categorical_hinge', 'cosine_proximity'])
 		}
-		super(BinaryClassifier, self).__init__({**default_space, **other_space})
+		super(CategoricalClassifier, self).__init__({**default_space, **other_space})
 
 	def make_const_data_objective(self, features, labels, loss_type='val_loss', retain_holdout=True, test_ratio=TEST_RATIO, val_ratio=VAL_RATIO, shuffle=False):
 		"""
 		Return an objective function that hyperopt can use for the given features and labels.
 		"""
+		labels = pd.get_dummies(labels, drop_first=False) # One hot encode
 		feat_train, feat_test, lab_train, lab_test = get_train_test_split(features, labels, test_ratio=test_ratio, shuffle=shuffle)
 
 		def objective(params):
