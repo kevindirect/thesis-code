@@ -53,15 +53,15 @@ def ray_test(argv):
 		pos_label, neg_label = pd_binary_clip(label)
 		config = {
 			# 'pos': {
-				"run": mod.make_ray_objective(mod.make_const_data_objective(feature, pos_label)),
-				# "stop": {
-				# 	"timesteps_total": 100
-				# },
-				'trial_resources': {
-					"cpu": 4,
-					"gpu": 1
-				},
-				"local_dir": exp_dir
+			"run": mod.make_ray_objective(mod.make_const_data_objective(feature, pos_label)),
+			# "stop": {
+			# 	"timesteps_total": 100
+			# },
+			'trial_resources': {
+				"cpu": 4,
+				"gpu": 1
+			},
+			"local_dir": exp_dir
 			# },
 			# 'neg': {
 			# 	"run": mod.make_ray_objective(mod.make_const_data_objective(feature, neg_label)),
