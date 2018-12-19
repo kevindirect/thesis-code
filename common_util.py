@@ -17,7 +17,7 @@ from difflib import SequenceMatcher
 from collections import defaultdict, MutableMapping, OrderedDict, ChainMap
 from itertools import product, chain, tee, islice, chain, zip_longest
 from functools import reduce, partial, wraps
-from datetime import datetime
+from datetime import datetime, date
 from timeit import default_timer
 import logging
 
@@ -115,6 +115,7 @@ def str_to_list(string, delimiter=',', cast_to=str):
 """Datetime"""
 dt_now = lambda: datetime.now()
 str_now = lambda: dt_now().strftime(DT_FMT_YMD_HMS)
+dt_delta = lambda start, end: datetime.combine(date.min, end) - datetime.combine(date.min, start)
 
 """List"""
 def remove_dups_list(lst):
