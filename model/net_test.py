@@ -21,7 +21,6 @@ from model.model.three_bin_ffn import ThreeLayerBinaryFFN
 from model.model.one_bin_lstm import OneLayerBinaryLSTM
 from recon.dataset_util import prep_dataset, gen_group
 from recon.split_util import get_train_test_split, pd_binary_clip
-from recon.label_util import ser_shift
 
 
 def net_test(argv):
