@@ -59,7 +59,6 @@ def exp(argv):
 							trial_resources=default_ray_trial_resources,
 							num_samples=1,
 							local_dir=exp_dir,
-							trial_name_creator=None,
 							custom_loggers=None,
 							sync_function=None)
 		neg_exp = Experiment('{},neg'.format(exp_name),
@@ -69,7 +68,6 @@ def exp(argv):
 							trial_resources=default_ray_trial_resources,
 							num_samples=1,
 							local_dir=exp_dir,
-							trial_name_creator=None,
 							custom_loggers=None,
 							sync_function=None)
 		exp_group.extend([pos_exp, neg_exp])
