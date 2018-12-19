@@ -535,7 +535,7 @@ def load_json(fname, dir_path=None):
 				logging.error('error in file', str(fname +':'), str(e))
 				raise e
 	else:
-		raise FileNotFoundError(str(basename(fpath) +' must be in:' +dirname(fpath)))
+		raise FileNotFoundError(str(basename(fpath) +' must be in: ' +dirname(fpath)))
 
 def dump_json(json_dict, fname, dir_path=None, ind="\t", seps=None, **kwargs):
 	fpath = str(add_sep_if_none(dir_path) + fname) if dir_path else fname
