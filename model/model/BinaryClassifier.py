@@ -22,8 +22,8 @@ class BinaryClassifier(Classifier):
 	def __init__(self, other_space={}):
 		default_space = {
 			'output_activation' : hp.choice('output_activation', ['sigmoid', 'exponential', 'elu', 'tanh']),
-			#'loss': hp.choice('loss', ['binary_crossentropy', 'hinge', 'squared_hinge', 'kullback_leibler_divergence']) # KL gives strange results
-			'loss': hp.choice('loss', ['binary_crossentropy', 'hinge', 'squared_hinge'])
+			#'loss': hp.choice('loss', ['binary_crossentropy', 'hinge', 'squared_hinge', 'kullback_leibler_divergence'])
+			'loss': hp.choice('loss', ['binary_crossentropy'])	# Setting to binary cross entropy loss only
 		}
 		super(BinaryClassifier, self).__init__({**default_space, **other_space})
 
