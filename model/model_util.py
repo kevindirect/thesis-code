@@ -10,11 +10,11 @@ import pandas as pd
 
 from common_util import identity_fn
 from model.common import EXPECTED_NUM_HOURS
-from model.model.one_bin_cnn import OneLayerBinaryCNN
-from model.model.one_bin_gru import OneLayerBinaryGRU
-from model.model.one_bin_lcl import OneLayerBinaryLCL
-from model.model.one_bin_lstm import OneLayerBinaryLSTM
-from model.model.three_bin_ffn import ThreeLayerBinaryFFN
+from .model.model.one_bin_cnn import OneLayerBinaryCNN
+from .model.model.one_bin_gru import OneLayerBinaryGRU
+from .model.model.one_bin_lcl import OneLayerBinaryLCL
+from .model.model.one_bin_lstm import OneLayerBinaryLSTM
+from .model.model.three_bin_ffn import ThreeLayerBinaryFFN
 
 
 """ ********** MODELS ********** """
