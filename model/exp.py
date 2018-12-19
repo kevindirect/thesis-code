@@ -58,18 +58,14 @@ def exp(argv):
 							config=None,	# All config happens within model classes
 							trial_resources=default_ray_trial_resources,
 							num_samples=1,
-							local_dir=exp_dir,
-							custom_loggers=None,
-							sync_function=None)
+							local_dir=exp_dir)
 		neg_exp = Experiment('{},neg'.format(exp_name),
 							run=mod.make_ray_objective(mod.make_const_data_objective(feature, neg_label)),
 							stop=None,
 							config=None,	# All config happens within model classes
 							trial_resources=default_ray_trial_resources,
 							num_samples=1,
-							local_dir=exp_dir,
-							custom_loggers=None,
-							sync_function=None)
+							local_dir=exp_dir)
 		exp_group.extend([pos_exp, neg_exp])
 
 	logging.info('running {}...'.format(exp_group_name))
