@@ -91,8 +91,6 @@ def ray_test(argv):
 		scheduler = HyperBandScheduler(reward_attr="loss", max_t=100)
 		row['start'] = str_now()
 		trials = run_experiments(config, search_alg=algo, scheduler=scheduler, verbose=True)
-		print(trials)
-		sys.exit(0)
 		row['end'] = str_now()
 		row['num'] = len(trials)
 		try:
@@ -101,6 +99,10 @@ def ray_test(argv):
 			index[mod_keys] = []
 		finally:
 			index[mod_keys].append(row)
+
+		print(trials)
+		print(type(trials))
+		sys.exit(0)
 
 	logging.info('dumping experiment index files...')
 	for keys, val in index.items():
