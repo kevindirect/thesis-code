@@ -13,7 +13,7 @@ from keras.layers import Input, Dense, LocallyConnected1D, MaxPooling1D, Average
 
 from common_util import MODEL_DIR
 from model.common import MODELS_DIR, ERROR_CODE
-from model.model.BinaryClassifier import BinaryClassifier
+from model.model.binary_classifier import BinaryClassifier
 
 
 class OneLayerBinaryLCL(BinaryClassifier):
