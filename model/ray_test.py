@@ -4,6 +4,7 @@ Kevin Patel
 import sys
 import os
 from os import sep
+from os.path import basename
 import logging
 
 import numpy as np
@@ -24,7 +25,7 @@ from recon.split_util import pd_binary_clip
 
 def ray_test(argv):
 	cmd_arg_list = ['model=', 'dataset=', 'assets=']
-	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name='ray_test')
+	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name=basename(__file__))
 	mod_code = cmd_input['model='] if (cmd_input['model='] is not None) else default_model
 	dataset_fname = cmd_input['dataset='] if (cmd_input['dataset='] is not None) else default_dataset
 	assets = str_to_list(cmd_input['assets=']) if (cmd_input['assets='] is not None) else None
@@ -62,19 +63,18 @@ def ray_test(argv):
 					"gpu": 1
 				},
 				"local_dir": exp_dir
+			},
+			'neg': {
+				"run": mod.make_ray_objective(mod.make_const_data_objective(feature, neg_label)),
+				# "stop": {
+				# 	"timesteps_total": 100
+				# },
+				'trial_resources': {
+					"cpu": 4,
+					"gpu": 1
+				},
+				"local_dir": exp_dir
 			}
-			# },
-			# 'neg': {
-			# 	"run": mod.make_ray_objective(mod.make_const_data_objective(feature, neg_label)),
-			# 	# "stop": {
-			# 	# 	"timesteps_total": 100
-			# 	# },
-			# 	'trial_resources': {
-			# 		"cpu": 4,
-			# 		"gpu": 1
-			# 	},
-			# 	"local_dir": exp_dir
-			# }
 		}
 		row = {
 			'index': i,
@@ -100,10 +100,6 @@ def ray_test(argv):
 			index[mod_keys] = []
 		finally:
 			index[mod_keys].append(row)
-
-		print(trials)
-		print(type(trials))
-		sys.exit(0)
 
 	logging.info('dumping experiment index files...')
 	for keys, val in index.items():
