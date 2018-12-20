@@ -53,6 +53,8 @@ def run_trials(model_exp, features, label):
 	best = fmin(obj, exp.get_space(), algo=tpe.suggest, max_evals=5, trials=trials)
 	best_params = exp.params_idx_to_name(best)
 	print(trials)
+	print('best_trial', trials.best_trial())
+	print('trials', trials.trials())
 
 	print('best idx: {}'.format(best))
 	print('best params: {}'.format(best_params))
