@@ -89,6 +89,6 @@ class Classifier(Model):
 			Note in the Ray doc examples "params" is called "config".
 			Also Ray is built on reward functions rather than loss functions.
 			"""
-			return reporter(loss=objective(params)['reward'])
+			return reporter(reward=objective(params)['reward'])
 
 		return ray_objective
