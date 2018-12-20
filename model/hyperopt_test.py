@@ -3,6 +3,7 @@ Kevin Patel
 """
 import sys
 import os
+from os.path import basename
 import logging
 
 import numpy as np
@@ -19,7 +20,7 @@ from recon.split_util import pd_binary_clip
 
 def hyperopt_test(argv):
 	cmd_arg_list = ['model=', 'dataset=', 'assets=']
-	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name='hyperopt_test')
+	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name=basename(__file__))
 	mod_code = cmd_input['model='] if (cmd_input['model='] is not None) else default_model
 	dataset_fname = cmd_input['dataset='] if (cmd_input['dataset='] is not None) else default_dataset
 	assets = str_to_list(cmd_input['assets=']) if (cmd_input['assets='] is not None) else None
