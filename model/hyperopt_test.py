@@ -52,10 +52,25 @@ def run_trials(model_exp, features, label):
 	obj = exp.make_const_data_objective(features, label, '')
 	best = fmin(obj, exp.get_space(), algo=tpe.suggest, max_evals=5, trials=trials)
 	best_params = exp.params_idx_to_name(best)
-	print(trials)
-	print('trials', trials.trials)
-	print('results', trials.results)
-	print('losses', trials.losses())
+	try:
+		print(trials)
+	except:
+		pass
+
+	try:
+		print('trials', trials.trials)
+	except:
+		pass
+
+	try:
+		print('results', trials.results)
+	except:
+		pass
+		
+	try:
+		print('losses', trials.losses())
+	except:
+		pass
 
 	print('best idx: {}'.format(best))
 	print('best params: {}'.format(best_params))
