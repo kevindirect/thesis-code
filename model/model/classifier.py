@@ -28,12 +28,12 @@ class Classifier(Model):
 		super(Classifier, self).__init__({**default_space, **other_space})
 		self.metrics = ['accuracy']
 
-	def make_const_data_objective(self, features, labels, logdir, binary=True, metaloss_type='val_loss', metaloss_mult=1, retain_holdout=True, test_ratio=TEST_RATIO, val_ratio=VAL_RATIO, shuffle=False):
+	def make_const_data_objective(self, features, labels, logdir, clf_type='binary', metaloss_type='val_acc', mode='max', retain_holdout=True, test_ratio=TEST_RATIO, val_ratio=VAL_RATIO, shuffle=False):
 		"""
 		Return an objective function that hyperopt can use for the given features and labels.
 		Acts as a factory for an objective function of a model over params.
 		"""
-		if (not binary and labels.unique().size > 2):
+		if (clf_type=='categorical' or labels.unique().size > 2):
 			labels = pd.get_dummies(labels, drop_first=False) # If the labels are not binary (more than two value types), one hot encode them
 		
 		feat_train, feat_test, lab_train, lab_test = get_train_test_split(features, labels, test_ratio=test_ratio, shuffle=shuffle)
@@ -57,13 +57,14 @@ class Classifier(Model):
 					logging.debug('val_acc mean, min, max, last: {mean}, {min}, {max}, {last}'
 						.format(mean=np.mean(val_acc), min=np.min(val_acc), max=np.max(val_acc), last=val_acc[-1]))
 
-				metaloss = metaloss_mult*results['history'][metaloss_type][-1]	# Called this metaloss to disambiguate from model level loss used for model fitting
-				metareward = -metaloss 											# Ray is built for reinforcement learning so it's based on reward instead of loss
+				metaloss = results['history'][metaloss_type][-1]	# Different from the loss used to fit models
+				if (mode == 'max'):
+					metaloss = -metaloss
 
-				return {'loss': metaloss, 'reward': metareward, 'status': STATUS_OK}
+				return {'loss': metaloss, 'status': STATUS_OK}
 
 			except:
-				return {'loss': ERROR_CODE, 'reward': ERROR_CODE, 'status': STATUS_OK}
+				return {'loss': ERROR_CODE, 'status': STATUS_OK}
 
 		return objective
 
@@ -90,6 +91,6 @@ class Classifier(Model):
 			Note in the Ray doc examples "params" is called "config".
 			Also Ray is built on reward functions rather than loss functions.
 			"""
-			return reporter(reward=objective(params)['reward'])
+			return reporter(reward=-objective(params)['loss'])
 
 		return ray_objective
