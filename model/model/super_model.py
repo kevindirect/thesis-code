@@ -26,7 +26,7 @@ class Model:
 		default_space = {
 			'epochs': hp.choice('epochs', [200]),
 			'batch_size': hp.choice('batch_size', [64, 128, 256]),
-			'es_patience': hp.choice('es_patience', [50]),
+			'es_patience': hp.choice('es_patience', [10]),
 		}
 		self.space = {**default_space, **other_space}
 
