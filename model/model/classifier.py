@@ -61,10 +61,13 @@ class Classifier(Model):
 				if (mode == 'max'):
 					metaloss = -metaloss
 
-				return {'loss': metaloss, 'status': STATUS_OK, 'params': params}
+				# return {'loss': metaloss, 'status': STATUS_OK, 'params': params}
 
-			# except:
+			except:
 			# 	return {'loss': ERROR_CODE, 'status': STATUS_OK, 'params': params}
+				pass
+			finally:
+				return {'loss': metaloss, 'status': STATUS_OK, 'params': params}
 
 		return objective
 
