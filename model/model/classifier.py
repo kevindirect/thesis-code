@@ -11,7 +11,7 @@ from hyperopt import hp, STATUS_OK, STATUS_FAIL
 from keras.callbacks import Callback, BaseLogger, History, EarlyStopping, TensorBoard, ReduceLROnPlateau, CSVLogger, LambdaCallback
 from keras.optimizers import SGD, RMSprop, Adam, Nadam
 
-from common_util import MODEL_DIR
+from common_util import MODEL_DIR, in_debug_mode
 from model.common import MODELS_DIR, ERROR_CODE, TEST_RATIO, VAL_RATIO
 from model.model.super_model import Model
 from recon.split_util import get_train_test_split
@@ -33,7 +33,7 @@ class Classifier(Model):
 		Return an objective function that hyperopt can use for the given features and labels.
 		Acts as a factory for an objective function of a model over params.
 		"""
-		if (clf_type=='categorical' or labels.unique().size > 2):
+		if (clf_type=='categorical' and labels.unique().size > 2):
 			labels = pd.get_dummies(labels, drop_first=False) # If the labels are not binary (more than two value types), one hot encode them
 		
 		feat_train, feat_test, lab_train, lab_test = get_train_test_split(features, labels, test_ratio=test_ratio, shuffle=shuffle)
