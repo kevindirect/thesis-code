@@ -65,6 +65,7 @@ def exp(argv):
 							num_samples=1,
 							local_dir=exp_dir)
 		exp_group.extend([pos_exp, neg_exp])
+		break
 
 	logging.info('running {}...'.format(exp_group_name))
 	algo = HyperOptSearch(mod.get_space(), reward_attr='reward')
