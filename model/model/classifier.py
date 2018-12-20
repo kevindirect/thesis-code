@@ -64,7 +64,7 @@ class Classifier(Model):
 				return {'loss': metaloss, 'status': STATUS_OK, 'params': params}
 
 			except:
-				return {'loss': ERROR_CODE, 'status': STATUS_FAIL, 'params': params}
+				return {'loss': ERROR_CODE, 'status': STATUS_OK, 'params': params}
 
 		return objective
 
