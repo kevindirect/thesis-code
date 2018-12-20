@@ -37,7 +37,7 @@ default_ray_config = {
 		"include_webui": False
 	}
 }
-default_ray_trial_resources = {"cpu": 1, "gpu": 1}
+default_ray_trial_resources = {"cpu": 2, "gpu": 1}
 default_model = 'OneBinGRU'
 default_dataset = 'mvp_dnorm_raw.json'
 default_filter = ["0"]

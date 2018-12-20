@@ -26,7 +26,8 @@ class Model:
 		}
 		self.space = {**default_space, **other_space}
 		self.callbacks = [History]
-		# self.reduce_lr = ReduceLROnPlateau(monitor='val_acc', factor=0.9, patience=30, verbose=1, mode='min', min_lr=0.000001) # TODO - try this out on fit function
+		# EarlyStopping(monitor='val_acc', min_delta=0, patience=50, verbose=1, mode='auto', baseline=None, restore_best_weights=False)
+		# ReduceLROnPlateau(monitor='val_acc', factor=0.9, patience=30, verbose=1, mode='min', min_lr=0.000001)
 		self.bad_trials = 0
 
 	def get_space(self):
@@ -97,7 +98,7 @@ class Model:
 							batch_size=params['batch_size'], 
 							callbacks=[init() for init in self.callbacks], 
 							verbose=1, 
-							validation_split=val_split, # Overriden if validation data is not None
+							validation_split=val_split, # Only used if validation_data is None
 							validation_data=self.preproc(params, val_data) if (val_data is not None) else None, 
 							shuffle=shuffle)
 

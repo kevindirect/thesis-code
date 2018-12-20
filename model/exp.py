@@ -13,7 +13,7 @@ from ray.tune.schedulers import HyperBandScheduler, AsyncHyperBandScheduler
 from ray.tune.suggest import HyperOptSearch
 
 from common_util import MODEL_DIR, REPORT_DIR, JSON_SFX_LEN, get_class_name, makedir_if_not_exists, str_to_list, get_cmd_args, load_json, benchmark
-from model.common import DATASET_DIR, default_model, default_dataset, default_ray_config, default_ray_trial_resources
+from model.common import DATASET_DIR, TRIALS_COUNT, default_model, default_dataset, default_ray_config, default_ray_trial_resources
 from model.model_util import BINARY_CLF_MAP
 from model.data_util import datagen, prepare_transpose_data, prepare_label_data
 from recon.dataset_util import prep_dataset
@@ -52,14 +52,14 @@ def exp(argv):
 
 		pos_exp = Experiment('{},pos'.format(exp_name),
 							run=mod.make_ray_objective(mod.make_const_data_objective(feature, pos_label)),
-							stop=None,
+							stop={"training_iteration": TRIALS_COUNT},
 							config=None,	# All config happens within model classes
 							trial_resources=default_ray_trial_resources,
 							num_samples=1,
 							local_dir=exp_dir)
 		neg_exp = Experiment('{},neg'.format(exp_name),
 							run=mod.make_ray_objective(mod.make_const_data_objective(feature, neg_label)),
-							stop=None,
+							stop={"training_iteration": TRIALS_COUNT},
 							config=None,	# All config happens within model classes
 							trial_resources=default_ray_trial_resources,
 							num_samples=1,
@@ -67,7 +67,7 @@ def exp(argv):
 		exp_group.extend([pos_exp, neg_exp])
 
 	logging.info('running {}...'.format(exp_group_name))
-	algo = HyperOptSearch(mod.get_space(), max_concurrent=4, reward_attr='loss')
+	algo = HyperOptSearch(mod.get_space(), reward_attr='reward')
 	trials = run_experiments(exp_group, search_alg=algo, verbose=True)
 
 if __name__ == '__main__':

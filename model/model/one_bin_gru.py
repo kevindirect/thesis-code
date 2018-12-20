@@ -10,6 +10,7 @@ import pandas as pd
 from hyperopt import hp, STATUS_OK
 from keras.models import Model
 from keras.layers import Input, Dense, GRU
+from keras.optimizers import SGD, RMSprop, Adam, Nadam
 
 from common_util import MODEL_DIR
 from model.common import MODELS_DIR, ERROR_CODE
@@ -22,7 +23,7 @@ class OneLayerBinaryGRU(SequentialMixin, BinaryClassifier):
 
 	def __init__(self, other_space={}):
 		default_space = {
-			'step_size': hp.choice('step_size', [3, 5]), 	# AKA target delay or time delay in RNN research
+			'step_size': hp.choice('step_size', [5]), 		# AKA target delay or time delay in RNN research
 			'layer1_size': hp.choice('layer1_size', [8, 16, 32, 64, 128]),
 			'activation': hp.choice('activation', ['relu', 'sigmoid', 'tanh', 'linear']),
 			'recurrent_activation': hp.choice('recurrent_activation', ['hard_sigmoid']),

@@ -22,12 +22,11 @@ class BinaryClassifier(Classifier):
 	def __init__(self, other_space={}):
 		default_space = {
 			'output_activation' : hp.choice('output_activation', ['sigmoid', 'exponential', 'elu', 'tanh']),
-			#'loss': hp.choice('loss', ['binary_crossentropy', 'hinge', 'squared_hinge', 'kullback_leibler_divergence'])
-			'loss': hp.choice('loss', ['binary_crossentropy'])	# Setting to binary cross entropy loss only
+			'loss': hp.choice('loss', ['binary_crossentropy'])	# Fix loss to binary cross entropy
 		}
 		super(BinaryClassifier, self).__init__({**default_space, **other_space})
 
-	def make_const_data_objective(self, features, labels, loss_type='val_acc', loss_mult=-1, retain_holdout=True, test_ratio=TEST_RATIO, val_ratio=VAL_RATIO, shuffle=False):
+	def make_const_data_objective(self, features, labels, metaloss_type='val_acc', metaloss_mult=-1, retain_holdout=True, test_ratio=TEST_RATIO, val_ratio=VAL_RATIO, shuffle=False):
 		"""
 		Return an objective function that hyperopt can use for the given features and labels.
 		"""
@@ -52,10 +51,13 @@ class BinaryClassifier(Classifier):
 					logging.debug('val_acc mean, min, max, last: {mean}, {min}, {max}, {last}'
 						.format(mean=np.mean(val_acc), min=np.min(val_acc), max=np.max(val_acc), last=val_acc[-1]))
 
-				return {'loss': loss_mult*results['history'][loss_type][-1], 'status': STATUS_OK}
+				metaloss = metaloss_mult*results['history'][metaloss_type][-1]	# Called this metaloss to disambiguate from model level loss used for model fitting
+				metareward = -metaloss 											# Ray is built for reinforcement learning so it's based on reward instead of loss
+
+				return {'loss': metaloss, 'reward': metareward, 'status': STATUS_OK}
 
 			except:
 				self.bad_trials += 1
-				return {'loss': ERROR_CODE, 'status': STATUS_OK}
+				return {'loss': ERROR_CODE, 'reward': ERROR_CODE, 'status': STATUS_OK}
 
 		return objective
