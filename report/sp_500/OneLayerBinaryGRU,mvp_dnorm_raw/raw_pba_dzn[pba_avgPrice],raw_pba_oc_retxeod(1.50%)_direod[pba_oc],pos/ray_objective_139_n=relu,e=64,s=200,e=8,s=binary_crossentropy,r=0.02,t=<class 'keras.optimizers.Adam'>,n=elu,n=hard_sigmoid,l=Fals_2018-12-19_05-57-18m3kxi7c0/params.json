@@ -1,0 +1,13 @@
+{
+  "activation": "relu",
+  "batch_size": 64,
+  "epochs": 200,
+  "layer1_size": 8,
+  "loss": "binary_crossentropy",
+  "lr": 0.02,
+  "opt": "<class 'keras.optimizers.Adam'>",
+  "output_activation": "elu",
+  "recurrent_activation": "hard_sigmoid",
+  "stateful": false,
+  "step_size": 5
+}

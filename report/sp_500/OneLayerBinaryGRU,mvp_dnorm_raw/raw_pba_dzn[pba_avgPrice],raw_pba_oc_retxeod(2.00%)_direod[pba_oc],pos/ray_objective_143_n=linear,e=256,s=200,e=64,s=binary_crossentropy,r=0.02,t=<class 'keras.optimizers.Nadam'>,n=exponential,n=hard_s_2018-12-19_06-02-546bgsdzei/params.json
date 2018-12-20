@@ -1,0 +1,13 @@
+{
+  "activation": "linear",
+  "batch_size": 256,
+  "epochs": 200,
+  "layer1_size": 64,
+  "loss": "binary_crossentropy",
+  "lr": 0.02,
+  "opt": "<class 'keras.optimizers.Nadam'>",
+  "output_activation": "exponential",
+  "recurrent_activation": "hard_sigmoid",
+  "stateful": false,
+  "step_size": 3
+}
