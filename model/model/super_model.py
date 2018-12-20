@@ -3,6 +3,7 @@ Kevin Patel
 """
 import sys
 import os
+from os import sep
 import logging
 
 import numpy as np
@@ -18,23 +19,25 @@ class Model:
 	"""
 	Abstract base class of all model subclasses.
 	Models bundle a supervised learning model with a hyperopt parameter space to search over.
+	Models do not store any experiment or trial information, instead they specify the model structure and parameter space. In this
+	way they are more like model factories than model objects.
 	"""
 	def __init__(self, other_space={}):
 		default_space = {
-			'epochs': hp.choice('epochs', [20]),
-			'batch_size': hp.choice('batch_size', [64, 128, 256])
+			'epochs': hp.choice('epochs', [200]),
+			'batch_size': hp.choice('batch_size', [64, 128, 256]),
+			'es_patience': hp.choice('es_patience', [50]),
 		}
 		self.space = {**default_space, **other_space}
-		self.callbacks = [History]
-		# EarlyStopping(monitor='val_acc', min_delta=0, patience=50, verbose=1, mode='auto', baseline=None, restore_best_weights=False)
-		# ReduceLROnPlateau(monitor='val_acc', factor=0.9, patience=30, verbose=1, mode='min', min_lr=0.000001)
-		self.bad_trials = 0
+
+		hs = lambda params, logdir: History()
+		es = lambda params, logdir: EarlyStopping(monitor='val_loss', min_delta=0, patience=params['es_patience'], verbose=1, mode='auto', baseline=None, restore_best_weights=False)
+		# tb = lambda params, logdir: TensorBoard(log_dir=sep.join([logdir, 'tblogs']), histogram_freq=0, batch_size=32, write_graph=True, write_grads=False, write_images=False, embeddings_freq=0, embeddings_layer_names=None, embeddings_metadata=None, embeddings_data=None, update_freq='epoch')
+		# cl = lambda params, logdir: CSVLogger(sep.join([logdir, 'log.csv']), separator=',', append=True)
+		self.callbacks = [hs, es]
 
 	def get_space(self):
 		return self.space
-
-	def get_bad_trials(self):
-		return self.bad_trials
 
 	def params_idx_to_name(self, params_idx):
 		"""
@@ -88,7 +91,7 @@ class Model:
 
 		return model
 
-	def fit_model(self, params, model, train_data, val_data=None, val_split=VAL_RATIO, shuffle=False):
+	def fit_model(self, params, logdir, model, train_data, val_data=None, val_split=VAL_RATIO, shuffle=False):
 		"""
 		Fit the model and return a dictionary describing the training and test results.
 		"""
@@ -96,7 +99,7 @@ class Model:
 			stats = model.fit(*self.preproc(params, train_data), 
 							epochs=params['epochs'], 
 							batch_size=params['batch_size'], 
-							callbacks=[init() for init in self.callbacks], 
+							callbacks=[init(params, logdir) for init in self.callbacks], 
 							verbose=1, 
 							validation_split=val_split, # Only used if validation_data is None
 							validation_data=self.preproc(params, val_data) if (val_data is not None) else None, 

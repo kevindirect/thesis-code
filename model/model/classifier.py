@@ -61,7 +61,6 @@ class Classifier(Model):
 				return {'loss': metaloss, 'status': STATUS_OK}
 
 			except:
-				self.bad_trials += 1
 				return {'loss': ERROR_CODE, 'status': STATUS_OK}
 
 		return objective

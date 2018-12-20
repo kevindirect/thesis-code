@@ -49,15 +49,12 @@ def hyperopt_test(argv):
 def run_trials(model_exp, features, label):
 	exp = model_exp()
 	trials = Trials()
-	obj = exp.make_const_data_objective(features, label)
+	obj = exp.make_const_data_objective(features, label, '')
 	best = fmin(obj, exp.get_space(), algo=tpe.suggest, max_evals=50, trials=trials)
 	best_params = exp.params_idx_to_name(best)
-	bad = exp.get_bad_trials()
 
 	print('best idx: {}'.format(best))
 	print('best params: {}'.format(best_params))
-	if (bad > 0):
-		print('bad trials: {}'.format(bad))
 
 	return best_params
 

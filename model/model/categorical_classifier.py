@@ -56,7 +56,6 @@ class CategoricalClassifier(Classifier):
 				return {'loss': loss_mult*results['history'][loss_type][-1], 'status': STATUS_OK}
 
 			except:
-				self.bad_trials += 1
 				return {'loss': ERROR_CODE, 'status': STATUS_OK}
 
 		return objective
