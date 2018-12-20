@@ -33,7 +33,6 @@ def exp(argv):
 	dataset = prep_dataset(dataset_dict, assets=assets, filters_map=None)
 	dataset_name = dataset_fname[:-JSON_SFX_LEN]
 	exp_group_name = '{model},{dataset}'.format(model=mod_name, dataset=dataset_name)
-	ray.init(**default_ray_config['init'])
 
 	logging.info('model: {}'.format(mod_name))
 	logging.info('dataset: {} {} df(s)'.format(len(dataset['features']), dataset_name))
@@ -68,6 +67,7 @@ def exp(argv):
 		break
 
 	logging.info('running {}...'.format(exp_group_name))
+	ray.init(**default_ray_config['init'])
 	algo = HyperOptSearch(mod.get_space(), reward_attr='reward')
 	trials = run_experiments(exp_group, search_alg=algo, verbose=True)
 
