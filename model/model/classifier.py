@@ -7,7 +7,7 @@ import logging
 
 import numpy as np
 import pandas as pd
-from hyperopt import hp, STATUS_OK
+from hyperopt import hp, STATUS_OK, STATUS_FAIL
 from keras.callbacks import Callback, BaseLogger, History, EarlyStopping, TensorBoard, ReduceLROnPlateau, CSVLogger, LambdaCallback
 from keras.optimizers import SGD, RMSprop, Adam, Nadam
 
@@ -64,7 +64,7 @@ class Classifier(Model):
 				return {'loss': metaloss, 'status': STATUS_OK, 'params': params}
 
 			except:
-				return {'loss': ERROR_CODE, 'status': STATUS_OK, 'params': params}
+				return {'loss': ERROR_CODE, 'status': STATUS_FAIL, 'params': params}
 
 		return objective
 
