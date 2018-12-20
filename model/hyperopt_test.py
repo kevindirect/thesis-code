@@ -42,7 +42,7 @@ def hyperopt_test(argv):
 
 		logging.info('pos dir model experiment')
 		run_trials(mod, feature, pos_label)
-
+		sys.exit(0)
 		logging.info('neg dir model experiment')
 		run_trials(mod, feature, neg_label)
 
@@ -50,8 +50,9 @@ def run_trials(model_exp, features, label):
 	exp = model_exp()
 	trials = Trials()
 	obj = exp.make_const_data_objective(features, label, '')
-	best = fmin(obj, exp.get_space(), algo=tpe.suggest, max_evals=10, trials=trials)
+	best = fmin(obj, exp.get_space(), algo=tpe.suggest, max_evals=5, trials=trials)
 	best_params = exp.params_idx_to_name(best)
+	print(trials)
 
 	print('best idx: {}'.format(best))
 	print('best params: {}'.format(best_params))
