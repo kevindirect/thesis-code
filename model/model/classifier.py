@@ -42,32 +42,29 @@ class Classifier(Model):
 			"""
 			Standard classifier objective function to minimize.
 			"""
-			try:
-				compiled = self.get_model(params, features.shape[1])
+			# try:
+			compiled = self.get_model(params, features.shape[1])
 
-				if (retain_holdout):
-					results = self.fit_model(params, logdir, compiled, (feat_train, lab_train), val_data=None, val_split=val_ratio, shuffle=shuffle)
-				else:
-					results = self.fit_model(params, logdir, compiled, (feat_train, lab_train), val_data=(feat_test, lab_test), val_split=val_ratio, shuffle=shuffle)
+			if (retain_holdout):
+				results = self.fit_model(params, logdir, compiled, (feat_train, lab_train), val_data=None, val_split=val_ratio, shuffle=shuffle)
+			else:
+				results = self.fit_model(params, logdir, compiled, (feat_train, lab_train), val_data=(feat_test, lab_test), val_split=val_ratio, shuffle=shuffle)
 
-				if (in_debug_mode()):
-					val_loss, val_acc = results['history']['val_loss'], results['history']['val_acc']
-					logging.debug('val_loss mean, min, max, last: {mean}, {min}, {max}, {last}'
-						.format(mean=np.mean(val_loss), min=np.min(val_loss), max=np.max(val_loss), last=val_loss[-1]))
-					logging.debug('val_acc mean, min, max, last: {mean}, {min}, {max}, {last}'
-						.format(mean=np.mean(val_acc), min=np.min(val_acc), max=np.max(val_acc), last=val_acc[-1]))
+			if (in_debug_mode()):
+				val_loss, val_acc = results['history']['val_loss'], results['history']['val_acc']
+				logging.debug('val_loss mean, min, max, last: {mean}, {min}, {max}, {last}'
+					.format(mean=np.mean(val_loss), min=np.min(val_loss), max=np.max(val_loss), last=val_loss[-1]))
+				logging.debug('val_acc mean, min, max, last: {mean}, {min}, {max}, {last}'
+					.format(mean=np.mean(val_acc), min=np.min(val_acc), max=np.max(val_acc), last=val_acc[-1]))
 
-				metaloss = results['history'][metaloss_type][-1]	# Different from the loss used to fit models
-				if (mode == 'max'):
-					metaloss = -metaloss
+			metaloss = results['history'][metaloss_type][-1]	# Different from the loss used to fit models
+			if (mode == 'max'):
+				metaloss = -metaloss
 
-				# return {'loss': metaloss, 'status': STATUS_OK, 'params': params}
+			return {'loss': metaloss, 'status': STATUS_OK, 'params': params}
 
-			except:
+			# except:
 			# 	return {'loss': ERROR_CODE, 'status': STATUS_OK, 'params': params}
-				pass
-			finally:
-				return {'loss': metaloss, 'status': STATUS_OK, 'params': params}
 
 		return objective
 
