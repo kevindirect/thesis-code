@@ -16,7 +16,7 @@ from ray.tune.schedulers import HyperBandScheduler, AsyncHyperBandScheduler
 from ray.tune.suggest import HyperOptSearch
 
 from common_util import MODEL_DIR, REPORT_DIR, JSON_SFX_LEN, NestedDefaultDict, get_class_name, str_now, dump_df, makedir_if_not_exists, str_to_list, get_cmd_args, pd_common_index_rows, load_json, benchmark
-from model.common import DATASET_DIR, default_rayconfig_name, default_model, default_dataset
+from model.common import DATASET_DIR, default_ray_config, default_model, default_dataset
 from model.model_util import BINARY_CLF_MAP
 from model.data_util import datagen, prepare_transpose_data, prepare_label_data
 from recon.dataset_util import prep_dataset
@@ -35,8 +35,7 @@ def ray_test(argv):
 	dataset_dict = load_json(dataset_fname, dir_path=DATASET_DIR)
 	dataset = prep_dataset(dataset_dict, assets=assets, filters_map=None)
 	dataset_name = dataset_fname[:-JSON_SFX_LEN]
-	rayconfig = load_json(default_rayconfig_name, dir_path=MODEL_DIR)
-	ray.init(**rayconfig['init'])
+	ray.init(**default_ray_config['init'])
 	index = NestedDefaultDict()
 
 	logging.info('model: {}'.format(mod_name))

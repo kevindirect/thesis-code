@@ -29,8 +29,15 @@ dum = 0
 
 
 # PACKAGE DEFAULTS
-default_rayconfig_name = 'ray.json'
-default_ray_trial_resources = {"cpu": 4, "gpu": 1}
+default_ray_config = {
+	"init": {
+		"num_cpus": 8,
+		"num_gpus": 1,
+		"redirect_output": True,
+		"include_webui": False
+	}
+}
+default_ray_trial_resources = {"cpu": 1, "gpu": 1}
 default_model = 'OneBinGRU'
 default_dataset = 'mvp_dnorm_raw.json'
 default_filter = ["0"]
