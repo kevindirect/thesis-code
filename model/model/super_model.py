@@ -24,9 +24,9 @@ class Model:
 	"""
 	def __init__(self, other_space={}):
 		default_space = {
-			'epochs': hp.choice('epochs', [50]),
+			'epochs': hp.choice('epochs', [200]),
 			'batch_size': hp.choice('batch_size', [64, 128, 256]),
-			# 'es_patience': hp.choice('es_patience', [50]),
+			'es_patience': hp.choice('es_patience', [50]),
 		}
 		self.space = {**default_space, **other_space}
 
@@ -35,7 +35,7 @@ class Model:
 			verbose=1, mode='auto', baseline=None, restore_best_weights=False)
 		# tb = lambda params, logdir: TensorBoard(log_dir=sep.join([logdir, 'tblogs']), histogram_freq=0, batch_size=32, write_graph=True, write_grads=False, write_images=False, embeddings_freq=0, embeddings_layer_names=None, embeddings_metadata=None, embeddings_data=None, update_freq='epoch')
 		# cl = lambda params, logdir: CSVLogger(sep.join([logdir, 'log.csv']), separator=',', append=True)
-		self.callbacks = [hs]
+		self.callbacks = [hs, es]
 
 	def get_space(self):
 		return self.space
