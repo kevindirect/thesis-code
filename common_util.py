@@ -17,7 +17,7 @@ from difflib import SequenceMatcher
 from collections import defaultdict, MutableMapping, OrderedDict, ChainMap
 from itertools import product, chain, tee, islice, chain, zip_longest
 from functools import reduce, partial, wraps
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from timeit import default_timer
 import logging
 
@@ -26,6 +26,7 @@ import pandas as pd
 from pandas.tseries.offsets import CustomBusinessDay, CustomBusinessHour
 from pandas.testing import assert_series_equal, assert_frame_equal
 from pandas.api.types import is_numeric_dtype
+import humanize
 
 
 """ ********** SYSTEM SETTINGS ********** """
@@ -1371,20 +1372,26 @@ def set_loglevel(loglevel=DEFAULT_LOG_LEVEL):
 
 
 """ ********** PROFILING UTILS ********** """
-# The following class was written by stackoverflow's user bburns.km
-# https://stackoverflow.com/questions/7370801/measure-time-elapsed-in-python/41408510#41408510
 class benchmark(object):
-	def __init__(self, msg, fmt="%0.3g", suppress=False):
+	"""
+	ContextManager that times a selection of code's entry and exit.
+
+	This class was adapted from stackoverflow's user bburns.km code at
+		https://stackoverflow.com/questions/7370801/measure-time-elapsed-in-python/41408510#41408510
+	"""
+	def __init__(self, msg, suppress=False, humanized=True):
 		self.msg = msg
-		self.fmt = fmt
 		self.suppress = suppress
+		self.humanized = humanized
 
 	def __enter__(self):
 		self.start = default_timer()
 		return self
 
 	def __exit__(self, *args):
-		t = default_timer() - self.start
+		elapsed_sec = default_timer() - self.start
+		self.delta = timedelta(seconds=elapsed_sec)
+
 		if (not self.suppress):
-			logging.warning(("%s : " + self.fmt + " seconds") % (self.msg, t))
-		self.time = t
+			delta_str = humanize.naturaltime(self.delta) if (self.humanized) else str(self.delta)
+			logging.warning('{msg}: {t}'.format(msg=self.msg, t=delta_str))
