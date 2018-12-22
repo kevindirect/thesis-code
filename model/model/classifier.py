@@ -22,9 +22,9 @@ class Classifier(Model):
 	def __init__(self, other_space={}):
 		default_space = {
 			'opt': hp.choice('opt', [
-				{'name': 'RMSprop', 'lr': hp.choice('lr', [0.002, 0.001, 0.0005])},
-				{'name': 'Adam', 'lr': hp.choice('lr', [0.002, 0.001, 0.0005])},
-				{'name': 'Nadam', 'lr': hp.choice('lr', [0.002])},
+				{'opt_name': 'RMSprop', 'opt_lr': hp.choice('opt_lr', [0.002, 0.001, 0.0005])},
+				{'opt_name': 'Adam', 'opt_lr': hp.choice('opt_lr', [0.002, 0.001, 0.0005])},
+				{'opt_name': 'Nadam', 'opt_lr': hp.choice('opt_lr', [0.002])},
 			])
 		}
 		super(Classifier, self).__init__({**default_space, **other_space})
@@ -34,8 +34,8 @@ class Classifier(Model):
 		"""
 		Converts optimizer parameters into a function that can be passed to keras model compile.
 		"""
-		optimizer = OPT_TRANSLATOR.get(params['opt']['name'])
-		return optimizer(lr=params['opt']['lr'])
+		optimizer = OPT_TRANSLATOR.get(params['opt']['opt_name'])
+		return optimizer(lr=params['opt']['opt_lr'])
 
 	def make_const_data_objective(self, features, labels, logdir, clf_type='binary', metaloss_type='val_acc', mode='max', retain_holdout=True, test_ratio=TEST_RATIO, val_ratio=VAL_RATIO, shuffle=False):
 		"""
