@@ -20,6 +20,7 @@ MONGOD_PORT = 27017
 MONGOD_ARGS = [
 	"--quiet"
 ]
+DEFAULT_MONGO_DBS = ['admin', 'config', 'local']
 MONGOD_CHECK_ATTEMPTS = 200
 DB_DIR = REPORT_DIR +"db" +sep
 
