@@ -14,7 +14,7 @@ from hyperopt import fmin, tpe, Trials
 from hyperopt.mongoexp import MongoTrials
 
 from common_util import REPORT_DIR, JSON_SFX_LEN, makedir_if_not_exists, get_class_name, str_to_list, get_cmd_args, load_json, benchmark
-from model.common import MODELS_DIR, DATASET_DIR, HOPT_WORKER_BIN, TRIALS_COUNT, default_model, default_dataset
+from model.common import DATASET_DIR, HOPT_WORKER_BIN, TRIALS_COUNT, default_model, default_dataset
 from model.model_util import BINARY_CLF_MAP
 from model.data_util import datagen, prepare_transpose_data, prepare_label_data
 from recon.dataset_util import prep_dataset
@@ -63,12 +63,9 @@ def run_exp(exp, features, label, db, db_name, exp_key='', max_evals=TRIALS_COUN
 		worker_args = [HOPT_WORKER_BIN]
 		worker_args.append('--max-jobs={max_jobs}'.format(max_jobs=1))
 		worker_args.append('--mongo={db_uri}'.format(db_uri=db.get_mongodb_uri(db_name=db_name)))
-		worker_args.append('--poll-interval={poll_interval}'.format(poll_interval=0.1))
+		worker_args.append('--poll-interval={poll_interval:1.2f}'.format(poll_interval=0.1))
 		worker_args.append('--workdir={dir}'.format(dir=sep.join([REPORT_DIR, 'workdir'])))
-		worker_env = os.environ.copy()
-		pypath = ';'.join(sys.path)
-		worker_env['PYTHONPATH'] = ';'.join([pypath, MODELS_DIR]) +';'
-		worker = subprocess.Popen(worker_args, stdout=db.fnull, stderr=subprocess.STDOUT, env=worker_env, shell=False)
+		worker = subprocess.Popen(worker_args, stdout=db.fnull, stderr=subprocess.STDOUT, shell=False)
 	else:
 		trials = Trials()
 	best = fmin(obj, exp.get_space(), algo=tpe.suggest, max_evals=max_evals, trials=trials)
