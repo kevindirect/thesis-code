@@ -61,7 +61,7 @@ def run_exp(exp, features, label, db, db_name, exp_key='', max_evals=TRIALS_COUN
 	if (db is not None):
 		trials = MongoTrials(db.get_mongodb_trials_uri(db_name=db_name), exp_key=exp_key)
 		worker_args = [HOPT_WORKER_BIN]
-		worker_args.append('--max-jobs={max_jobs}'.format(max_jobs=1))
+		# worker_args.append('--max-jobs={max_jobs}'.format(max_jobs=1))
 		worker_args.append('--mongo={db_uri}'.format(db_uri=db.get_mongodb_uri(db_name=db_name)))
 		worker_args.append('--poll-interval={poll_interval:1.2f}'.format(poll_interval=0.1))
 		worker_args.append('--workdir={dir}'.format(dir=sep.join([REPORT_DIR, 'workdir'])))
