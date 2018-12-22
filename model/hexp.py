@@ -56,6 +56,7 @@ def run_exp(exp, features, label, db, db_name, exp_key='', max_evals=TRIALS_COUN
 	logdir = sep.join([REPORT_DIR, *db_name.split(','), exp_key])
 	makedir_if_not_exists(logdir)
 	obj = exp.make_const_data_objective(features, label, logdir)
+	logging.info('{group}: {exp}'.format(group=db_name, exp=exp_key))
 
 	if (db is not None):
 		trials = MongoTrials(db.get_mongodb_trials_uri(db_name=db_name), exp_key=exp_key)
@@ -66,9 +67,9 @@ def run_exp(exp, features, label, db, db_name, exp_key='', max_evals=TRIALS_COUN
 		worker = subprocess.Popen(worker_args, stdout=db.fnull, stderr=subprocess.STDOUT, shell=False)
 	else:
 		trials = Trials()
-
-	logging.info('{group}: {exp}'.format(group=db_name, exp=exp_key))
 	best = fmin(obj, exp.get_space(), algo=tpe.suggest, max_evals=max_evals, trials=trials)
+	best_params = exp.params_idx_to_name(best)
+	print('best params: {}'.format(best_params))
 
 
 if __name__ == '__main__':
