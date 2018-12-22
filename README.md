@@ -1,6 +1,12 @@
 Kevin Patel
 
 
+## INSTRUCTIONS ##
+* add models directory (crunch/model/model/) to PYTHONPATH
+	- Add this line to your bashrc file (with <PATH_TO_CRUNCH_DIR> filled in):
+		export PYTHONPATH="${PYTHONPATH}:/<PATH_TO_CRUNCH_DIR>/model/model/"
+
+
 ## CRUNCH ##
 * Crunch is a (python3) package consisting of a data pipeline for the analysis of hourly financial time series data
 
