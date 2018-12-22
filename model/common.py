@@ -21,6 +21,7 @@ from keras.optimizers import SGD, RMSprop, Adam, Nadam
 DATASET_DIR = RECON_DIR +'dataset' +sep
 FILTERSET_DIR = RECON_DIR +'filterset' +sep
 MODELS_DIR = MODEL_DIR +'model' +sep
+sys.path.append(MODELS_DIR)
 HOPT_WORKER_BIN = 'hyperopt-mongo-worker'
 EXPECTED_NUM_HOURS = 8
 TRIALS_COUNT = 100
