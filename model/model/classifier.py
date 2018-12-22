@@ -10,7 +10,7 @@ import pandas as pd
 from hyperopt import hp, STATUS_OK, STATUS_FAIL
 from keras.optimizers import SGD, RMSprop, Adam, Nadam
 
-from common_util import MODEL_DIR, in_debug_mode
+from common_util import MODEL_DIR, in_debug_mode, one_minus
 from model.common import MODELS_DIR, ERROR_CODE, TEST_RATIO, VAL_RATIO, OPT_TRANSLATOR
 from model.model.super_model import Model
 from recon.split_util import get_train_test_split
@@ -67,8 +67,8 @@ class Classifier(Model):
 					.format(mean=np.mean(val_acc), min=np.min(val_acc), max=np.max(val_acc), last=val_acc[-1]))
 
 			metaloss = results['history'][metaloss_type][-1]	# Different from the loss used to fit models
-			if (mode == 'max'):
-				metaloss = -metaloss
+			if (mode == 'max'):	# Converts a score that should be maximized into a loss to minimize
+				metaloss = one_minus(metaloss)
 
 			return {'loss': metaloss, 'status': STATUS_OK, 'params': params}
 
