@@ -13,7 +13,7 @@ import pandas as pd
 from hyperopt import fmin, tpe, Trials
 from hyperopt.mongoexp import MongoTrials
 
-from common_util import REPORT_DIR, JSON_SFX_LEN, get_class_name, str_to_list, get_cmd_args, load_json, benchmark
+from common_util import REPORT_DIR, JSON_SFX_LEN, makedir_if_not_exists, get_class_name, str_to_list, get_cmd_args, load_json, benchmark
 from model.common import DATASET_DIR, HOPT_WORKER_BIN, TRIALS_COUNT, default_model, default_dataset
 from model.model_util import BINARY_CLF_MAP
 from model.data_util import datagen, prepare_transpose_data, prepare_label_data
