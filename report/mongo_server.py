@@ -92,6 +92,17 @@ class MongoServer:
 	def running(self):
 		return self.process is not None
 
+	def get_mongodb_uri(self, db_name):
+		uri = '{host}:{port}/{db}'.format(host='localhost', port=self.port, db=db_name)
+		return uri
+
+	def get_mongodb_trials_uri(self, db_name):
+		"""
+		Produces uri string for MongoTrials constructor for a particular database.
+		"""
+		uri = 'mongo://{mongodb_uri}/jobs'.format(mongodb_uri=self.get_mongodb_uri(db_name))
+		return uri
+
 	def get_client(self):
 		"""
 		Return client connection to this MongoDB server.
