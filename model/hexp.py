@@ -68,8 +68,9 @@ def run_exp(exp, features, label, db, db_name, exp_key='', max_evals=TRIALS_COUN
 	else:
 		trials = Trials()
 	best = fmin(obj, exp.get_space(), algo=tpe.suggest, max_evals=max_evals, trials=trials)
-	best_params = exp.params_idx_to_name(best)
-	print('best params: {}'.format(best_params))
+	print('best idx: {}'.format(best))
+	# best_params = exp.params_idx_to_name(best)
+	# print('best params: {}'.format(best_params))
 
 
 if __name__ == '__main__':
