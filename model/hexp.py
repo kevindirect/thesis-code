@@ -65,7 +65,7 @@ def run_exp(exp, features, label, db, db_name, exp_key='', max_evals=TRIALS_COUN
 		worker_args.append('--mongo={db_uri}'.format(db_uri=db.get_mongodb_uri(db_name=db_name)))
 		worker_args.append('--poll-interval={poll_interval}'.format(poll_interval=0.1))
 		worker_args.append('--workdir={dir}'.format(dir=sep.join([REPORT_DIR, 'workdir'])))
-		worker = subprocess.Popen(worker_args, stdout=db.fnull, stderr=subprocess.STDOUT, shell=False)
+		worker = subprocess.Popen(worker_args, stdout=db.fnull, stderr=subprocess.STDOUT, env=os.environ.copy(), shell=False)
 	else:
 		trials = Trials()
 	best = fmin(obj, exp.get_space(), algo=tpe.suggest, max_evals=max_evals, trials=trials)
