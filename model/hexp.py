@@ -62,7 +62,7 @@ def run_exp(exp, features, label, db, db_name, exp_key='', max_evals=TRIALS_COUN
 		worker_args = [HOPT_WORKER_BIN]
 		worker_args.append('--mongo={}'.format(db.get_mongodb_uri(db_name=db_name)))
 		worker_args.append('--poll-interval=0.1')
-		worker_args.append('--workdir={workdir}'.format(sep.join([REPORT_DIR, 'workdir'])))
+		worker_args.append('--workdir={dir}'.format(dir=sep.join([REPORT_DIR, 'workdir'])))
 		worker = subprocess.Popen(worker_args, stdout=db.fnull, stderr=subprocess.STDOUT, shell=False)
 	else:
 		trials = Trials()
