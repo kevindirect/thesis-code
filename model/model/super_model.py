@@ -33,11 +33,11 @@ class Model:
 		hs = lambda params, logdir: History()
 		es = lambda params, logdir: EarlyStopping(monitor='val_loss', min_delta=0, patience=params['es_patience'],
 			verbose=1, mode='auto', baseline=None, restore_best_weights=False)
-		# tb = lambda params, logdir: TensorBoard(log_dir=sep.join([logdir, 'tb']), histogram_freq=1, batch_size=params['batch_size'],
-		# 	write_graph=True, write_grads=False, write_images=True, embeddings_freq=0, embeddings_layer_names=None, embeddings_metadata=None,
-		# 	embeddings_data=None, update_freq='epoch')
+		tb = lambda params, logdir: TensorBoard(log_dir=sep.join([logdir, 'tb']), histogram_freq=1, batch_size=params['batch_size'],
+			write_graph=True, write_grads=False, write_images=True, embeddings_freq=0, embeddings_layer_names=None, embeddings_metadata=None,
+			embeddings_data=None, update_freq='epoch')
 		cl = lambda params, logdir: CSVLogger(sep.join([logdir, 'log.csv']), separator=',', append=True)
-		self.callbacks = [hs, es, cl]
+		self.callbacks = [hs, es, cl, tb]
 
 	def get_space(self):
 		return self.space
