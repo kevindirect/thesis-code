@@ -66,7 +66,7 @@ def run_exp(exp, features, label, db, db_name, exp_key='', max_evals=TRIALS_COUN
 	else:
 		trials = Trials()
 
-	logging.info('{group}: {exp}'.format(group=group_name, exp=exp_key))
+	logging.info('{group}: {exp}'.format(group=db_name, exp=exp_key))
 	best = fmin(obj, exp.get_space(), algo=tpe.suggest, max_evals=max_evals, trials=trials)
 
 
