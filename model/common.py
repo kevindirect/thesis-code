@@ -28,7 +28,7 @@ TEST_RATIO = .2
 VAL_RATIO = .25
 ERROR_CODE = 999999
 OPT_TRANSLATOR = {
-	'SGD': SGD
+	'SGD': SGD,
 	'RMSprop': RMSprop,
 	'Adam': Adam,
 	'Nadam': Nadam
