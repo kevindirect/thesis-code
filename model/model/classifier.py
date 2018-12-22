@@ -8,11 +8,10 @@ import logging
 import numpy as np
 import pandas as pd
 from hyperopt import hp, STATUS_OK, STATUS_FAIL
-from keras.callbacks import Callback, BaseLogger, History, EarlyStopping, TensorBoard, ReduceLROnPlateau, CSVLogger, LambdaCallback
 from keras.optimizers import SGD, RMSprop, Adam, Nadam
 
 from common_util import MODEL_DIR, in_debug_mode
-from model.common import MODELS_DIR, ERROR_CODE, TEST_RATIO, VAL_RATIO
+from model.common import MODELS_DIR, ERROR_CODE, TEST_RATIO, VAL_RATIO, OPT_TRANSLATOR
 from model.model.super_model import Model
 from recon.split_util import get_train_test_split
 
@@ -22,11 +21,21 @@ class Classifier(Model):
 
 	def __init__(self, other_space={}):
 		default_space = {
-			'opt': hp.choice('opt', [RMSprop, Adam, Nadam]),	# Recommended to fix an optimizer in the instantiated model subclass
-			'lr': hp.choice('lr', [0.01, 0.02, 0.001, 0.0001])
+			'opt': hp.choice('opt', [
+				{'name': 'RMSprop', 'lr': hp.choice('lr', [0.002, 0.001, 0.0005])},
+				{'name': 'Adam', 'lr': hp.choice('lr', [0.002, 0.001, 0.0005])},
+				{'name': 'Nadam', 'lr': hp.choice('lr', [0.002])},
+			])
 		}
 		super(Classifier, self).__init__({**default_space, **other_space})
 		self.metrics = ['accuracy']
+
+	def make_optimizer(self, params):
+		"""
+		Converts optimizer parameters into a function that can be passed to keras model compile.
+		"""
+		optimizer = OPT_TRANSLATOR.get(params['opt']['name'])
+		return optimizer(lr=params['opt']['lr'])
 
 	def make_const_data_objective(self, features, labels, logdir, clf_type='binary', metaloss_type='val_acc', mode='max', retain_holdout=True, test_ratio=TEST_RATIO, val_ratio=VAL_RATIO, shuffle=False):
 		"""

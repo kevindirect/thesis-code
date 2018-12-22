@@ -45,6 +45,6 @@ class OneLayerBinaryLCL(BinaryClassifier):
 
 		# Compile model
 		model = Model(inputs=inputs, outputs=output)
-		model.compile(optimizer=params['opt'](lr=params['lr']), loss=params['loss'], metrics=self.metrics)
+		model.compile(optimizer=self.make_optimizer(params), loss=params['loss'], metrics=self.metrics)
 
 		return model

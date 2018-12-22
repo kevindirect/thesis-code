@@ -14,6 +14,7 @@ from os import sep
 from common_util import RECON_DIR, MODEL_DIR
 
 # OTHER STAGE DEPENDENCIES
+from keras.optimizers import SGD, RMSprop, Adam, Nadam
 
 
 # PACKAGE CONSTANTS
@@ -26,6 +27,12 @@ TRIALS_COUNT = 100
 TEST_RATIO = .2
 VAL_RATIO = .25
 ERROR_CODE = 999999
+OPT_TRANSLATOR = {
+	'SGD': SGD
+	'RMSprop': RMSprop,
+	'Adam': Adam,
+	'Nadam': Nadam
+}
 dum = 0
 
 
