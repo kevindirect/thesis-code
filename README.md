@@ -5,7 +5,10 @@ Kevin Patel
 * add models directory (crunch/model/model/) to PYTHONPATH
 	- Add this line to your bashrc file (with <PATH_TO_CRUNCH_DIR> filled in):
 		export PYTHONPATH="${PYTHONPATH}:/<PATH_TO_CRUNCH_DIR>/model/model/"
-
+* modify keras source code
+	- Add 'config.gpu_options.allow_growth=True' after both config = tf.ConfigProto(...) calls in keras/backend/tensorflow_backend.py
+	- More info: https://stackoverflow.com/questions/43990046/tensorflow-blas-gemm-launch-failed
+	- TensorFlow API doc: https://www.tensorflow.org/guide/using_gpu
 
 ## CRUNCH ##
 * Crunch is a (python3) package consisting of a data pipeline for the analysis of hourly financial time series data

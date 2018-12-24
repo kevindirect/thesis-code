@@ -3,6 +3,7 @@ Kevin Patel
 """
 import sys
 import os
+from os import sep
 import logging
 
 import numpy as np
@@ -10,7 +11,7 @@ import pandas as pd
 from hyperopt import hp, STATUS_OK, STATUS_FAIL
 from keras.optimizers import SGD, RMSprop, Adam, Nadam
 
-from common_util import MODEL_DIR, in_debug_mode, one_minus
+from common_util import MODEL_DIR, in_debug_mode, str_now, one_minus
 from model.common import MODELS_DIR, ERROR_CODE, TEST_RATIO, VAL_RATIO, OPT_TRANSLATOR
 from model.model.super_model import Model
 from recon.split_util import get_train_test_split
@@ -37,10 +38,28 @@ class Classifier(Model):
 		optimizer = OPT_TRANSLATOR.get(params['opt']['name'])
 		return optimizer(lr=params['opt']['lr'])
 
-	def make_const_data_objective(self, features, labels, logdir, clf_type='binary', metaloss_type='val_acc', mode='max', retain_holdout=True, test_ratio=TEST_RATIO, val_ratio=VAL_RATIO, shuffle=False):
+	def make_const_data_objective(self, features, labels, objlogdir, objlogtime=True, clf_type='binary', metaloss_type='val_acc', metaloss_mode='max', retain_holdout=True, test_ratio=TEST_RATIO, val_ratio=VAL_RATIO, shuffle=False):
 		"""
 		Return an objective function that hyperopt can use for the given features and labels.
 		Acts as a factory for an objective function of a model over params.
+
+		Args:
+			features (pd.DataFrame): features df
+			labels (pd.DataFrame): labels df
+			objlogdir (str): path to logging directory for objective function
+			objlogtime (bool): if true creates subdirectories in the logging directory for each time the objective is called 
+			clf_type ('binary'|'categorical'): the classifier type 
+			metaloss_type (str): the loss to return after the objective function is run
+			metaloss_mode ('min'|'max'): whether the metaloss should be minimized or maximized
+			retain_holdout (bool): if true the the test set is held out and validation set is taken from the training set,
+									if false the test set is used as validation and there is no test set
+			test_ratio (float): ratio to be removed for test
+			val_ratio (float): ratio to be removed for validation (only used if retain_holdout set true)
+			shuffle (bool): if true shuffles the data
+
+		Returns:
+			objective function to arg minimize
+
 		"""
 		if (clf_type=='categorical' and labels.unique().size > 2):
 			labels = pd.get_dummies(labels, drop_first=False) # If the labels are not binary (more than two value types), one hot encode them
@@ -53,6 +72,7 @@ class Classifier(Model):
 			"""
 			# try:
 			compiled = self.get_model(params, features.shape[1])
+			logdir = sep.join([objlogdir, str_now()]) if (objlogtime) else objlogdir
 
 			if (retain_holdout):
 				results = self.fit_model(params, logdir, compiled, (feat_train, lab_train), val_data=None, val_split=val_ratio, shuffle=shuffle)
@@ -67,7 +87,7 @@ class Classifier(Model):
 					.format(mean=np.mean(val_acc), min=np.min(val_acc), max=np.max(val_acc), last=val_acc[-1]))
 
 			metaloss = results['history'][metaloss_type][-1]	# Different from the loss used to fit models
-			if (mode == 'max'):	# Converts a score that should be maximized into a loss to minimize
+			if (metaloss_mode == 'max'):	# Converts a score that should be maximized into a loss to minimize
 				metaloss = one_minus(metaloss)
 
 			return {'loss': metaloss, 'status': STATUS_OK, 'params': params}
