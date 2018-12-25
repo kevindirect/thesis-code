@@ -355,6 +355,12 @@ class NestedDefaultDict(MutableMapping):
 		"""
 		return "{}, {}".format(self.keychains, self.tree)
 
+def dict_combine(a, b):
+	"""
+	Combine / merge two dicts into one.
+	"""
+	return {**a, **b}
+
 def nice_print_dict(dictionary):
 	print(dumps(dictionary, indent=4, sort_keys=True))
 
