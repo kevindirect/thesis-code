@@ -74,6 +74,7 @@ DT_BIZ_HOURLY_FREQ = 'BH'
 DT_FMT_YMD =  '%Y-%m-%d'
 DT_FMT_YMD_HM = '%Y-%m-%d %H:%M'
 DT_FMT_YMD_HMS = '%Y-%m-%d %H:%M:%S'
+DT_FMT_YMD_HMSF = '%Y-%m-%d %H:%M:%S:%f'
 
 """Type"""
 def is_type(obj, *types):
@@ -115,7 +116,7 @@ def str_to_list(string, delimiter=',', cast_to=str):
 
 """Datetime"""
 dt_now = lambda: datetime.now()
-str_now = lambda: dt_now().strftime(DT_FMT_YMD_HMS)
+str_now = lambda fmt=DT_FMT_YMD_HMS: dt_now().strftime(fmt)
 dt_delta = lambda start, end: datetime.combine(date.min, end) - datetime.combine(date.min, start)
 
 """List"""
