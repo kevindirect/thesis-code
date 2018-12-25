@@ -77,7 +77,7 @@ class Classifier(Model):
 			"""
 			# try:
 			compiled = self.get_model(params, features.shape[1])
-			trial_logdir = sep.join([exp_logdir, str_now()])
+			trial_logdir = exp_logdir +str_now() +sep
 			makedir_if_not_exists(trial_logdir)
 			dump_json(params, 'params.json', dir_path=trial_logdir)
 
