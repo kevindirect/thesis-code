@@ -61,8 +61,7 @@ def hexp(argv):
 			pos_label, neg_label = pd_binary_clip(label)
 			pos_meta, neg_meta = copy.deepcopy(meta), copy.deepcopy(meta)
 			pos_meta['exp']['dir'], neg_meta['exp']['dir'] = 'pos', 'neg'
-			pos_meta['exp']['dir'] = pos_meta['exp']['dir'].format(**pos_meta['exp'])
-			neg_meta['exp']['dir'] = neg_meta['exp']['dir'].format(**neg_meta['exp'])
+			pos_meta['exp']['name'], neg_meta['exp']['name'] = pos_meta['exp']['name'].format(**pos_meta['exp']), neg_meta['exp']['name'].format(**neg_meta['exp'])
 
 			run_model(model_obj, feature, pos_label, pos_meta, db)
 			run_model(model_obj, feature, neg_label, neg_meta, db)
