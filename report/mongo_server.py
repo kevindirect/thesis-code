@@ -10,7 +10,7 @@ import logging
 
 import pymongo
 
-from common_util import makedir_if_not_exists, get_free_port, benchmark
+from common_util import makedir_if_not_exists, get_free_port
 from report.common import MONGOD_BIN, MONGOD_PORT, MONGOD_ARGS, MONGOD_CHECK_ATTEMPTS, DB_DIR
 
 
