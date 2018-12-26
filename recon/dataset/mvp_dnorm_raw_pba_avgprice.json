@@ -1,0 +1,7 @@
+{
+	"features": [
+		["mvp_norm", "dnorm_raw_pba_avgprice"]
+	],
+	"labels": "mvp_labels_eod.json",
+	"row_masks": "row_masks.json"
+}

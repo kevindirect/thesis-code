@@ -47,7 +47,7 @@ default_ray_config = {
 }
 default_ray_trial_resources = {"cpu": 2, "gpu": 1}
 default_model = 'OneBinGRU'
-default_dataset = 'mvp_dnorm_raw.json'
+default_dataset = 'mvp_dnorm_raw_pba_avgprice.json'
 default_filter = ["0"]
 default_nt_filter = ["1"]
 default_opt_filter = ["1", "2"]

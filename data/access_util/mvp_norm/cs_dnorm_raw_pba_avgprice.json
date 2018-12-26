@@ -1,0 +1,26 @@
+{
+	"dzn": {
+		"all": null,
+		"subsets": {
+			"raw_pba": {
+				"exact": ["pba_avgPrice"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			}
+		}
+	},
+	"dmx": {
+		"all": null,
+		"subsets": {
+			"raw_pba": {
+				"exact": ["pba_avgPrice"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			}
+		}
+	}
+}
