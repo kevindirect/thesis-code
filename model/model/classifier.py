@@ -38,7 +38,7 @@ class Classifier(Model):
 		optimizer = OPT_TRANSLATOR.get(params['opt']['name'])
 		return optimizer(lr=params['opt']['lr'])
 
-	def make_const_data_objective(self, features, labels, exp_logdir, exp_meta={}, clf_type='binary', metaloss_type='val_acc', metaloss_mode='max',
+	def make_const_data_objective(self, features, labels, exp_logdir, exp_meta=None, clf_type='binary', metaloss_type='val_acc', metaloss_mode='max',
 									retain_holdout=True, test_ratio=TEST_RATIO, val_ratio=VAL_RATIO, shuffle=False):
 		"""
 		Return an objective function that hyperopt can use for the given features and labels.
@@ -49,7 +49,7 @@ class Classifier(Model):
 			features (pd.DataFrame): features df
 			labels (pd.DataFrame): labels df
 			exp_logdir (str): path to the logging directory of the objective function
-			exp_meta (dict): any additional key-value metadata to log for the experiment (locals are logged by default)
+			exp_meta (dict): any additional key-value metadata to log for the experiment (locals are always logged)
 			clf_type ('binary'|'categorical'): the classifier type 
 			metaloss_type (str): the loss to return after the objective function is run
 			metaloss_mode ('min'|'max'): whether the metaloss should be minimized or maximized
@@ -62,10 +62,11 @@ class Classifier(Model):
 		Returns:
 			objective function to arg minimize
 		"""
-		exp_info = {'params': remove_keys(dict(locals().items()), ['self', 'features', 'labels', 'exp_meta'])}
-		exp_info = dict_combine(exp_meta, exp_info)
+		exp_meta = exp_meta or {}
+		exp_meta['params'] = remove_keys(dict(locals().items()), ['self', 'features', 'labels', 'exp_meta'])
+		exp_meta['data'] = {'size': labels.size, 'lab_dist': labels.value_counts(normalize=False).to_dict()}
 		makedir_if_not_exists(exp_logdir)
-		dump_json(exp_info, 'exp.json', dir_path=exp_logdir)
+		dump_json(exp_meta, 'exp.json', dir_path=exp_logdir)
 
 		if (clf_type=='categorical' and labels.unique().size > 2):
 			labels = pd.get_dummies(labels, drop_first=False) # If the labels are not binary (more than two value types), one hot encode them		
@@ -96,6 +97,8 @@ class Classifier(Model):
 			metaloss = results['history'][metaloss_type][-1]	# Different from the loss used to fit models
 			if (metaloss_mode == 'max'):	# Converts a score that should be maximized into a loss to minimize
 				metaloss = one_minus(metaloss)
+
+			# TODO - free GPU memory
 
 			return {'loss': metaloss, 'status': STATUS_OK, 'params': params}
 

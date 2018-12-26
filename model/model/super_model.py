@@ -36,7 +36,7 @@ class Model:
 		tb = lambda params, logdir: TensorBoard(log_dir=logdir, histogram_freq=1, batch_size=params['batch_size'],
 			write_graph=True, write_grads=False, write_images=False, embeddings_freq=0, embeddings_layer_names=None, embeddings_metadata=None,
 			embeddings_data=None, update_freq='epoch')
-		cl = lambda params, logdir: CSVLogger(str(logdir +sep +'log.csv'), separator=',', append=True)
+		cl = lambda params, logdir: CSVLogger(str(logdir +'log.csv'), separator=',', append=True)
 		self.callbacks = [hs, es, cl, tb]
 
 	def get_space(self):

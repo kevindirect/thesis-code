@@ -14,7 +14,7 @@ import pandas as pd
 from hyperopt import fmin, tpe, Trials
 from hyperopt.mongoexp import MongoTrials
 
-from common_util import REPORT_DIR, JSON_SFX_LEN, makedir_if_not_exists, get_class_name, str_to_list, get_cmd_args, load_json, benchmark
+from common_util import CRUNCH_DIR, REPORT_DIR, JSON_SFX_LEN, makedir_if_not_exists, get_class_name, str_to_list, get_cmd_args, load_json, benchmark
 from model.common import DATASET_DIR, HOPT_WORKER_BIN, TRIALS_COUNT, default_model, default_dataset
 from model.model_util import BINARY_CLF_MAP
 from model.data_util import datagen, prepare_transpose_data, prepare_label_data
@@ -41,7 +41,8 @@ def hexp(argv):
 	logging.info('assets: {}'.format(str('all' if (assets==None) else ', '.join(assets))))
 
 	with MongoServer() as db:
-		for fpath, lpath, frec, lrec, fcol, lcol, feature, label in datagen(dataset, feat_prep_fn=prepare_transpose_data, label_prep_fn=prepare_label_data, how='ser_to_ser'):
+		for i, fpath, lpath, frec, lrec, fcol, lcol, feature, label in enumerate(datagen(dataset, feat_prep_fn=prepare_transpose_data, label_prep_fn=prepare_label_data, how='ser_to_ser')):
+			logging.info('parent exp {}'.format(i))
 			asset_name = fpath[0]
 			assert(asset_name==lpath[0])
 			meta = {
@@ -78,41 +79,22 @@ def run_model(mdl, features, label, meta, db, max_evals=TRIALS_COUNT):
 	logging.info('{group}: {exp}'.format(group=db_name, exp=exp_name))
 
 	if (db is not None):
-		trials = MongoTrials(db.get_mongodb_trials_uri(db_name=db_name), exp_key=exp_name)
 		worker_args = [HOPT_WORKER_BIN]
-		# worker_args.append('--max-jobs={max_jobs}'.format(max_jobs=1))
+		worker_args.append('--exp-key={exp}'.format(exp=exp_name))
+		worker_args.append('--max-jobs={max_jobs}'.format(max_jobs=max_evals))
 		worker_args.append('--mongo={db_uri}'.format(db_uri=db.get_mongodb_uri(db_name=db_name)))
 		worker_args.append('--poll-interval={poll_interval:1.2f}'.format(poll_interval=0.1))
-		worker_args.append('--workdir={dir}'.format(dir=REPORT_DIR +'workdir' +sep))
+		worker_args.append('--workdir={dir}'.format(dir=CRUNCH_DIR))
 		worker = subprocess.Popen(worker_args, stdout=db.fnull, stderr=subprocess.STDOUT, shell=False)
+		logging.info('started worker: {}'.format(' '.join(worker_args)))
+		trials = MongoTrials(db.get_mongodb_trials_uri(db_name=db_name), exp_key=exp_name)
+		# TODO - maybe add a sleep here to give hyperopt mongo worker time to get up and running
 	else:
 		trials = Trials()
 	best = fmin(obj, mdl.get_space(), algo=tpe.suggest, max_evals=max_evals, trials=trials)
 	print('best idx: {}'.format(best))
 	# best_params = exp.params_idx_to_name(best)
 	# print('best params: {}'.format(best_params))
-
-
-# def run_exp(exp, features, label, db, db_name, exp_key='', max_evals=TRIALS_COUNT/4):
-# 	logdir = sep.join([REPORT_DIR, *db_name.split(','), exp_key])
-# 	makedir_if_not_exists(logdir)
-# 	obj = exp.make_const_data_objective(features, label, logdir)
-# 	logging.info('{group}: {exp}'.format(group=db_name, exp=exp_key))
-
-# 	if (db is not None):
-# 		trials = MongoTrials(db.get_mongodb_trials_uri(db_name=db_name), exp_key=exp_key)
-# 		worker_args = [HOPT_WORKER_BIN]
-# 		# worker_args.append('--max-jobs={max_jobs}'.format(max_jobs=1))
-# 		worker_args.append('--mongo={db_uri}'.format(db_uri=db.get_mongodb_uri(db_name=db_name)))
-# 		worker_args.append('--poll-interval={poll_interval:1.2f}'.format(poll_interval=0.1))
-# 		worker_args.append('--workdir={dir}'.format(dir=sep.join([REPORT_DIR, 'workdir'])))
-# 		worker = subprocess.Popen(worker_args, stdout=db.fnull, stderr=subprocess.STDOUT, shell=False)
-# 	else:
-# 		trials = Trials()
-# 	best = fmin(obj, exp.get_space(), algo=tpe.suggest, max_evals=max_evals, trials=trials)
-# 	print('best idx: {}'.format(best))
-# 	# best_params = exp.params_idx_to_name(best)
-# 	# print('best params: {}'.format(best_params))
 
 
 if __name__ == '__main__':
