@@ -80,8 +80,8 @@ def run_model(mdl, features, label, meta, db, max_evals=TRIALS_COUNT):
 
 	if (db is not None):
 		worker_args = [HOPT_WORKER_BIN]
-		worker_args.append('--exp-key={exp}'.format(exp=exp_name))
-		worker_args.append('--max-jobs={max_jobs}'.format(max_jobs=max_evals))
+		worker_args.append('--exp-key={exp}'.format(exp=exp_name))					# XXX - only run this experiment
+		worker_args.append('--max-jobs={max_jobs}'.format(max_jobs=max_evals))		# XXX - set jobs to number of trials
 		worker_args.append('--mongo={db_uri}'.format(db_uri=db.get_mongodb_uri(db_name=db_name)))
 		worker_args.append('--poll-interval={poll_interval:1.2f}'.format(poll_interval=0.1))
 		worker_args.append('--workdir={dir}'.format(dir=CRUNCH_DIR))
