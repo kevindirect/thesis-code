@@ -67,7 +67,7 @@ class Classifier(Model):
 		"""
 		exp_meta = exp_meta or {}
 		exp_meta['params'] = remove_keys(dict(locals().items()), ['self', 'features', 'labels', 'exp_meta'])
-		exp_meta['data'] = {'size': labels.size, 'lab_dist': labels.value_counts(normalize=False).to_dict()}
+		exp_meta['data'] = {'size': labels.size, 'lab_dist': labels.value_counts(normalize=True).to_dict()}
 		makedir_if_not_exists(exp_logdir)
 		dump_json(exp_meta, 'exp.json', dir_path=exp_logdir)
 
