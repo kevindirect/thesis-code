@@ -11,7 +11,7 @@ import pandas as pd
 from hyperopt import hp, STATUS_OK, STATUS_FAIL
 from keras.optimizers import SGD, RMSprop, Adam, Nadam
 
-from common_util import MODEL_DIR, makedir_if_not_exists, in_debug_mode, remove_keys, dict_combine, dump_json, str_now, one_minus
+from common_util import MODEL_DIR, makedir_if_not_exists, remove_keys, dict_combine, dump_json, str_now, one_minus
 from model.common import MODELS_DIR, ERROR_CODE, TEST_RATIO, VAL_RATIO, OPT_TRANSLATOR
 from model.model.super_model import Model
 from recon.split_util import get_train_test_split
@@ -38,7 +38,8 @@ class Classifier(Model):
 		optimizer = OPT_TRANSLATOR.get(params['opt']['name'])
 		return optimizer(lr=params['opt']['lr'])
 
-	def make_const_data_objective(self, features, labels, exp_logdir, exp_meta=None, clf_type='binary', metaloss_type='val_acc', metaloss_mode='max',
+	def make_const_data_objective(self, features, labels, exp_logdir, exp_meta=None, clf_type='binary',
+									meta_obj='val_acc', obj_agg='last', obj_mode='max', meta_var=None,
 									retain_holdout=True, test_ratio=TEST_RATIO, val_ratio=VAL_RATIO, shuffle=False):
 		"""
 		Return an objective function that hyperopt can use for the given features and labels.
@@ -51,8 +52,10 @@ class Classifier(Model):
 			exp_logdir (str): path to the logging directory of the objective function
 			exp_meta (dict): any additional key-value metadata to log for the experiment (locals are always logged)
 			clf_type ('binary'|'categorical'): the classifier type 
-			metaloss_type (str): the loss to return after the objective function is run
-			metaloss_mode ('min'|'max'): whether the metaloss should be minimized or maximized
+			meta_obj (str): the name of the loss to return after the objective function is run
+			obj_agg ('last'|'mean'): the method to aggregate the objective function
+			obj_mode ('min'|'max'): indicates whether the meta objective should be minimized or maximized
+			meta_var (None | str): the name of the loss uncertainty variable, if unused uncertainty will be fixed to zero (point estimate model)
 			retain_holdout (bool): if true the the test set is held out and validation set is taken from the training set,
 									if false the test set is used as validation and there is no test set
 			test_ratio (float): ratio to be removed for test
@@ -75,6 +78,19 @@ class Classifier(Model):
 		def objective(params):
 			"""
 			Standard classifier objective function to minimize.
+
+			Args:
+				params (dict): dictionary of objective function parameters
+
+			Returns:
+				dict containing the following items
+						status: one of the keys from hyperopt.STATUS_STRINGS, will be fixed to STATUS_OK
+						loss: the float valued loss (validation set loss), if status is STATUS_OK this has to be present
+						loss_variance: the uncertainty in a stochastic objective function
+						params: the params passed in (for convenience)
+					optional:
+						true_loss: generalization error (test set loss), not actually used in tuning
+						true_loss_variance: uncertainty of the generalization error, not actually used in tuning
 			"""
 			# try:
 			compiled = self.get_model(params, features.shape[1])
@@ -87,28 +103,23 @@ class Classifier(Model):
 			else:
 				results = self.fit_model(params, trial_logdir, compiled, (feat_train, lab_train), val_data=(feat_test, lab_test), val_split=val_ratio, shuffle=shuffle)
 
-			if (in_debug_mode()):
-				val_loss, val_acc = results['history']['val_loss'], results['history']['val_acc']
-				logging.debug('val_loss mean, min, max, last: {mean}, {min}, {max}, {last}'
-					.format(mean=np.mean(val_loss), min=np.min(val_loss), max=np.max(val_loss), last=val_loss[-1]))
-				logging.debug('val_acc mean, min, max, last: {mean}, {min}, {max}, {last}'
-					.format(mean=np.mean(val_acc), min=np.min(val_acc), max=np.max(val_acc), last=val_acc[-1]))
-
-			metaloss = results['history'][metaloss_type][-1]	# Different from the loss used to fit models
-			if (metaloss_mode == 'max'):	# Converts a score that should be maximized into a loss to minimize
+			metaloss = results[obj_agg][meta_obj]										# Different from the loss used to fit models
+			metaloss_var = 0 if (meta_var is None) else results[obj_agg][meta_var]		# If zero the prediction is a point estimate
+			if (obj_mode == 'max'):														# Converts a score that to maximize into a loss to minimize
 				metaloss = one_minus(metaloss)
 
 			# TODO - free GPU memory
 
-			return {'loss': metaloss, 'status': STATUS_OK, 'params': params}
+			return {'status': STATUS_OK, 'loss': metaloss, 'loss_variance': metaloss_var, 'params': params}
 
 			# except:
-			# 	return {'loss': ERROR_CODE, 'status': STATUS_OK, 'params': params}
+			# 	return {'status': STATUS_OK, 'loss': ERROR_CODE, 'loss_variance': ERROR_CODE, 'params': params}
 
 		return objective
 
-	def make_var_data_objective(self, raw_features, raw_labels, features_fn, labels_fn, exp_logdir, clf_type='binary', metaloss_type='val_acc',
-								metaloss_mode='max', retain_holdout=True, test_ratio=TEST_RATIO, val_ratio=VAL_RATIO, shuffle=False):
+	def make_var_data_objective(self, raw_features, raw_labels, features_fn, labels_fn, exp_logdir, exp_meta=None, clf_type='binary',
+									meta_obj='val_acc', obj_agg='last', obj_mode='max', meta_var=None,
+									retain_holdout=True, test_ratio=TEST_RATIO, val_ratio=VAL_RATIO, shuffle=False):		
 		"""
 		Return an objective function that hyperopt can use that can search over features and labels along with the hyperparameters.
 		"""
@@ -117,9 +128,9 @@ class Classifier(Model):
 			Standard classifier objective function to minimize.
 			"""
 			features, labels = features_fn(raw_features, params), labels_fn(raw_labels, params)
-			return self.make_const_data_objective(features, labels, exp_logdir=exp_logdir, clf_type=clf_type, metaloss_type=metaloss_type,
-													metaloss_mode=metaloss_mode, retain_holdout=retain_holdout, test_ratio=test_ratio, val_ratio=val_ratio,
-													shuffle=shuffle)
+			return self.make_const_data_objective(features, labels, exp_logdir=exp_logdir, exp_meta=exp_meta, clf_type=clf_type,
+													meta_obj=meta_obj, obj_agg=obj_agg, obj_mode=obj_mode, meta_var=meta_var,
+													retain_holdout=retain_holdout, test_ratio=test_ratio, val_ratio=val_ratio, shuffle=shuffle)
 
 		return objective
 

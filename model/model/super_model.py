@@ -113,8 +113,17 @@ class Model:
 			raise e
 
 		return {
-			'model': stats.model,
-			'params': stats.params,
-			'val_data': stats.validation_data,
-			'history': stats.history
+			'history': stats.history,
+			'mean': {
+				'loss': np.mean(stats.history['loss']),
+				'acc': np.mean(stats.history['acc']),
+				'val_loss': np.mean(stats.history['val_loss']),
+				'val_acc': np.mean(stats.history['val_acc'])
+			},
+			'last': {
+				'loss': stats.history['loss'][-1],
+				'acc': stats.history['acc'][-1],
+				'val_loss': stats.history['val_loss'][-1],
+				'val_acc': stats.history['val_acc'][-1]
+			}
 		}
