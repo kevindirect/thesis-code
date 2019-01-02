@@ -17,7 +17,7 @@ from model.common import MODELS_DIR, ERROR_CODE, TEST_RATIO, VAL_RATIO
 
 class Model:
 	"""
-	Abstract base class of all model subclasses.
+	Abstract base class of all keras model subclasses.
 	Models bundle a supervised learning model with a hyperopt parameter space to search over.
 	Models do not store any experiment or trial information, instead they specify the model structure and parameter space. In this
 	way they are more like model factories than model objects.

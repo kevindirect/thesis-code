@@ -13,7 +13,7 @@ from keras.optimizers import SGD, RMSprop, Adam, Nadam
 
 from common_util import MODEL_DIR, makedir_if_not_exists, remove_keys, dict_combine, dump_json, str_now, one_minus
 from model.common import MODELS_DIR, ERROR_CODE, TEST_RATIO, VAL_RATIO, OPT_TRANSLATOR
-from model.model.super_model import Model
+from model.model.keras_model import Model
 from recon.split_util import get_train_test_split
 
 
