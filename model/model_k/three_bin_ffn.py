@@ -13,7 +13,7 @@ from keras.layers import Input, Dense, Dropout
 
 from common_util import MODEL_DIR
 from model.common import MODELS_DIR, ERROR_CODE
-from model.model.binary_classifier import BinaryClassifier
+from model.model_k.binary_classifier import BinaryClassifier
 
 
 class ThreeLayerBinaryFFN(BinaryClassifier):

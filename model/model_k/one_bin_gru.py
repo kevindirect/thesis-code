@@ -14,8 +14,8 @@ from keras.optimizers import SGD, RMSprop, Adam, Nadam
 
 from common_util import MODEL_DIR
 from model.common import MODELS_DIR, ERROR_CODE
-from model.model.sequential_mixin import SequentialMixin
-from model.model.binary_classifier import BinaryClassifier
+from model.model_k.sequential_mixin import SequentialMixin
+from model.model_k.binary_classifier import BinaryClassifier
 
 
 class OneLayerBinaryGRU(SequentialMixin, BinaryClassifier):
