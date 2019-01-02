@@ -18,16 +18,18 @@ from recon.common import DATASET_DIR
 no_constraint = lambda *a: True
 asset_match = lambda a, b: a[0]==b[0]
 src_match = lambda a, b: a[2]==b[2]
+parent_match = lambda a, b: a[-1].split('_')[:-1]==b[-1].split('_')[:-1] # Common parent if all the items in desc except last are identical 
 
 flr_asset_match = lambda fp, lp, rp: asset_match(fp, lp) and asset_match(fp, rp)
 flr_src_match = lambda fp, lp, rp: src_match(fp, rp)
 flr_constraint = lambda fp, lp, rp: flr_asset_match(fp, lp, rp) and flr_src_match(fp, lp, rp)
 
+fltr_parent_match = lambda fp, lp, tp, rp: parent_match(lp, tp)
 fltr_asset_match = lambda fp, lp, tp, rp: asset_match(fp, lp) and asset_match(fp, tp) and asset_match(fp, rp)
 fltr_src_match = lambda fp, lp, tp, rp: src_match(fp, rp)
-fltr_constraint = lambda fp, lp, tp, rp: fltr_asset_match(fp, lp, tp, rp) and fltr_src_match(fp, lp, tp, rp)
+fltr_constraint = lambda fp, lp, tp, rp: fltr_parent_match(fp, lp, tp, rp) and fltr_asset_match(fp, lp, tp, rp) and fltr_src_match(fp, lp, tp, rp)
 
-def gen_group(dataset, group=['features', 'labels', 'row_masks'], out=['dfs'], constraint=flr_constraint):
+def gen_group(dataset, group=['features', 'labels', 'targets', 'row_masks'], out=['dfs'], constraint=fltr_constraint):
 	"""
 	Convenience function to yield specified partitions from dataset.
 

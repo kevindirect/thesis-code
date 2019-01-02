@@ -79,6 +79,10 @@ def prepare_transpose_data(feature_df, row_masks_df):
 	return prep_fn(feature_df, row_masks_df)
 
 def prepare_label_data(label_ser):
+	prep_fn = compose(partial(pd_dti_index_to_date, new_tz=None), partial(ser_shift, cast_type=int))
+	return prep_fn(label_ser)
+
+def prepare_target_data(label_ser):
 	prep_fn = compose(partial(pd_dti_index_to_date, new_tz=None), ser_shift)
 	return prep_fn(label_ser)
 
@@ -95,7 +99,7 @@ def prepare_masked_labels(labels_df, label_types, label_filter):
 
 
 """ ********** DATA GENERATORS ********** """
-def datagen(dataset, feat_prep_fn=identity_fn, label_prep_fn=identity_fn, common_prep_fn=pd_common_index_rows, how='ser_to_ser'):
+def datagen(dataset, feat_prep_fn=identity_fn, label_prep_fn=identity_fn, target_prep_fn=identity_fn, common_prep_fn=pd_common_index_rows, how='ser_to_ser'):
 	"""
 	Yield from data generation function.
 
@@ -103,7 +107,9 @@ def datagen(dataset, feat_prep_fn=identity_fn, label_prep_fn=identity_fn, common
 		dataset: a dataset (recursive dictionary of data returned by prep_dataset)
 		feat_prep_fn: final transform to run on the feature df/series
 		label_prep_fn: final transform to run on the label df/series
-		how ('ser_to_ser' | 'df_to_ser' | 'ser_to_df')
+		target_prep_fn: final transform to run on the target df/series
+		common_prep_fn: common transform to run after all specific transforms
+		how ('ser_to_ser' | 'df_to_ser' | 'ser_to_df'): how to serve the data
 
 	"""
 	datagen_fn = {
@@ -112,82 +118,91 @@ def datagen(dataset, feat_prep_fn=identity_fn, label_prep_fn=identity_fn, common
 		'df_to_df': datagen_df_to_df
 	}.get(how)
 
-	yield from datagen_fn(dataset, feat_prep_fn, label_prep_fn, common_prep_fn)
+	yield from datagen_fn(dataset, feat_prep_fn, label_prep_fn, target_prep_fn, common_prep_fn)
 
-def datagen_ser_to_ser(dataset, feat_prep_fn, label_prep_fn, common_prep_fn):
+def datagen_ser_to_ser(dataset, feat_prep_fn, label_prep_fn, target_prep_fn, common_prep_fn):
 	"""
 	Yield data from the dataset by series product.
 
 	Args:
 		dataset: a dataset (recursive dictionary of data returned by prep_dataset)
-		feat_prep_fn: final transform to run on the feature df/series
-		label_prep_fn: final transform to run on the label df/series
+		feat_prep_fn: final transform to run on the feature series
+		label_prep_fn: final transform to run on the label series
+		target_prep_fn: final transform to run on the target series
 
 	"""
 	for paths, recs, dfs in gen_group(dataset, out=['recs', 'dfs']):
-		fpath, lpath, rpath = paths
-		frec, lrec, rrec = recs
-		feat_df, lab_df, rm_df = (df.compute() for df in dfs)
+		fpath, lpath, tpath, rpath = paths
+		frec, lrec, trec, rrec = recs
+		feat_df, lab_df, tar_df, rm_df = (df.compute() for df in dfs)
 
 		logging.debug('fpath: {}'.format(str(fpath)))
 		logging.debug('lpath: {}'.format(str(lpath)))
+		logging.debug('tpath: {}'.format(str(tpath)))
 		logging.debug('rpath: {}'.format(str(rpath)))
 
-		for fcol, lcol in product(feat_df.columns, lab_df.columns):
+		for fcol, lcol, tcol in product(feat_df.columns, lab_df.columns, tar_df.columns):
 			feature = feat_prep_fn(feat_df.loc[:, [fcol]], rm_df).dropna(axis=0, how='all')
 			label = label_prep_fn(lab_df.loc[:, lcol]).dropna(axis=0, how='all')
+			target = target_prep_fn(tar_df.loc[:, tcol]).dropna(axis=0, how='all')
 			
-			yield (fpath, lpath, frec, lrec, fcol, lcol, *common_prep_fn(feature, label))
+			yield (fpath, lpath, tpath, frec, lrec, trec, fcol, lcol, tcol, *common_prep_fn(feature, label, target))
 
-def datagen_df_to_ser(dataset, feat_prep_fn, label_prep_fn, common_prep_fn):
+def datagen_df_to_ser(dataset, feat_prep_fn, label_prep_fn, target_prep_fn, common_prep_fn):
 	"""
 	Yield data from the dataset mapping feature df to each label column.
 
 	Args:
 		dataset: a dataset (recursive dictionary of data returned by prep_dataset)
-		feat_prep_fn: final transform to run on the feature df/series
-		label_prep_fn: final transform to run on the label df/series
+		feat_prep_fn: final transform to run on the feature df
+		label_prep_fn: final transform to run on the label series
+		target_prep_fn: final transform to run on the target series
 
 	"""
 	for paths, recs, dfs in gen_group(dataset, out=['recs', 'dfs']):
-		fpath, lpath, rpath = paths
-		frec, lrec, rrec = recs
-		feat_df, lab_df, rm_df = (df.compute() for df in dfs)
+		fpath, lpath, tpath, rpath = paths
+		frec, lrec, trec, rrec = recs
+		feat_df, lab_df, tar_df, rm_df = (df.compute() for df in dfs)
 
 		logging.debug('fpath: {}'.format(str(fpath)))
 		logging.debug('lpath: {}'.format(str(lpath)))
+		logging.debug('tpath: {}'.format(str(tpath)))
 		logging.debug('rpath: {}'.format(str(rpath)))
 
 		feature = feat_prep_fn(feat_df, rm_df).dropna(axis=0, how='all')
 
-		for lcol in lab_df.columns:
+		for lcol, tcol in product(lab_df.columns, tar_df.columns):
 			label = label_prep_fn(lab_df.loc[:, lcol]).dropna(axis=0, how='all')
+			target = target_prep_fn(tar_df.loc[:, tcol]).dropna(axis=0, how='all')
 			
-			yield (fpath, lpath, frec, lrec, lcol, *common_prep_fn(feature, label))
+			yield (fpath, lpath, tpath, frec, lrec, trec, lcol, tcol, *common_prep_fn(feature, label, target))
 
-def datagen_df_to_df(dataset, feat_prep_fn, label_prep_fn, common_prep_fn):
+def datagen_df_to_df(dataset, feat_prep_fn, label_prep_fn, target_prep_fn, common_prep_fn):
 	"""
 	Yield data from the dataset by df product.
 
 	Args:
 		dataset: a dataset (recursive dictionary of data returned by prep_dataset)
-		feat_prep_fn: final transform to run on the feature df/series
-		label_prep_fn: final transform to run on the label df/series
+		feat_prep_fn: final transform to run on the feature df
+		label_prep_fn: final transform to run on the label df
+		target_prep_fn: final transform to run on the target df
 
 	"""
 	for paths, recs, dfs in gen_group(dataset, out=['recs', 'dfs']):
-		fpath, lpath, rpath = paths
-		frec, lrec, rrec = recs
-		feat_df, lab_df, rm_df = (df.compute() for df in dfs)
+		fpath, lpath, tpath, rpath = paths
+		frec, lrec, trec, rrec = recs
+		feat_df, lab_df, tar_df, rm_df = (df.compute() for df in dfs)
 
 		logging.debug('fpath: {}'.format(str(fpath)))
 		logging.debug('lpath: {}'.format(str(lpath)))
+		logging.debug('tpath: {}'.format(str(tpath)))
 		logging.debug('rpath: {}'.format(str(rpath)))
 
 		feature = feat_prep_fn(feat_df, rm_df).dropna(axis=0, how='all')
 		label = label_prep_fn(lab_df).dropna(axis=0, how='all')
+		target = label_prep_fn(tar_df).dropna(axis=0, how='all')
 		
-		yield (fpath, lpath, frec, lrec, *common_prep_fn(feature, label))
+		yield (fpath, lpath, tpath, frec, lrec, trec, *common_prep_fn(feature, label, target))
 
 def hyperopt_trials_to_df(trials):
 	"""
