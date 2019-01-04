@@ -12,7 +12,7 @@ from hyperopt import hp, STATUS_OK, STATUS_FAIL
 from keras.optimizers import SGD, RMSprop, Adam, Nadam
 
 from common_util import MODEL_DIR, makedir_if_not_exists, remove_keys, dict_combine, dump_json, str_now, one_minus
-from model.common import MODELS_DIR, ERROR_CODE, TEST_RATIO, VAL_RATIO, OPT_TRANSLATOR
+from model.common import MODELS_DIR, ERROR_CODE, TEST_RATIO, VAL_RATIO, KERAS_OPT_TRANSLATOR
 from model.model_k.keras_model import Model
 from recon.split_util import get_train_test_split
 
@@ -35,7 +35,7 @@ class Classifier(Model):
 		"""
 		Converts optimizer parameters into a function that can be passed to keras model compile.
 		"""
-		optimizer = OPT_TRANSLATOR.get(params['opt']['name'])
+		optimizer = KERAS_OPT_TRANSLATOR.get(params['opt']['name'])
 		return optimizer(lr=params['opt']['lr'])
 
 	def make_const_data_objective(self, features, labels, exp_logdir, exp_meta=None, clf_type='binary',
