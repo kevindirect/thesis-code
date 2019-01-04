@@ -6,9 +6,10 @@ import logging
 
 import numpy as np
 import pandas as pd
+import sklearn
 from sklearn.model_selection import train_test_split, KFold, TimeSeriesSplit
 
-from common_util import RECON_DIR
+from common_util import RECON_DIR, index_intersection, index_split
 from recon.common import dum
 
 
@@ -30,8 +31,28 @@ def pd_binary_clip(pd_obj, thresh=0, return_abs=True):
 
 
 """ ********** TRAIN/TEST SPLITS ********** """
+def index_three_split(*pd_idx, val_ratio=.2, test_ratio=.2, shuffle=False):
+	"""
+	Return tuple of common train/val/test indices.
+
+	Args:
+		pd_idx (sequence of pandas indexes): the indexes to three split
+		val_ratio (float ∈ [0, 1]): proportion of total data used for validation 
+		test_ratio (float ∈ [0, 1]): proportion of total data used for test
+
+	Returns:
+		(train_idx, val_idx, test_idx)
+	"""
+	common_idx = index_intersection(*pd_idx)
+	if (shuffle):
+		common_idx = sklearn.utils.shuffle(common_idx)
+	train_idx, val_idx, test_idx = index_split(common_idx, 1-(val_ratio+test_ratio), val_ratio, test_ratio)
+
+	return train_idx, val_idx, test_idx
+
 def get_train_test_split(feats, lab, test_ratio=.8, to_np=True, shuffle=False):
 	"""
+	XXX - deprecated, use three_split_idx instead
 	Return a basic train/test split.
 
 	Args:

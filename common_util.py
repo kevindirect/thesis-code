@@ -8,6 +8,7 @@ from os import sep, path, makedirs, walk, listdir, rmdir
 from os.path import dirname, basename, realpath, normpath, exists, isfile, getsize, join as path_join
 import socket
 from json import load, dump, dumps
+import math
 import numbers
 import operator
 import getopt
@@ -173,6 +174,24 @@ def list_compare(master, other):
 		return 'has_some'
 	elif (master_set.isdisjoint(other_set)):
 		return 'disjoint'
+
+def get_range_cuts(start, end, ratios_list):
+	"""
+	Return a list of segment indices for cuts based on ratios over the range provided by the passed [start, end).
+	The cuts will traverse the whole range of [start, end), if the provided ratios sum to less than one
+	the last segment will contain the remainder.
+	"""
+	cuts = [start]
+	size = end - start
+	seg_start = start
+
+	for seg_ratio in ratios_list[:-1]:
+		seg_end = seg_start + int(math.floor(seg_ratio*size))
+		cuts.append(seg_end)
+		seg_start = seg_end
+	cuts.append(end)
+
+	return cuts
 
 def pairwise(iterable):
 	"""
@@ -746,6 +765,13 @@ def index_intersection(*pd_idx):
 	Return the common intersection of all passed pandas index objects.
 	"""
 	return reduce(lambda idx, oth: idx.intersection(oth), pd_idx)
+
+def index_split(pd_idx, *ratio):
+	"""
+	Split an index into multiple sub indexes based on ratios passed in.
+	"""
+	cuts = get_range_cuts(0, pd_idx.size(), list(ratio))
+	return *(pd_idx[start:end] for start, end in pairwise(cuts))
 
 def pd_common_index_rows(*pd_obj):
 	"""
