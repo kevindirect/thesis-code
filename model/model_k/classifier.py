@@ -12,7 +12,7 @@ from hyperopt import hp, STATUS_OK, STATUS_FAIL
 from keras.optimizers import SGD, RMSprop, Adam, Nadam
 
 from common_util import MODEL_DIR, makedir_if_not_exists, remove_keys, dict_combine, dump_json, str_now, one_minus
-from model.common import MODELS_DIR, ERROR_CODE, TEST_RATIO, VAL_RATIO, KERAS_OPT_TRANSLATOR
+from model.common import MODELS_DIR, ERROR_CODE, OLD_TEST_RATIO, OLD_VAL_RATIO, KERAS_OPT_TRANSLATOR
 from model.model_k.keras_model import Model
 from recon.split_util import get_train_test_split
 
@@ -40,7 +40,7 @@ class Classifier(Model):
 
 	def make_const_data_objective(self, features, labels, exp_logdir, exp_meta=None, clf_type='binary',
 									meta_obj='val_acc', obj_agg='last', obj_mode='max', meta_var=None,
-									retain_holdout=True, test_ratio=TEST_RATIO, val_ratio=VAL_RATIO, shuffle=False):
+									retain_holdout=True, test_ratio=OLD_TEST_RATIO, val_ratio=OLD_VAL_RATIO, shuffle=False):
 		"""
 		Return an objective function that hyperopt can use for the given features and labels.
 		Acts as a factory for an objective function of a model over params.
@@ -119,7 +119,7 @@ class Classifier(Model):
 
 	def make_var_data_objective(self, raw_features, raw_labels, features_fn, labels_fn, exp_logdir, exp_meta=None, clf_type='binary',
 									meta_obj='val_acc', obj_agg='last', obj_mode='max', meta_var=None,
-									retain_holdout=True, test_ratio=TEST_RATIO, val_ratio=VAL_RATIO, shuffle=False):		
+									retain_holdout=True, test_ratio=OLD_TEST_RATIO, val_ratio=OLD_VAL_RATIO, shuffle=False):		
 		"""
 		Return an objective function that hyperopt can use that can search over features and labels along with the hyperparameters.
 		"""
