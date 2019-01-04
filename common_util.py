@@ -770,8 +770,8 @@ def index_split(pd_idx, *ratio):
 	"""
 	Split an index into multiple sub indexes based on ratios passed in.
 	"""
-	cuts = get_range_cuts(0, pd_idx.size(), list(ratio))
-	return *(pd_idx[start:end] for start, end in pairwise(cuts))
+	cuts = get_range_cuts(0, pd_idx.size, list(ratio))
+	return tuple(pd_idx[start:end] for start, end in pairwise(cuts))
 
 def pd_common_index_rows(*pd_obj):
 	"""
