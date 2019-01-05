@@ -16,7 +16,7 @@ from hyperopt.mongoexp import MongoTrials
 
 from common_util import CRUNCH_DIR, REPORT_DIR, JSON_SFX_LEN, makedir_if_not_exists, get_class_name, str_to_list, get_cmd_args, load_json, benchmark
 from model.common import DATASET_DIR, HOPT_WORKER_BIN, TRIALS_COUNT, default_model, default_dataset
-from model.model_util import BINARY_CLF_MAP
+from model.model_util import KERAS_BINARY_CLF_MAP
 from model.data_util import datagen, prepare_transpose_data, prepare_label_data, prepare_target_data
 from recon.dataset_util import prep_dataset
 from recon.split_util import pd_binary_clip
@@ -30,7 +30,7 @@ def hexp(argv):
 	dataset_fname = cmd_input['dataset='] if (cmd_input['dataset='] is not None) else default_dataset
 	assets = str_to_list(cmd_input['assets=']) if (cmd_input['assets='] is not None) else None
 
-	model_obj = BINARY_CLF_MAP[model_code]()
+	model_obj = KERAS_BINARY_CLF_MAP[model_code]()
 	model_name = get_class_name(model_obj)
 	dataset_name = dataset_fname[:-JSON_SFX_LEN]
 	dataset_dict = load_json(dataset_fname, dir_path=DATASET_DIR)
