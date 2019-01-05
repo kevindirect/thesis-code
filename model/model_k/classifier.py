@@ -12,7 +12,7 @@ from hyperopt import hp, STATUS_OK, STATUS_FAIL
 from keras.optimizers import SGD, RMSprop, Adam, Nadam
 
 from common_util import MODEL_DIR, makedir_if_not_exists, remove_keys, dict_combine, dump_json, str_now, one_minus
-from model.common import MODELS_DIR, ERROR_CODE, OLD_TEST_RATIO, OLD_VAL_RATIO, KERAS_OPT_TRANSLATOR
+from model.common import KERAS_MODELS_DIR, ERROR_CODE, OLD_TEST_RATIO, OLD_VAL_RATIO, KERAS_OPT_TRANSLATOR
 from model.model_k.keras_model import Model
 from recon.split_util import get_train_test_split
 

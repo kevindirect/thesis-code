@@ -11,7 +11,7 @@ from hyperopt import hp, STATUS_OK
 from keras import losses
 
 from common_util import MODEL_DIR
-from model.common import MODELS_DIR, ERROR_CODE, TEST_RATIO, VAL_RATIO
+from model.common import KERAS_MODELS_DIR, ERROR_CODE, TEST_RATIO, VAL_RATIO
 from model.model_k.classifier import Classifier
 
 

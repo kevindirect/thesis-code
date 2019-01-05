@@ -13,7 +13,7 @@ from keras.layers import Input, Dense, GRU
 from keras.optimizers import SGD, RMSprop, Adam, Nadam
 
 from common_util import MODEL_DIR
-from model.common import MODELS_DIR, ERROR_CODE
+from model.common import KERAS_MODELS_DIR, ERROR_CODE
 from model.model_k.sequential_mixin import SequentialMixin
 from model.model_k.binary_classifier import BinaryClassifier
 

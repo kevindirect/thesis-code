@@ -12,7 +12,7 @@ from keras.models import Model
 from keras.layers import Input, Dense, LocallyConnected1D, MaxPooling1D, AveragePooling1D
 
 from common_util import MODEL_DIR
-from model.common import MODELS_DIR, ERROR_CODE
+from model.common import KERAS_MODELS_DIR, ERROR_CODE
 from model.model_k.binary_classifier import BinaryClassifier
 
 

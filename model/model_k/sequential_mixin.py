@@ -10,7 +10,7 @@ import pandas as pd
 from hyperopt import hp, STATUS_OK
 
 from common_util import MODEL_DIR, window_iter
-from model.common import MODELS_DIR, ERROR_CODE
+from model.common import KERAS_MODELS_DIR, ERROR_CODE
 
 
 class SequentialMixin:
