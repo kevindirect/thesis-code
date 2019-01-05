@@ -17,7 +17,7 @@ from hyperopt.mongoexp import MongoTrials
 from common_util import CRUNCH_DIR, REPORT_DIR, JSON_SFX_LEN, makedir_if_not_exists, get_class_name, str_to_list, get_cmd_args, load_json, benchmark
 from model.common import DATASET_DIR, HOPT_WORKER_BIN, TRIALS_COUNT, default_model, default_dataset
 from model.model_util import BINARY_CLF_MAP
-from model.data_util import datagen, prepare_transpose_data, prepare_label_data
+from model.data_util import datagen, prepare_transpose_data, prepare_label_data, prepare_target_data
 from recon.dataset_util import prep_dataset
 from recon.split_util import pd_binary_clip
 from report.mongo_server import MongoServer
@@ -41,7 +41,7 @@ def hexp(argv):
 	logging.info('assets: {}'.format(str('all' if (assets==None) else ', '.join(assets))))
 
 	with MongoServer() as db:
-		for i, (fpath, lpath, frec, lrec, fcol, lcol, feature, label) in enumerate(datagen(dataset, feat_prep_fn=prepare_transpose_data, label_prep_fn=prepare_label_data, how='ser_to_ser')):
+		for i, (fpath, lpath, _, frec, lrec, _, fcol, lcol, _, feature, label, _) in enumerate(datagen(dataset, feat_prep_fn=prepare_transpose_data, label_prep_fn=prepare_label_data, target_prep_fn=prepare_target_data, how='ser_to_ser')):
 			logging.info('parent exp {}'.format(i))
 			asset_name = fpath[0]
 			assert(asset_name==lpath[0])
