@@ -15,7 +15,7 @@ from hyperopt import fmin, tpe, Trials
 from hyperopt.mongoexp import MongoTrials
 
 from common_util import CRUNCH_DIR, REPORT_DIR, JSON_SFX_LEN, makedir_if_not_exists, get_class_name, str_to_list, get_cmd_args, load_json, benchmark
-from model.common import DATASET_DIR, HOPT_WORKER_BIN, TRIALS_COUNT, default_model, default_dataset
+from model.common import DATASET_DIR, HOPT_WORKER_BIN, default_model, default_dataset, default_trials_count
 from model.model_util import KERAS_BINARY_CLF_MAP
 from model.data_util import datagen, prepare_transpose_data, prepare_label_data, prepare_target_data
 from recon.dataset_util import prep_dataset
@@ -24,11 +24,12 @@ from report.mongo_server import MongoServer
 
 
 def hexp(argv):
-	cmd_arg_list = ['model=', 'dataset=', 'assets=']
+	cmd_arg_list = ['model=', 'dataset=', 'assets=', 'trials_count=']
 	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name=basename(__file__))
 	model_code = cmd_input['model='] if (cmd_input['model='] is not None) else default_model
 	dataset_fname = cmd_input['dataset='] if (cmd_input['dataset='] is not None) else default_dataset
 	assets = str_to_list(cmd_input['assets=']) if (cmd_input['assets='] is not None) else None
+	trials_count = int(cmd_input['trials_count=']) if (cmd_input['trials_count='] is not None) else default_trials_count
 
 	model_obj = KERAS_BINARY_CLF_MAP[model_code]()
 	model_name = get_class_name(model_obj)
@@ -64,11 +65,11 @@ def hexp(argv):
 			pos_meta['exp']['dir'], neg_meta['exp']['dir'] = 'pos', 'neg'
 			pos_meta['exp']['name'], neg_meta['exp']['name'] = pos_meta['exp']['name'].format(**pos_meta['exp']), neg_meta['exp']['name'].format(**neg_meta['exp'])
 
-			run_model(model_obj, feature, pos_label, pos_meta, db)
-			run_model(model_obj, feature, neg_label, neg_meta, db)
+			run_model(model_obj, feature, pos_label, pos_meta, db, trials_count)
+			run_model(model_obj, feature, neg_label, neg_meta, db, trials_count)
 
 
-def run_model(mdl, features, label, meta, db, max_evals=TRIALS_COUNT):
+def run_model(mdl, features, label, meta, db, max_evals):
 	"""
 	Run the model over passed (features, labels) using metadata in meta.
 	"""
