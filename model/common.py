@@ -15,8 +15,8 @@ from common_util import RECON_DIR, MODEL_DIR
 
 # OTHER STAGE DEPENDENCIES
 from keras.optimizers import SGD, RMSprop, Adam, Nadam
-from tf.train import RMSPropOptimizer, AdamOptimizer
-from tf.nn import sparse_softmax_cross_entropy_with_logits, softmax_cross_entropy_with_logits_v2
+from tensorflow.train import RMSPropOptimizer, AdamOptimizer
+from tensorflow.nn import sparse_softmax_cross_entropy_with_logits, softmax_cross_entropy_with_logits_v2
 
 # PACKAGE CONSTANTS
 DATASET_DIR = RECON_DIR +'dataset' +sep
