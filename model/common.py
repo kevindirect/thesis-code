@@ -29,7 +29,7 @@ VAL_RATIO = .2
 TEST_RATIO = .2
 
 # Keras
-KERAS_MODEL_DIR = MODEL_DIR +'model_k' +sep
+KERAS_MODELS_DIR = MODEL_DIR +'model_k' +sep
 KERAS_OPT_TRANSLATOR = {
 	'SGD': SGD,
 	'RMSprop': RMSprop,
@@ -38,7 +38,7 @@ KERAS_OPT_TRANSLATOR = {
 }
 
 # TensorFlow
-TENSORFLOW_MODEL_DIR = MODEL_DIR +'model_t' +sep
+TENSORFLOW_MODELS_DIR = MODEL_DIR +'model_t' +sep
 TENSORFLOW_OPT_TRANSLATOR = {
 	'RMSprop': RMSPropOptimizer,
 	'Adam': AdamOptimizer
