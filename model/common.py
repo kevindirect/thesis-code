@@ -15,26 +15,37 @@ from common_util import RECON_DIR, MODEL_DIR
 
 # OTHER STAGE DEPENDENCIES
 from keras.optimizers import SGD, RMSprop, Adam, Nadam
-
+from tf.train import RMSPropOptimizer, AdamOptimizer
+from tf.nn import sparse_softmax_cross_entropy_with_logits, softmax_cross_entropy_with_logits_v2
 
 # PACKAGE CONSTANTS
 DATASET_DIR = RECON_DIR +'dataset' +sep
 FILTERSET_DIR = RECON_DIR +'filterset' +sep
-KERAS_MODEL_DIR = MODEL_DIR +'model_k' +sep
-TENSORFLOW_MODEL_DIR = MODEL_DIR +'model_t' +sep
 HOPT_WORKER_BIN = 'hyperopt-mongo-worker'
-EXPECTED_NUM_HOURS = 8
+ERROR_CODE = 999999
 TRIALS_COUNT = 100
-OLD_TEST_RATIO = .2
-OLD_VAL_RATIO = .25
+EXPECTED_NUM_HOURS = 8
 VAL_RATIO = .2
 TEST_RATIO = .2
-ERROR_CODE = 999999
+
+# Keras
+KERAS_MODEL_DIR = MODEL_DIR +'model_k' +sep
 KERAS_OPT_TRANSLATOR = {
 	'SGD': SGD,
 	'RMSprop': RMSprop,
 	'Adam': Adam,
 	'Nadam': Nadam
+}
+
+# TensorFlow
+TENSORFLOW_MODEL_DIR = MODEL_DIR +'model_t' +sep
+TENSORFLOW_OPT_TRANSLATOR = {
+	'RMSprop': RMSPropOptimizer,
+	'Adam': AdamOptimizer
+}
+TENSORFLOW_LOSS_TRANSLATOR = {
+	'sparse_ce': sparse_softmax_cross_entropy_with_logits, 	# This version takes in a 1D series of integer labels
+	'onehot_ce': softmax_cross_entropy_with_logits_v2	    # One hot encoded version of sparse_cross_entropy
 }
 dum = 0
 

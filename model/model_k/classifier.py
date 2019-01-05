@@ -12,9 +12,9 @@ from hyperopt import hp, STATUS_OK, STATUS_FAIL
 from keras.optimizers import SGD, RMSprop, Adam, Nadam
 
 from common_util import MODEL_DIR, makedir_if_not_exists, remove_keys, dict_combine, dump_json, str_now, one_minus
-from model.common import KERAS_MODELS_DIR, ERROR_CODE, OLD_TEST_RATIO, OLD_VAL_RATIO, KERAS_OPT_TRANSLATOR
+from model.common import KERAS_MODELS_DIR, ERROR_CODE, TEST_RATIO, VAL_RATIO, KERAS_OPT_TRANSLATOR
 from model.model_k.keras_model import Model
-from recon.split_util import get_train_test_split
+from recon.split_util import index_three_split
 
 
 class Classifier(Model):
@@ -40,7 +40,7 @@ class Classifier(Model):
 
 	def make_const_data_objective(self, features, labels, exp_logdir, exp_meta=None, clf_type='binary',
 									meta_obj='val_acc', obj_agg='last', obj_mode='max', meta_var=None,
-									retain_holdout=True, test_ratio=OLD_TEST_RATIO, val_ratio=OLD_VAL_RATIO, shuffle=False):
+									val_ratio=VAL_RATIO, test_ratio=TEST_RATIO, shuffle=False):
 		"""
 		Return an objective function that hyperopt can use for the given features and labels.
 		Acts as a factory for an objective function of a model over params.
@@ -56,10 +56,8 @@ class Classifier(Model):
 			obj_agg ('last'|'mean'): the method to aggregate the objective function
 			obj_mode ('min'|'max'): indicates whether the meta objective should be minimized or maximized
 			meta_var (None | str): the name of the loss uncertainty variable, if unused uncertainty will be fixed to zero (point estimate model)
-			retain_holdout (bool): if true the the test set is held out and validation set is taken from the training set,
-									if false the test set is used as validation and there is no test set
+			val_ratio (float): ratio to be removed for validation
 			test_ratio (float): ratio to be removed for test
-			val_ratio (float): ratio to be removed for validation (only used if retain_holdout set true)
 			shuffle (bool): if true shuffles the data
 
 		Returns:
@@ -72,8 +70,11 @@ class Classifier(Model):
 		dump_json(exp_meta, 'exp.json', dir_path=exp_logdir)
 
 		if (clf_type=='categorical' and labels.unique().size > 2):
-			labels = pd.get_dummies(labels, drop_first=False) # If the labels are not binary (more than two value types), one hot encode them		
-		feat_train, feat_test, lab_train, lab_test = get_train_test_split(features, labels, test_ratio=test_ratio, shuffle=shuffle)
+			labels = pd.get_dummies(labels, drop_first=False) # If the labels are not binary (more than two value types), one hot encode them
+
+		train_idx, val_idx, test_idx = index_three_split(features.index, labels.index, val_ratio=val_ratio, test_ratio=test_ratio, shuffle=shuffle)
+		feat_train, feat_val, feat_test = features.loc[train_idx].values, features.loc[val_idx].values, features.loc[test_idx].values
+		lab_train, lab_val, lab_test = labels.loc[train_idx].values, labels.loc[val_idx].values, labels.loc[test_idx].values
 
 		def objective(params):
 			"""
@@ -93,15 +94,12 @@ class Classifier(Model):
 						true_loss_variance: uncertainty of the generalization error, not actually used in tuning
 			"""
 			# try:
-			compiled = self.get_model(params, features.shape[1])
 			trial_logdir = exp_logdir +str_now() +sep
 			makedir_if_not_exists(trial_logdir)
 			dump_json(params, 'params.json', dir_path=trial_logdir)
 
-			if (retain_holdout):
-				results = self.fit_model(params, trial_logdir, compiled, (feat_train, lab_train), val_data=None, val_split=val_ratio, shuffle=shuffle)
-			else:
-				results = self.fit_model(params, trial_logdir, compiled, (feat_train, lab_train), val_data=(feat_test, lab_test), val_split=val_ratio, shuffle=shuffle)
+			compiled = self.get_model(params, features.shape[1])
+			results = self.fit_model(params, trial_logdir, compiled, train_data=(feat_train, lab_train), val_data=(feat_val, lab_val))
 
 			metaloss = results[obj_agg][meta_obj]										# Different from the loss used to fit models
 			metaloss_var = 0 if (meta_var is None) else results[obj_agg][meta_var]		# If zero the prediction is a point estimate
@@ -119,7 +117,7 @@ class Classifier(Model):
 
 	def make_var_data_objective(self, raw_features, raw_labels, features_fn, labels_fn, exp_logdir, exp_meta=None, clf_type='binary',
 									meta_obj='val_acc', obj_agg='last', obj_mode='max', meta_var=None,
-									retain_holdout=True, test_ratio=OLD_TEST_RATIO, val_ratio=OLD_VAL_RATIO, shuffle=False):		
+									val_ratio=VAL_RATIO, test_ratio=TEST_RATIO, shuffle=False):		
 		"""
 		Return an objective function that hyperopt can use that can search over features and labels along with the hyperparameters.
 		"""
@@ -130,7 +128,7 @@ class Classifier(Model):
 			features, labels = features_fn(raw_features, params), labels_fn(raw_labels, params)
 			return self.make_const_data_objective(features, labels, exp_logdir=exp_logdir, exp_meta=exp_meta, clf_type=clf_type,
 													meta_obj=meta_obj, obj_agg=obj_agg, obj_mode=obj_mode, meta_var=meta_var,
-													retain_holdout=retain_holdout, test_ratio=test_ratio, val_ratio=val_ratio, shuffle=shuffle)
+													val_ratio=val_ratio, test_ratio=test_ratio, shuffle=shuffle)
 
 		return objective
 

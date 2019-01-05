@@ -94,9 +94,9 @@ class Model:
 
 		return model
 
-	def fit_model(self, params, logdir, model, train_data, val_data=None, val_split=VAL_RATIO, shuffle=False):
+	def fit_model(self, params, logdir, model, train_data, val_data):
 		"""
-		Fit the model and return a dictionary describing the training and test results.
+		Fit the model and return a dictionary describing the training and validation results.
 		"""
 		try:
 			stats = model.fit(*self.preproc(params, train_data), 
@@ -104,9 +104,8 @@ class Model:
 							batch_size=params['batch_size'], 
 							callbacks=[init(params, logdir) for init in self.callbacks], 
 							verbose=1, 
-							validation_split=val_split, # Only used if validation_data is None
-							validation_data=self.preproc(params, val_data) if (val_data is not None) else None, 
-							shuffle=shuffle)
+							validation_data=self.preproc(params, val_data), 
+							shuffle=False)
 
 		except Exception as e:
 			logging.error('Error during model fitting: {}'.format(str(e)))
