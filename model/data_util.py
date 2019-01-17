@@ -64,7 +64,7 @@ def prepare_transpose_data_d(feature_df, row_masks_df):
 		feature_df (pd.DataFrame): one series intraday dataframe
 	"""
 	prep_fn = dcompose(reindex_on_time_mask, gb_transpose, filter_cols_below,
-		align_first_last,prune_nulls, partial(pd_dti_index_to_date, new_tz=None))
+		align_first_last, prune_nulls, partial(pd_dti_index_to_date, new_tz=None))
 	return prep_fn(feature_df, row_masks_df)
 
 def prepare_transpose_data(feature_df, row_masks_df):
@@ -75,7 +75,7 @@ def prepare_transpose_data(feature_df, row_masks_df):
 		feature_df (pd.DataFrame): one series intraday dataframe
 	"""
 	prep_fn = compose(reindex_on_time_mask, gb_transpose, filter_cols_below,
-		align_first_last,prune_nulls, partial(pd_dti_index_to_date, new_tz=None))
+		align_first_last, prune_nulls, partial(pd_dti_index_to_date, new_tz=None))
 	return prep_fn(feature_df, row_masks_df)
 
 def prepare_label_data(label_ser):

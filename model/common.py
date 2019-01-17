@@ -15,6 +15,7 @@ from common_util import RECON_DIR, MODEL_DIR
 
 # OTHER STAGE DEPENDENCIES
 from keras.optimizers import SGD, RMSprop, Adam, Nadam
+import torch
 from tensorflow.train import RMSPropOptimizer, AdamOptimizer
 from tensorflow.nn import sparse_softmax_cross_entropy_with_logits, softmax_cross_entropy_with_logits_v2
 
@@ -34,6 +35,24 @@ KERAS_OPT_TRANSLATOR = {
 	'RMSprop': RMSprop,
 	'Adam': Adam,
 	'Nadam': Nadam
+}
+
+# PyTorch
+PYTORCH_MODELS_DIR = MODEL_DIR +'model_p' +sep
+PYTORCH_OPT_TRANSLATOR = {
+	'RMSprop': torch.optim.RMSprop,
+	'Adam': torch.optim.Adam
+}
+PYTORCH_LOSS_TRANSLATOR = {
+	'bce': torch.nn.BCELoss,						# Binary: Binary Cross Entropy
+	'bcel': torch.nn.BCEWithLogitsLoss,				# Binary: Binary Cross Entropy with Logits
+	'sm': torch.nn.SoftMarginLoss,					# Binary: Soft Margin Loss
+	'ce': torch.nn.CrossEntropyLoss,				# Categorical: Cross Entropy Loss
+	'mls': torch.nn.MultiLabelSoftMarginLoss,		# Categorical: Multi Label Soft Margin Loss
+	'nll': torch.nn.NLLLoss,						# Categorical: Negative Log Likelihood Loss
+	'mae': torch.nn.L1Loss,							# Regression: Mean Absolute Error Loss
+	'mse': torch.nn.MSELoss,						# Regression: Mean Squared Error Loss
+	'sl1': torch.nn.SmoothL1Loss					# Regression: Smooth L1 Loss
 }
 
 # TensorFlow
