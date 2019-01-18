@@ -61,13 +61,13 @@ class TemporalBlock(nn.Module):
 		Initialize convolutional layer weights.
 		TCN networks are influenced heavily by weight initialization.
 		"""
-		if (init_type == 'normal'):
+		if (init_method == 'normal'):
 			self.conv1.weight.data.normal_(0, 0.01)
 			self.conv2.weight.data.normal_(0, 0.01)
 			if self.downsample is not None:
 				self.downsample.weight.data.normal_(0, 0.01)
 
-		elif (init_type == 'xavier_uniform'):
+		elif (init_method == 'xavier_uniform'):
 			nn.init.xavier_uniform(self.conv1.weight, gain=np.sqrt(2))
 			nn.init.xavier_uniform(self.conv2.weight, gain=np.sqrt(2))
 			if self.downsample is not None:
