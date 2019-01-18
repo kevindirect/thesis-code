@@ -145,7 +145,7 @@ class TCN_Classifier(nn.Module):
 	TCN Based Classifier Network
 	"""
 	def __init__(self, num_inputs, num_outputs, channels, kernel_size=2, stride=1, dropout=0.2, attention=False, max_attn_len=80):
-		super(TCN, self).__init__()
+		super(TCN_Classifier, self).__init__()
 		self.tcn = TemporalConvNet(num_inputs, channels, kernel_size=kernel_size, stride=stride, dropout=dropout, attention=attention, max_attn_len=max_attn_len)
 		if (attention):
 			self.linear = nn.Linear(max_attn_len, num_outputs) # TODO - verify correctness of using max_attn_len as input size to output layer

@@ -40,7 +40,7 @@ class BinaryTCN(TemporalMixin, BinaryClassifier):
 			'attention': hp.choice('attention', [False]),
 			'max_attn_len': hp.uniform('max_attn_len', 24, 120)
 		}
-		super(TCN, self).__init__({**default_space, **other_space})
+		super(BinaryTCN, self).__init__({**default_space, **other_space})
 
 	def make_model(self, params, num_inputs):
 		real_num_inputs = num_inputs * params['num_windows']  								# Multiply by num_windows to get real expected inputs
