@@ -29,15 +29,16 @@ def hexp(argv):
 	model_code = cmd_input['model='] if (cmd_input['model='] is not None) else default_model
 	dataset_fname = cmd_input['dataset='] if (cmd_input['dataset='] is not None) else default_dataset
 	assets = str_to_list(cmd_input['assets=']) if (cmd_input['assets='] is not None) else None
-	backend = cmd_input['backend='] if (cmd_input['backend='] is not None) else default_backend
+	backend_name = cmd_input['backend='] if (cmd_input['backend='] is not None) else default_backend
 	trials_count = int(cmd_input['trials_count=']) if (cmd_input['trials_count='] is not None) else default_trials_count
 
-	model_obj = BINARY_CLF_MAP[backend][model_code]()
+	model_obj = BINARY_CLF_MAP[backend_name][model_code]()
 	model_name = get_class_name(model_obj)
 	dataset_name = dataset_fname[:-JSON_SFX_LEN]
 	dataset_dict = load_json(dataset_fname, dir_path=DATASET_DIR)
 	dataset = prep_dataset(dataset_dict, assets=assets, filters_map=None)
 
+	logging.info('backend: {}'.format(backend_name))
 	logging.info('model: {}'.format(model_name))
 	logging.info('dataset: {} {} df(s)'.format(len(dataset['features']), dataset_name))
 	logging.info('assets: {}'.format(str('all' if (assets==None) else ', '.join(assets))))
@@ -49,9 +50,10 @@ def hexp(argv):
 			assert(asset_name==lpath[0])
 			meta = {
 				'group': {
-					'name': '{asset},{dataset},{model}'.format(asset=asset_name, dataset=dataset_name, model=model_name),
+					'name': '{asset},{dataset},{backend0}_{model}'.format(asset=asset_name, dataset=dataset_name, backend0=backend_name[0], model=model_name),
 					'asset': asset_name,
 					'dataset': dataset_name,
+					'backend': backend_name,
 					'model': model_name
 				},
 				'exp': {
