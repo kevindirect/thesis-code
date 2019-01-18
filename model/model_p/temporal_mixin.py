@@ -24,10 +24,10 @@ class TemporalMixin:
 		Reshaping transform for temporal data.
 
 		Runs a "moving window unstack" operation through the first data such that each row of the result contains the history
-		of the original up to and including that row based on a history_multiplier parameter in params. The history_multiplier
-		determines how far back the history each row will record; a history_multiplier of '1' results in no change. 
+		of the original up to and including that row based on a num_windows parameter in params. The num_windows
+		determines how far back the history each row will record; a num_windows of '1' results in no change. 
 		
-		example with history_multiplier of '2':
+		example with num_windows of '2':
 													0 | a b c 
 													1 | d e f ---> 1 | a b c d e f
 													2 | g h i      2 | d e f g h i
@@ -37,9 +37,9 @@ class TemporalMixin:
 		tuple item.
 		"""
 		# Reshape features into overlapping moving window samples
-		f = np.array([np.concatenate(vec) for vec in window_iter(data[0], n=params['history_multiplier'])])
+		f = np.array([np.concatenate(vec) for vec in window_iter(data[0], n=params['num_windows'])])
 
 		# Drop lables prior to the first step for label/target vectors
-		l = tuple(label[params['history_multiplier']-1:] for label in data[1:])
+		l = tuple(label[params['num_windows']-1:] for label in data[1:])
 
 		return f, *l

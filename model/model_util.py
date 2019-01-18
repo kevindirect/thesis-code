@@ -15,13 +15,25 @@ from model.model_k.one_bin_gru import OneLayerBinaryGRU
 from model.model_k.one_bin_lcl import OneLayerBinaryLCL
 from model.model_k.one_bin_lstm import OneLayerBinaryLSTM
 from model.model_k.three_bin_ffn import ThreeLayerBinaryFFN
+from model.model_p.bin_tcn import BinaryTCN
 
 
-""" ********** MODELS ********** """
+""" ********** KERAS BINARY CLASSIFIERS ********** """
 KERAS_BINARY_CLF_MAP = {
 	'OneBinCNN': OneLayerBinaryCNN,
 	'OneBinGRU': OneLayerBinaryGRU,
 	'OneBinLCL': OneLayerBinaryLCL,
 	'OneBinLSTM': OneLayerBinaryLSTM,
 	'ThreeBinFFN': ThreeLayerBinaryFFN
+}
+
+""" ********** PYTORCH BINARY CLASSIFIERS ********** """
+PYTORCH_BINARY_CLF_MAP = {
+	'BinTCN': BinaryTCN
+}
+
+""" ********** ALL BINARY CLASSIFIERS ********** """
+BINARY_CLF_MAP = {
+	'keras': KERAS_BINARY_CLF_MAP,
+	'pytorch': PYTORCH_BINARY_CLF_MAP
 }

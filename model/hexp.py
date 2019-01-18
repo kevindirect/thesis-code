@@ -15,8 +15,8 @@ from hyperopt import fmin, tpe, Trials
 from hyperopt.mongoexp import MongoTrials
 
 from common_util import CRUNCH_DIR, REPORT_DIR, JSON_SFX_LEN, makedir_if_not_exists, get_class_name, str_to_list, get_cmd_args, load_json, benchmark
-from model.common import DATASET_DIR, HOPT_WORKER_BIN, default_model, default_dataset, default_trials_count
-from model.model_util import KERAS_BINARY_CLF_MAP
+from model.common import DATASET_DIR, HOPT_WORKER_BIN, default_model, default_dataset, default_backend, default_trials_count
+from model.model_util import BINARY_CLF_MAP
 from model.data_util import datagen, prepare_transpose_data, prepare_label_data, prepare_target_data
 from recon.dataset_util import prep_dataset
 from recon.split_util import pd_binary_clip
@@ -24,14 +24,15 @@ from report.mongo_server import MongoServer
 
 
 def hexp(argv):
-	cmd_arg_list = ['model=', 'dataset=', 'assets=', 'trials_count=']
+	cmd_arg_list = ['model=', 'dataset=', 'assets=', 'backend=', 'trials_count=']
 	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name=basename(__file__))
 	model_code = cmd_input['model='] if (cmd_input['model='] is not None) else default_model
 	dataset_fname = cmd_input['dataset='] if (cmd_input['dataset='] is not None) else default_dataset
 	assets = str_to_list(cmd_input['assets=']) if (cmd_input['assets='] is not None) else None
+	backend = cmd_input['backend='] if (cmd_input['backend='] is not None) else default_backend
 	trials_count = int(cmd_input['trials_count=']) if (cmd_input['trials_count='] is not None) else default_trials_count
 
-	model_obj = KERAS_BINARY_CLF_MAP[model_code]()
+	model_obj = BINARY_CLF_MAP[backend][model_code]()
 	model_name = get_class_name(model_obj)
 	dataset_name = dataset_fname[:-JSON_SFX_LEN]
 	dataset_dict = load_json(dataset_fname, dir_path=DATASET_DIR)

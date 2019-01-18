@@ -78,12 +78,12 @@ class Model:
 		"""
 		return identity_fn(data)
 
-	def batchify(self, params, data, device):
+	def batchify(self, params, data, device, shuffle_batches=False):
 		"""
 		Takes in final numpy data and returns torch DataLoader over torch tensor minibatches of specified torch device.
 		"""
 		ds = TensorDataset(*[torch.tensor(d, device=device) for d in data])
-		dl = DataLoader(ds, batch_size=params['batch_size'], shuffle=False)
+		dl = DataLoader(ds, batch_size=params['batch_size'], shuffle=shuffle_batches)
 		return dl
 
 	def batch_loss_metrics(model, loss_function, feat_batch, lab_batch, optimizer=None):
@@ -121,7 +121,7 @@ class Model:
 
 		return model
 
-	def fit_model(self, params, logdir, model, device, train_data, val_data=None, shuffle=False):
+	def fit_model(self, params, logdir, model, device, train_data, val_data=None):
 		"""
 		Fit the model to training data and return results on the validation data.
 		"""
@@ -135,7 +135,7 @@ class Model:
 			
 			for epoch in range(params['epochs']):
 				model.train()
-				for Xb, yb in self.batchify(params, self.preproc(params, train_data), device):
+				for Xb, yb in self.batchify(params, self.preproc(params, train_data), device, shuffle_batches=True):
 					losses, nums, metrics = self.batch_loss_metrics(model, loss_fn, Xb, yb, optimizer=opt)
 				loss = np.sum(np.multiply(losses, nums)) / np.sum(nums)
 				history['loss'].append(loss)
@@ -144,7 +144,7 @@ class Model:
 
 				model.eval()
 				with torch.no_grad():
-					losses, nums, metrics = zip(*[self.batch_loss_metrics(model, loss_fn, Xb, yb) for Xb, yb in self.batchify(params, self.preproc(params, val_data), device)])
+					losses, nums, metrics = zip(*[self.batch_loss_metrics(model, loss_fn, Xb, yb) for Xb, yb in self.batchify(params, self.preproc(params, val_data), device, False)])
 				loss = np.sum(np.multiply(losses, nums)) / np.sum(nums)
 				history['val_loss'].append(loss)
 				writer.add_scalar('data/val/loss', loss, epoch)
