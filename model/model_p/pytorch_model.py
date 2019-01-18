@@ -86,7 +86,7 @@ class Model:
 		dl = DataLoader(ds, batch_size=params['batch_size'], shuffle=shuffle_batches)
 		return dl
 
-	def batch_loss_metrics(model, loss_function, feat_batch, lab_batch, optimizer=None):
+	def batch_loss_metrics(self, params, model, loss_function, feat_batch, lab_batch, optimizer=None):
 		"""
 		Compute loss and metrics on batch, run optimizer on losses if passed.
 		"""
@@ -131,12 +131,12 @@ class Model:
 				'val_loss': []
 			}
 			loss_fn, opt = self.make_loss_fn(params), self.make_optimizer(params)
-			writer = self.tbx(logdir)
+			writer = self.tbx(params, logdir)
 			
 			for epoch in range(params['epochs']):
 				model.train()
 				for Xb, yb in self.batchify(params, self.preproc(params, train_data), device, shuffle_batches=True):
-					losses, nums, metrics = self.batch_loss_metrics(model, loss_fn, Xb, yb, optimizer=opt)
+					losses, nums, metrics = self.batch_loss_metrics(params, model, loss_fn, Xb, yb, optimizer=opt)
 				loss = np.sum(np.multiply(losses, nums)) / np.sum(nums)
 				history['loss'].append(loss)
 				writer.add_scalar('data/train/loss', loss, epoch)
@@ -144,7 +144,7 @@ class Model:
 
 				model.eval()
 				with torch.no_grad():
-					losses, nums, metrics = zip(*[self.batch_loss_metrics(model, loss_fn, Xb, yb) for Xb, yb in self.batchify(params, self.preproc(params, val_data), device, False)])
+					losses, nums, metrics = zip(*[self.batch_loss_metrics(params, model, loss_fn, Xb, yb) for Xb, yb in self.batchify(params, self.preproc(params, val_data), device, shuffle_batches=False)])
 				loss = np.sum(np.multiply(losses, nums)) / np.sum(nums)
 				history['val_loss'].append(loss)
 				writer.add_scalar('data/val/loss', loss, epoch)
