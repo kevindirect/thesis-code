@@ -25,7 +25,6 @@ class Classifier(Model):
 		opt (string): string representing pytorch optimizer to use
 		opt.lr (float > 0): optimizer learning rate
 	"""
-
 	def __init__(self, other_space={}):
 		default_space = {
 			'opt': hp.choice('opt', [
@@ -86,6 +85,7 @@ class Classifier(Model):
 		train_idx, val_idx, test_idx = index_three_split(features.index, labels.index, val_ratio=val_ratio, test_ratio=test_ratio, shuffle=shuffle)
 		feat_train, feat_val, feat_test = features.loc[train_idx].values, features.loc[val_idx].values, features.loc[test_idx].values
 		lab_train, lab_val, lab_test = labels.loc[train_idx].values, labels.loc[val_idx].values, labels.loc[test_idx].values
+		input_size = features.shape[1]
 
 		def objective(params):
 			"""
@@ -110,7 +110,7 @@ class Classifier(Model):
 			dump_json(params, 'params.json', dir_path=trial_logdir)
 
 			dev = torch.device('cuda') if (torch.cuda.is_available()) else torch.device('cpu')
-			mdl = self.get_model(params, features.shape[1]).to(device=dev)
+			mdl = self.get_model(params, input_size).to(device=dev)
 			res = self.fit_model(params, trial_logdir, mdl, dev, (feat_train, lab_train), val_data=(feat_val, lab_val))
 			# dump_json(res, 'results.json', dir_path=trial_logdir)
 

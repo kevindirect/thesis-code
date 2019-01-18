@@ -65,13 +65,13 @@ class TemporalBlock(nn.Module):
 		if (init_method == 'normal'):
 			self.conv1.weight.data.normal_(0, 0.01)
 			self.conv2.weight.data.normal_(0, 0.01)
-			if self.downsample is not None:
+			if (self.downsample is not None):
 				self.downsample.weight.data.normal_(0, 0.01)
 
 		elif (init_method == 'xavier_uniform'):
 			nn.init.xavier_uniform(self.conv1.weight, gain=np.sqrt(2))
 			nn.init.xavier_uniform(self.conv2.weight, gain=np.sqrt(2))
-			if self.downsample is not None:
+			if (self.downsample is not None):
 				nn.init.xavier_uniform(self.downsample.weight, gain=np.sqrt(2))
 
 	def forward(self, x):
