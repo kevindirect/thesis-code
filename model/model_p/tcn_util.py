@@ -27,17 +27,17 @@ class Chomp1d(nn.Module):
 
 
 class TemporalBlock(nn.Module):
-		"""
-		TCN Block Class
+	"""
+	TCN Block Class
 
-		DC: Dilated Casual Convolution
-		WN: Weight Normalization
-		RU: ReLu
-		DO: Dropout
+	DC: Dilated Casual Convolution
+	WN: Weight Normalization
+	RU: ReLu
+	DO: Dropout
 
-		--| DC |-->| WN |-->| RU |-->| DO |-->| DC |-->| WN |-->| RU |-->| DO |--(+)-->
-		  |-------------------------|1x1 Conv (optional)|-------------------------|
-		"""
+	----| DC |-->| WN |-->| RU |-->| DO |-->| DC |-->| WN |-->| RU |-->| DO |--(+)---->
+		|-------------------------|1x1 Conv (optional)|-------------------------|
+	"""
 	def __init__(self, n_inputs, n_outputs, kernel_size, stride, dilation, padding, dropout):
 		super(TemporalBlock, self).__init__()
 		self.conv1 = weight_norm(nn.Conv1d(n_inputs, n_outputs, kernel_size, stride=stride, padding=padding, dilation=dilation))
@@ -154,7 +154,7 @@ class TCN_Classifier(nn.Module):
 
 	def forward(self, x):
 		"""
-		Input must have have shape (Minibatch size, C_in, L_in)
+		Input must have have shape (N, C_in, L_in)
 		"""
 		out_embedding = self.tcn(x)  # input should have dimension (N, C, L)
 		out = self.linear(out_embedding[:, :, -1])
