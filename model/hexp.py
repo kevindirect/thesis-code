@@ -24,12 +24,12 @@ from report.mongo_server import MongoServer
 
 
 def hexp(argv):
-	cmd_arg_list = ['model=', 'dataset=', 'assets=', 'backend=', 'trials_count=']
+	cmd_arg_list = ['model=', 'backend=', 'dataset=', 'assets=', 'trials_count=']
 	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name=basename(__file__))
 	model_code = cmd_input['model='] if (cmd_input['model='] is not None) else default_model
+	backend_name = cmd_input['backend='] if (cmd_input['backend='] is not None) else default_backend
 	dataset_fname = cmd_input['dataset='] if (cmd_input['dataset='] is not None) else default_dataset
 	assets = str_to_list(cmd_input['assets=']) if (cmd_input['assets='] is not None) else None
-	backend_name = cmd_input['backend='] if (cmd_input['backend='] is not None) else default_backend
 	trials_count = int(cmd_input['trials_count=']) if (cmd_input['trials_count='] is not None) else default_trials_count
 
 	model_obj = BINARY_CLF_MAP[backend_name][model_code]()
@@ -38,8 +38,8 @@ def hexp(argv):
 	dataset_dict = load_json(dataset_fname, dir_path=DATASET_DIR)
 	dataset = prep_dataset(dataset_dict, assets=assets, filters_map=None)
 
-	logging.info('backend: {}'.format(backend_name))
 	logging.info('model: {}'.format(model_name))
+	logging.info('backend: {}'.format(backend_name))
 	logging.info('dataset: {} {} df(s)'.format(len(dataset['features']), dataset_name))
 	logging.info('assets: {}'.format(str('all' if (assets==None) else ', '.join(assets))))
 
@@ -50,7 +50,7 @@ def hexp(argv):
 			assert(asset_name==lpath[0])
 			meta = {
 				'group': {
-					'name': '{asset},{dataset},{backend0}_{model}'.format(asset=asset_name, dataset=dataset_name, backend0=backend_name[0], model=model_name),
+					'name': '{asset},{dataset},{model}_{backend0}'.format(asset=asset_name, dataset=dataset_name, model=model_name, backend0=backend_name[0]),
 					'asset': asset_name,
 					'dataset': dataset_name,
 					'backend': backend_name,
