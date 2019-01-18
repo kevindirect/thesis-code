@@ -42,4 +42,4 @@ class TemporalMixin:
 		# Drop lables prior to the first step for label/target vectors
 		l = tuple(label[params['num_windows']-1:] for label in data[1:])
 
-		return f, *l
+		return (f, *l)
