@@ -33,7 +33,7 @@ def hyperopt_test(argv):
 	dataset_dict = load_json(dataset_fname, dir_path=DATASET_DIR)
 	dataset = prep_dataset(dataset_dict, assets=assets, filters_map=None)
 
-	logging.info('model: {}'.format(model_name))
+	logging.info('model: {}'.format(mod_name))
 	logging.info('backend: {}'.format(backend_name))
 	logging.info('dataset: {} {} df(s)'.format(len(dataset['features']), dataset_name))
 	logging.info('assets: {}'.format(str('all' if (assets==None) else ', '.join(assets))))
