@@ -152,12 +152,13 @@ class TCN_Classifier(nn.Module):
 			self.linear = nn.Linear(max_attn_len, num_outputs) # TODO - verify correctness of using max_attn_len as input size to output layer
 		else:
 			self.linear = nn.Linear(channels[-1], num_outputs)
+		self.output = nn.LogSoftmax(dim=num_outputs)
 
 	def forward(self, x):
 		"""
 		Input must have have shape (N, C_in, L_in)
 		"""
 		out_embedding = self.tcn(x)  # input should have dimension (N, C, L)
-		out = self.linear(out_embedding[:, :, -1])
+		# out = self.linear(out_embedding[:, :, -1])
 		out = self.linear(out_embedding)
-		return F.log_softmax(out, dim=1)
+		return self.output(out)
