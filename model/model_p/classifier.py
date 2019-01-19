@@ -48,7 +48,7 @@ class Classifier(Model):
 		optimizer = PYTORCH_OPT_TRANSLATOR.get(params['opt']['name'])
 		return optimizer(lr=params['opt']['lr'])
 
-	def make_const_data_objective(self, features, labels, exp_logdir, exp_meta=None, clf_type='binary',
+	def make_const_data_objective(self, features, labels, exp_logdir=None, exp_meta=None, clf_type='binary',
 									meta_obj='val_loss', obj_agg='last', obj_mode='min', meta_var=None,
 									val_ratio=VAL_RATIO, test_ratio=TEST_RATIO, shuffle=False):
 		"""
@@ -59,7 +59,7 @@ class Classifier(Model):
 		Args:
 			features (pd.DataFrame): features df
 			labels (pd.DataFrame or pd.Series): labels df or series
-			exp_logdir (str): path to the logging directory of the objective function
+			exp_logdir (str): path to the logging directory of the objective function (no logging if not supplied)
 			exp_meta (dict): any additional key-value metadata to log for the experiment (locals are automatically logged)
 			clf_type ('binary'|'categorical'): the classifier type 
 			meta_obj (str): the name of the loss to return after the objective function is run
@@ -76,8 +76,9 @@ class Classifier(Model):
 		exp_meta = exp_meta or {}
 		exp_meta['params'] = remove_keys(dict(locals().items()), ['self', 'features', 'labels', 'exp_meta'])
 		exp_meta['data'] = {'size': labels.size, 'lab_dist': labels.value_counts(normalize=True).to_dict()}
-		makedir_if_not_exists(exp_logdir)
-		dump_json(exp_meta, 'exp.json', dir_path=exp_logdir)
+		if (exp_logdir is not None):
+			makedir_if_not_exists(exp_logdir)
+			dump_json(exp_meta, 'exp.json', dir_path=exp_logdir)
 
 		if (clf_type=='categorical' and labels.unique().size > 2):
 			labels = pd.get_dummies(labels, drop_first=False) # If the labels are not binary (more than two value types), one hot encode them
@@ -105,9 +106,10 @@ class Classifier(Model):
 						true_loss_variance: uncertainty of the generalization error, not actually used in tuning
 			"""
 			# try:
-			trial_logdir = exp_logdir +str_now() +sep
-			makedir_if_not_exists(trial_logdir)
-			dump_json(params, 'params.json', dir_path=trial_logdir)
+			trial_logdir = str(exp_logdir +str_now() +sep) if (exp_logdir is not None) else None
+			if (trial_logdir is not None):
+				makedir_if_not_exists(trial_logdir)
+				dump_json(params, 'params.json', dir_path=trial_logdir)
 
 			dev = torch.device('cuda') if (torch.cuda.is_available()) else torch.device('cpu')
 			mdl = self.get_model(params, input_size).to(device=dev)

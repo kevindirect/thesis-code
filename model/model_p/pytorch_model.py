@@ -131,7 +131,7 @@ class Model:
 				'val_loss': []
 			}
 			loss_fn, opt = self.make_loss_fn(params), self.make_optimizer(params)
-			writer = self.tbx(params, logdir)
+			writer = self.tbx(params, logdir) if (logdir is not None) else None
 			
 			for epoch in range(params['epochs']):
 				model.train()
@@ -139,19 +139,22 @@ class Model:
 					losses, nums, metrics = self.batch_loss_metrics(params, model, loss_fn, Xb, yb, optimizer=opt)
 				loss = np.sum(np.multiply(losses, nums)) / np.sum(nums)
 				history['loss'].append(loss)
-				writer.add_scalar('data/train/loss', loss, epoch)
-				writer.add_scalars('data/train/metrics', metrics, epoch)
+				if (writer is not None):
+					writer.add_scalar('data/train/loss', loss, epoch)
+					writer.add_scalars('data/train/metrics', metrics, epoch)
 
 				model.eval()
 				with torch.no_grad():
 					losses, nums, metrics = zip(*[self.batch_loss_metrics(params, model, loss_fn, Xb, yb) for Xb, yb in self.batchify(params, self.preproc(params, val_data), device, shuffle_batches=False)])
 				loss = np.sum(np.multiply(losses, nums)) / np.sum(nums)
 				history['val_loss'].append(loss)
-				writer.add_scalar('data/val/loss', loss, epoch)
-				writer.add_scalars('data/val/metrics', metrics, epoch)
+				if (writer is not None):
+					writer.add_scalar('data/val/loss', loss, epoch)
+					writer.add_scalars('data/val/metrics', metrics, epoch)
 
-			writer.export_scalars_to_json('results.json')
-			writer.close()
+			if (writer is not None):
+				writer.export_scalars_to_json('results.json')
+				writer.close()
 
 			results = {
 				# 'history': history
