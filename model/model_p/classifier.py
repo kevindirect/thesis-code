@@ -4,6 +4,7 @@ Kevin Patel
 import sys
 import os
 from os import sep
+from functools import partial
 import logging
 
 import numpy as np
@@ -43,10 +44,11 @@ class Classifier(Model):
 
 	def make_optimizer(self, params):
 		"""
-		Make pytorch optimizer based on passed params.
+		Make pytorch optimizer constructor based on passed params which
+		returns an optimizer when called with a set of model parameters.
 		"""
 		optimizer = PYTORCH_OPT_TRANSLATOR.get(params['opt']['name'])
-		return optimizer(lr=params['opt']['lr'])
+		return partial(optimizer, lr=params['opt']['lr'])
 
 	def make_const_data_objective(self, features, labels, exp_logdir=None, exp_meta=None, clf_type='binary',
 									meta_obj='val_loss', obj_agg='last', obj_mode='min', meta_var=None,
