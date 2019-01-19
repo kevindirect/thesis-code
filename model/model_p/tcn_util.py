@@ -159,4 +159,5 @@ class TCN_Classifier(nn.Module):
 		"""
 		out_embedding = self.tcn(x)  # input should have dimension (N, C, L)
 		out = self.linear(out_embedding[:, :, -1])
+		out = self.linear(out_embedding)
 		return F.log_softmax(out, dim=1)
