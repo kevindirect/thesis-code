@@ -90,7 +90,7 @@ class Model:
 		"""
 		Compute loss and metrics on batch, run optimizer on losses if passed.
 		"""
-		predictions = model(feat_batch)	# Exception
+		predictions = model(feat_batch)
 		loss = loss_function(predictions, lab_batch)
 		metrics = {name: fn(lab_batch, predictions) for name, fn in self.metrics_fns}
 
@@ -132,7 +132,7 @@ class Model:
 			}
 			loss_fn, opt = self.make_loss_fn(params), self.make_optimizer(params)(model.parameters())
 			writer = self.tbx(params, logdir) if (logdir is not None) else None
-			
+
 			for epoch in range(params['epochs']):
 				model.train()
 				for Xb, yb in self.batchify(params, self.preproc(params, train_data), device, shuffle_batches=True):
