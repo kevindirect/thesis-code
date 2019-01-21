@@ -32,7 +32,8 @@ class Model:
 	def __init__(self, other_space={}):
 		default_space = {
 			'epochs': hp.choice('epochs', [200]),
-			'batch_size': hp.choice('batch_size', [64, 128, 256])
+			# 'batch_size': hp.choice('batch_size', [64, 128, 256])
+			'batch_size': hp.choice('batch_size', [128])
 		}
 		self.space = {**default_space, **other_space}
 		self.tbx = lambda params, logdir: SummaryWriter(logdir) # Creates TensorBoardX logger
