@@ -171,7 +171,7 @@ class TCN_Classifier(nn.Module):
 			L_in: length of input sequence
 		"""
 		out_embedding = self.tcn(x)
-		out = self.linear(out_embedding[:, :, -1])
+		# out = self.linear(out_embedding[:, :, -1])
 		# out = self.linear(out_embedding).double()
-		# out = self.linear(out_embedding)
+		out = self.linear(out_embedding)
 		return self.output(out)
