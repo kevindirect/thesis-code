@@ -82,7 +82,7 @@ class Model:
 		"""
 		Takes in final numpy data and returns torch DataLoader over torch tensor minibatches of specified torch device.
 		"""
-		ds = TensorDataset(*[torch.tensor(d, device=device) for d in data])
+		ds = TensorDataset(*[torch.tensor(d, dtype=torch.float32, device=device) for d in data])
 		dl = DataLoader(ds, batch_size=params['batch_size'], shuffle=shuffle_batches)
 		return dl
 
