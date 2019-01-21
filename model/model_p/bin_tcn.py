@@ -26,7 +26,7 @@ class BinaryTCN(TemporalMixin, BinaryClassifier):
 		topology (list): Topology of the TCN divided by the window size
 		kernel_size (int > 1): CNN kernel size
 		stride (int > 0): CNN kernel's stride 
-		dropout (float [0, 1]): amount of dropout 
+		dropout (float [0, 1]): dropout probability, probability of an element to be zeroed
 		attention (bool): whether or not to include attention block after each tcn block
 		max_attn_len (int > 0): max length of attention (only relevant if attention is set to True)
 	"""
@@ -56,6 +56,6 @@ class BinaryTCN(TemporalMixin, BinaryClassifier):
 		real_num_inputs = window_size * params['num_windows']  								# Multiply by window size by num_windows to get real expected inputs
 		real_topology = window_size * np.array(params['topology'])							# Scale topology by the window size
 		real_topology = np.clip(real_topology, a_min=1, a_max=None).astype(int)				# Make sure that layer outputs are always greater than zero
-		mdl = TCN_Classifier(num_inputs=real_num_inputs, num_outputs=1, channels=real_topology.tolist(), kernel_size=params['kernel_size'], stride=params['stride'],
-								dropout=params['dropout'], attention=params['attention'], max_attn_len=params['max_attn_len'])
+		mdl = TCN_Classifier(num_input_channels=1, channels=real_topology.tolist(), num_outputs=1, kernel_size=params['kernel_size'],
+							stride=params['stride'], dropout=params['dropout'], attention=params['attention'], max_attn_len=params['max_attn_len'])
 		return mdl
