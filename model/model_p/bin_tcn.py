@@ -32,7 +32,7 @@ class BinaryTCN(TemporalMixin, BinaryClassifier):
 	"""
 	def __init__(self, other_space={}):
 		default_space = {
-			'num_windows': hp.choice('num_windows', [5]),
+			'num_windows': hp.choice('num_windows', [4]),
 			'topology': hp.choice('topology', [[3, 5, 1]]),
 			'kernel_size': hp.choice('kernel_size', [4]),
 			'stride': hp.choice('stride', [1]),
