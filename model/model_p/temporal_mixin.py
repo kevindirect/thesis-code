@@ -24,12 +24,12 @@ class TemporalMixin:
 		Reshaping transform for temporal data.
 
 		Runs a "moving window unstack" operation through the first data such that each row of the result contains the history
-		of the original up to and including that row based on a num_windows parameter in params. The num_windows
-		determines how far back the history each row will record; a num_windows of '1' results in no change.
+		of the original up to and including that row based on a input_windows parameter in params. The input_windows
+		determines how far back the history each row will record; a input_windows of '1' results in no change.
 		This method also adds a singleton dimension between the first and second after the moving window unstack; this is to
 		denote the "number of channels" for CNN based learning algorithms.
 		
-		example with num_windows of '2':
+		example with input_windows of '2':
 													0 | a b c 
 													1 | d e f ---> 1 | a b c d e f
 													2 | g h i      2 | d e f g h i
@@ -39,12 +39,12 @@ class TemporalMixin:
 		tuple item.
 		"""
 		# Reshape features into overlapping moving window samples
-		f = np.array([np.concatenate(vec) for vec in window_iter(data[0], n=params['num_windows'])])
+		f = np.array([np.concatenate(vec) for vec in window_iter(data[0], n=params['input_windows'])])
 
 		# Add a singleton dimension (required to denote number of channels in this data)
 		f = np.expand_dims(f, 1)
 
 		# Drop lables prior to the first step for label/target vectors
-		l = tuple(label[params['num_windows']-1:] for label in data[1:])
+		l = tuple(label[params['input_windows']-1:] for label in data[1:])
 
 		return (f, *l)

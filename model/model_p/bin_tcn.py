@@ -22,7 +22,7 @@ class BinaryTCN(TemporalMixin, BinaryClassifier):
 	Note: Receptive Field Size = Number TCN Blocks * Kernel Size * Last Layer Dilation Size
 
 	Parameters:
-		num_windows (int > 0): Scalar to multiply input size by to get actual network input size (aka effective history)
+		input_windows (int > 0): Number of aggregation windows in the input layer
 		topology (list): Topology of the TCN divided by the window size
 		kernel_size (int > 1): CNN kernel size
 		stride (int > 0): CNN kernel's stride 
@@ -32,7 +32,7 @@ class BinaryTCN(TemporalMixin, BinaryClassifier):
 	"""
 	def __init__(self, other_space={}):
 		default_space = {
-			'num_windows': hp.choice('num_windows', [4]),
+			'input_windows': hp.choice('input_windows', [4]),
 			'topology': hp.choice('topology', [[3, 5, 1]]),
 			'kernel_size': hp.choice('kernel_size', [4]),
 			'stride': hp.choice('stride', [1]),
@@ -41,7 +41,7 @@ class BinaryTCN(TemporalMixin, BinaryClassifier):
 			'max_attn_len': hp.uniform('max_attn_len', 24, 120)
 		}
 		# default_space = {
-		# 	'num_windows': hp.choice('num_windows', [3, 5, 10, 20]),
+		# 	'input_windows': hp.choice('input_windows', [3, 5, 10, 20]),
 		# 	'topology': hp.choice('topology', [[3], [3, 5, 1]], [3, 1, 3], [3, 5, 1, .5]),
 		# 	'kernel_size': hp.choice('kernel_size', [2, 4, 8]),
 		# 	'stride': hp.choice('stride', [1, 2]),
@@ -53,7 +53,7 @@ class BinaryTCN(TemporalMixin, BinaryClassifier):
 
 	def make_model(self, params, num_inputs):
 		window_size = num_inputs
-		real_num_inputs = window_size * params['num_windows']  								# Multiply by window size by num_windows to get real expected inputs
+		eff_history = window_size * params['input_windows']  								# Effective history = window_size * input_windows
 		real_topology = window_size * np.array(params['topology'])							# Scale topology by the window size
 		real_topology = np.clip(real_topology, a_min=1, a_max=None).astype(int)				# Make sure that layer outputs are always greater than zero
 		mdl = TCN_Classifier(num_input_channels=1, channels=real_topology.tolist(), num_outputs=1, kernel_size=params['kernel_size'],
