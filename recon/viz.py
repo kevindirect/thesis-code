@@ -1,5 +1,6 @@
-# Kevin Patel
-
+"""
+Kevin Patel
+"""
 import sys
 import os
 import logging
@@ -8,6 +9,8 @@ from collections import Mapping
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import scipy
+import scipy.stats
 # import pygraphviz as pgv
 from graphviz import Digraph
 
@@ -17,29 +20,24 @@ from recon.common import dum
 
 
 """ ********** PANEL DATA VISUALIZATION ********** """
-def plot_dist(col_name):
-	series = data[col_name].dropna().sort_values(inplace=False)
-	mean = np.mean(series)
-	median = np.median(series)
-	sdev = np.std(series)
-	fit = sc.stats.norm.pdf(series, mean, sdev)
-
+def plot_dist(df, col_name, fit_overlay=False):
+	series = df[col_name].dropna().sort_values(inplace=False)
 	plt.figure(figsize=(4,4))
 	plt.title(col_name)
 	plt.xlabel('value')
 	plt.ylabel('number of records')
 	plt.grid(b=True, which='major', axis='y')
-	textstr = '$\mu=%.2f$\n$\mathrm{median}=%.2f$\n$\sigma=%.2f$'%(mean, median, sdev)
-
-	# these are matplotlib.patch.Patch properties
-	props = dict(boxstyle='round', facecolor='white', alpha=0.5)
-
-	# place a text box in upper left in axes coords
-	plt.axes().text(0.05, 0.95, textstr, transform=plt.axes().transAxes, fontsize=14,
-		verticalalignment='top', bbox=props)
-
 	plt.hist(series, bins=80, normed=True)
-	plt.plot(series, fit,'k^')
+
+	if (fit_overlay):
+		size, mean, median, sdev = series.size, np.mean(series), np.median(series), np.std(series)
+		textstr = '$n=%i$\n$\mu=%.2f$\n$\mathrm{median}=%.2f$\n$\sigma=%.2f$'%(size, mean, median, sdev)
+		fit = scipy.stats.norm.pdf(series, mean, sdev)
+
+		props = dict(boxstyle='round', facecolor='white', alpha=0.5)				# matplotlib.patch.Patch properties
+		plt.axes().text(0.05, 0.95, textstr, transform=plt.axes().transAxes,
+			fontsize=14, verticalalignment='top', bbox=props)						# place a text box in upper left
+		plt.plot(series, fit,'k^')
 
 
 def plot_heatmap(df):
@@ -232,6 +230,11 @@ def i_plot_feature(feature=None, label=None,
 	plt.show()
 	return
 
+def ploty(y, x_start=0, x_step=1):
+	y = np.array(y)
+	x = np.arange(x_start, y.size, x_step)
+	plt.plot(x, y)
+	plt.show()
 
 def plot_ser(ser, title_str='plot', xlabel_str='xlab', ylabel_str='ylab'):
 	plt.figure(figsize=((25, 10)))
