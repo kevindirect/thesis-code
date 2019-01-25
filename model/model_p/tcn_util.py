@@ -24,7 +24,7 @@ class Chomp1d(nn.Module):
 		self.chomp_size = chomp_size
 
 	def forward(self, x):
-		return x[:, :, :-self.chomp_size].contiguous()
+		return x[:, :, :-self.chomp_size].contiguous() # XXX - chomps off (kernel_size-1)*dilation off right end
 
 
 class TemporalBlock(nn.Module):
@@ -67,7 +67,7 @@ class TemporalBlock(nn.Module):
 			if (self.downsample is not None):
 				self.downsample.weight.data.normal_(0, 0.01)
 
-		elif (init_method == 'xavier_uniform'):
+		elif (init_method in ('xavier_uniform', 'glorot_uniform')):
 			nn.init.xavier_uniform_(self.conv1.weight, gain=np.sqrt(2))
 			nn.init.xavier_uniform_(self.conv2.weight, gain=np.sqrt(2))
 			if (self.downsample is not None):
