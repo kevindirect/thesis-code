@@ -92,6 +92,7 @@ class Model:
 		Compute loss and metrics on batch, run optimizer on losses if passed.
 		"""
 		prediction_batch = model(feat_batch)
+		print(prediction_batch.shape)
 		print(prediction_batch)
 		loss = loss_function(prediction_batch, lab_batch)
 		metrics = {name: fn(lab_batch, prediction_batch) for name, fn in self.metrics_fns}
