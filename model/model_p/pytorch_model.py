@@ -67,7 +67,10 @@ class Model:
 					choice_list = hp_obj.pos_args[1:]
 					print('choice_list[idx]', choice_list[idx])
 					print('dir(choice_list[idx])', dir(choice_list[idx]))
-					chosen = choice_list[idx]._obj
+					print('choice_list[idx].named_args', choice_list[idx].named_args)
+					print('choice_list[idx].pos_args', choice_list[idx].pos_args)
+					chosen = choice_list[idx].obj
+					print('choice_list[idx].obj', choice_list[idx].obj)
 					if (isinstance(chosen, str) or isinstance(chosen, int) or isinstance(chosen, float)):
 						params_dict[name] = chosen
 					else:
