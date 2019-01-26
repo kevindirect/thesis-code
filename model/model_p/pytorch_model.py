@@ -59,6 +59,7 @@ class Model:
 				hp_obj_type = hp_obj.name
 
 				print('hp_obj', hp_obj)
+				print('dir(hp_obj)', dir(hp_obj))
 				print('hp_obj.name', hp_obj.name)
 
 				if (hp_obj_type == 'switch'): # Indicates an hp.choice object
