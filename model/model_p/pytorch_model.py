@@ -53,6 +53,8 @@ class Model:
 		"""
 		params_dict = {}
 
+		print(hp_obj)
+
 		for name, idx in params_idx.items():
 			hp_obj = self.space[name]
 			hp_obj_type = hp_obj.name
