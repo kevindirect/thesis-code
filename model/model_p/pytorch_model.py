@@ -14,7 +14,7 @@ from torch.utils.data import TensorDataset, DataLoader
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from tensorboardX import SummaryWriter
 
-from common_util import MODEL_DIR, identity_fn
+from common_util import MODEL_DIR, identity_fn, is_type
 from model.common import PYTORCH_MODELS_DIR, ERROR_CODE, TEST_RATIO, VAL_RATIO
 
 
@@ -47,44 +47,79 @@ class Model:
 	def get_space(self):
 		return self.space
 
-	def params_idx_to_name(self, params_idx):
-		"""
-		Loop over params_idx dictionary and map indexes to parameter values in hyperspace dictionary.
-		"""
-		params_dict = {}
+	def translate_param_idx(self, hp_space, params_idx):
+		def handle_param(hp_param_obj, hp_type, hp_idx, param_name, res):
+			if (hp_type == 'switch'):			# Indicates an hp.choice object
+				choice_list = hp_param_obj.pos_args[1:]
+				chosen = choice_list[hp_idx]
+				
+				if (len(chosen.named_args) > 0): # Nested hp.choice
+					for subparam in chosen.named_args:
+						if (istype(subparam[0], str)):
+							sp_name = '_'.join([param_name, subparam[0]])
+							sp_obj = subparam[1]
+							handle_param(subparam[1], sp_obj, 0, sp_name, res)
+				
+				chosen_value = chosen.obj
+				if (is_type(chosen, bool, str, int, float)):
+					res[param_name] = chosen_value
+
+			elif (hp_type == 'float'):			# Indicates a hp sampled value
+				res[param_name] = hp_idx
+
+			return res
+
+		result = {}
 
 		for name, idx in params_idx.items():
-			if (name in self.space):
-				hp_obj = self.space[name]
-				hp_obj_type = hp_obj.name
+			if (name in hp_space):
+				hp_obj = hp_space[name]
+				handle_param(hp_obj, hp_obj.name, idx, name, result)
 
-				print('hp_obj', hp_obj)
-				print('dir(hp_obj)', dir(hp_obj))
-				print('hp_obj.name', hp_obj.name)
+		return result
 
-				if (hp_obj_type == 'switch'): # Indicates an hp.choice object
-					print('hp_obj.pos_args', hp_obj.pos_args)
-					choice_list = hp_obj.pos_args[1:]
-					print('choice_list[idx]', choice_list[idx])
-					print('dir(choice_list[idx])', dir(choice_list[idx]))
-					print('choice_list[idx].named_args', choice_list[idx].named_args)
-					print('choice_list[idx].pos_args', choice_list[idx].pos_args)
-					chosen = choice_list[idx].obj
-					print('choice_list[idx].obj', choice_list[idx].obj)
-					if (isinstance(chosen, str) or isinstance(chosen, int) or isinstance(chosen, float)):
-						params_dict[name] = chosen
-					else:
-						try:
-							params_dict[name] = chosen.__name__
-						except:
-							params_dict[name] = str(chosen)
+	def params_idx_to_name(self, params_idx):
+		return translate_param_idx(self.space, params_idx)
 
-				elif (hp_obj_type == 'float'): # Indicates a hp sampled value
-					params_dict[name] = idx
-			else:
-				params_dict[name] = idx
+	# def params_idx_to_name(self, params_idx):
+	# 	"""
+	# 	Loop over params_idx dictionary and map indexes to parameter values in hyperspace dictionary.
+	# 	"""
+	# 	params_dict = {}
 
-		return params_dict
+	# 	for name, idx in params_idx.items():
+	# 		if (name in self.space):
+	# 			hp_obj = self.space[name]
+	# 			hp_obj_type = hp_obj.name
+
+	# 			print('hp_obj', hp_obj)
+	# 			print('dir(hp_obj)', dir(hp_obj))
+	# 			print('hp_obj.name', hp_obj.name)
+
+	# 			if (hp_obj_type == 'switch'): # Indicates an hp.choice object
+	# 				print('hp_obj.pos_args', hp_obj.pos_args)
+	# 				choice_list = hp_obj.pos_args[1:]
+	# 				print('choice_list[idx]', choice_list[idx])
+	# 				print('dir(choice_list[idx])', dir(choice_list[idx]))
+	# 				print('choice_list[idx].named_args', choice_list[idx].named_args)
+	# 				print('choice_list[idx].pos_args', choice_list[idx].pos_args)
+	# 				chosen = choice_list[idx].obj
+	# 				print('choice_list[idx].obj', choice_list[idx].obj)
+
+	# 				if (isinstance(chosen, bool) or isinstance(chosen, str) or isinstance(chosen, int) or isinstance(chosen, float)):
+	# 					params_dict[name] = chosen
+	# 				else:
+	# 					try:
+	# 						params_dict[name] = chosen.__name__
+	# 					except:
+	# 						params_dict[name] = str(chosen)
+
+	# 			elif (hp_obj_type == 'float'): # Indicates a hp sampled value
+	# 				params_dict[name] = idx
+	# 		else:
+	# 			params_dict[name] = idx
+
+	# 	return params_dict
 
 	def preproc(self, params, data):
 		"""
