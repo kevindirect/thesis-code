@@ -150,7 +150,7 @@ class TCN_Classifier(nn.Module):
 		num_outputs (int): number of outputs, usually the number of classes to predict (defaults to binary case)
 		kernel_size (int > 1): CNN kernel size
 		stride (int > 0): CNN kernel's stride 
-		dropout (float [0, 1]): dropout probability, probability of an element to be zeroed
+		dropout (float [0, 1]): dropout probability, probability of an element to be zeroed during training
 		attention (bool): whether or not to include attention block after each tcn block
 		max_attn_len (int > 0): max length of attention (only relevant if attention is set to True)
 	"""
@@ -173,5 +173,5 @@ class TCN_Classifier(nn.Module):
 		out_embedding = self.tcn(x)
 		# out = self.linear(out_embedding[:, :, -1])
 		# out = self.linear(out_embedding).double()
-		out = self.linear(out_embedding)
+		out = self.linear(out_embedding[:, :, -1])
 		return self.output(out)
