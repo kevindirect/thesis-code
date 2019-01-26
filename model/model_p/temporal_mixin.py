@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 from hyperopt import hp, STATUS_OK
 
-from common_util import MODEL_DIR, window_iter
+from common_util import MODEL_DIR, window_iter, np_is_ndim
 from model.common import PYTORCH_MODELS_DIR, ERROR_CODE
 
 
@@ -46,5 +46,9 @@ class TemporalMixin:
 
 		# Drop lables prior to the first step for label/target vectors
 		l = tuple(label[params['input_windows']-1:] for label in data[1:])
+
+		# Make numpy array vector of vectors if it is one dimensional
+		if (np_is_ndim(l, dim=1)):
+			l = np.expand_dims(l, 1)
 
 		return (f, *l)

@@ -655,6 +655,13 @@ def get_free_port(host="localhost"):
 
 
 """ ********** NUMPY GENERAL UTILS ********** """
+def np_is_ndim(arr, dim=1):
+	"""
+	Return whether or not the numpy array has dim dimensions.
+	By default returns whether or not array is one dimensional.
+	"""
+	return arr.ndim == dim
+
 def filter_null(arr):
 	"""
 	Return numpy array with all nulls removed.
