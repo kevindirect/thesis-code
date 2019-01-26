@@ -44,11 +44,10 @@ class TemporalMixin:
 		# Add a singleton dimension (required to denote number of channels in this data)
 		f = np.expand_dims(f, 1)
 
-		# Drop lables prior to the first step for label/target vectors
-		l = tuple(label[params['input_windows']-1:] for label in data[1:])
-
-		# Make numpy array vector of vectors if it is one dimensional
-		if (np_is_ndim(l, dim=1)):
-			l = np.expand_dims(l, 1)
+		l = []
+		for vec in data[1:]:
+			r = vec[params['input_windows']-1:]							# Realign by dropping lables prior to the first step
+			m = np.expand_dims(r) if (np_is_ndim(vec)) else r 			# Make array vector of vectors if it is one dimensional
+			l.append(m)
 
 		return (f, *l)
