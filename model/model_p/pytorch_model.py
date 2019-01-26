@@ -79,7 +79,7 @@ class Model:
 		return result
 
 	def params_idx_to_name(self, params_idx):
-		return translate_param_idx(self.space, params_idx)
+		return self.translate_param_idx(self.space, params_idx)
 
 	# def params_idx_to_name(self, params_idx):
 	# 	"""
