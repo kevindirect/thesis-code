@@ -37,18 +37,17 @@ class Classifier(Model):
 
 	def make_loss_fn(self, params):
 		"""
-		Make pytorch loss function based on passed params.
+		Make pytorch loss function object based on passed params.
 		"""
 		loss_fn = PYTORCH_LOSS_TRANSLATOR.get(params['loss'])
-		return loss_fn
+		return loss_fn()
 
 	def make_optimizer(self, params):
 		"""
-		Make pytorch optimizer constructor based on passed params which
-		returns an optimizer when called with a set of model parameters.
+		Make pytorch optimizer object based on passed params.
 		"""
 		optimizer = PYTORCH_OPT_TRANSLATOR.get(params['opt']['name'])
-		return partial(optimizer, lr=params['opt']['lr'])
+		return optimizer(lr=params['opt']['lr'])
 
 	def make_const_data_objective(self, features, labels, exp_logdir=None, exp_meta=None, clf_type='binary',
 									meta_obj='val_loss', obj_agg='last', obj_mode='min', meta_var=None,
