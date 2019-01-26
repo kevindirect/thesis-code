@@ -58,6 +58,7 @@ class Model:
 						if (is_type(subparam[0], str)):
 							sp_name = '_'.join([param_name, subparam[0]])
 							sp_obj = subparam[1]
+							print('dir(sp_obj)', dir(sp_obj))
 							handle_param(subparam[1], sp_obj, 0, sp_name, res)
 				
 				chosen_value = chosen.obj
