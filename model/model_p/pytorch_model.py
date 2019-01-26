@@ -135,7 +135,7 @@ class Model:
 				'loss': [],
 				'val_loss': []
 			}
-			loss_fn, opt = self.make_loss_fn(params), self.make_optimizer(params)(model.parameters())
+			loss_fn, opt = self.make_loss_fn(params), self.make_optimizer(params, model.parameters())
 			writer = self.tbx(params, logdir) if (logdir is not None) else None
 
 			for epoch in range(params['epochs']):
