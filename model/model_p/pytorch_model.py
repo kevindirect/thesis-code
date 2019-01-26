@@ -97,6 +97,7 @@ class Model:
 		# print(lab_batch.shape)
 		# print(lab_batch)
 		loss = loss_function(prediction_batch, lab_batch)
+		metrics = None
 		# metrics = {name: fn(lab_batch, prediction_batch) for name, fn in self.metrics_fns}
 
 		if (optimizer is not None):
