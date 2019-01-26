@@ -47,40 +47,40 @@ class Model:
 	def get_space(self):
 		return self.space
 
-	def translate_param_idx(self, hp_space, params_idx):
-		def handle_param(hp_param_obj, hp_type, hp_idx, param_name, res):
-			if (hp_type == 'switch'):			# Indicates an hp.choice object
-				choice_list = hp_param_obj.pos_args[1:]
-				chosen = choice_list[hp_idx]
-				
-				if (len(chosen.named_args) > 0): # Nested hp.choice
-					for subparam in chosen.named_args:
-						if (is_type(subparam[0], str)):
-							sp_name = '_'.join([param_name, subparam[0]])
-							sp_obj = subparam[1]
-							print('dir(sp_obj)', dir(sp_obj))
-							handle_param(subparam[1], sp_obj, 0, sp_name, res)
-				
-				chosen_value = chosen.obj
-				if (is_type(chosen, bool, str, int, float)):
-					res[param_name] = chosen_value
-
-			elif (hp_type == 'float'):			# Indicates a hp sampled value
-				res[param_name] = hp_idx
-
-			return res
-
-		result = {}
-
-		for name, idx in params_idx.items():
-			if (name in hp_space):
-				hp_obj = hp_space[name]
-				handle_param(hp_obj, hp_obj.name, idx, name, result)
-
-		return result
-
 	def params_idx_to_name(self, params_idx):
-		return self.translate_param_idx(self.space, params_idx)
+		def translate_param_idx(hp_space, params_idx):
+			def handle_param(hp_param_obj, hp_type, hp_idx, param_name, res):
+				if (hp_type == 'switch'):			# Indicates an hp.choice object
+					choice_list = hp_param_obj.pos_args[1:]
+					chosen = choice_list[hp_idx]
+					
+					if (len(chosen.named_args) > 0): # Nested hp.choice
+						for subparam in chosen.named_args:
+							if (is_type(subparam[0], str)):
+								sp_name = '_'.join([param_name, subparam[0]])
+								sp_obj = subparam[1]
+								print('dir(sp_obj)', dir(sp_obj))
+								handle_param(subparam[1], sp_obj, 0, sp_name, res)
+					
+					chosen_value = chosen.obj
+					if (is_type(chosen, bool, str, int, float)):
+						res[param_name] = chosen_value
+
+				elif (hp_type == 'float'):			# Indicates a hp sampled value
+					res[param_name] = hp_idx
+
+				return res
+
+			result = {}
+
+			for name, idx in params_idx.items():
+				if (name in hp_space):
+					hp_obj = hp_space[name]
+					handle_param(hp_obj, hp_obj.name, idx, name, result)
+
+			return result
+
+		return translate_param_idx(self.space, params_idx)
 
 	# def params_idx_to_name(self, params_idx):
 	# 	"""
