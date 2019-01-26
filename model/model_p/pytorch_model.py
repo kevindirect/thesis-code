@@ -58,8 +58,13 @@ class Model:
 				hp_obj = self.space[name]
 				hp_obj_type = hp_obj.name
 
+				print('hp_obj', hp_obj)
+				print('hp_obj.name', hp_obj.name)
+
 				if (hp_obj_type == 'switch'): # Indicates an hp.choice object
+					print('hp_obj.pos_args', hp_obj.pos_args)
 					choice_list = hp_obj.pos_args[1:]
+					print('choice_list[idx]', choice_list[idx])
 					chosen = choice_list[idx]._obj
 					if (isinstance(chosen, str) or isinstance(chosen, int) or isinstance(chosen, float)):
 						params_dict[name] = chosen
