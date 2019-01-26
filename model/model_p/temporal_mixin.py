@@ -46,8 +46,8 @@ class TemporalMixin:
 
 		l = []
 		for vec in data[1:]:
-			r = vec[params['input_windows']-1:]							# Realign by dropping lables prior to the first step
-			m = np.expand_dims(r) if (np_is_ndim(vec)) else r 			# Make array vector of vectors if it is one dimensional
+			r = vec[params['input_windows']-1:]								# Realign by dropping lables prior to the first step
+			m = np.expand_dims(r, 1) if (np_is_ndim(vec)) else r 			# Make array vector of vectors if it is one dimensional
 			l.append(m)
 
 		return (f, *l)
