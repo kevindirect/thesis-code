@@ -189,6 +189,7 @@ class Model:
 				if (writer is not None):
 					writer.add_scalar('data/train/loss', loss, epoch)
 					writer.add_scalars('data/train/metrics', metrics, epoch)
+				logging.debug('parameters {}: {}'.format(epoch_str, list(model.parameters())))
 
 				model.eval()
 				with torch.no_grad():
