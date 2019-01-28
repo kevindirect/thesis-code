@@ -173,5 +173,7 @@ class TCN_Classifier(nn.Module):
 		out_embedding = self.tcn(x)
 		# out = self.linear(out_embedding[:, :, -1])
 		# out = self.linear(out_embedding).double()
+		print('BEFORE: ', out_embedding.shape)
+		print('AFTER:  ', out_embedding[:, :, -1].shape)
 		out = self.linear(out_embedding[:, :, -1])
 		return self.output(out)
