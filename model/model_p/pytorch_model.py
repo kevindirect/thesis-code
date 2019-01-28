@@ -123,7 +123,7 @@ class Model:
 		"""
 		f = torch.tensor(data[0], dtype=torch.float32, device=device)
 		if (params['loss'] in ['bce', 'bcel']):
-			l = [torch.tensor(d, dtype=torch.int32, device=device) for d in data[1:]]
+			l = [torch.tensor(d, dtype=torch.float32, device=device) for d in data[1:]]
 		elif (params['loss'] in ['ce', 'nll']):
 			l = [torch.tensor(d, dtype=torch.int64, device=device) for d in data[1:]]
 		ds = TensorDataset(f, *l)
