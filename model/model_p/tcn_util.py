@@ -169,10 +169,11 @@ class TCN_Classifier(nn.Module):
 			N: number of batches
 			C_in: number of input channels
 			L_in: length of input sequence
+
+		Output shape will be (N, C_out) where
+			N: number of batches
+			C_out: number of classes
 		"""
 		out_embedding = self.tcn(x)
-		# out = self.linear(out_embedding[:, :, -1])
-		# out = self.linear(out_embedding).double()
 		out = self.linear(out_embedding[:, :, -1])
-		print('OUT:', out.shape)
 		return self.output(out)
