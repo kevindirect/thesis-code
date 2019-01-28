@@ -45,9 +45,9 @@ PYTORCH_OPT_TRANSLATOR = {
 }
 PYTORCH_LOSS_TRANSLATOR = {
 	'bce': torch.nn.BCELoss,						# Binary: Binary Cross Entropy
-	'bcel': torch.nn.BCEWithLogitsLoss,				# Binary: Binary Cross Entropy with Logits
+	'bcel': torch.nn.BCEWithLogitsLoss,				# Binary: Binary Cross Entropy with Logits (Sigmoid + BCELoss)
 	'sm': torch.nn.SoftMarginLoss,					# Binary: Soft Margin Loss
-	'ce': torch.nn.CrossEntropyLoss,				# Categorical: Cross Entropy Loss
+	'ce': torch.nn.CrossEntropyLoss,				# Categorical: Cross Entropy Loss (LogSoftmax + NLLLoss)
 	'mls': torch.nn.MultiLabelSoftMarginLoss,		# Categorical: Multi Label Soft Margin Loss
 	'nll': torch.nn.NLLLoss,						# Categorical: Negative Log Likelihood Loss
 	'mae': torch.nn.L1Loss,							# Regression: Mean Absolute Error Loss

@@ -24,7 +24,7 @@ class BinaryClassifier(Classifier):
 
 	def __init__(self, other_space={}):
 		default_space = {
-			'loss': hp.choice('loss', ['nll'])
+			'loss': hp.choice('loss', ['bcel'])
 		}
 		# default_space = {
 		# 	'loss': hp.choice('loss', ['bce', 'ce', 'bcel', 'nll'])
