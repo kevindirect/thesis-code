@@ -121,7 +121,12 @@ class Model:
 		"""
 		Takes in final numpy data and returns torch DataLoader over torch tensor minibatches of specified torch device.
 		"""
-		ds = TensorDataset(*[torch.tensor(d, dtype=torch.float32, device=device) for d in data])
+		f = torch.tensor(data[0], dtype=torch.float32, device=device)
+		if (params['loss'] in ['ce', 'nll']):
+			l = [torch.tensor(d, dtype=torch.int64, device=device) for d in data[1:]]
+		elif (params['loss'] in ['bce', 'bcel']):
+			l = [torch.tensor(d, dtype=torch.int32, device=device) for d in data[1:]]
+		ds = TensorDataset(f, *l)
 		dl = DataLoader(ds, batch_size=params['batch_size'], shuffle=shuffle_batches)
 		return dl
 
@@ -130,7 +135,7 @@ class Model:
 		Compute loss and metrics on batch, run optimizer on losses if passed.
 		"""
 		prediction_batch = model(feat_batch)
-		loss = loss_function(prediction_batch, lab_batch.long())
+		loss = loss_function(prediction_batch, lab_batch)
 		metrics = None
 		# metrics = {name: fn(lab_batch, prediction_batch) for name, fn in self.metrics_fns}
 
