@@ -31,24 +31,24 @@ class BinaryTCN(TemporalMixin, BinaryClassifier):
 		max_attn_len (int > 0): max length of attention (only relevant if attention is set to True)
 	"""
 	def __init__(self, other_space={}):
-		# default_space = {
-		# 	'input_windows': hp.choice('input_windows', [5]),
-		# 	'topology': hp.choice('topology', [[3, 5, 1]]),
-		# 	'kernel_size': hp.choice('kernel_size', [4]),
-		# 	'stride': hp.choice('stride', [1]),
-		# 	'dropout': hp.uniform('dropout', .2, .8),
-		# 	'attention': hp.choice('attention', [False]),
-		# 	'max_attn_len': hp.uniform('max_attn_len', 24, 120)
-		# }
 		default_space = {
-			'input_windows': hp.choice('input_windows', [3, 5, 10, 20]),
-			'topology': hp.choice('topology', [[5, 3], [3, 5, 1], [3, 5, 7], [3, 1, 3], [3, 5, 3]]),
-			'kernel_size': hp.choice('kernel_size', [2, 4, 8]),
-			'stride': hp.choice('stride', [1, 2]),
+			'input_windows': hp.choice('input_windows', [1, 5]),
+			'topology': hp.choice('topology', [[3, 5, 1]]),
+			'kernel_size': hp.choice('kernel_size', [4]),
+			'stride': hp.choice('stride', [1]),
 			'dropout': hp.uniform('dropout', .2, .8),
 			'attention': hp.choice('attention', [False]),
 			'max_attn_len': hp.uniform('max_attn_len', 24, 120)
 		}
+		# default_space = {
+		# 	'input_windows': hp.choice('input_windows', [3, 5, 10, 20]),
+		# 	'topology': hp.choice('topology', [[5, 3], [3, 5, 1], [3, 5, 7], [3, 1, 3], [3, 5, 3]]),
+		# 	'kernel_size': hp.choice('kernel_size', [2, 4, 8]),
+		# 	'stride': hp.choice('stride', [1, 2]),
+		# 	'dropout': hp.uniform('dropout', .2, .8),
+		# 	'attention': hp.choice('attention', [False]),
+		# 	'max_attn_len': hp.uniform('max_attn_len', 24, 120)
+		# }
 		super(BinaryTCN, self).__init__({**default_space, **other_space})
 
 	def make_model(self, params, num_inputs):
