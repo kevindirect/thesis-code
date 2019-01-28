@@ -174,4 +174,4 @@ class TCN_Classifier(nn.Module):
 		# out = self.linear(out_embedding[:, :, -1])
 		# out = self.linear(out_embedding).double()
 		out = self.linear(out_embedding[:, :, -1])
-		return self.output(out)
+		return self.output(out).double()
