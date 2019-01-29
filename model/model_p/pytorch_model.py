@@ -96,7 +96,7 @@ class Model:
 					choice_list = hp_obj.pos_args[1:]
 					chosen = choice_list[idx].obj
 
-					if (isinstance(chosen, bool) or isinstance(chosen, str) or isinstance(chosen, int) or isinstance(chosen, float)):
+					if (is_type(chosen, bool, str, int, float)):
 						params_dict[name] = chosen
 					else:
 						try:
