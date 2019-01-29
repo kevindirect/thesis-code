@@ -186,7 +186,7 @@ class Model:
 				# for Xb, yb in self.batchify(params, self.preproc(params, train_data), device, shuffle_batches=True):
 				# 	losses, nums, metrics = self.batch_loss_metrics(params, model, loss_fn, Xb, yb, optimizer=opt)
 				loss = np.sum(np.multiply(losses, nums)) / np.sum(nums)
-				logging.debug('train loss {}: {}'.format(epoch_str, loss))
+				logging.debug('train loss  {}: {}'.format(epoch_str, loss))
 				history['loss'].append(loss)
 				if (writer is not None):
 					writer.add_scalar('data/train/loss', loss, epoch)
@@ -196,7 +196,7 @@ class Model:
 				with torch.no_grad():
 					losses, nums, metrics = zip(*[self.batch_loss_metrics(params, model, loss_fn, Xb, yb) for Xb, yb in self.batchify(params, self.preproc(params, val_data), device, shuffle_batches=False)])
 				loss = np.sum(np.multiply(losses, nums)) / np.sum(nums)
-				logging.debug('val loss   {}: {}'.format(epoch_str, loss))
+				logging.debug('val loss    {}: {}'.format(epoch_str, loss))
 				history['val_loss'].append(loss)
 				if (writer is not None):
 					writer.add_scalar('data/val/loss', loss, epoch)
