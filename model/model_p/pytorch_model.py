@@ -181,7 +181,7 @@ class Model:
 
 			for epoch in range(params['epochs']):
 				epoch_str = str(epoch).zfill(3)
-				model.train()
+				# model.train()
 				losses, nums, metrics = zip(*[self.batch_loss_metrics(params, model, loss_fn, Xb, yb, optimizer=opt) for Xb, yb in self.batchify(params, self.preproc(params, train_data), device, shuffle_batches=True)])
 				# for Xb, yb in self.batchify(params, self.preproc(params, train_data), device, shuffle_batches=True):
 				# 	losses, nums, metrics = self.batch_loss_metrics(params, model, loss_fn, Xb, yb, optimizer=opt)
@@ -192,7 +192,7 @@ class Model:
 					writer.add_scalar('data/train/loss', loss, epoch)
 					writer.add_scalars('data/train/metrics', metrics, epoch)
 
-				model.eval()
+				# model.eval()
 				with torch.no_grad():
 					losses, nums, metrics = zip(*[self.batch_loss_metrics(params, model, loss_fn, Xb, yb) for Xb, yb in self.batchify(params, self.preproc(params, val_data), device, shuffle_batches=False)])
 				loss = np.sum(np.multiply(losses, nums)) / np.sum(nums)
