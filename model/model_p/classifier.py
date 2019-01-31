@@ -112,7 +112,8 @@ class Classifier(Model):
 				makedir_if_not_exists(trial_logdir)
 				dump_json(params, 'params.json', dir_path=trial_logdir)
 
-			dev = torch.device('cuda') if (torch.cuda.is_available()) else torch.device('cpu')
+			# dev = torch.device('cuda') if (torch.cuda.is_available()) else torch.device('cpu')
+			dev = torch.device('cpu')
 			mdl = self.get_model(params, input_size).to(device=dev)
 			res = self.fit_model(params, trial_logdir, mdl, dev, (feat_train, lab_train), val_data=(feat_val, lab_val))
 			# dump_json(res, 'results.json', dir_path=trial_logdir)
