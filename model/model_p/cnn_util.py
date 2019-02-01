@@ -102,7 +102,7 @@ class CNN_Classifier(nn.Module):
 	"""
 	def __init__(self, num_input_channels, channels, num_outputs=1, kernel_size=2, stride=1, dilation=False, residual=False):
 		super(CNN_Classifier, self).__init__()
-		self.cnn = ConvNet(num_input_channels, channels, kernel_size=kernel_size, stride=stride, dilation=dilation)
+		self.cnn = ConvNet(num_input_channels, channels, kernel_size=kernel_size, stride=stride, dilation=dilation, residual=residual)
 		pool_kernel_size = kernel_size
 		pool_stride = 2
 		pool_padding = 0
