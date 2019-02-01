@@ -6,6 +6,7 @@ Source: https://github.com/locuslab/TCN, https://github.com/flrngel/TCN-with-att
 """
 import sys
 import os
+from math import floor
 import logging
 
 import numpy as np
@@ -106,8 +107,8 @@ class CNN_Classifier(nn.Module):
 		pool_kernel_size = kernel_size
 		pool_stride = 2
 		pool_padding = 0
-		pool_seqlen = ((channels[-1] + 2*pool_padding - pool_kernel_size) / pool_stride) + 1
-		self.pool = nn.AvgPool1d(kernel_size=pool_kernel_size, stride=pool_stride, padding=pool_padding)
+		pool_seqlen = int(floor(((channels[-1] + 2*pool_padding - pool_kernel_size) / pool_stride) + 1))
+		self.pool = nn.AvgPool1d(kernel_size=pool_kernel_size, stride=pool_stride, padding=pool_padding, ceil_mode=False)
 		self.linear = nn.Linear(pool_seqlen, num_outputs)
 		self.output = nn.LogSoftmax(dim=1)
 
