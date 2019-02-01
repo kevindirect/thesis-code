@@ -15,6 +15,7 @@ from model.model_k.one_bin_gru import OneLayerBinaryGRU
 from model.model_k.one_bin_lcl import OneLayerBinaryLCL
 from model.model_k.one_bin_lstm import OneLayerBinaryLSTM
 from model.model_k.three_bin_ffn import ThreeLayerBinaryFFN
+from model.model_p.bin_cnn import BinaryCNN
 from model.model_p.bin_tcn import BinaryTCN
 
 
@@ -29,6 +30,7 @@ KERAS_BINARY_CLF_MAP = {
 
 """ ********** PYTORCH BINARY CLASSIFIERS ********** """
 PYTORCH_BINARY_CLF_MAP = {
+	'BinCNN': BinaryCNN,
 	'BinTCN': BinaryTCN
 }
 
