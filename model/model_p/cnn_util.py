@@ -36,11 +36,11 @@ class ConvBlock(nn.Module):
 		super(ConvBlock, self).__init__()
 		self.residual = residual
 		self.conv1 = nn.Conv1d(n_inputs, n_outputs, kernel_size, stride=stride, padding=padding, dilation=dilation)
-		# self.chomp1 = Chomp1d(padding)
+		self.chomp1 = Chomp1d(padding)
 		self.relu1 = nn.ReLU()
-		self.net = nn.Sequential(self.conv1, self.relu1)
+		self.net = nn.Sequential(self.conv1, self.chomp1, self.relu1)
 
-		if (residual):
+		if (self.residual):
 			self.downsample = nn.Conv1d(n_inputs, n_outputs, 1) if (n_inputs != n_outputs) else None
 			self.relu = nn.ReLU()
 		self.init_weights()
