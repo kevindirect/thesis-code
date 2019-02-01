@@ -100,6 +100,8 @@ class CNN_Classifier(nn.Module):
 		num_outputs (int): number of outputs, usually the number of classes to predict (defaults to binary case)
 		kernel_size (int > 1): CNN kernel size
 		stride (int > 0): CNN kernel's stride
+		dilation (bool): use dilation
+		residual (bool): add residual connection
 	"""
 	def __init__(self, num_input_channels, channels, num_outputs=1, kernel_size=2, stride=1, dilation=False, residual=False):
 		super(CNN_Classifier, self).__init__()
@@ -125,5 +127,5 @@ class CNN_Classifier(nn.Module):
 		"""
 		out_embedded = self.cnn(x)
 		out_pooled = self.pool(out_embedded)
-		out = self.linear(out_pooled[:, :, -1])
+		out = self.linear(out_pooled)
 		return self.output(out)
