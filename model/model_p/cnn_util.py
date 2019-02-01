@@ -111,7 +111,7 @@ class CNN_Classifier(nn.Module):
 		pool_padding = 0
 		pool_seqlen = int(floor(((channels[-1] + 2*pool_padding - pool_kernel_size) / pool_stride) + 1))
 		self.pool = nn.AvgPool1d(kernel_size=pool_kernel_size, stride=pool_stride, padding=pool_padding, ceil_mode=False)
-		self.linear = nn.Linear(pool_seqlen, num_outputs)
+		self.linear = nn.Linear(channels[-1], num_outputs)
 		self.output = nn.LogSoftmax(dim=1)
 
 	def forward(self, x):
@@ -127,5 +127,5 @@ class CNN_Classifier(nn.Module):
 		"""
 		out_embedded = self.cnn(x)
 		out_pooled = self.pool(out_embedded)
-		out = self.linear(out_pooled)
+		out = self.linear(out_pooled[:, :, -1])
 		return self.output(out)
