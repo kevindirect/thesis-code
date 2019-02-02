@@ -28,9 +28,9 @@ class BinaryCNN(TemporalMixin, BinaryClassifier):
 	"""
 	def __init__(self, other_space={}):
 		default_space = {
-			'input_windows': hp.choice('input_windows', [5]),
-			'topology': hp.choice('topology', [[5, 3]]),
-			'kernel_size': hp.choice('kernel_size', [4]),
+			'input_windows': hp.choice('input_windows', [3]),
+			'topology': hp.choice('topology', [[5]]),
+			'kernel_size': hp.choice('kernel_size', [3]),
 			'stride': hp.choice('stride', [1]),
 			'dilation': hp.choice('dilation', [False]),
 			'residual': hp.choice('residual', [False])
