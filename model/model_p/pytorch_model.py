@@ -179,7 +179,7 @@ class Model:
 			writer = self.tbx(params, logdir) if (logdir is not None) else None
 			opt.zero_grad()
 
-			logging.debug('INIT w[-2:][-2:]  {}: {}'.format(epoch_str, list(model.parameters())[-2:][-2:]))
+			logging.debug('INIT w[-2:][-2:]: {}'.format(list(model.parameters())[-2:][-2:]))
 
 			for epoch in range(params['epochs']):
 				epoch_str = str(epoch).zfill(3)
