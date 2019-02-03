@@ -143,9 +143,9 @@ class Model:
 		if (optimizer is not None):
 			optimizer.zero_grad()
 			loss.backward()
-			logging.debug('model.grad: {}'.format(model.grad))
+			logging.debug('loss.grad: {}'.format(loss.grad))
 			optimizer.step()
-			logging.debug('model.grad: {}'.format(model.grad))
+			logging.debug('loss.grad: {}'.format(loss.grad))
 
 		logging.debug('batch loss:   {}'.format(loss.item()))
 
