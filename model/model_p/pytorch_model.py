@@ -141,13 +141,11 @@ class Model:
 		# metrics = {name: fn(lab_batch, prediction_batch) for name, fn in self.metrics_fns}
 
 		if (optimizer is not None):
-			logging.debug('opt.grad.data: {}'.format(loss.grad.data))
 			optimizer.zero_grad()
-			logging.debug('opt.grad.data: {}'.format(loss.grad.data))
 			loss.backward()
-			logging.debug('opt.grad.data: {}'.format(loss.grad.data))
+			logging.debug('loss.grad.data: {}'.format(loss.grad.data))
 			optimizer.step()
-			logging.debug('opt.grad.data: {}'.format(loss.grad.data))
+			logging.debug('loss.grad.data: {}'.format(loss.grad.data))
 
 		logging.debug('batch loss:   {}'.format(loss.item()))
 
