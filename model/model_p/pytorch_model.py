@@ -187,7 +187,7 @@ class Model:
 			for epoch in range(params['epochs']):
 				epoch_str = str(epoch).zfill(3)
 				model.train()
-				losses, nums, metrics = zip(*[self.batch_loss_metrics(params, model, loss_fn, Xb, yb, optimizer=opt) for Xb, yb in self.batchify(params, self.preproc(params, train_data), device, shuffle_batches=True)])
+				losses, nums, metrics = zip(*[self.batch_loss_metrics(params, model, loss_fn, Xb, yb, optimizer=opt) for Xb, yb in self.batchify(params, self.preproc(params, train_data), device, shuffle_batches=False)])
 				# for Xb, yb in self.batchify(params, self.preproc(params, train_data), device, shuffle_batches=True):
 				# 	losses, nums, metrics = self.batch_loss_metrics(params, model, loss_fn, Xb, yb, optimizer=opt)
 				loss = np.sum(np.multiply(losses, nums)) / np.sum(nums)
