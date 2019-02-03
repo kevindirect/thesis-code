@@ -141,13 +141,13 @@ class Model:
 		# metrics = {name: fn(lab_batch, prediction_batch) for name, fn in self.metrics_fns}
 
 		if (optimizer is not None):
-			logging.debug('opt.grad.data: {}'.format(optimizer.grad.data))
+			logging.debug('opt.grad.data: {}'.format(loss.grad.data))
 			optimizer.zero_grad()
-			logging.debug('opt.grad.data: {}'.format(optimizer.grad.data))
+			logging.debug('opt.grad.data: {}'.format(loss.grad.data))
 			loss.backward()
-			logging.debug('opt.grad.data: {}'.format(optimizer.grad.data))
+			logging.debug('opt.grad.data: {}'.format(loss.grad.data))
 			optimizer.step()
-			logging.debug('opt.grad.data: {}'.format(optimizer.grad.data))
+			logging.debug('opt.grad.data: {}'.format(loss.grad.data))
 
 		logging.debug('batch loss:   {}'.format(loss.item()))
 
@@ -184,7 +184,7 @@ class Model:
 			}
 			loss_fn, opt = self.make_loss_fn(params), self.make_optimizer(params, model.parameters())
 			writer = self.tbx(params, logdir) if (logdir is not None) else None
-			# opt.zero_grad()
+			opt.zero_grad()
 
 			logging.debug('INIT w[-2:][-2:]: {}'.format(list(model.parameters())[-2:][-2:]))
 
