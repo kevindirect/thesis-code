@@ -179,6 +179,8 @@ class Model:
 			writer = self.tbx(params, logdir) if (logdir is not None) else None
 			opt.zero_grad()
 
+			logging.debug('INIT w[-2:][-2:]  {}: {}'.format(epoch_str, list(model.parameters())[-2:][-2:]))
+
 			for epoch in range(params['epochs']):
 				epoch_str = str(epoch).zfill(3)
 				model.train()
@@ -186,23 +188,25 @@ class Model:
 				# for Xb, yb in self.batchify(params, self.preproc(params, train_data), device, shuffle_batches=True):
 				# 	losses, nums, metrics = self.batch_loss_metrics(params, model, loss_fn, Xb, yb, optimizer=opt)
 				loss = np.sum(np.multiply(losses, nums)) / np.sum(nums)
-				logging.debug('train loss  {}: {}'.format(epoch_str, loss))
+				logging.debug('train loss    {}: {}'.format(epoch_str, loss))
 				history['loss'].append(loss)
 				if (writer is not None):
 					writer.add_scalar('data/train/loss', loss, epoch)
 					writer.add_scalars('data/train/metrics', metrics, epoch)
 
+				logging.debug('B w[-2:][-2:] {}: {}'.format(epoch_str, list(model.parameters())[-2:][-2:]))
+
 				model.eval()
 				with torch.no_grad():
 					losses, nums, metrics = zip(*[self.batch_loss_metrics(params, model, loss_fn, Xb, yb) for Xb, yb in self.batchify(params, self.preproc(params, val_data), device, shuffle_batches=False)])
 				loss = np.sum(np.multiply(losses, nums)) / np.sum(nums)
-				logging.debug('val loss    {}: {}'.format(epoch_str, loss))
+				logging.debug('val loss      {}: {}'.format(epoch_str, loss))
 				history['val_loss'].append(loss)
 				if (writer is not None):
 					writer.add_scalar('data/val/loss', loss, epoch)
 					writer.add_scalars('data/val/metrics', metrics, epoch)
 
-				logging.debug('w[-2:][-2:] {}: {}'.format(epoch_str, list(model.parameters())[-2:][-2:]))
+				logging.debug('A w[-2:][-2:] {}: {}'.format(epoch_str, list(model.parameters())[-2:][-2:]))
 
 			if (writer is not None):
 				writer.export_scalars_to_json('results.json')
