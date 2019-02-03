@@ -130,7 +130,7 @@ class Model:
 		dl = DataLoader(ds, batch_size=params['batch_size'], shuffle=shuffle_batches)
 		return dl
 
-	def batch_loss_metrics(self, params, model, loss_function, feat_batch, lab_batch, optimizer=None):
+	def batch_loss(self, params, model, loss_function, feat_batch, lab_batch, optimizer=None):
 		"""
 		Compute loss and metrics on batch, run optimizer on losses if passed.
 		"""
@@ -141,9 +141,13 @@ class Model:
 		# metrics = {name: fn(lab_batch, prediction_batch) for name, fn in self.metrics_fns}
 
 		if (optimizer is not None):
-			# optimizer.zero_grad()
+			logging.debug('opt.grad.data: {}'.format(optimizer.grad.data))
+			optimizer.zero_grad()
+			logging.debug('opt.grad.data: {}'.format(optimizer.grad.data))
 			loss.backward()
+			logging.debug('opt.grad.data: {}'.format(optimizer.grad.data))
 			optimizer.step()
+			logging.debug('opt.grad.data: {}'.format(optimizer.grad.data))
 
 		logging.debug('batch loss:   {}'.format(loss.item()))
 
@@ -180,16 +184,16 @@ class Model:
 			}
 			loss_fn, opt = self.make_loss_fn(params), self.make_optimizer(params, model.parameters())
 			writer = self.tbx(params, logdir) if (logdir is not None) else None
-			opt.zero_grad()
+			# opt.zero_grad()
 
 			logging.debug('INIT w[-2:][-2:]: {}'.format(list(model.parameters())[-2:][-2:]))
 
 			for epoch in range(params['epochs']):
 				epoch_str = str(epoch).zfill(3)
 				model.train()
-				losses, nums, metrics = zip(*[self.batch_loss_metrics(params, model, loss_fn, Xb, yb, optimizer=opt) for Xb, yb in self.batchify(params, self.preproc(params, train_data), device, shuffle_batches=False)])
+				losses, nums, metrics = zip(*[self.batch_loss(params, model, loss_fn, Xb, yb, optimizer=opt) for Xb, yb in self.batchify(params, self.preproc(params, train_data), device, shuffle_batches=False)])
 				# for Xb, yb in self.batchify(params, self.preproc(params, train_data), device, shuffle_batches=True):
-				# 	losses, nums, metrics = self.batch_loss_metrics(params, model, loss_fn, Xb, yb, optimizer=opt)
+				# 	losses, nums, metrics = self.batch_loss(params, model, loss_fn, Xb, yb, optimizer=opt)
 				loss = np.sum(np.multiply(losses, nums)) / np.sum(nums)
 				logging.debug('train loss    {}: {}'.format(epoch_str, loss))
 				history['loss'].append(loss)
@@ -201,7 +205,7 @@ class Model:
 
 				model.eval()
 				with torch.no_grad():
-					losses, nums, metrics = zip(*[self.batch_loss_metrics(params, model, loss_fn, Xb, yb) for Xb, yb in self.batchify(params, self.preproc(params, val_data), device, shuffle_batches=False)])
+					losses, nums, metrics = zip(*[self.batch_loss(params, model, loss_fn, Xb, yb) for Xb, yb in self.batchify(params, self.preproc(params, val_data), device, shuffle_batches=False)])
 				loss = np.sum(np.multiply(losses, nums)) / np.sum(nums)
 				logging.debug('val loss      {}: {}'.format(epoch_str, loss))
 				history['val_loss'].append(loss)
