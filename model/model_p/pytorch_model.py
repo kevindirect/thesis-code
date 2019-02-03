@@ -144,7 +144,7 @@ class Model:
 			loss.backward()
 			optimizer.step()
 
-		lossing.debug('loss: {}'.format(loss.item()))
+		logging.debug('loss: {}'.format(loss.item()))
 
 		return loss.item(), len(feat_batch), metrics
 
