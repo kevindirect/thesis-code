@@ -134,6 +134,7 @@ class Model:
 		"""
 		Compute loss and metrics on batch, run optimizer on losses if passed.
 		"""
+		logging.debug('batch tensor: {}'.format(feat_batch))
 		prediction_batch = model(feat_batch)
 		loss = loss_function(prediction_batch, lab_batch)
 		metrics = None
@@ -144,7 +145,7 @@ class Model:
 			loss.backward()
 			optimizer.step()
 
-		logging.debug('batch loss: {}'.format(loss.item()))
+		logging.debug('batch loss:   {}'.format(loss.item()))
 
 		return loss.item(), len(feat_batch), metrics
 
