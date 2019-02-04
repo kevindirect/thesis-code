@@ -144,11 +144,9 @@ class Model:
 			optimizer.zero_grad()
 			loss.backward()
 			logging.debug('loss.grad: {}'.format(loss.grad))
-			logging.debug('model.grad: {}'.format(model.grad))
 			logging.debug('feat_batch.grad: {}'.format(feat_batch.grad))
 			optimizer.step()
 			logging.debug('loss.grad: {}'.format(loss.grad))
-			logging.debug('model.grad: {}'.format(model.grad))
 			logging.debug('feat_batch.grad: {}'.format(feat_batch.grad))
 
 		logging.debug('batch loss:   {}'.format(loss.item()))
