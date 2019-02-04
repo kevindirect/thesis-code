@@ -143,9 +143,9 @@ class Model:
 		if (optimizer is not None):
 			optimizer.zero_grad()
 			loss.backward()
-			logging.debug('loss.grad: {}'.format(loss.grad))
+			logging.debug('feat_batch.grad: {}'.format(feat_batch.grad))
 			optimizer.step()
-			logging.debug('loss.grad: {}'.format(loss.grad))
+			logging.debug('feat_batch.grad: {}'.format(feat_batch.grad))
 
 		logging.debug('batch loss:   {}'.format(loss.item()))
 
@@ -182,6 +182,7 @@ class Model:
 			}
 			loss_fn, opt = self.make_loss_fn(params), self.make_optimizer(params, model.parameters())
 			writer = self.tbx(params, logdir) if (logdir is not None) else None
+			model.zero_grad()
 			opt.zero_grad()
 
 			logging.debug('INIT w[-2:][-2:]: {}'.format(list(model.parameters())[-2:][-2:]))
