@@ -125,7 +125,7 @@ class Model:
 		if (params['loss'] in ['bce', 'bcel']):
 			l = [torch.tensor(d, dtype=torch.float32, device=device, requires_grad=False) for d in data[1:]]
 		elif (params['loss'] in ['ce', 'nll']):
-			l = [torch.tensor(d, dtype=torch.long, device=device, requires_grad=False) for d in data[1:]]
+			l = [torch.tensor(d, dtype=torch.int64, device=device, requires_grad=False) for d in data[1:]]
 		ds = TensorDataset(f, *l)
 		dl = DataLoader(ds, batch_size=params['batch_size'], shuffle=shuffle_batches)
 		return dl
@@ -136,7 +136,7 @@ class Model:
 		"""
 		# logging.debug('batch tensor[0][0]: {}'.format(feat_batch[0][0]))
 		prediction_batch = model(feat_batch)
-		loss = loss_function(prediction_batch, lab_batch.squeeze())
+		loss = loss_function(prediction_batch, lab_batch)
 		metrics = None
 		# metrics = {name: fn(lab_batch, prediction_batch) for name, fn in self.metrics_fns}
 
