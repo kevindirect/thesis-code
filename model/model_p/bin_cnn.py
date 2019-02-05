@@ -42,6 +42,6 @@ class BinaryCNN(TemporalMixin, BinaryClassifier):
 		eff_history = window_size * params['input_windows']  								# Effective history = window_size * input_windows
 		real_topology = window_size * np.array(params['topology'])							# Scale topology by the window size
 		real_topology = np.clip(real_topology, a_min=1, a_max=None).astype(int)				# Make sure that layer outputs are always greater than zero
-		mdl = CNN_Classifier(num_input_channels=1, channels=real_topology.tolist(), num_outputs=1, kernel_size=params['kernel_size'],
+		mdl = CNN_Classifier(num_input_channels=1, channels=real_topology.tolist(), num_outputs=2, kernel_size=params['kernel_size'],
 								stride=params['stride'], dilation=params['dilation'], residual=params['residual'])
 		return mdl
