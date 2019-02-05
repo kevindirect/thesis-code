@@ -123,9 +123,9 @@ class Model:
 		"""
 		f = torch.tensor(data[0], dtype=torch.float32, device=device, requires_grad=False)
 		if (params['loss'] in ['bce', 'bcel']):
-			l = [torch.tensor(d, dtype=torch.float32, device=device, requires_grad=False) for d in data[1:]]
+			l = [torch.tensor(d, dtype=torch.float32, device=device, requires_grad=False).squeeze() for d in data[1:]]
 		elif (params['loss'] in ['ce', 'nll']):
-			l = [torch.tensor(d, dtype=torch.float64, device=device, requires_grad=False).squeeze() for d in data[1:]]
+			l = [torch.tensor(d, dtype=torch.int64, device=device, requires_grad=False).squeeze() for d in data[1:]]
 		ds = TensorDataset(f, *l)
 		dl = DataLoader(ds, batch_size=params['batch_size'], shuffle=shuffle_batches)
 		return dl
