@@ -136,7 +136,7 @@ class Model:
 		"""
 		# logging.debug('batch tensor[0][0]: {}'.format(feat_batch[0][0]))
 		prediction_batch = model(feat_batch)
-		loss = loss_function(prediction_batch.squeeze(), lab_batch.squeeze())
+		loss = loss_function(prediction_batch, lab_batch.squeeze())
 		metrics = None
 		# metrics = {name: fn(lab_batch, prediction_batch) for name, fn in self.metrics_fns}
 
