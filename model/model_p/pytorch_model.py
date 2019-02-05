@@ -182,7 +182,7 @@ class Model:
 				'loss': [],
 				'val_loss': []
 			}
-			loss_fn, opt = self.make_loss_fn(params).to(device), self.make_optimizer(params, model.parameters()).to(device)
+			loss_fn, opt = self.make_loss_fn(params).to(device), self.make_optimizer(params, model.parameters())
 			writer = self.tbx(params, logdir) if (logdir is not None) else None
 			model.zero_grad()
 			opt.zero_grad()
