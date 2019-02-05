@@ -123,7 +123,7 @@ class Model:
 		"""
 		f = torch.tensor(data[0], dtype=torch.float32, device=device, requires_grad=False)
 		if (params['loss'] in ['bce', 'bcel']):
-			l = [torch.tensor(d, dtype=torch.float32, device=device, requires_grad=False).squeeze() for d in data[1:]]
+			l = [torch.tensor(d, dtype=torch.float32, device=device, requires_grad=False) for d in data[1:]]
 		elif (params['loss'] in ['ce', 'nll']):
 			l = [torch.tensor(d, dtype=torch.int64, device=device, requires_grad=False).squeeze() for d in data[1:]]
 		ds = TensorDataset(f, *l)
@@ -136,7 +136,7 @@ class Model:
 		"""
 		logging.debug('batch tensor[0][0]: {}'.format(feat_batch[0][0]))
 		prediction_batch = model(feat_batch)
-		loss = loss_function(prediction_batch, lab_batch)
+		loss = loss_function(prediction_batch.squeeze(), lab_batch.squeeze())
 		metrics = None
 		# metrics = {name: fn(lab_batch, prediction_batch) for name, fn in self.metrics_fns}
 
