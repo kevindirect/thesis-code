@@ -44,7 +44,7 @@ PYTORCH_OPT_TRANSLATOR = {
 	'Adam': torch.optim.Adam
 }
 PYTORCH_LOSS_TRANSLATOR = {
-	'bce': torch.nn.BCELoss,						# Binary: Binary Cross Entropy
+	'bce': torch.nn.BCELoss,						# Binary Probability: Binary Cross Entropy
 	'bcel': torch.nn.BCEWithLogitsLoss,				# Binary: Binary Cross Entropy with Logits (Sigmoid + BCELoss)
 	'sm': torch.nn.SoftMarginLoss,					# Binary: Soft Margin Loss
 	'ce': torch.nn.CrossEntropyLoss,				# Categorical: Cross Entropy Loss (LogSoftmax + NLLLoss)

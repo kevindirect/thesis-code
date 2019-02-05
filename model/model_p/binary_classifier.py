@@ -17,16 +17,9 @@ from model.model_p.classifier import Classifier
 class BinaryClassifier(Classifier):
 	"""
 	Abstract Base Class of all binary classifiers.
-
-	Parameters:
-		loss (string): string representing pytorch loss to use
 	"""
 
 	def __init__(self, other_space={}):
 		default_space = {
-			'loss': hp.choice('loss', ['ce'])
 		}
-		# default_space = {
-		# 	'loss': hp.choice('loss', ['bce', 'ce', 'bcel', 'nll'])
-		# }
 		super(BinaryClassifier, self).__init__({**default_space, **other_space})

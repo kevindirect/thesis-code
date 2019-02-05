@@ -23,11 +23,13 @@ class Classifier(Model):
 	Abstract Base Class of all classifiers.
 
 	Parameters:
+		loss (string): string representing pytorch loss function to use
 		opt (string): string representing pytorch optimizer to use
 		opt.lr (float > 0): optimizer learning rate
 	"""
 	def __init__(self, other_space={}):
 		default_space = {
+			'loss': hp.choice('loss', ['ce']),
 			'opt': hp.choice('opt', [
 			# 	{'name': 'RMSprop', 'lr': hp.choice('RMSprop_lr', [0.002, 0.001, 0.0005])},
 				{'name': 'Adam', 'lr': hp.uniform('Adam_lr', 0.0005, 0.0025)}
