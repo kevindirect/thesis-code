@@ -31,24 +31,24 @@ class BinaryTCN(TemporalMixin, BinaryClassifier):
 		max_attn_len (int > 0): max length of attention (only relevant if attention is set to True)
 	"""
 	def __init__(self, other_space={}):
-		default_space = {
-			'input_windows': hp.choice('input_windows', [5]),
-			'topology': hp.choice('topology', [[5]]),
-			'kernel_size': hp.choice('kernel_size', [4]),
-			'stride': hp.choice('stride', [1]),
-			'dropout': hp.uniform('dropout', .2, .8),
-			'attention': hp.choice('attention', [False]),
-			'max_attn_len': hp.uniform('max_attn_len', 24, 120)
-		}
 		# default_space = {
-		# 	'input_windows': hp.choice('input_windows', [3, 5, 10, 20]),
-		# 	'topology': hp.choice('topology', [[5, 3], [3, 5, 1], [3, 5, 7], [3, 1, 3], [3, 5, 3]]),
-		# 	'kernel_size': hp.choice('kernel_size', [2, 4, 8]),
-		# 	'stride': hp.choice('stride', [1, 2]),
+		# 	'input_windows': hp.choice('input_windows', [5]),
+		# 	'topology': hp.choice('topology', [[5]]),
+		# 	'kernel_size': hp.choice('kernel_size', [4]),
+		# 	'stride': hp.choice('stride', [1]),
 		# 	'dropout': hp.uniform('dropout', .2, .8),
 		# 	'attention': hp.choice('attention', [False]),
 		# 	'max_attn_len': hp.uniform('max_attn_len', 24, 120)
 		# }
+		default_space = {
+			'input_windows': hp.choice('input_windows', [3, 5, 10, 20]),
+			'topology': hp.choice('topology', [[5, 3], [3, 5, 1], [3, 5, 7], [3, 1, 3], [3, 5, 3]]),
+			'kernel_size': hp.choice('kernel_size', [2, 4, 8]),
+			'stride': hp.choice('stride', [1, 2]),
+			'dropout': hp.uniform('dropout', .2, .8),
+			'attention': hp.choice('attention', [False]),
+			'max_attn_len': hp.uniform('max_attn_len', 24, 120)
+		}
 		super(BinaryTCN, self).__init__({**default_space, **other_space})
 
 	def make_model(self, params, num_inputs):
@@ -56,6 +56,6 @@ class BinaryTCN(TemporalMixin, BinaryClassifier):
 		eff_history = window_size * params['input_windows']  								# Effective history = window_size * input_windows
 		real_topology = window_size * np.array(params['topology'])							# Scale topology by the window size
 		real_topology = np.clip(real_topology, a_min=1, a_max=None).astype(int)				# Make sure that layer outputs are always greater than zero
-		mdl = TCN_Classifier(num_input_channels=1, channels=real_topology.tolist(), num_outputs=1, kernel_size=params['kernel_size'],
+		mdl = TCN_Classifier(num_input_channels=1, channels=real_topology.tolist(), num_outputs=2, kernel_size=params['kernel_size'],
 							stride=params['stride'], dropout=params['dropout'], attention=params['attention'], max_attn_len=params['max_attn_len'])
 		return mdl
