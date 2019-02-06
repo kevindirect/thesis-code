@@ -64,7 +64,14 @@ class ConvBlock(nn.Module):
 		out = self.net(x)
 		if (self.residual):
 			res = x if (self.downsample is None) else self.downsample(x)
-			return self.relu(out + res)
+			try:
+				comb = self.relu(out + res)
+			except RuntimeError as e:
+				print(e)
+				print('out.shape: {}'.format(out.shape))
+				print('res.shape: {}'.format(res.shape))
+				sys.exit(0)
+			return comb
 		else:
 			return out
 
