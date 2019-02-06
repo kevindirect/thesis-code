@@ -33,7 +33,7 @@ class BinaryCNN(TemporalMixin, BinaryClassifier):
 			'kernel_size': hp.choice('kernel_size', [3]),
 			'stride': hp.choice('stride', [1]),
 			'dilation': hp.choice('dilation', [True]),
-			'residual': hp.choice('residual', [False])
+			'residual': hp.choice('residual', [True])
 		}
 		super(BinaryCNN, self).__init__({**default_space, **other_space})
 
