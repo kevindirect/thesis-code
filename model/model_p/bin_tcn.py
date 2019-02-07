@@ -25,7 +25,6 @@ class BinaryTCN(TemporalMixin, BinaryClassifier):
 		input_windows (int > 0): Number of aggregation windows in the input layer
 		topology (list): Topology of the TCN divided by the window size
 		kernel_size (int > 1): CNN kernel size
-		stride (int > 0): CNN kernel's stride 
 		dropout (float [0, 1]): dropout probability, probability of an element to be zeroed
 		attention (bool): whether or not to include attention block after each tcn block
 		max_attn_len (int > 0): max length of attention (only relevant if attention is set to True)
@@ -35,7 +34,6 @@ class BinaryTCN(TemporalMixin, BinaryClassifier):
 		# 	'input_windows': hp.choice('input_windows', [5]),
 		# 	'topology': hp.choice('topology', [[5]]),
 		# 	'kernel_size': hp.choice('kernel_size', [4]),
-		# 	'stride': hp.choice('stride', [1]),
 		# 	'dropout': hp.uniform('dropout', .2, .8),
 		# 	'attention': hp.choice('attention', [False]),
 		# 	'max_attn_len': hp.uniform('max_attn_len', 24, 120)
@@ -44,7 +42,6 @@ class BinaryTCN(TemporalMixin, BinaryClassifier):
 			'input_windows': hp.choice('input_windows', [3, 5, 10, 20]),
 			'topology': hp.choice('topology', [[5, 3], [3, 5, 1], [3, 5, 7], [3, 1, 3], [3, 5, 3]]),
 			'kernel_size': hp.choice('kernel_size', [2, 4, 8]),
-			'stride': hp.choice('stride', [1, 2]),
 			'dropout': hp.uniform('dropout', .2, .8),
 			'attention': hp.choice('attention', [False]),
 			'max_attn_len': hp.uniform('max_attn_len', 24, 120)

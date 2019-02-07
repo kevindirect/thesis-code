@@ -19,6 +19,10 @@ from model.common import PYTORCH_MODELS_DIR, ERROR_CODE, TEST_RATIO, VAL_RATIO
 
 
 class Chomp1d(nn.Module):
+	"""
+	This transform is meant to chop off any trailing elements caused by a convoluition padding,
+	only works for this purpose if the stride is 1.
+	"""
 	def __init__(self, chomp_size):
 		super(Chomp1d, self).__init__()
 		self.chomp_size = chomp_size
@@ -155,15 +159,14 @@ class TCN_Classifier(nn.Module):
 		num_input_channels (int): number of input channels
 		channels (list): list of output channel sizes in order from first to last
 		num_outputs (int): number of outputs, usually the number of classes to predict (defaults to binary case)
-		kernel_size (int > 1): CNN kernel size
-		stride (int > 0): CNN kernel's stride 
+		kernel_size (int > 1): CNN kernel size 
 		dropout (float [0, 1]): dropout probability, probability of an element to be zeroed during training
 		attention (bool): whether or not to include attention block after each tcn block
 		max_attn_len (int > 0): max length of attention (only relevant if attention is set to True)
 	"""
-	def __init__(self, num_input_channels, channels, num_outputs=1, kernel_size=2, stride=1, dropout=0.2, attention=False, max_attn_len=80):
+	def __init__(self, num_input_channels, channels, num_outputs=1, kernel_size=2, dropout=0.2, attention=False, max_attn_len=80):
 		super(TCN_Classifier, self).__init__()
-		self.tcn = TemporalConvNet(num_input_channels, channels, kernel_size=kernel_size, stride=stride, dropout=dropout, attention=attention, max_attn_len=max_attn_len)
+		self.tcn = TemporalConvNet(num_input_channels, channels, kernel_size=kernel_size, stride=1, dropout=dropout, attention=attention, max_attn_len=max_attn_len)
 		if (attention):
 			self.linear = nn.Linear(max_attn_len, num_outputs) # TODO - verify correctness of using max_attn_len as input size to output layer
 		else:
