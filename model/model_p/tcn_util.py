@@ -42,6 +42,8 @@ class TemporalBlock(nn.Module):
 
 	----| DC |-->| WN |-->| RU |-->| DO |-->| DC |-->| WN |-->| RU |-->| DO |--(+)---->
 		|-------------------------|1x1 Conv (optional)|-------------------------|
+
+	May not work correctly for a stride greater than 1
 	"""
 	def __init__(self, n_inputs, n_outputs, kernel_size, stride, dilation, padding, dropout):
 		super(TemporalBlock, self).__init__()
@@ -133,16 +135,16 @@ class TemporalConvNet(nn.Module):
 	Temporal Conv Net with Optional Attention Blocks.
 	This class can be used to build classifiers and regressors.
 	"""
-	def __init__(self, num_input_channels, channels, kernel_size, stride, dropout, attention, max_attn_len):
+	def __init__(self, num_input_channels, channels, kernel_size, dropout, attention, max_attn_len):
 		super(TemporalConvNet, self).__init__()
 		layers = []
 		num_levels = len(channels)
 		for i in range(num_levels):
 			dilation_size = 2 ** i
+			padding_size = (kernel_size-1) * dilation_size
 			in_channels = num_input_channels if (i == 0) else channels[i-1]
 			out_channels = channels[i]
-			layers += [TemporalBlock(in_channels, out_channels, kernel_size=kernel_size, stride=stride, dilation=dilation_size,
-									padding=(kernel_size-1) * dilation_size, dropout=dropout)]
+			layers += [TemporalBlock(in_channels, out_channels, kernel_size=kernel_size, stride=1, dilation=dilation_size, padding=padding_size, dropout=dropout)]
 			if (attention):
 				layers += [AttentionBlock(max_attn_len, max_attn_len, max_attn_len)]
 		self.network = nn.Sequential(*layers)
@@ -166,7 +168,7 @@ class TCN_Classifier(nn.Module):
 	"""
 	def __init__(self, num_input_channels, channels, num_outputs=1, kernel_size=2, dropout=0.2, attention=False, max_attn_len=80):
 		super(TCN_Classifier, self).__init__()
-		self.tcn = TemporalConvNet(num_input_channels, channels, kernel_size=kernel_size, stride=1, dropout=dropout, attention=attention, max_attn_len=max_attn_len)
+		self.tcn = TemporalConvNet(num_input_channels, channels, kernel_size=kernel_size, dropout=dropout, attention=attention, max_attn_len=max_attn_len)
 		if (attention):
 			self.linear = nn.Linear(max_attn_len, num_outputs) # TODO - verify correctness of using max_attn_len as input size to output layer
 		else:
