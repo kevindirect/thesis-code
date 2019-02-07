@@ -54,5 +54,5 @@ class BinaryTCN(TemporalMixin, BinaryClassifier):
 		real_topology = window_size * np.array(params['topology'])							# Scale topology by the window size
 		real_topology = np.clip(real_topology, a_min=1, a_max=None).astype(int)				# Make sure that layer outputs are always greater than zero
 		mdl = TCN_Classifier(num_input_channels=1, channels=real_topology.tolist(), num_outputs=2, kernel_size=params['kernel_size'],
-							stride=params['stride'], dropout=params['dropout'], attention=params['attention'], max_attn_len=params['max_attn_len'])
+							dropout=params['dropout'], attention=params['attention'], max_attn_len=params['max_attn_len'])
 		return mdl
