@@ -27,11 +27,14 @@ class Chomp1d(nn.Module):
 	def forward(self, x):
 		return x[:, :, :-self.chomp_size].contiguous() # XXX - chomps off (kernel_size-1)*dilation off right end
 
-
 class ConvBlock(nn.Module):
 	"""
 	Conv Block Class
 	"""
+	@staticmethod
+	def conv1d_seq_size(input_seq_size, padding_size, dilation_size, kernel_size, stride_size):
+		return int(floor(((input_seq_size + 2*padding_size - dilation_size*(kernel_size - 1) - 1 / stride_size) + 1)))
+
 	def __init__(self, n_inputs, n_outputs, kernel_size, stride, dilation, padding, residual):
 		super(ConvBlock, self).__init__()
 		self.residual = residual
@@ -41,7 +44,8 @@ class ConvBlock(nn.Module):
 		self.net = nn.Sequential(self.conv1, self.relu1)
 
 		if (self.residual):
-			self.downsample = nn.Conv1d(n_inputs, n_outputs, 1) if (n_inputs != n_outputs) else None
+			out_seqlen = conv1d_seq_size(n_outputs, padding, dilation, kernel_size, stride)
+			self.downsample = nn.Conv1d(n_inputs, out_seqlen, 1) if (n_inputs != out_seqlen) else None
 			self.relu = nn.ReLU()
 		self.init_weights()
 
@@ -116,7 +120,6 @@ class CNN_Classifier(nn.Module):
 		pool_kernel_size = kernel_size
 		pool_stride = 2
 		pool_padding = 0
-		pool_seqlen = int(floor(((channels[-1] + 2*pool_padding - pool_kernel_size) / pool_stride) + 1))
 		self.pool = nn.AvgPool1d(kernel_size=pool_kernel_size, stride=pool_stride, padding=pool_padding, ceil_mode=False)
 		self.linear = nn.Linear(channels[-1], num_outputs)
 
