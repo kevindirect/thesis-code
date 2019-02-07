@@ -20,8 +20,8 @@ from model.common import PYTORCH_MODELS_DIR, ERROR_CODE, TEST_RATIO, VAL_RATIO
 
 class Chomp1d(nn.Module):
 	"""
-	This transform is meant to chop off any trailing elements caused by a convoluition padding,
-	only works for this purpose if the stride is 1.
+	This transform is meant to chop off any trailing elements caused by 1d convolution padding,
+	only guaranteed to work for this purpose if the stride is 1.
 	"""
 	def __init__(self, chomp_size):
 		super(Chomp1d, self).__init__()
