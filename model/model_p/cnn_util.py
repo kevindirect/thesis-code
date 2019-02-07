@@ -31,8 +31,8 @@ class ConvBlock(nn.Module):
 	"""
 	Conv Block Class
 	"""
-	@staticmethod
-	def conv1d_seq_size(input_seq_size, padding_size, dilation_size, kernel_size, stride_size):
+	@classmethod
+	def seq_size(cls, input_seq_size, padding_size, dilation_size, kernel_size, stride_size):
 		return int(floor(((input_seq_size + 2*padding_size - dilation_size*(kernel_size - 1) - 1 / stride_size) + 1)))
 
 	def __init__(self, n_inputs, n_outputs, kernel_size, stride, dilation, padding, residual):
@@ -44,7 +44,7 @@ class ConvBlock(nn.Module):
 		self.net = nn.Sequential(self.conv1, self.relu1)
 
 		if (self.residual):
-			out_seqlen = conv1d_seq_size(n_outputs, padding, dilation, kernel_size, stride)
+			out_seqlen = ConvBlock.seq_size(n_outputs, padding, dilation, kernel_size, stride)
 			self.downsample = nn.Conv1d(n_inputs, out_seqlen, 1) if (n_inputs != out_seqlen) else None
 			self.relu = nn.ReLU()
 		self.init_weights()
