@@ -35,7 +35,7 @@ def hyperopt_test(argv):
 
 	logging.info('model: {}'.format(mod_name))
 	logging.info('backend: {}'.format(backend_name))
-	logging.info('dataset: {} {} df(s)'.format(len(dataset['features']), dataset_name))
+	logging.info('dataset: {} {} df(s)'.format(len(dataset['features']['dfs']), dataset_name))
 	logging.info('assets: {}'.format(str('all' if (assets==None) else ', '.join(assets))))
 
 	logging.info('executing...')

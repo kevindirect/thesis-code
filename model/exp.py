@@ -35,7 +35,7 @@ def exp(argv):
 	exp_group_name = '{model},{dataset}'.format(model=mod_name, dataset=dataset_name)
 
 	logging.info('model: {}'.format(mod_name))
-	logging.info('dataset: {} {} df(s)'.format(len(dataset['features']), dataset_name))
+	logging.info('dataset: {} {} df(s)'.format(len(dataset['features']['dfs']), dataset_name))
 	logging.info('assets: {}'.format(str('all' if (assets==None) else ', '.join(assets))))
 	logging.info('constructing {}...'.format(exp_group_name))
 	exp_group = []

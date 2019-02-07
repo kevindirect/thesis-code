@@ -39,7 +39,7 @@ def ray_test(argv):
 	index = NestedDefaultDict()
 
 	logging.info('model: {}'.format(mod_name))
-	logging.info('dataset: {} {} df(s)'.format(len(dataset['features']), dataset_name))
+	logging.info('dataset: {} {} df(s)'.format(len(dataset['features']['dfs']), dataset_name))
 	logging.info('assets: {}'.format(str('all' if (assets==None) else ', '.join(assets))))
 	logging.info('starting experiment loop')
 
