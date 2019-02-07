@@ -45,7 +45,7 @@ class ConvBlock(nn.Module):
 
 		if (self.residual):
 			out_seqlen = ConvBlock.seq_size(n_outputs, padding, dilation, kernel_size, stride)
-			self.downsample = nn.Conv1d(n_inputs, out_seqlen, 1) if (n_inputs != out_seqlen) else None
+			self.downsample = nn.Conv1d(n_inputs, n_outputs, 1) if (n_inputs != n_outputs) else None
 			self.relu = nn.ReLU()
 		self.init_weights()
 
