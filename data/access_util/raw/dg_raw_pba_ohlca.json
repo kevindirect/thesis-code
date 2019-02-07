@@ -1,0 +1,12 @@
+{
+	"raw_pba_ohlca": {
+		"all": {
+			"stage": "raw",
+			"raw_cat": "us_equity_index",
+			"desc": "raw"
+		},
+		"subsets": {
+			"raw_pba": {}
+		}
+	}
+}
