@@ -11,47 +11,67 @@ import numpy as np
 import pandas as pd
 from dask import delayed, compute
 
-from common_util import identity_fn, compose, dcompose, pd_dti_index_to_date, filter_cols_below, reindex_on_time_mask, gb_transpose, ser_shift, pd_common_index_rows, chained_filter
+from common_util import is_type, identity_fn, compose, dcompose, pd_dti_index_to_date, filter_cols_below, reindex_on_time_mask, df_downsample_transpose, ser_shift, pd_common_index_rows, chained_filter
 from model.common import EXPECTED_NUM_HOURS
 from recon.dataset_util import gen_group
 from mutate.label_util import prep_labels
 
 
 """ ********** DATA PREPARATION ********** """
-def align_first_last(df, ratio_max=.25):
+def align_first_last_cols(df, ratio_max=.25, min_num_cols=EXPECTED_NUM_HOURS, how='last'):
 	"""
-	Return df where non-overlapping subsets have first or last column set to null, align them and remove the redundant column.
+	Return a df where a misalignment problem of data within columns causing a redundant column is fixed.
+
+	If the passed DataFrame of n+1 columns has rows with n valid column values, where some rows are
+	column-indexed from [0, n-1] and others are column-indexed from [1, n], then this function
+	will shift the less commonly occurring indexing method so that the returned DataFrame has n columns. 
 
 	Args:
-		df (pd.DataFrame): dataframe of multiple columns
-		ratio_max (float): multiplier of the maximum count of all columns, whose product is used as a threshold for the alignment condition.
+		df (pd.DataFrame): Dataframe of at least two columns
+		ratio_max (float): Threshold value to test for misalignment, alignment is conducted if the difference
+			in non-null counts between the first and last column is greater than ratio_max * the most populated column count
+		min_num_cols (int): Only perform aligment if there are more than this number of columns
+		how (['max'|'last']): How to choose whether to drop the first or last column label if needed
 
 	Returns:
-		Aligned and filtered dataframe if alignment is needed, otherwise return the original dataframe.
+		DataFrame
 	"""
 	def fl_alignment_needed(df, ratio_max=ratio_max):
+		"""
+		Returns whether alignment (redundant column removal) is needed.
+		"""
 		count_df = df.count()
-		return count_df.size > EXPECTED_NUM_HOURS and abs(count_df.iloc[0] - count_df.iloc[-1]) > ratio_max*count_df.max()
+		fl_difference = abs(count_df.iloc[0] - count_df.iloc[-1])
+		return fl_difference > ratio_max*count_df.max()
 
-	if (fl_alignment_needed(df)):
-		cnt_df = df.count()
-		first_hr, last_hr = cnt_df.index[0], cnt_df.index[-1]
-		firstnull = df[df[first_hr].isnull() & ~df[last_hr].isnull()]
-		lastnull = df[~df[first_hr].isnull() & df[last_hr].isnull()]
+	if (df.columns.size > min_num_cols and fl_alignment_needed(df)):
+		alg_df = df.copy(deep=True) 	# Copy made to prevent side-effects in original reference
+		cnt_df = alg_df.count()
+		first_col, last_col = cnt_df.index[0], cnt_df.index[-1]
+		first_valid = alg_df[~alg_df[first_col].isnull() & alg_df[last_col].isnull()]		# Rows where first is valid and last is null
+		last_valid = alg_df[alg_df[first_col].isnull() & ~alg_df[last_col].isnull()]		# Rows where last is valid and first is null
 
-		# The older format is changed to match the temporally latest one
-		if (firstnull.index[-1] > lastnull.index[-1]): 		# Changed lastnull subset to firstnull
-			df.loc[~df[first_hr].isnull() & df[last_hr].isnull(), :] = lastnull.shift(periods=1, axis=1)
-		elif (firstnull.index[-1] < lastnull.index[-1]):	# Changed firstnull subset to lastnull
-			df.loc[df[first_hr].isnull() & ~df[last_hr].isnull(), :] = firstnull.shift(periods=-1, axis=1)
+		if (how == 'max'):		# The most common occurrence is used
+			keep_first = first_valid.size > last_valid.size
+		elif (how == 'last'): 	# The last occurrence is used
+			if (is_type(alg_df.index, pd.core.index.MultiIndex)):
+				fval, lval = first_valid.index[-1][0], last_valid.index[-1][0]
+			else:
+				fval, lval = first_valid.index[-1], last_valid.index[-1]
+			keep_first = fval > lval
 
-		return filter_cols_below(df)
+		if (keep_first):
+			alg_df.loc[alg_df[first_col].isnull() & ~alg_df[last_col].isnull(), :] = last_valid.shift(periods=-1, axis=1)
+		else:
+			alg_df.loc[~alg_df[first_col].isnull() & alg_df[last_col].isnull(), :] = first_valid.shift(periods=1, axis=1)
+
+		return filter_cols_below(alg_df)
 	else:
 		return df
 
-def prune_nulls(df, method='ffill'):
+def prune_nulls(df, method='ffill', limit=EXPECTED_NUM_HOURS//2):
 	if (method=='ffill'):
-		return df.dropna(axis=0, how='all').fillna(axis=1, method='ffill', limit=3).dropna(axis=0, how='any')
+		return df.dropna(axis=0, how='all').fillna(axis=1, method='ffill', limit=limit).dropna(axis=0, how='any')
 	elif (method=='drop'):
 		return df.dropna(axis=0, how='any')
 
@@ -63,19 +83,26 @@ def prepare_transpose_data_d(feature_df, row_masks_df):
 	Args:
 		feature_df (pd.DataFrame): one series intraday dataframe
 	"""
-	prep_fn = dcompose(reindex_on_time_mask, gb_transpose, filter_cols_below,
+	prep_fn = dcompose(reindex_on_time_mask, df_downsample_transpose, filter_cols_below,
 		align_first_last, prune_nulls, partial(pd_dti_index_to_date, new_tz=None))
 	return prep_fn(feature_df, row_masks_df)
 
 def prepare_transpose_data(feature_df, row_masks_df):
 	"""
-	Converts an intraday single column DataFrame into a daily multi column DataFrame.
+	Converts a single indexed intraday DataFrame into a MultiIndexed daily DataFrame.
 
 	Args:
-		feature_df (pd.DataFrame): one series intraday dataframe
+		feature_df (pd.DataFrame): intraday DataFrame
+		row_masks_df (pd.DataFrame): row_mask / time mask DataFrame
 	"""
-	prep_fn = compose(reindex_on_time_mask, gb_transpose, filter_cols_below,
-		align_first_last, prune_nulls, partial(pd_dti_index_to_date, new_tz=None))
+	prep_fn = compose(
+						reindex_on_time_mask,		# Converts the UTC time index to local time
+						df_downsample_transpose,	# Performs the grouby downsample to daily frequency and intraday transpose
+						filter_cols_below,			# Filters out columns with 90% or less of their data missing (relative to the most populated column)
+						align_first_last_cols,		# Removes an extra column due to misalignment if it exists
+						prune_nulls,				# Removes or fills any last null data
+						partial(pd_dti_index_to_date, new_tz=None)
+					)
 	return prep_fn(feature_df, row_masks_df)
 
 def prepare_label_data(label_ser):
