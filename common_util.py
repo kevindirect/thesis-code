@@ -1048,7 +1048,7 @@ def reindex_on_time_mask(reindex_df, time_mask_df, dest_tz_col_name='times'):
 	"""
 	result_df = inner_join(reindex_df.dropna(how='all'), time_mask_df.dropna(how='all')).set_index(dest_tz_col_name)
 	result_df.index = result_df.index.rename('id')
-	return result_df
+	return result_df.dropna(how='all')
 
 def df_freq_transpose(df, col_freq='hour'):
 	"""
