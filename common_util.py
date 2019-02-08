@@ -1052,6 +1052,7 @@ def reindex_on_time_mask(reindex_df, time_mask_df, dest_tz_col_name='times'):
 
 def df_freq_transpose(df, col_freq='hour'):
 	"""
+	XXX - Deprecated, use 'df_mindex_column_unstack'
 	Transpose df by time index attribute.
 
 	Args:
@@ -1070,6 +1071,7 @@ def df_freq_transpose(df, col_freq='hour'):
 
 def gb_transpose(df, agg_freq=DT_CAL_DAILY_FREQ, col_freq='hour'):
 	"""
+	XXX - Deprecated, use 'df_downsample_transpose'
 	Convert a series a DataFrame grouped by agg_freq and transposed in each group.
 
 	Args:
@@ -1078,60 +1080,7 @@ def gb_transpose(df, agg_freq=DT_CAL_DAILY_FREQ, col_freq='hour'):
 
 	Returns:
 		pd.DataFrame where each aggregation has its rows and columns transposed.
-		
-		Example:
 
-		def make_example_intraday_df(tz_code='UTC'):
-			example_dti = ['2010-01-02 01:00:00+00:00', '2010-01-02 02:00:00+00:00', '2010-01-02 03:00:00+00:00', '2010-01-02 04:00:00+00:00',
-							'2010-01-03 01:00:00+00:00', '2010-01-03 02:00:00+00:00', '2010-01-03 03:00:00+00:00', '2010-01-03 04:00:00+00:00',
-							'2010-01-04 01:00:00+00:00', '2010-01-04 02:00:00+00:00', '2010-01-04 03:00:00+00:00', '2010-01-04 04:00:00+00:00',
-							'2010-01-08 01:00:00+00:00', '2010-01-08 02:00:00+00:00', '2010-01-08 03:00:00+00:00', '2010-01-08 04:00:00+00:00',
-							'2010-01-09 01:00:00+00:00',                                                           '2010-01-09 04:00:00+00:00']
-			example_vals = [i for i in range(len(example_dti))]
-			example = pd.DataFrame(example_vals, index=pd.DatetimeIndex(example_dti), columns=['intraday_vals'])
-			example.index.name = 'index'
-
-			for i in example.index:
-				if (i.hour==4):
-					example.loc[i] = None
-			example.loc['2010-01-03 02:00:00+00:00'] = None
-			example.loc['2010-01-09 04:00:00+00:00'] = 18
-
-			return example.tz_localize(tz_code)
-
-		Example Input:
-
-			index	                    vals
-			2010-01-02 01:00:00+00:00	0.0
-			2010-01-02 02:00:00+00:00	1.0
-			2010-01-02 03:00:00+00:00	2.0
-			2010-01-02 04:00:00+00:00	NaN
-			2010-01-03 01:00:00+00:00	4.0
-			2010-01-03 02:00:00+00:00	NaN
-			2010-01-03 03:00:00+00:00	6.0
-			2010-01-03 04:00:00+00:00	NaN
-			2010-01-04 01:00:00+00:00	8.0
-			2010-01-04 02:00:00+00:00	9.0
-			2010-01-04 03:00:00+00:00	10.0
-			2010-01-04 04:00:00+00:00	NaN
-			2010-01-08 01:00:00+00:00	12.0
-			2010-01-08 02:00:00+00:00	13.0
-			2010-01-08 03:00:00+00:00	14.0
-			2010-01-08 04:00:00+00:00	NaN
-			2010-01-09 01:00:00+00:00	16.0
-			2010-01-09 04:00:00+00:00	18.0
-
-		Example Output:
-
-			index	    1	  2	    3	  4
-			2010-01-02	0.0	  1.0	2.0	  NaN
-			2010-01-03	4.0	  NaN	6.0	  NaN
-			2010-01-04	8.0	  9.0	10.0  NaN
-			2010-01-05	NaN	  NaN	NaN   NaN
-			2010-01-06	NaN	  NaN	NaN   NaN
-			2010-01-07	NaN	  NaN	NaN   NaN
-			2010-01-08	12.0  13.0	14.0  NaN
-			2010-01-09	16.0  NaN	NaN	  18.0
 	"""
 	# Groupby aggfreq
 	gbt = df.groupby(pd.Grouper(freq=agg_freq)).apply(df_freq_transpose, col_freq=col_freq)
@@ -1143,6 +1092,73 @@ def gb_transpose(df, agg_freq=DT_CAL_DAILY_FREQ, col_freq='hour'):
 	gbt = gbt.asfreq(agg_freq)
 
 	return gbt
+
+def df_mindex_column_unstack(df, group_attr=None, col_attr=None):
+	"""
+	Apply a MultiIndex Column Unstack operation on the passed DataFrame.
+
+	This essentially transposes the sole column of the passed MultiIndex DataFrame into as many columns
+	as there were "groups" at level 0 for all subindexes at level 1.
+	
+	This is useful for converting a single or multi-columned intraday time series into a date indexed time series
+	where each column is an hour or minute of the day (this is implemented in df_downsample_transpose by calling
+	stack and then this function in a groupby apply).
+
+	Args:
+		df (pd.DataFrame): DataFrame must have a two level MultiIndex: ['id0', 'id1'] with a single value column named 'val'
+		group_attr (str, Optional): If supplied returns a MultiIndex DataFrame with this attribute as level 0 
+		col_attr (str, Optional): If supplied uses this attribute to name the columns
+
+	Returns:
+		MultiIndex DataFrame if group_attr is a valid attribute of level 0 of the input DataFrame MultiIndex,
+		otherwise returns a single index DataFrame
+	"""
+	df_t = None
+
+	if (not df.index.empty):
+		id1_labels = remove_dups_list(df.index.get_level_values('id1'))
+		rows_t = [df.xs(id1_label, level='id1').rename(columns={'val': id1_label}).T for id1_label in id1_labels]
+
+		# Concat the rows into a DataFrame and do some cleanup
+		df_t = pd.concat(rows_t)
+		df_t.columns.name = None
+		df_t.index = df_t.index.rename('id1')
+
+		# Rename the columns to their col_attr attribute
+		if (col_attr is not None):
+			df_t.columns = getattr(df_t.columns, col_attr)
+
+		# Create a MultiIndex by prepending the group_attr attribute to the existing index
+		if (group_attr is not None):
+			group_id = remove_dups_list(getattr(df.index.get_level_values('id0'), 'date'))
+			assert (len(group_id)==1), 'There must only be a single distinct group identifier'
+			df_t.index = pd.MultiIndex.from_product([group_id, df_t.index], names=['id0', 'id1'])
+
+	return df_t
+
+def df_downsample_transpose(df, agg_freq=DT_CAL_DAILY_FREQ, col_attr='hour'):
+	"""
+	Apply a Downsample Transpose operation to the passed single index DatetimeIndexed DataFrame.
+	This function downsamples by the supplied 'agg_freq' and transposes the excess data as columns
+	of the resultant MultiIndex DataFrame.
+
+	Args:
+		df (pd.DataFrame): Single index DatetimeIndexed DataFrame
+		agg_freq (str): Frequency of the downsample
+		col_attr (str): Attribute of the original DataFrame's DatetimeIndex to name the columns by
+
+	Returns:
+		MultiIndex DataFrame with levels ['id0', 'id1']
+	"""
+	# Convert to MultiIndex DataFrame, with id0 being the timestamp level and id1 all original columns
+	stacked = df.stack()
+	stacked = pd.DataFrame(stacked, index=stacked.index, columns=['val'])
+	stacked.index = stacked.index.rename(['id0', 'id1'])
+
+	# Group by each aggregation period and apply df_mindex_column_unstack
+	unstacked = stacked.groupby(pd.Grouper(level='id0', freq=agg_freq)).apply(df_mindex_column_unstack, group_attr=None, col_attr=col_attr)
+
+	return unstacked
 
 """String"""
 def string_df_join_to_ser(df, join_str='_'):
