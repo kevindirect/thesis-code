@@ -769,22 +769,37 @@ outer_join = lambda a,b: a.join(b, how='outer', sort=True)
 
 def index_intersection(*pd_idx):
 	"""
+	XXX - Deprecated, use idx_intersection
 	Return the common intersection of all passed pandas index objects.
 	"""
 	return reduce(lambda idx, oth: idx.intersection(oth), pd_idx)
 
+def idx_intersection(*idxs):
+	"""
+	Return the common intersection of all passed pandas index objects.
+	"""
+	return reduce(lambda idx, oth: idx.intersection(oth), idxs)
+
 def index_split(pd_idx, *ratio):
 	"""
+	XXX - Deprecated, use idx_split
 	Split an index into multiple sub indexes based on ratios passed in.
 	"""
 	cuts = get_range_cuts(0, pd_idx.size, list(ratio))
 	return tuple(pd_idx[start:end] for start, end in pairwise(cuts))
 
+def idx_split(idx, *ratio):
+	"""
+	Split an index into multiple sub indexes based on ratios passed in.
+	"""
+	cuts = get_range_cuts(0, idx.size, list(ratio))
+	return tuple(idx[start:end] for start, end in pairwise(cuts))
+
 def pd_common_index_rows(*pd_obj):
 	"""
 	Take the intersection of pandas object indices and return each object's common indexed rows.
 	"""
-	common_index = index_intersection(*(obj.index for obj in pd_obj))
+	common_index = idx_intersection(*(obj.index for obj in pd_obj))
 	return (obj.loc[common_index] for obj in pd_obj)
 
 def df_count(df):
@@ -876,7 +891,7 @@ def ser_range_center_clip(ser, thresh=None, inner=0, outer=False, inclusive=Fals
 """Datetime"""
 def df_dti_index_to_date(df, new_freq=DT_CAL_DAILY_FREQ, new_tz=False):
 	"""
-	XXX - deprecated
+	XXX - Deprecated, use 'pd_dti_idx_date_only'
 	Convert DataFrame's DatetimeIndex index to solely a date component, set new frequency if specified.
 	"""
 	index_name = df.index.name
@@ -888,6 +903,7 @@ def df_dti_index_to_date(df, new_freq=DT_CAL_DAILY_FREQ, new_tz=False):
 
 def pd_dti_index_to_date(pd_obj, new_freq=DT_CAL_DAILY_FREQ, new_tz=False):
 	"""
+	XXX - Deprecated, use 'pd_dti_idx_date_only'
 	Convert pandas object DatetimeIndex index to solely a date component, set new frequency if specified.
 	"""
 	index_name = pd_obj.index.name
@@ -896,6 +912,50 @@ def pd_dti_index_to_date(pd_obj, new_freq=DT_CAL_DAILY_FREQ, new_tz=False):
 	if (new_freq is not None):
 		pd_obj = pd_obj.asfreq(new_freq)
 	return pd_obj.tz_localize(timezone)
+
+def dti_extract_date(dti, date_freq=DT_CAL_DAILY_FREQ, date_tz=None, level=0):
+	"""
+	Return modified DatetimeIndex with date extracted and set to the desired date frequency.
+	If a MultiIndex is passed in, this prodedure is applied to the selected level.
+
+	Args:
+		dti (pd.DatetimeIndex or pd.MultiIndex): DatetimeIndex or MultiIndex to extract from
+		date_freq (str): Date frequency string
+		date_tz (pytz.timezone or dateutil.tz.tzfile): Timezone identifier, default to no timezone,
+			uses the original timezone if this argument is set to 'old'
+		level (int): MultiIndex level where the DatetimeIndex to modify is
+
+	Returns:
+		pd.DatetimeIndex or MultiIndex
+	"""
+	if (is_type(dti, pd.core.index.MultiIndex)):
+		date_tz = date_tz if (date_tz != 'old') else dti.levels[level].tz
+		date_idx = dti.set_levels(pd.DatetimeIndex(dti.levels[level].normalize().date, freq=date_freq, tz=date_tz), level=level)
+	else:
+		date_tz = date_tz if (date_tz != 'old') else dti.tz
+		date_idx = pd.DatetimeIndex(dti.normalize().date, freq=date_freq, tz=date_tz)
+	return date_idx
+
+def pd_dti_idx_date_only(pd_obj, date_freq=DT_CAL_DAILY_FREQ, date_tz=None, level=0, deep=False):
+	"""
+	Return DatetimeIndexed pd.Series or pd.DataFrame (single or MultiIndex) with time component of 
+	its index removed. Basically a wrapper around 'dti_extract_date'.
+
+	Args:
+		pd_obj (pd.Series or pd.DataFrame): Pandas object whose index to modify
+		date_freq (str): Date frequency string
+		date_tz ('old' or pytz.timezone or dateutil.tz.tzfile): Timezone identifier, default to no timezone,
+			uses the original timezone if this argument is set to 'old'
+		level (int): MultiIndex level where the DatetimeIndex to modify is
+		deep (boolean): Whether to create a deepcopy to avoid side-effects on the passed object
+
+	Returns:
+		pd.Series or pd.DataFrame
+	"""
+	if (deep):
+		pd_obj = pd_obj.copy(deep=True)
+	pd_obj.index = dti_extract_date(pd_obj.index, date_freq=date_freq, date_tz=date_tz, level=level)
+	return pd_obj
 
 def series_to_dti(ser, fmt=DT_FMT_YMD_HM, utc=True, exact=True, freq=DT_HOURLY_FREQ):
 	"""
