@@ -762,10 +762,48 @@ def dump_df(df, fname, dir_path=None, data_format=DF_DATA_FMT):
 
 
 """ ********** PANDAS GENERAL UTILS ********** """
+DEFAULT_IDX_NAME = 'id'
+
 left_join = lambda a,b: a.join(b, how='left', sort=True)
 right_join = lambda a,b: a.join(b, how='right', sort=True)
 inner_join = lambda a,b: a.join(b, how='inner', sort=True)
 outer_join = lambda a,b: a.join(b, how='outer', sort=True)
+
+def pd_idx_rename(pd_obj, idx_name=DEFAULT_IDX_NAME, deep=False):
+	"""
+	Wrapper function to rename index of pd_obj. Useful for function
+	compositions/pipelines because it returns a reference to the object.
+
+	Args:
+		pd_obj (pd.Series or pd.DataFrame): Pandas object whose index to rename
+		idx_name (str or list): Index or index levels for MultiIndex
+		deep (boolean): Whether to create a deepcopy to avoid side-effects on the passed object
+
+	Returns:
+		pd.Series or pd.DataFrame with index renamed
+	"""
+	if (deep):
+		pd_obj = pd_obj.copy(deep=True)
+	pd_obj.index = pd_obj.index.rename(idx_name)
+	return pd_obj
+
+def pd_get_idx_level(pd_obj, level=0):
+	"""
+	Return single index or level of MultiIndex for the passed pd_obj.
+	This is a convenience function to prevent the need for separate logic for extracting a
+	a single index versus a single level of a MultiIndex.
+
+	Args:
+		pd_obj (pd.Series or pd.DataFrame): Pandas object whose index to return
+		level (int): Level of the MultiIndex to return
+
+	Returns:
+		Index or MultiIndex
+	"""
+	idx = pd_obj.index
+	if (is_type(idx, pd.core.index.MultiIndex)):
+		idx = idx.levels[level]
+	return idx
 
 def index_intersection(*pd_idx):
 	"""
@@ -797,9 +835,17 @@ def idx_split(idx, *ratio):
 
 def pd_common_index_rows(*pd_obj):
 	"""
+	XXX - Deprecated, use pd_common_idx_rows
 	Take the intersection of pandas object indices and return each object's common indexed rows.
 	"""
 	common_index = idx_intersection(*(obj.index for obj in pd_obj))
+	return (obj.loc[common_index] for obj in pd_obj)
+
+def pd_common_idx_rows(*pd_obj, level=0):
+	"""
+	Take the intersection of pandas object indices and return each object's common indexed rows.
+	"""
+	common_index = idx_intersection(*(pd_get_idx_level(obj, level=level) for obj in pd_obj))
 	return (obj.loc[common_index] for obj in pd_obj)
 
 def df_count(df):
@@ -929,10 +975,10 @@ def dti_extract_date(dti, date_freq=DT_CAL_DAILY_FREQ, date_tz=None, level=0):
 		pd.DatetimeIndex or MultiIndex
 	"""
 	if (is_type(dti, pd.core.index.MultiIndex)):
-		date_tz = date_tz if (date_tz != 'old') else dti.levels[level].tz
+		date_tz = date_tz if (date_tz!='old') else dti.levels[level].tz
 		date_idx = dti.set_levels(pd.DatetimeIndex(dti.levels[level].normalize().date, freq=date_freq, tz=date_tz), level=level)
 	else:
-		date_tz = date_tz if (date_tz != 'old') else dti.tz
+		date_tz = date_tz if (date_tz!='old') else dti.tz
 		date_idx = pd.DatetimeIndex(dti.normalize().date, freq=date_freq, tz=date_tz)
 	return date_idx
 
@@ -1107,7 +1153,7 @@ def reindex_on_time_mask(reindex_df, time_mask_df, dest_tz_col_name='times'):
 		pd.DataFrame identical to reindex_df, with its index swapped with the 'times' column of time_mask_df
 	"""
 	result_df = inner_join(reindex_df.dropna(how='all'), time_mask_df.dropna(how='all')).set_index(dest_tz_col_name)
-	result_df.index = result_df.index.rename('id')
+	result_df = pd_idx_rename(result_df)
 	return result_df.dropna(how='all')
 
 def df_freq_transpose(df, col_freq='hour'):
@@ -1182,7 +1228,7 @@ def df_mindex_column_unstack(df, group_attr=None, col_attr=None):
 		# Concat the rows into a DataFrame and do some cleanup
 		df_t = pd.concat(rows_t)
 		df_t.columns.name = None
-		df_t.index = df_t.index.rename('id1')
+		df_t = pd_idx_rename(df_t, idx_name='id1')
 
 		# Rename the columns to their col_attr attribute
 		if (col_attr is not None):
@@ -1213,7 +1259,7 @@ def df_downsample_transpose(df, agg_freq=DT_CAL_DAILY_FREQ, col_attr='hour'):
 	# Convert to MultiIndex DataFrame, with id0 being the timestamp level and id1 all original columns
 	stacked = df.stack()
 	stacked = pd.DataFrame(stacked, index=stacked.index, columns=['val'])
-	stacked.index = stacked.index.rename(['id0', 'id1'])
+	stacked = pd_idx_rename(stacked, idx_name=['id0', 'id1'])
 
 	# Group by each aggregation period and apply df_mindex_column_unstack
 	unstacked = stacked.groupby(pd.Grouper(level='id0', freq=agg_freq)).apply(df_mindex_column_unstack, group_attr=None, col_attr=col_attr)
