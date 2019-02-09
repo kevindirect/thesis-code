@@ -11,14 +11,14 @@ import numpy as np
 import pandas as pd
 from dask import delayed, compute
 
-from common_util import is_type, identity_fn, compose, dcompose, pd_dti_index_to_date, filter_cols_below, reindex_on_time_mask, df_downsample_transpose, ser_shift, pd_common_index_rows, chained_filter
+from common_util import is_type, identity_fn, compose, dcompose, pd_idx_rename, pd_dti_idx_date_only, filter_cols_below, reindex_on_time_mask, df_downsample_transpose, ser_shift, pd_common_idx_rows, chained_filter
 from model.common import EXPECTED_NUM_HOURS
 from recon.dataset_util import gen_group
 from mutate.label_util import prep_labels
 
 
-""" ********** DATA PREPARATION ********** """
-def align_first_last_cols(df, ratio_max=.25, min_num_cols=EXPECTED_NUM_HOURS, how='last'):
+""" ********** DATA PREPARATION UTIL FUNCTIONS ********** """
+def align_first_last_cols(df, ratio_max=.25, min_num_cols=EXPECTED_NUM_HOURS, how='last', deep=False):
 	"""
 	Return a df where a misalignment problem of data within columns causing a redundant column is fixed.
 
@@ -32,6 +32,7 @@ def align_first_last_cols(df, ratio_max=.25, min_num_cols=EXPECTED_NUM_HOURS, ho
 			in non-null counts between the first and last column is greater than ratio_max * the most populated column count
 		min_num_cols (int): Only perform aligment if there are more than this number of columns
 		how (['max'|'last']): How to choose whether to drop the first or last column label if needed
+		deep (boolean): Whether to create a deepcopy to avoid side-effects on the passed object
 
 	Returns:
 		DataFrame
@@ -45,27 +46,28 @@ def align_first_last_cols(df, ratio_max=.25, min_num_cols=EXPECTED_NUM_HOURS, ho
 		return fl_difference > ratio_max*count_df.max()
 
 	if (df.columns.size > min_num_cols and fl_alignment_needed(df)):
-		alg_df = df.copy(deep=True) 	# Copy made to prevent side-effects in original reference
-		cnt_df = alg_df.count()
+		if (deep):
+			df = df.copy(deep=True)
+		cnt_df = df.count()
 		first_col, last_col = cnt_df.index[0], cnt_df.index[-1]
-		first_valid = alg_df[~alg_df[first_col].isnull() & alg_df[last_col].isnull()]		# Rows where first is valid and last is null
-		last_valid = alg_df[alg_df[first_col].isnull() & ~alg_df[last_col].isnull()]		# Rows where last is valid and first is null
+		first_valid = df[~df[first_col].isnull() & df[last_col].isnull()]		# Rows where first is valid and last is null
+		last_valid = df[df[first_col].isnull() & ~df[last_col].isnull()]		# Rows where last is valid and first is null
 
 		if (how == 'max'):		# The most common occurrence is used
 			keep_first = first_valid.size > last_valid.size
 		elif (how == 'last'): 	# The last occurrence is used
-			if (is_type(alg_df.index, pd.core.index.MultiIndex)):
+			if (is_type(df.index, pd.core.index.MultiIndex)):
 				fval, lval = first_valid.index[-1][0], last_valid.index[-1][0]
 			else:
 				fval, lval = first_valid.index[-1], last_valid.index[-1]
 			keep_first = fval > lval
 
 		if (keep_first):
-			alg_df.loc[alg_df[first_col].isnull() & ~alg_df[last_col].isnull(), :] = last_valid.shift(periods=-1, axis=1)
+			df.loc[df[first_col].isnull() & ~df[last_col].isnull(), :] = last_valid.shift(periods=-1, axis=1)
 		else:
-			alg_df.loc[~alg_df[first_col].isnull() & alg_df[last_col].isnull(), :] = first_valid.shift(periods=1, axis=1)
+			df.loc[~df[first_col].isnull() & df[last_col].isnull(), :] = first_valid.shift(periods=1, axis=1)
 
-		return filter_cols_below(alg_df)
+		return filter_cols_below(df)
 	else:
 		return df
 
@@ -75,43 +77,68 @@ def prune_nulls(df, method='ffill', limit=EXPECTED_NUM_HOURS//2):
 	elif (method=='drop'):
 		return df.dropna(axis=0, how='any')
 
-def prepare_transpose_data_d(feature_df, row_masks_df):
-	"""
-	Return delayed object to produce intraday to daily transposed data.
-	Converts an intraday single column DataFrame into a daily multi column DataFrame.
 
-	Args:
-		feature_df (pd.DataFrame): one series intraday dataframe
-	"""
-	prep_fn = dcompose(reindex_on_time_mask, df_downsample_transpose, filter_cols_below,
-		align_first_last, prune_nulls, partial(pd_dti_index_to_date, new_tz=None))
-	return prep_fn(feature_df, row_masks_df)
-
-def prepare_transpose_data(feature_df, row_masks_df):
+""" ********** DATA PREPARATION COMPOSITIONS ********** """
+def prepare_transpose_data(feature_df, row_masks_df, delayed=False):
 	"""
 	Converts a single indexed intraday DataFrame into a MultiIndexed daily DataFrame.
 
 	Args:
-		feature_df (pd.DataFrame): intraday DataFrame
-		row_masks_df (pd.DataFrame): row_mask / time mask DataFrame
+		feature_df (pd.DataFrame): Intraday DataFrame
+		row_masks_df (pd.DataFrame): DataFrame of row masks / time mask
+		delayed (boolean): Whether or not to create a delayed function composition
+
+	Returns:
+		pd.DataFrame or dask Delayed object
 	"""
-	prep_fn = compose(
-						reindex_on_time_mask,		# Converts the UTC time index to local time
-						df_downsample_transpose,	# Performs the grouby downsample to daily frequency and intraday transpose
-						filter_cols_below,			# Filters out columns with 90% or less of their data missing (relative to the most populated column)
-						align_first_last_cols,		# Removes an extra column due to misalignment if it exists
-						prune_nulls,				# Removes or fills any last null data
-						partial(pd_dti_index_to_date, new_tz=None)
-					)
+	preproc = (
+				reindex_on_time_mask,		# Converts the UTC time index to local time]
+				df_downsample_transpose,	# Performs the grouby downsample to daily frequency and intraday transpose
+				filter_cols_below,			# Filters out columns with 90% or less of their data missing (relative to the most populated column)
+				align_first_last_cols,		# Removes an extra column due to misalignment if it exists
+				prune_nulls,				# Removes or fills any last null data
+				pd_dti_idx_date_only		# Removes the time component of the DatetimeIndex index 
+			)
+	prep_fn = dcompose(*preproc) if (delayed) else compose(*preproc)
 	return prep_fn(feature_df, row_masks_df)
 
-def prepare_label_data(label_ser):
-	prep_fn = compose(partial(pd_dti_index_to_date, new_tz=None), partial(ser_shift, cast_type=int))
+def prepare_label_data(label_ser, delayed=False):
+	"""
+	Converts a single indexed intraday DataFrame into a MultiIndexed daily DataFrame.
+
+	Args:
+		label_ser (pd.Series): Label Series
+		delayed (boolean): Whether or not to create a delayed function composition
+
+	Returns:
+		pd.Series or dask Delayed object
+	"""
+	preproc = (
+				pd_dti_idx_date_only,					# Removes the time component of the DatetimeIndex index 
+				partial(ser_shift, cast_type=int),		# Shifts the series up by one slot and casts to int
+				pd_idx_rename							# Sets the index name to the default
+			)
+	prep_fn = dcompose(*preproc) if (delayed) else compose(*preproc)
 	return prep_fn(label_ser)
 
-def prepare_target_data(label_ser):
-	prep_fn = compose(partial(pd_dti_index_to_date, new_tz=None), ser_shift)
-	return prep_fn(label_ser)
+def prepare_target_data(target_ser, delayed=False):
+	"""
+	Converts a single indexed intraday DataFrame into a MultiIndexed daily DataFrame.
+
+	Args:
+		target_ser (pd.Series): Target Series
+		delayed (boolean): Whether or not to create a delayed function composition
+
+	Returns:
+		pd.Series or dask Delayed object
+	"""
+	preproc = (
+				pd_dti_idx_date_only,		# Removes the time component of the DatetimeIndex index 
+				ser_shift,					# Shifts the series up by one slot
+				pd_idx_rename				# Sets the index name to the default
+			)
+	prep_fn = dcompose(*preproc) if (delayed) else compose(*preproc)
+	return prep_fn(target_ser)
 
 def prepare_masked_labels(labels_df, label_types, label_filter):
 	"""
@@ -126,7 +153,7 @@ def prepare_masked_labels(labels_df, label_types, label_filter):
 
 
 """ ********** DATA GENERATORS ********** """
-def datagen(dataset, feat_prep_fn=identity_fn, label_prep_fn=identity_fn, target_prep_fn=identity_fn, common_prep_fn=pd_common_index_rows, how='ser_to_ser'):
+def datagen(dataset, feat_prep_fn=identity_fn, label_prep_fn=identity_fn, target_prep_fn=identity_fn, common_prep_fn=pd_common_idx_rows, how='ser_to_ser'):
 	"""
 	Yield from data generation function.
 
