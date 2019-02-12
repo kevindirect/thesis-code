@@ -92,7 +92,7 @@ def prepare_transpose_data(feature_df, row_masks_df, delayed=False):
 		pd.DataFrame or dask Delayed object
 	"""
 	preproc = (
-				reindex_on_time_mask,		# Converts the UTC time index to local time]
+				reindex_on_time_mask,		# Converts the UTC time index to local time
 				df_downsample_transpose,	# Performs the grouby downsample to daily frequency and intraday transpose
 				filter_cols_below,			# Filters out columns with 90% or less of their data missing (relative to the most populated column)
 				align_first_last_cols,		# Removes an extra column due to misalignment if it exists
@@ -153,7 +153,7 @@ def prepare_masked_labels(labels_df, label_types, label_filter):
 
 
 """ ********** DATA GENERATORS ********** """
-def datagen(dataset, feat_prep_fn=identity_fn, label_prep_fn=identity_fn, target_prep_fn=identity_fn, common_prep_fn=pd_common_idx_rows, how='ser_to_ser'):
+def datagen(dataset, feat_prep_fn=identity_fn, label_prep_fn=identity_fn, target_prep_fn=identity_fn, common_prep_fn=pd_common_idx_rows, how='df_to_ser'):
 	"""
 	Yield from data generation function.
 
