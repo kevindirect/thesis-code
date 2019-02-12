@@ -769,6 +769,34 @@ right_join = lambda a,b: a.join(b, how='right', sort=True)
 inner_join = lambda a,b: a.join(b, how='inner', sort=True)
 outer_join = lambda a,b: a.join(b, how='outer', sort=True)
 
+def pd_rows(pd_obj, idx):
+	"""
+	Return the indexed rows of pd_obj, going from left to right if a MultiIndex is passed in.
+	
+	Args:
+		pd_obj (pd.Series or pd.DataFrame): Pandas object to index into
+		idx (pd.Index or pd.MultiIndex): Index of selected rows
+
+	Returns:
+		Indexed rows of pd_obj at the correct dimensionality/MultiIndexing levels
+	"""
+	if (is_type(idx, pd.core.index.MultiIndex)):
+		if (is_type(pd_obj.index, pd.core.index.MultiIndex)):
+			if (pd_obj.index.nlevels < idx.nlevels):
+				higher_levels = list(set(range(idx.nlevels)).difference(set(range(pd_obj.index.nlevels))))
+				selected = pd_obj.loc[idx.droplevel(higher_levels).drop_duplicates()]
+			else:
+				selected = pd_obj.loc[idx.drop_duplicates()]
+		else:
+			selected = pd_obj.loc[idx.levels[0].drop_duplicates()]
+	else:
+		if (is_type(pd_obj.index, pd.core.index.MultiIndex)):
+			selected = pd_obj.loc[idx.drop_duplicates()]
+		else:
+			selected = pd_obj.loc[idx]
+
+	return selected
+
 def pd_idx_rename(pd_obj, idx_name=DEFAULT_IDX_NAME, deep=False):
 	"""
 	Wrapper function to rename index of pd_obj. Useful for function
@@ -787,11 +815,68 @@ def pd_idx_rename(pd_obj, idx_name=DEFAULT_IDX_NAME, deep=False):
 	pd_obj.index = pd_obj.index.rename(idx_name)
 	return pd_obj
 
-def pd_get_idx_level(pd_obj, level=0):
+def idx_level_top_up(idx, midx):
+	"""
+	Perform Index Level Top Up on 'idx' based on 'midx'.
+	This will append levels to the passed index or MultiIndex up to the number of levels
+	in the passed MultiIndex as a Cartesian product.
+
+	Args:
+		midx (pd.MultiIndex): Reference MultiIndex to top up with
+		idx (pd.Index or pd.MultiIndex): Index or MultiIndex to be topped up
+
+	Returns:
+		Topped up idx (as MultiIndex)
+	"""
+	if (is_type(idx, pd.core.index.MultiIndex)):
+		diff = midx.nlevels - idx.nlevels
+		if (diff > 0):
+			fix_levels = [*list(idx.levels), *list(midx.levels[-diff:])]
+			fix_names = list(idx.names) + list(midx.names)[-diff:]
+		else:
+			return idx
+	else:
+		fix_levels = [idx, *list(midx.levels[1:])]
+		fix_names = list(midx.names)
+	return pd.MultiIndex.from_product(fix_levels, names=fix_names)
+
+def midx_level_standarize(*idxs):
+	"""
+	MultiIndex Level Standardize the passed set of Pandas single indexes or MultiIndexes.
+	If one or more are MultiIndex this function standardizes them all to the highest level depth MultiIndex.
+
+	Args:
+		idx (pd.Index or pd.MultiIndex): Indexes to standardize
+
+	Returns:
+		Level standardized MultiIndexes, or single indexes if no MultiIndexes exist
+	"""
+	midx_list = [idx for idx in idxs if (is_type(idx, pd.core.index.MultiIndex))]
+	if (len(midx_list) > 0):
+		highest_dim = max(midx_list, key=lambda i: i.nlevels)
+		yield from (idx_level_top_up(idx, highest_dim) for idx in idxs)
+	else:
+		yield from idxs
+
+def midx_get_level(idx, level=0):
+	"""
+	Return level(s) of MultiIndex (if it is one), otherwise return the passed index
+
+	Args:
+		idx (pd.Index or pd.MultiIndex): Pandas object whose index to return
+		level (int or tuple): Level(s) of the MultiIndex to return
+
+	Returns:
+		Index or MultiIndex
+	"""
+	return idx.levels[level] if (is_type(idx, pd.core.index.MultiIndex)) else idx
+
+def pd_get_midx_level(pd_obj, level=0):
 	"""
 	Return single index or level of MultiIndex for the passed pd_obj.
 	This is a convenience function to prevent the need for separate logic for extracting a
 	a single index versus a single level of a MultiIndex.
+	Wrapper around 'midx_get_level'.
 
 	Args:
 		pd_obj (pd.Series or pd.DataFrame): Pandas object whose index to return
@@ -800,21 +885,18 @@ def pd_get_idx_level(pd_obj, level=0):
 	Returns:
 		Index or MultiIndex
 	"""
-	idx = pd_obj.index
-	if (is_type(idx, pd.core.index.MultiIndex)):
-		idx = idx.levels[level]
-	return idx
+	return midx_get_level(pd_obj.index, level=level)
 
 def index_intersection(*pd_idx):
 	"""
-	XXX - Deprecated, use idx_intersection
+	XXX - Deprecated, use 'midx_intersect'
 	Return the common intersection of all passed pandas index objects.
 	"""
 	return reduce(lambda idx, oth: idx.intersection(oth), pd_idx)
 
-def idx_intersection(*idxs):
+def midx_intersect(*idxs):
 	"""
-	Return the common intersection of all passed pandas index objects.
+	Return the common intersection of all passed pandas single index or MultiIndex objects.
 	"""
 	return reduce(lambda idx, oth: idx.intersection(oth), idxs)
 
@@ -835,18 +917,27 @@ def idx_split(idx, *ratio):
 
 def pd_common_index_rows(*pd_obj):
 	"""
-	XXX - Deprecated, use pd_common_idx_rows
+	XXX - Deprecated, use 'pd_common_idx_rows'
 	Take the intersection of pandas object indices and return each object's common indexed rows.
 	"""
-	common_index = idx_intersection(*(obj.index for obj in pd_obj))
+	common_index = index_intersection(*(obj.index for obj in pd_obj))
 	return (obj.loc[common_index] for obj in pd_obj)
 
-def pd_common_idx_rows(*pd_obj, level=0):
+def pd_common_idx_rows(*pd_objs):
 	"""
 	Take the intersection of pandas object indices and return each object's common indexed rows.
+	If there are level differences among them, first performs level standardization on their indices.
+
+	Args:
+		pd_obj (pd.Series or pd.DataFrames): Pandas objects to deliver common indexed rows of
+
+	Returns:
+		Pandas objects filtered by their common indexed rows
 	"""
-	common_index = idx_intersection(*(pd_get_idx_level(obj, level=level) for obj in pd_obj))
-	return (obj.loc[common_index] for obj in pd_obj)
+	common_idx = midx_intersect(*midx_level_standarize(*(pd_obj.index for pd_obj in pd_objs)))
+	if (is_type(common_idx, pd.core.index.MultiIndex)):
+		common_idx = common_idx.sortlevel(level=list(range(common_idx.nlevels)), sort_remaining=False)[0]
+	yield from (pd_rows(pd_obj, common_idx) for pd_obj in pd_objs)
 
 def df_count(df):
 	return df.count(axis=0)
@@ -1158,7 +1249,7 @@ def reindex_on_time_mask(reindex_df, time_mask_df, dest_tz_col_name='times'):
 
 def df_freq_transpose(df, col_freq='hour'):
 	"""
-	XXX - Deprecated, use 'df_mindex_column_unstack'
+	XXX - Deprecated, use 'df_midx_column_unstack'
 	Transpose df by time index attribute.
 
 	Args:
@@ -1199,7 +1290,7 @@ def gb_transpose(df, agg_freq=DT_CAL_DAILY_FREQ, col_freq='hour'):
 
 	return gbt
 
-def df_mindex_column_unstack(df, group_attr=None, col_attr=None):
+def df_midx_column_unstack(df, group_attr=None, col_attr=None):
 	"""
 	Apply a MultiIndex Column Unstack operation on the passed DataFrame.
 
@@ -1261,8 +1352,8 @@ def df_downsample_transpose(df, agg_freq=DT_CAL_DAILY_FREQ, col_attr='hour'):
 	stacked = pd.DataFrame(stacked, index=stacked.index, columns=['val'])
 	stacked = pd_idx_rename(stacked, idx_name=['id0', 'id1'])
 
-	# Group by each aggregation period and apply df_mindex_column_unstack
-	unstacked = stacked.groupby(pd.Grouper(level='id0', freq=agg_freq)).apply(df_mindex_column_unstack, group_attr=None, col_attr=col_attr)
+	# Group by each aggregation period and apply df_midx_column_unstack
+	unstacked = stacked.groupby(pd.Grouper(level='id0', freq=agg_freq)).apply(df_midx_column_unstack, group_attr=None, col_attr=col_attr)
 
 	return unstacked
 
