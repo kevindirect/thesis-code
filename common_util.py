@@ -908,9 +908,9 @@ def index_split(pd_idx, *ratio):
 	cuts = get_range_cuts(0, pd_idx.size, list(ratio))
 	return tuple(pd_idx[start:end] for start, end in pairwise(cuts))
 
-def idx_split(idx, *ratio):
+def midx_split(idx, *ratio):
 	"""
-	Split an index into multiple sub indexes based on ratios passed in.
+	Split an index or MultiIndex into multiple sub indexes based on ratios passed in.
 	"""
 	cuts = get_range_cuts(0, idx.size, list(ratio))
 	return tuple(idx[start:end] for start, end in pairwise(cuts))
