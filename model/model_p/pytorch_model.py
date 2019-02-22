@@ -140,7 +140,7 @@ class Model:
 		prediction_batch = torch.argmax(outputs_batch, dim=1) # Convert network outputs into predictions
 		print(lab_batch.shape, lab_batch)
 		print(prediction_batch.shape, prediction_batch)
-		metrics = {name: fn(lab_batch, prediction_batch) for name, fn in self.metrics_fns}
+		metrics = {name: float(fn(lab_batch, prediction_batch)) for name, fn in self.metrics_fns}
 
 		if (optimizer is not None):
 			optimizer.zero_grad()
