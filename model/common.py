@@ -79,7 +79,7 @@ default_ray_config = {
 }
 default_ray_trial_resources = {"cpu": 2, "gpu": 1}
 default_model = 'BinTCN'
-default_dataset = 'mvp_dnorm_raw.json'
+default_dataset = 'dnorm_raw_pba_ohlca.json'
 default_backend = 'pytorch'
 default_trials_count = 100
 default_filter = ["0"]
