@@ -894,6 +894,23 @@ def index_intersection(*pd_idx):
 	"""
 	return reduce(lambda idx, oth: idx.intersection(oth), pd_idx)
 
+def pd_midx_to_arr(pd_obj, drop_null=True):
+	"""
+	XXX - Currently works with 3D pandas objects, untested with higher dim frames
+	Converts a MultiIndex DataFrame into a numpy array.
+	Adapted from code by Igor Raush
+	Source: https://stackoverflow.com/questions/35047882/transform-pandas-dataframe-with-n-level-hierarchical-index-into-n-d-numpy-array
+	"""
+	shape = tuple(map(len, pd_obj.index.levels))
+	arr = np.full(shape, np.nan)							# create an empty array of NaN of the right dimensions
+	arr[tuple(pd_obj.index.codes)] = pd_obj.values.flat 	# fill it using Numpy's advanced indexing
+	if (drop_null):
+		mask = np.all(np.isnan(arr), axis=-1)
+		arr = arr[~mask]
+		new_shape = (arr.shape[0]//mask.shape[-1], mask.shape[-1], arr.shape[-1])
+		arr = np.reshape(arr, new_shape)
+	return arr
+
 def midx_intersect(*idxs):
 	"""
 	Return the common intersection of all passed pandas single index or MultiIndex objects.
