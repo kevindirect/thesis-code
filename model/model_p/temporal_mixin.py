@@ -39,10 +39,10 @@ class TemporalMixin:
 		tuple item.
 		"""
 		# Reshape features into overlapping moving window samples
-		f = np.array([np.concatenate(vec) for vec in window_iter(data[0], n=params['input_windows'])])
+		f = np.array([np.concatenate(vec, axis=-1) for vec in window_iter(data[0], n=params['input_windows'])])
 
-		# Add a singleton dimension (required to denote number of channels in this data)
-		f = np.expand_dims(f, 1)
+		if (len(f.shape) < 3):
+			f = np.expand_dims(f, 1) # Add a singleton dimension for single channel data if needed
 
 		l = []
 		for vec in data[1:]:
