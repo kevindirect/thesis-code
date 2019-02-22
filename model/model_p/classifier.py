@@ -12,7 +12,7 @@ import pandas as pd
 import torch
 from hyperopt import hp, STATUS_OK, STATUS_FAIL
 
-from common_util import MODEL_DIR, makedir_if_not_exists, remove_keys, dump_json, str_now, one_minus
+from common_util import MODEL_DIR, makedir_if_not_exists, remove_keys, dump_json, str_now, one_minus, pd_midx_to_arr
 from model.common import PYTORCH_MODELS_DIR, ERROR_CODE, VAL_RATIO, TEST_RATIO, PYTORCH_LOSS_TRANSLATOR, PYTORCH_OPT_TRANSLATOR
 from model.model_p.pytorch_model import Model
 from recon.split_util import index_three_split
@@ -86,10 +86,25 @@ class Classifier(Model):
 		if (clf_type=='categorical' and labels.unique().size > 2):
 			labels = pd.get_dummies(labels, drop_first=False) # If the labels are not binary (more than two value types), one hot encode them
 
-		train_idx, val_idx, test_idx = index_three_split(features.index, labels.index, val_ratio=val_ratio, test_ratio=test_ratio, shuffle=shuffle)
-		feat_train, feat_val, feat_test = features.loc[train_idx].values, features.loc[val_idx].values, features.loc[test_idx].values
-		lab_train, lab_val, lab_test = labels.loc[train_idx].values, labels.loc[val_idx].values, labels.loc[test_idx].values
-		input_size = features.shape[1]
+		# XXX - shuffle option (probably won't need)
+		# XXX - create the dataset dataloaders here?
+		# XXX - encapsulate this data prep into a function?
+		train_ratio = 1-(val_ratio+test_ratio)
+		f_train_idx, f_val_idx, f_test_idx = midx_split(features.index, train_ratio, val_ratio, test_ratio)
+		l_train_idx, l_val_idx, l_test_idx = midx_split(labels.index, train_ratio, val_ratio, test_ratio)
+		# t_train_idx, t_val_idx, t_test_idx = midx_split(t.index, train_ratio, val_ratio, test_ratio)
+
+		f_train_pd, f_val_pd, f_test_pd = features.loc[f_train_idx], features.loc[f_val_idx], features.loc[f_test_idx]
+		l_train_pd, l_val_pd, l_test_pd = labels.loc[l_train_idx], labels.loc[l_val_idx], labels.loc[l_test_idx]
+		# t_train_pd, t_val_pd, t_test_pd = targets.loc[t_train_idx], targets.loc[t_val_idx], targets.loc[t_test_idx]
+
+		if (is_type(features.index, pd.core.index.MultiIndex)):
+			f_train_np, f_val_np, f_test_np = map(pd_midx_to_arr, [f_train_pd.stack(), f_val_pd.stack(), f_test_pd.stack()])
+		else:
+			f_train_np, f_val_np, f_test_np = f_train_pd.values, f_val_pd.values, f_test_pd.values
+		l_train_np, l_val_np, l_test_np = l_train_pd.values, l_val_pd.values, l_test_pd.values
+		# t_train_np, t_val_np, t_test_np = t_train_pd.values, t_val_pd.values, t_test_pd.values
+		input_shape = tuple(f_train_np.shape[-2:]) if (len(f_train_np.shape) < 3) else (1, f_train_np.shape[-1])
 
 		def objective(params):
 			"""
@@ -115,8 +130,8 @@ class Classifier(Model):
 				dump_json(params, 'params.json', dir_path=trial_logdir)
 
 			dev = torch.device('cuda') if (torch.cuda.is_available()) else torch.device('cpu')
-			mdl = self.get_model(params, input_size).to(device=dev)
-			res = self.fit_model(params, trial_logdir, mdl, dev, (feat_train, lab_train), val_data=(feat_val, lab_val))
+			mdl = self.get_model(params, input_shape).to(device=dev)
+			res = self.fit_model(params, trial_logdir, mdl, dev, (f_train_np, l_train_np), val_data=(f_val_np, l_val_np))
 			# dump_json(res, 'results.json', dir_path=trial_logdir)
 
 			metaloss = res[obj_agg][meta_obj]										# Different from the loss used to fit models

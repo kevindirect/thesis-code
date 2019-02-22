@@ -48,11 +48,11 @@ class BinaryTCN(TemporalMixin, BinaryClassifier):
 		}
 		super(BinaryTCN, self).__init__({**default_space, **other_space})
 
-	def make_model(self, params, num_inputs):
-		window_size = num_inputs
+	def make_model(self, params, input_shape):
+		window_size = input_shape[1]
 		eff_history = window_size * params['input_windows']  								# Effective history = window_size * input_windows
 		real_topology = window_size * np.array(params['topology'])							# Scale topology by the window size
 		real_topology = np.clip(real_topology, a_min=1, a_max=None).astype(int)				# Make sure that layer outputs are always greater than zero
-		mdl = TCN_Classifier(num_input_channels=1, channels=real_topology.tolist(), num_outputs=2, kernel_size=params['kernel_size'],
+		mdl = TCN_Classifier(num_input_channels=input_shape[0], channels=real_topology.tolist(), num_outputs=2, kernel_size=params['kernel_size'],
 							dropout=params['dropout'], attention=params['attention'], max_attn_len=params['max_attn_len'])
 		return mdl

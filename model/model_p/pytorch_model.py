@@ -135,9 +135,10 @@ class Model:
 		Compute loss and metrics on batch, run optimizer on losses if passed.
 		"""
 		# logging.debug('batch tensor[0][0]: {}'.format(feat_batch[0][0]))
-		prediction_batch = model(feat_batch)
-		loss = loss_function(prediction_batch, lab_batch)
+		outputs_batch = model(feat_batch)
+		loss = loss_function(outputs_batch, lab_batch)
 		metrics = None
+		prediction_batch # Convert network outputs into a prediction
 		# metrics = {name: fn(lab_batch, prediction_batch) for name, fn in self.metrics_fns}
 
 		if (optimizer is not None):
@@ -149,20 +150,19 @@ class Model:
 
 		return loss.item(), len(feat_batch), metrics
 
-	def make_model(self, params, num_inputs):
+	def make_model(self, params, input_shape):
 		"""
 		Define, compile, and return a model over params.
 		Concrete model subclasses must implement this.
 		"""
 		pass
 
-	def get_model(self, params, num_inputs):
+	def get_model(self, params, input_shape):
 		"""
 		Wrapper around make_model that reports/handles errors.
 		"""
 		try:
-			model = self.make_model(params, num_inputs)
-
+			model = self.make_model(params, input_shape)
 		except Exception as e:
 			logging.error('Error during model creation: {}'.format(str(e)))
 			raise e
