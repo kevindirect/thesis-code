@@ -175,7 +175,7 @@ def list_compare(master, other):
 	elif (master_set.isdisjoint(other_set)):
 		return 'disjoint'
 
-def get_range_cuts(start, end, ratios_list):
+def get_range_cuts(start, end, ratios_list, block_size=1):
 	"""
 	Return a list of segment indices for cuts based on ratios over the range provided by the passed [start, end).
 	The cuts will traverse the whole range of [start, end), if the provided ratios sum to less than one
@@ -929,7 +929,13 @@ def midx_split(idx, *ratio):
 	"""
 	Split an index or MultiIndex into multiple sub indexes based on ratios passed in.
 	"""
-	cuts = get_range_cuts(0, idx.size, list(ratio))
+	if (is_type(idx, pd.core.index.MultiIndex)):
+		sub_idx_sizes = list(map(lambda lvl: lvl.size, idx.levels[1:]))
+		block_size = reduce(lambda a,b: a*b, sub_idx_sizes)
+		block_cuts = get_range_cuts(0, int(idx.size/block_size), list(ratio))
+		cuts = [block_cut*block_size for block_cut in block_cuts]
+	else:
+		cuts = get_range_cuts(0, idx.size, list(ratio))
 	return tuple(idx[start:end] for start, end in pairwise(cuts))
 
 def pd_common_index_rows(*pd_obj):
