@@ -229,7 +229,7 @@ def datagen_df_to_ser(dataset, feat_prep_fn, label_prep_fn, target_prep_fn, comm
 			label = label_prep_fn(lab_df.loc[:, lcol]).dropna(axis=0, how='all')
 			target = target_prep_fn(tar_df.loc[:, tcol]).dropna(axis=0, how='all')
 			
-			yield (fpath, lpath, tpath, frec, lrec, trec, lcol, tcol, *common_prep_fn(feature, label, target))
+			yield (fpath, lpath, tpath, frec, lrec, trec, '', lcol, tcol, *common_prep_fn(feature, label, target))
 
 def datagen_df_to_df(dataset, feat_prep_fn, label_prep_fn, target_prep_fn, common_prep_fn):
 	"""
@@ -256,7 +256,7 @@ def datagen_df_to_df(dataset, feat_prep_fn, label_prep_fn, target_prep_fn, commo
 		label = label_prep_fn(lab_df).dropna(axis=0, how='all')
 		target = label_prep_fn(tar_df).dropna(axis=0, how='all')
 		
-		yield (fpath, lpath, tpath, frec, lrec, trec, *common_prep_fn(feature, label, target))
+		yield (fpath, lpath, tpath, frec, lrec, trec, '', '', '', *common_prep_fn(feature, label, target))
 
 def hyperopt_trials_to_df(trials):
 	"""
