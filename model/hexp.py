@@ -72,14 +72,14 @@ def hexp(argv):
 			run_model(mod_obj, feature, neg_label, neg_meta, db, trials_count)
 
 
-def run_model(mdl, features, label, meta, db, max_evals):
+def run_model(mdl, features, labels, meta, db, max_evals):
 	"""
 	Run the model over passed (features, labels) using metadata in meta.
 	"""
 	db_name, exp_name = meta['group']['name'], meta['exp']['name']
 	logdir = REPORT_DIR +sep.join([*db_name.split(','), *exp_name.split(',')]) +sep
 	makedir_if_not_exists(logdir)
-	obj = mdl.make_const_data_objective(features, label, logdir, exp_meta=meta)
+	obj = mdl.make_const_data_objective(features, labels, logdir, exp_meta=meta)
 	logging.info('{group}: {exp}'.format(group=db_name, exp=exp_name))
 
 	if (db is not None):
