@@ -1,0 +1,14 @@
+{
+	"reteod": {
+		"all": null,
+		"subsets": {
+			"raw_pba_oc_retxeod_reteod": {
+				"exact": ["pba_oc"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			}
+		}
+	}
+}

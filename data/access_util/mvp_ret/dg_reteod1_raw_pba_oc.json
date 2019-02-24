@@ -1,0 +1,18 @@
+{
+	"reteod": {
+		"all": {
+			"stage": "mutate",
+			"mutate_type": "reteod",
+			"raw_cat": "us_equity_index"
+		},
+		"subsets": {
+			"raw_pba_oc_retxeod_reteod": {
+				"desc": ["raw_pba_oc_retxeod(0.25%)_reteod",
+						"raw_pba_oc_retxeod(0.50%)_reteod",
+						"raw_pba_oc_retxeod(1.00%)_reteod",
+						"raw_pba_oc_retxeod(1.50%)_reteod",
+						"raw_pba_oc_retxeod(2.00%)_reteod"]
+			}
+		}
+	}
+}
