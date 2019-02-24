@@ -44,7 +44,7 @@ def hexp(argv):
 	logging.info('assets: {}'.format(str('all' if (assets==None) else ', '.join(assets))))
 
 	with MongoServer() as db:
-		for i, (fpath, lpath, _, frec, lrec, _, fcol, lcol, _, feature, label, _) in enumerate(datagen(dataset, feat_prep_fn=prepare_transpose_data, label_prep_fn=prepare_label_data, target_prep_fn=prepare_target_data, how='ser_to_ser')):
+		for i, (fpath, lpath, _, frec, lrec, _, fcol, lcol, _, feature, label, _) in enumerate(datagen(dataset, feat_prep_fn=prepare_transpose_data, label_prep_fn=prepare_label_data, target_prep_fn=prepare_target_data, how='df_to_ser')):
 			logging.info('parent exp {}'.format(i))
 			asset_name = fpath[0]
 			assert(asset_name==lpath[0])
