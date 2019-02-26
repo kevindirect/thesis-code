@@ -27,6 +27,7 @@ import pandas as pd
 from pandas.tseries.offsets import CustomBusinessDay, CustomBusinessHour
 from pandas.testing import assert_series_equal, assert_frame_equal
 from pandas.api.types import is_numeric_dtype
+from dask import delayed
 import humanize
 
 
@@ -108,8 +109,8 @@ Return string with escaped quotes enclosed around it.
 Useful for programs, commands, and engines with text interfaces that use
 enclosing quotes to recognize strings (like numexpr and sql).
 """
-quote_it = lambda string: '\'' +string +'\''
-
+quote_it = lambda string: '\'' +string +'\'' # XXX - Deprecated in favor of 'wrap_quotes'
+wrap_quotes = lambda string: '\'' +string +'\''
 wrap_parens = lambda string: '(' +string +')'
 
 def str_to_list(string, delimiter=',', cast_to=str):
@@ -220,7 +221,7 @@ def best_match(original_key, candidates, alt_maps=None):
 	else:									# inexact longest subseq match
 		match_len = [SequenceMatcher(None, original_key, can).find_longest_match(0, len(original_key), 0, len(can)).size for can in candidates]
 		match_key = candidates[match_len.index(max(match_len))]
-		logging.warn('using inexact match: ' +str(quote_it(original_key)) +' mapped to ' +str(quote_it(match_key)))
+		logging.warn('using inexact match: ' +str(wrap_quotes(original_key)) +' mapped to ' +str(wrap_quotes(match_key)))
 		return match_key
 
 """Dict"""
@@ -763,6 +764,7 @@ def dump_df(df, fname, dir_path=None, data_format=DF_DATA_FMT):
 
 """ ********** PANDAS GENERAL UTILS ********** """
 DEFAULT_IDX_NAME = 'id'
+ALL_COLS = ':'
 
 left_join = lambda a,b: a.join(b, how='left', sort=True)
 right_join = lambda a,b: a.join(b, how='right', sort=True)
@@ -961,6 +963,26 @@ def pd_common_idx_rows(*pd_objs):
 	if (is_type(common_idx, pd.core.index.MultiIndex)):
 		common_idx = common_idx.sortlevel(level=list(range(common_idx.nlevels)), sort_remaining=False)[0]
 	yield from (pd_rows(pd_obj, common_idx) for pd_obj in pd_objs)
+
+def pd_single_ser(pd_obj, col_idx=0, enforce_singleton=True):
+	"""
+	Return pandas object as one series.
+	This function is mainly used in data pipelines.
+
+	Args:
+		pd_obj (pd.Series or pd.DataFrame): Pandas object to convert to a single series
+		col_idx (int>=0): Column of DataFrame to return when relevant (only used if 'enforce_singleton' is 'False')
+		enforce_singleton (bool): Whether to only allow pd.Series or single column pd.DataFrame (otherwise throw Exception)
+	
+	Returns:
+		Pandas object as singleton
+	"""
+	if (is_ser(pd_obj)):
+		return pd_obj
+	elif (is_df(pd_obj)):
+		if (enforce_singleton and pd_obj.shape[1] > 1):
+			raise ValueError('Not a series or single column df and enforce_singleton is set True')
+		return pd_obj.iloc[:, col_idx]
 
 def df_count(df):
 	return df.count(axis=0)
@@ -1535,7 +1557,7 @@ def to_numexpr(key, val):
 	return {
 		int: partial(int_numexpr, key, str(val)),
 		float: partial(float_numexpr, key, str(val)),
-		str: partial(str_numexpr, key, quote_it(str(val))),
+		str: partial(str_numexpr, key, wrap_quotes(str(val))),
 		list: partial(list_numexpr, key, str(val)),
 		tuple: partial(tuple_numexpr, key, val)
 	}.get(type(val), DEFAULT_NUMEXPR)()

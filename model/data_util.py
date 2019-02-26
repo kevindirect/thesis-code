@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 from dask import delayed, compute
 
-from common_util import is_type, identity_fn, compose, dcompose, pd_idx_rename, pd_dti_idx_date_only, filter_cols_below, reindex_on_time_mask, df_downsample_transpose, ser_shift, pd_common_idx_rows, chained_filter
+from common_util import ALL_COLS, is_type, identity_fn, compose, dcompose, pd_idx_rename, pd_dti_idx_date_only, filter_cols_below, reindex_on_time_mask, df_downsample_transpose, pd_single_ser, ser_shift, pd_common_idx_rows, chained_filter
 from model.common import EXPECTED_NUM_HOURS
 from recon.dataset_util import gen_group
 from mutate.label_util import prep_labels
@@ -107,13 +107,14 @@ def prepare_label_data(label_ser, delayed=False):
 	Converts a single indexed intraday DataFrame into a MultiIndexed daily DataFrame.
 
 	Args:
-		label_ser (pd.Series): Label Series
+		label_ser (pd.Series or pd.DataFrame): Label Series or single column DataFrame
 		delayed (boolean): Whether or not to create a delayed function composition
 
 	Returns:
 		pd.Series or dask Delayed object
 	"""
 	preproc = (
+				pd_single_ser,							# Makes sure label_ser is a series or single column DataFrame
 				pd_dti_idx_date_only,					# Removes the time component of the DatetimeIndex index 
 				partial(ser_shift, cast_type=int),		# Shifts the series up by one slot and casts to int
 				pd_idx_rename							# Sets the index name to the default
@@ -126,13 +127,14 @@ def prepare_target_data(target_ser, delayed=False):
 	Converts a single indexed intraday DataFrame into a MultiIndexed daily DataFrame.
 
 	Args:
-		target_ser (pd.Series): Target Series
+		target_ser (pd.Series or pd.DataFrame): Target Series or single column DataFrame
 		delayed (boolean): Whether or not to create a delayed function composition
 
 	Returns:
 		pd.Series or dask Delayed object
 	"""
 	preproc = (
+				pd_single_ser,				# Makes sure target_ser is a series or single column DataFrame
 				pd_dti_idx_date_only,		# Removes the time component of the DatetimeIndex index 
 				ser_shift,					# Shifts the series up by one slot
 				pd_idx_rename				# Sets the index name to the default
@@ -153,37 +155,44 @@ def prepare_masked_labels(labels_df, label_types, label_filter):
 
 
 """ ********** DATA GENERATORS ********** """
-def datagen(dataset, feat_prep_fn=identity_fn, label_prep_fn=identity_fn, target_prep_fn=identity_fn, common_prep_fn=pd_common_idx_rows, how='df_to_ser'):
+def datagen(dataset, feat_prep_fn=identity_fn, label_prep_fn=identity_fn, target_prep_fn=identity_fn, common_prep_fn=pd_common_idx_rows, how='df_to_ser', delayed=False):
 	"""
 	Yield from data generation function.
+	Multiplexes different methods of iterating through the dataset.
 
 	Args:
 		dataset: a dataset (recursive dictionary of data returned by prep_dataset)
-		feat_prep_fn: final transform to run on the feature df/series
-		label_prep_fn: final transform to run on the label df/series
-		target_prep_fn: final transform to run on the target df/series
-		common_prep_fn: common transform to run after all specific transforms
-		how ('ser_to_ser' | 'df_to_ser' | 'ser_to_df'): how to serve the data
+		feat_prep_fn: transform to run on the feature df/series
+		label_prep_fn: transform to run on the label df/series
+		target_prep_fn: transform to run on the target df/series
+		common_prep_fn: final function to run on all the data at the end (oftentimes an index intersection function)
+		how ('ser_to_ser' | 'df_to_ser' | 'df_to_df'): how to serve the data
+		delayed (bool): whether or not to delay computation, only relevant if 'how' is set to 'df_to_df'
 
+	Yields from:
+		Generator of tuples of metadata/data
 	"""
 	datagen_fn = {
 		'ser_to_ser': datagen_ser_to_ser,
 		'df_to_ser': datagen_df_to_ser,
-		'df_to_df': datagen_df_to_df
+		'df_to_df': partial(datagen_df_to_df, delayed=delayed)
 	}.get(how)
 
 	yield from datagen_fn(dataset, feat_prep_fn, label_prep_fn, target_prep_fn, common_prep_fn)
 
 def datagen_ser_to_ser(dataset, feat_prep_fn, label_prep_fn, target_prep_fn, common_prep_fn):
 	"""
-	Yield data from the dataset by series product.
+	Yield data from the dataset by cartesian product of all feature to label/target series.
 
 	Args:
 		dataset: a dataset (recursive dictionary of data returned by prep_dataset)
-		feat_prep_fn: final transform to run on the feature series
-		label_prep_fn: final transform to run on the label series
-		target_prep_fn: final transform to run on the target series
+		feat_prep_fn: transform to run on the feature series
+		label_prep_fn: transform to run on the label series
+		target_prep_fn: transform to run on the target series
+		common_prep_fn: final function to run on all the data at the end (oftentimes an index intersection function)
 
+	Yields:
+		Tuples of metadata/data
 	"""
 	for paths, recs, dfs in gen_group(dataset, out=['recs', 'dfs']):
 		fpath, lpath, tpath, rpath = paths
@@ -204,14 +213,17 @@ def datagen_ser_to_ser(dataset, feat_prep_fn, label_prep_fn, target_prep_fn, com
 
 def datagen_df_to_ser(dataset, feat_prep_fn, label_prep_fn, target_prep_fn, common_prep_fn):
 	"""
-	Yield data from the dataset mapping feature df to each label column.
+	Yield data from the dataset by cartesian product of all feature dfs to label/target series.
 
 	Args:
 		dataset: a dataset (recursive dictionary of data returned by prep_dataset)
-		feat_prep_fn: final transform to run on the feature df
-		label_prep_fn: final transform to run on the label series
-		target_prep_fn: final transform to run on the target series
+		feat_prep_fn: transform to run on the feature df
+		label_prep_fn: transform to run on the label series
+		target_prep_fn: transform to run on the target series
+		common_prep_fn: final function to run on all the data at the end (oftentimes an index intersection function)
 
+	Yields:
+		Tuples of metadata/data
 	"""
 	for paths, recs, dfs in gen_group(dataset, out=['recs', 'dfs']):
 		fpath, lpath, tpath, rpath = paths
@@ -229,34 +241,41 @@ def datagen_df_to_ser(dataset, feat_prep_fn, label_prep_fn, target_prep_fn, comm
 			label = label_prep_fn(lab_df.loc[:, lcol]).dropna(axis=0, how='all')
 			target = target_prep_fn(tar_df.loc[:, tcol]).dropna(axis=0, how='all')
 			
-			yield (fpath, lpath, tpath, frec, lrec, trec, '*', lcol, tcol, *common_prep_fn(feature, label, target))
+			yield (fpath, lpath, tpath, frec, lrec, trec, ALL_COLS, lcol, tcol, *common_prep_fn(feature, label, target))
 
-def datagen_df_to_df(dataset, feat_prep_fn, label_prep_fn, target_prep_fn, common_prep_fn):
+def datagen_df_to_df(dataset, feat_prep_fn, label_prep_fn, target_prep_fn, common_prep_fn, delayed=False):
 	"""
-	Yield data from the dataset by df product.
+	Yield data from the dataset by cartesian product of all feature dfs to label/target dfs.
 
 	Args:
 		dataset: a dataset (recursive dictionary of data returned by prep_dataset)
-		feat_prep_fn: final transform to run on the feature df
-		label_prep_fn: final transform to run on the label df
-		target_prep_fn: final transform to run on the target df
+		feat_prep_fn: transform to run on the feature df
+		label_prep_fn: transform to run on the label df
+		target_prep_fn: transform to run on the target df
+		common_prep_fn: final function to run on all the data at the end (oftentimes an index intersection function)
+		delayed (bool): whether or not to delay computation
 
+	Yields:
+		Tuples of metadata/data or metadata/delayed
 	"""
 	for paths, recs, dfs in gen_group(dataset, out=['recs', 'dfs']):
 		fpath, lpath, tpath, rpath = paths
 		frec, lrec, trec, rrec = recs
-		feat_df, lab_df, tar_df, rm_df = (df.compute() for df in dfs)
+		feat_df, lab_df, tar_df, rm_df = dfs if (delayed) else (df.compute() for df in dfs)
 
 		logging.debug('fpath: {}'.format(str(fpath)))
 		logging.debug('lpath: {}'.format(str(lpath)))
 		logging.debug('tpath: {}'.format(str(tpath)))
 		logging.debug('rpath: {}'.format(str(rpath)))
 
-		feature = feat_prep_fn(feat_df, rm_df).dropna(axis=0, how='all')
-		label = label_prep_fn(lab_df).dropna(axis=0, how='all')
-		target = label_prep_fn(tar_df).dropna(axis=0, how='all')
+		feature = feat_prep_fn(feat_df, rm_df, delayed=delayed).dropna(axis=0, how='all')
+		label = label_prep_fn(lab_df, delayed=delayed).dropna(axis=0, how='all')
+		target = target_prep_fn(tar_df, delayed=delayed).dropna(axis=0, how='all')
 		
-		yield (fpath, lpath, tpath, frec, lrec, trec, '*', '*', '*', *common_prep_fn(feature, label, target))
+		if (delayed):
+			yield (fpath, lpath, tpath, frec, lrec, trec, ALL_COLS, ALL_COLS, ALL_COLS, dcompose(common_prep_fn)(feature, label, target))
+		else:
+			yield (fpath, lpath, tpath, frec, lrec, trec, ALL_COLS, ALL_COLS, ALL_COLS, *common_prep_fn(feature, label, target))
 
 def hyperopt_trials_to_df(trials):
 	"""
