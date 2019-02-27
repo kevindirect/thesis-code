@@ -670,6 +670,13 @@ def filter_null(arr):
 	"""
 	return arr[~pd.isnull(arr)]		# Filter None, NaN, and NaT values
 
+def np_inner(vals, nums, normalize=True):
+	"""
+	Return dot product of vals and nums, normalized by sum(nums) if desired.
+	"""
+	inner = np.dot(vals, nums)
+	return inner/np.sum(nums) if (normalize) else inner
+
 def arr_nonzero(arr, ret_idx=False, idx_norm=False, idx_shf=1):
 	"""
 	Return the the nonzero indices or values if they exists in the array.

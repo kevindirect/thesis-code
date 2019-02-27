@@ -14,7 +14,7 @@ from torch.utils.data import TensorDataset, DataLoader
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from tensorboardX import SummaryWriter
 
-from common_util import MODEL_DIR, identity_fn, is_type
+from common_util import MODEL_DIR, identity_fn, is_type, np_inner
 from model.common import PYTORCH_MODELS_DIR, ERROR_CODE, TEST_RATIO, VAL_RATIO
 
 
@@ -37,10 +37,7 @@ class Model:
 		self.space = {**default_space, **other_space}
 		self.tbx = lambda params, logdir: SummaryWriter(logdir) # Creates TensorBoardX logger
 		self.metrics_fns = {
-			'accuracy': accuracy_score,
-			'precision': precision_score,
-			'recall': recall_score,
-			'f1': f1_score
+			'acc': accuracy_score
 		}
 
 	def get_space(self):
@@ -137,8 +134,8 @@ class Model:
 		# logging.debug('batch tensor[0][0]: {}'.format(feat_batch[0][0]))
 		outputs_batch = model(feat_batch)
 		loss = loss_function(outputs_batch, lab_batch)
-		prediction_batch = torch.argmax(outputs_batch, dim=1) # Convert network outputs into predictions
-		metrics = {name: fn(lab_batch, prediction_batch) for name, fn in self.metrics_fns.items()}
+		max_batch, pred_batch = torch.max(outputs_batch, dim=1) # Convert network outputs into predictions
+		metrics = {name: fn(lab_batch, pred_batch) for name, fn in self.metrics_fns.items()}
 
 		if (optimizer is not None):
 			optimizer.zero_grad()
@@ -177,6 +174,10 @@ class Model:
 				'loss': [],
 				'val_loss': []
 			}
+			for name in self.metrics_fns.keys():
+				history[name] = []
+				history['val_{}'.format(name)] = []
+
 			loss_fn, opt = self.make_loss_fn(params).to(device), self.make_optimizer(params, model.parameters())
 			writer = self.tbx(params, logdir) if (logdir is not None) else None
 			model.zero_grad()
@@ -190,24 +191,36 @@ class Model:
 				losses, nums, metrics = zip(*[self.batch_loss(params, model, loss_fn, Xb, yb, optimizer=opt) for Xb, yb in self.batchify(params, self.preproc(params, train_data), device, shuffle_batches=True)])
 				# for Xb, yb in self.batchify(params, self.preproc(params, train_data), device, shuffle_batches=True):
 				# 	losses, nums, metrics = self.batch_loss(params, model, loss_fn, Xb, yb, optimizer=opt)
-				loss = np.sum(np.multiply(losses, nums)) / np.sum(nums)
+				loss = np_inner(losses, nums)
+				soa = {name[0]: tuple(d[name[0]] for d in metrics) for name in zip(*metrics)}
+				metric = {name: np_inner(vals, nums) for name, vals in soa.items()}
+
 				logging.debug('{} train loss: {}'.format(epoch_str, loss))
 				history['loss'].append(loss)
+				for name, val in metric.items():
+					history[name].append(val)
+
 				if (writer is not None):
 					writer.add_scalar('data/train/loss', loss, epoch)
-					writer.add_scalars('data/train/metrics', metrics, epoch)
+					writer.add_scalars('data/train/metric', metric, epoch)
 
 				logging.debug('{} w[-2:][-2:]: {}'.format(epoch_str, list(model.parameters())[-2:][-2:]))
 
 				model.eval()
 				with torch.no_grad():
 					losses, nums, metrics = zip(*[self.batch_loss(params, model, loss_fn, Xb, yb) for Xb, yb in self.batchify(params, self.preproc(params, val_data), device, shuffle_batches=False)])
-				loss = np.sum(np.multiply(losses, nums)) / np.sum(nums)
+				loss = np_inner(losses, nums)
+				soa = {name[0]: tuple(d[name[0]] for d in metrics) for name in zip(*metrics)}
+				metric = {name: np_inner(vals, nums) for name, vals in soa.items()}
+
 				logging.debug('{} val loss: {}'.format(epoch_str, loss))
 				history['val_loss'].append(loss)
+				for name, val in metric.items():
+					history['val_{}'.format(name)].append(val)
+
 				if (writer is not None):
 					writer.add_scalar('data/val/loss', loss, epoch)
-					writer.add_scalars('data/val/metrics', metrics, epoch)
+					writer.add_scalars('data/val/metric', metric, epoch)
 
 				logging.debug('{} w[-2:][-2:]: {}'.format(epoch_str, list(model.parameters())[-2:][-2:]))
 
@@ -216,15 +229,9 @@ class Model:
 				writer.close()
 
 			results = {
-				# 'history': history
-				'mean': {
-					'loss': np.mean(history['loss']),
-					'val_loss': np.mean(history['val_loss'])
-				},
-				'last': {
-					'loss': history['loss'][-1],
-					'val_loss': history['val_loss'][-1]
-				}
+				'history': history,
+				'mean': {name: np.mean(vals) for name, vals in history.items()},
+				'last': {name: vals[-1] for name, vals in history.items()}
 			}
 
 		except Exception as e:
