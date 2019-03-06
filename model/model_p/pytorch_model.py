@@ -208,7 +208,7 @@ class Model:
 
 				model.eval()
 				with torch.no_grad():
-					losses, nums, metrics = zip(*[self.batch_loss(params, model, loss_fn, Xb, yb) for Xb, yb in self.batchify(params, self.preproc(params, val_data), device, shuffle_batches=False)])
+					losses, nums, metrics = zip(*[self.batch_loss(params, model, loss_fn, Xb, yb) for Xb, yb in self.batchify(params, self.preproc(params, val_data), device, override_batch_size=val_data[-1].size, shuffle_batches=False)])
 				loss = np_inner(losses, nums)
 				soa = {name[0]: tuple(d[name[0]] for d in metrics) for name in zip(*metrics)}
 				metric = {name: np_inner(vals, nums) for name, vals in soa.items()}
