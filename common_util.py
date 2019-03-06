@@ -83,7 +83,7 @@ def is_type(obj, *types):
 	return any([isinstance(obj, tp) for tp in types])
 
 def isnt(obj):
-	return is_type(obj, NoneType)
+	return is_type(obj, type(None))
 
 def is_real_num(obj):
 	return is_type(obj, numbers.Real)
