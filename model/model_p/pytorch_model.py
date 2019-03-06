@@ -14,7 +14,7 @@ from torch.utils.data import TensorDataset, DataLoader
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from tensorboardX import SummaryWriter
 
-from common_util import MODEL_DIR, identity_fn, is_type, np_inner
+from common_util import MODEL_DIR, identity_fn, is_type, isnt, np_inner
 from model.common import PYTORCH_MODELS_DIR, ERROR_CODE, TEST_RATIO, VAL_RATIO
 
 
@@ -114,7 +114,7 @@ class Model:
 		"""
 		return identity_fn(data)
 
-	def batchify(self, params, data, device, shuffle_batches=False):
+	def batchify(self, params, data, device, override_batch_size=None, shuffle_batches=False):
 		"""
 		Takes in final numpy data and returns torch DataLoader over torch tensor minibatches of specified torch device.
 		"""
@@ -124,7 +124,7 @@ class Model:
 		elif (params['loss'] in ['ce', 'nll']):
 			l = [torch.tensor(d, dtype=torch.int64, device=device, requires_grad=False).squeeze() for d in data[1:]]
 		ds = TensorDataset(f, *l)
-		dl = DataLoader(ds, batch_size=params['batch_size'], shuffle=shuffle_batches)
+		dl = DataLoader(ds, batch_size=params['batch_size'] if (isnt(override_batch_size)) else override_batch_size, shuffle=shuffle_batches)
 		return dl
 
 	def batch_loss(self, params, model, loss_function, feat_batch, lab_batch, optimizer=None):
