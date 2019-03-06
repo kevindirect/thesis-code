@@ -14,7 +14,7 @@ from torch.utils.data import TensorDataset, DataLoader
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from tensorboardX import SummaryWriter
 
-from common_util import MODEL_DIR, identity_fn, is_type, isnt, np_inner
+from common_util import MODEL_DIR, identity_fn, is_type, isnt, np_inner, get0
 from model.common import PYTORCH_MODELS_DIR, ERROR_CODE, TEST_RATIO, VAL_RATIO
 
 
@@ -127,7 +127,7 @@ class Model:
 		dl = DataLoader(ds, batch_size=params['batch_size'] if (isnt(override_batch_size)) else override_batch_size, shuffle=shuffle_batches)
 		return dl
 
-	def batch_loss(self, params, model, loss_function, feat_batch, lab_batch, optimizer=None):
+	def batch_loss(self, params, model, loss_function, feat_batch, lab_batch, optimizer=None, ret_train_pred=False):
 		"""
 		Compute loss and metrics on batch, run optimizer on losses if passed.
 		"""
@@ -141,10 +141,11 @@ class Model:
 			optimizer.zero_grad()
 			loss.backward()
 			optimizer.step()
+			if (not ret_train_pred):
+				return loss.item(), len(feat_batch), metrics
 
-		logging.debug('batch loss:   {}'.format(loss.item()))
-
-		return loss.item(), len(feat_batch), metrics
+		# logging.debug('batch loss:   {}'.format(loss.item()))
+		return loss.item(), len(feat_batch), metrics, (max_batch, pred_batch)
 
 	def make_model(self, params, input_shape):
 		"""
@@ -208,10 +209,8 @@ class Model:
 
 				model.eval()
 				with torch.no_grad():
-					losses, nums, metrics = zip(*[self.batch_loss(params, model, loss_fn, Xb, yb) for Xb, yb in self.batchify(params, self.preproc(params, val_data), device, override_batch_size=val_data[-1].size, shuffle_batches=False)])
-				loss = np_inner(losses, nums)
-				soa = {name[0]: tuple(d[name[0]] for d in metrics) for name in zip(*metrics)}
-				metric = {name: np_inner(vals, nums) for name, vals in soa.items()}
+					Xe, ye = get0(*self.batchify(params, self.preproc(params, val_data), dev, override_batch_size=val_data[-1].size, shuffle_batches=False))
+					loss, num, metric, pred = self.batch_loss(params, model, loss_fn, Xe, ye)
 
 				logging.debug('{} val loss: {}'.format(epoch_str, loss))
 				history['val_loss'].append(loss)
