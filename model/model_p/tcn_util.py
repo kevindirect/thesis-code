@@ -161,7 +161,7 @@ class TCN_Classifier(nn.Module):
 		num_input_channels (int): number of input channels
 		channels (list): list of output channel sizes in order from first to last
 		num_outputs (int): number of outputs, usually the number of classes to predict (defaults to binary case)
-		kernel_size (int > 1): CNN kernel size 
+		kernel_size (int > 1): CNN kernel size
 		dropout (float [0, 1]): dropout probability, probability of an element to be zeroed during training
 		attention (bool): whether or not to include attention block after each tcn block
 		max_attn_len (int > 0): max length of attention (only relevant if attention is set to True)
@@ -173,6 +173,7 @@ class TCN_Classifier(nn.Module):
 			self.linear = nn.Linear(max_attn_len, num_outputs) # TODO - verify correctness of using max_attn_len as input size to output layer
 		else:
 			self.linear = nn.Linear(channels[-1], num_outputs)
+		self.logprob = nn.LogSoftmax(dim=1)
 
 	def forward(self, x):
 		"""
@@ -186,5 +187,6 @@ class TCN_Classifier(nn.Module):
 			C_out: number of classes
 		"""
 		out_embedding = self.tcn(x)
-		out = self.linear(out_embedding[:, :, -1])
+		out_score = self.linear(out_embedding[:, :, -1])
+		out = self.logprob(out_score)
 		return out
