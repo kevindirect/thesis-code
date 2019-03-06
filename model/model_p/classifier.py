@@ -29,7 +29,7 @@ class Classifier(Model):
 	"""
 	def __init__(self, other_space={}):
 		default_space = {
-			'loss': hp.choice('loss', ['ce']),
+			'loss': hp.choice('loss', ['nll']),
 			'opt': hp.choice('opt', [
 			# 	{'name': 'RMSprop', 'lr': hp.choice('RMSprop_lr', [0.002, 0.001, 0.0005])},
 				{'name': 'Adam', 'lr': hp.uniform('Adam_lr', 0.0005, 0.0025)}
@@ -64,7 +64,7 @@ class Classifier(Model):
 			labels (pd.DataFrame or pd.Series): labels df or series
 			exp_logdir (str): path to the logging directory of the objective function (no logging if not supplied)
 			exp_meta (dict): any additional key-value metadata to log for the experiment (locals are automatically logged)
-			clf_type ('binary'|'categorical'): the classifier type 
+			clf_type ('binary'|'categorical'): the classifier type
 			meta_obj (str): the name of the loss to return after the objective function is run
 			obj_agg ('last'|'mean'): the method to aggregate the objective function
 			obj_mode ('min'|'max'): indicates whether the meta objective should be minimized or maximized
@@ -148,7 +148,7 @@ class Classifier(Model):
 
 	def make_var_data_objective(self, raw_features, raw_labels, features_fn, labels_fn, exp_logdir, exp_meta=None, clf_type='binary',
 									meta_obj='val_acc', obj_agg='last', obj_mode='max', meta_var=None,
-									retain_holdout=True, test_ratio=TEST_RATIO, val_ratio=VAL_RATIO, shuffle=False):		
+									retain_holdout=True, test_ratio=TEST_RATIO, val_ratio=VAL_RATIO, shuffle=False):
 		"""
 		Return an objective function that hyperopt can use that can search over features and labels along with the hyperparameters.
 		"""
