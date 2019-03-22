@@ -560,7 +560,7 @@ def load_json(fname, dir_path=None):
 			try:
 				return load(json_data)
 			except Exception as e:
-				logging.error('error in file', str(fname +':'), str(e))
+				logging.error('error in file {fname}: {err}'.format(fname=str(fname), err=str(e)))
 				raise e
 	else:
 		raise FileNotFoundError(str(basename(fpath) +' must be in: ' +dirname(fpath)))

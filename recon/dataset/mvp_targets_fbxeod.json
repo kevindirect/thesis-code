@@ -1,0 +1,6 @@
+{
+	"targets": [
+		["mvp_ret", "cretfbxeod1_raw_pba_oc"],
+		["mvp_ret", "cretfbxeod2_raw_pba_oc"]
+	]
+}
