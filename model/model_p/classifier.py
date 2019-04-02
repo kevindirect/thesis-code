@@ -37,12 +37,12 @@ class Classifier(Model):
 		}
 		super(Classifier, self).__init__({**default_space, **other_space})
 
-	def make_loss_fn(self, params):
+	def make_loss_fn(self, params, class_weights=None):
 		"""
 		Make pytorch loss function object based on passed params.
 		"""
 		loss_fn = PYTORCH_LOSS_TRANSLATOR.get(params['loss'])
-		return loss_fn()
+		return loss_fn(weight=class_weights)
 
 	def make_optimizer(self, params, model_params):
 		"""

@@ -170,9 +170,9 @@ class TCN_Classifier(nn.Module):
 		super(TCN_Classifier, self).__init__()
 		self.tcn = TemporalConvNet(num_input_channels, channels, kernel_size=kernel_size, dropout=dropout, attention=attention, max_attn_len=max_attn_len)
 		if (attention):
-			self.linear = nn.Linear(max_attn_len, num_outputs) # TODO - verify correctness of using max_attn_len as input size to output layer
+			self.out = nn.Linear(max_attn_len, num_outputs) # TODO - verify correctness of using max_attn_len as input size to output layer
 		else:
-			self.linear = nn.Linear(channels[-1], num_outputs)
+			self.out = nn.Linear(channels[-1], num_outputs)
 		self.logprob = nn.LogSoftmax(dim=1)
 
 	def forward(self, x):
@@ -187,6 +187,6 @@ class TCN_Classifier(nn.Module):
 			C_out: number of classes
 		"""
 		out_embedding = self.tcn(x)
-		out_score = self.linear(out_embedding[:, :, -1])
-		out = self.logprob(out_score)
-		return out
+		out_score = self.out(out_embedding[:, :, -1])
+		out_prob = self.logprob(out_score)
+		return out_prob

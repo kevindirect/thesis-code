@@ -145,7 +145,7 @@ class Model:
 				return loss.item(), len(feat_batch), metrics
 
 		# logging.debug('batch loss:   {}'.format(loss.item()))
-		return loss.item(), len(feat_batch), metrics, (max_batch, pred_batch)
+		return loss.item(), len(feat_batch), metrics, (max_batch.exp(), pred_batch.float())
 
 	def make_model(self, params, input_shape):
 		"""
