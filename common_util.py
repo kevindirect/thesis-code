@@ -1648,6 +1648,18 @@ def chained_filter(str_list, qualifier_dict_list):
 
 
 """ ********** PYTORCH GENERAL UTILS ********** """
+def pyt_reverse_dim_order(pyt):
+	"""
+	Reverse the order of the dimensions of the passed tensor.
+
+	Args:
+		pyt (torch.tensor): Tensor to reverse dimensions of
+
+	Returns:
+		View of the torch.tensor passed in with dimension order reversed
+	"""
+	return torch.reshape(pyt, pyt.shape[::-1])
+
 def pyt_unsqueeze_to(pyt, dim, append_right=True):
 	"""
 	Unsqueeze the passed pytorch tensor to given number of dimensions.
