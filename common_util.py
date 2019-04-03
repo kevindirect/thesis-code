@@ -27,6 +27,7 @@ import pandas as pd
 from pandas.tseries.offsets import CustomBusinessDay, CustomBusinessHour
 from pandas.testing import assert_series_equal, assert_frame_equal
 from pandas.api.types import is_numeric_dtype
+import torch
 from dask import delayed
 import humanize
 
@@ -1644,7 +1645,6 @@ def chained_filter(str_list, qualifier_dict_list):
 		qualifier_dict_list = [qualifier_dict_list]
 
 	return reduce(get_subset, qualifier_dict_list, str_list)
-
 
 
 """ ********** PYTORCH GENERAL UTILS ********** """
