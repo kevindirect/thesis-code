@@ -1646,6 +1646,32 @@ def chained_filter(str_list, qualifier_dict_list):
 	return reduce(get_subset, qualifier_dict_list, str_list)
 
 
+
+""" ********** PYTORCH GENERAL UTILS ********** """
+def pyt_unsqueeze_to(pyt, dim, append_right=True):
+	"""
+	Unsqueeze the passed pytorch tensor to given number of dimensions.
+	If the tensor already has 'dim' dimensions or more, it is returned unchanged.
+
+	Args:
+		pyt (torch.tensor): Tensor to unsqueeze
+		dim (int > 0): Desired number of dimensions to unsqueeze to
+		append_right (bool): Whether to append singleton dimensions to the right or left side of tensor
+	
+	Returns:
+		Unsqueezed torch.tensor with 'dim' dimensions or more
+	"""
+	append_dim = -1 if (append_right) else 0
+	cur_dim = pyt.dim()
+	dim_diff = dim - cur_dim
+
+	if (dim_diff > 0):
+		for d in range(dim_diff):
+			pyt = pyt.unsqueeze(dim=append_dim)
+
+	return pyt
+
+
 """ ********** DEBUGGING UTILS ********** """
 DEFAULT_LOG_LEVEL = logging.INFO
 
