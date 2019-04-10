@@ -137,7 +137,7 @@ class DataAPI:
 			with benchmark('', suppress=True) as b:
 				entry['size'] = dump_df(df, entry['name'], dir_path=dump_location)
 
-			entry['dumptime'] = round(b.time, 2)
+			entry['dumptime'] = round(b.delta.total_seconds(), 2)
 			entry['hash'] = sum(hash_pandas_object(df))
 			addition = pd.DataFrame(columns=DR_COLS, index=[entry['id']])
 

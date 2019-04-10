@@ -774,10 +774,10 @@ def dump_df(df, fname, dir_path=None, data_format=DF_DATA_FMT):
 DEFAULT_IDX_NAME = 'id'
 ALL_COLS = ':'
 
-left_join = lambda a,b: a.join(b, how='left', sort=True)
-right_join = lambda a,b: a.join(b, how='right', sort=True)
-inner_join = lambda a,b: a.join(b, how='inner', sort=True)
-outer_join = lambda a,b: a.join(b, how='outer', sort=True)
+left_join = lambda a, b, l=EMPTY_STR, r=EMPTY_STR, s=True, **kwargs: a.join(b, how='left', lsuffix=l, rsuffix=r, sort=s, **kwargs)
+right_join = lambda a, b, l=EMPTY_STR, r=EMPTY_STR, s=True, **kwargs: a.join(b, how='right', lsuffix=l, rsuffix=r, sort=s, **kwargs)
+inner_join = lambda a, b, l=EMPTY_STR, r=EMPTY_STR, s=True, **kwargs: a.join(b, how='inner', lsuffix=l, rsuffix=r, sort=s, **kwargs)
+outer_join = lambda a, b, l=EMPTY_STR, r=EMPTY_STR, s=True, **kwargs: a.join(b, how='outer', lsuffix=l, rsuffix=r, sort=s, **kwargs)
 
 def pd_rows(pd_obj, idx):
 	"""
