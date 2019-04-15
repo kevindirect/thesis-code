@@ -8,9 +8,6 @@
 		"subsets": {
 			"raw_pba_oc_retxeod_direod": {
 				"desc": "raw_pba_oc_retxeod_direod"
-			},
-			"raw_pba_oa_retxeod_direod": {
-				"desc": "raw_pba_oa_retxeod_direod"
 			}
 		}
 	}

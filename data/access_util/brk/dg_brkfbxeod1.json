@@ -7,46 +7,88 @@
 		},
 		"subsets": {
 			"raw_pba_oc_cretxeod_brkfbxeod": {
-				"desc": ["raw_pba_oc_cretxeod(0.25%)_brkfbxeod",
-						"raw_pba_oc_cretxeod(0.50%)_brkfbxeod",
-						"raw_pba_oc_cretxeod(1.00%)_brkfbxeod",
-						"raw_pba_oc_cretxeod(1.50%)_brkfbxeod",
-						"raw_pba_oc_cretxeod(2.00%)_brkfbxeod"]
+				"desc": ["raw_pba_oc_cretxeod(0.062500%)_brkfbxeod",
+						"raw_pba_oc_cretxeod(0.125000%)_brkfbxeod",
+						"raw_pba_oc_cretxeod(0.250000%)_brkfbxeod",
+						"raw_pba_oc_cretxeod(0.500000%)_brkfbxeod",
+						"raw_pba_oc_cretxeod(1.000000%)_brkfbxeod",
+						"raw_pba_oc_cretxeod(2.000000%)_brkfbxeod",
+						"raw_pba_oc_cretxeod(3.000000%)_brkfbxeod",
+						"raw_pba_oc_cretxeod(4.000000%)_brkfbxeod",
+						"raw_pba_oc_cretxeod(5.000000%)_brkfbxeod",
+						"raw_pba_oc_cretxeod(6.000000%)_brkfbxeod",
+						"raw_pba_oc_cretxeod(7.000000%)_brkfbxeod",
+						"raw_pba_oc_cretxeod(8.000000%)_brkfbxeod"]
 			},
 			"raw_pba_oa_cretxeod_brkfbxeod": {
-				"desc": ["raw_pba_oa_cretxeod(0.25%)_brkfbxeod",
-						"raw_pba_oa_cretxeod(0.50%)_brkfbxeod",
-						"raw_pba_oa_cretxeod(1.00%)_brkfbxeod",
-						"raw_pba_oa_cretxeod(1.50%)_brkfbxeod",
-						"raw_pba_oa_cretxeod(2.00%)_brkfbxeod"]
+				"desc": ["raw_pba_oa_cretxeod(0.062500%)_brkfbxeod",
+						"raw_pba_oa_cretxeod(0.125000%)_brkfbxeod",
+						"raw_pba_oa_cretxeod(0.250000%)_brkfbxeod",
+						"raw_pba_oa_cretxeod(0.500000%)_brkfbxeod",
+						"raw_pba_oa_cretxeod(1.000000%)_brkfbxeod",
+						"raw_pba_oa_cretxeod(2.000000%)_brkfbxeod",
+						"raw_pba_oa_cretxeod(3.000000%)_brkfbxeod",
+						"raw_pba_oa_cretxeod(4.000000%)_brkfbxeod",
+						"raw_pba_oa_cretxeod(5.000000%)_brkfbxeod",
+						"raw_pba_oa_cretxeod(6.000000%)_brkfbxeod",
+						"raw_pba_oa_cretxeod(7.000000%)_brkfbxeod",
+						"raw_pba_oa_cretxeod(8.000000%)_brkfbxeod"]
 			},
 			"raw_pba_lh_cretxeod_brkfbxeod": {
-				"desc": ["raw_pba_lh_cretxeod(0.25%)_brkfbxeod",
-						"raw_pba_lh_cretxeod(0.50%)_brkfbxeod",
-						"raw_pba_lh_cretxeod(1.00%)_brkfbxeod",
-						"raw_pba_lh_cretxeod(1.50%)_brkfbxeod",
-						"raw_pba_lh_cretxeod(2.00%)_brkfbxeod"]
+				"desc": ["raw_pba_lh_cretxeod(0.062500%)_brkfbxeod",
+						"raw_pba_lh_cretxeod(0.125000%)_brkfbxeod",
+						"raw_pba_lh_cretxeod(0.250000%)_brkfbxeod",
+						"raw_pba_lh_cretxeod(0.500000%)_brkfbxeod",
+						"raw_pba_lh_cretxeod(1.000000%)_brkfbxeod",
+						"raw_pba_lh_cretxeod(2.000000%)_brkfbxeod",
+						"raw_pba_lh_cretxeod(3.000000%)_brkfbxeod",
+						"raw_pba_lh_cretxeod(4.000000%)_brkfbxeod",
+						"raw_pba_lh_cretxeod(5.000000%)_brkfbxeod",
+						"raw_pba_lh_cretxeod(6.000000%)_brkfbxeod",
+						"raw_pba_lh_cretxeod(7.000000%)_brkfbxeod",
+						"raw_pba_lh_cretxeod(8.000000%)_brkfbxeod"]
 			},
 			"raw_vol_oc_cretxeod_brkfbxeod": {
-				"desc": ["raw_vol_oc_cretxeod(0.25%)_brkfbxeod",
-						"raw_vol_oc_cretxeod(0.50%)_brkfbxeod",
-						"raw_vol_oc_cretxeod(1.00%)_brkfbxeod",
-						"raw_vol_oc_cretxeod(1.50%)_brkfbxeod",
-						"raw_vol_oc_cretxeod(2.00%)_brkfbxeod"]
+				"desc": ["raw_vol_oc_cretxeod(0.062500%)_brkfbxeod",
+						"raw_vol_oc_cretxeod(0.125000%)_brkfbxeod",
+						"raw_vol_oc_cretxeod(0.250000%)_brkfbxeod",
+						"raw_vol_oc_cretxeod(0.500000%)_brkfbxeod",
+						"raw_vol_oc_cretxeod(1.000000%)_brkfbxeod",
+						"raw_vol_oc_cretxeod(2.000000%)_brkfbxeod",
+						"raw_vol_oc_cretxeod(3.000000%)_brkfbxeod",
+						"raw_vol_oc_cretxeod(4.000000%)_brkfbxeod",
+						"raw_vol_oc_cretxeod(5.000000%)_brkfbxeod",
+						"raw_vol_oc_cretxeod(6.000000%)_brkfbxeod",
+						"raw_vol_oc_cretxeod(7.000000%)_brkfbxeod",
+						"raw_vol_oc_cretxeod(8.000000%)_brkfbxeod"]
 			},
 			"raw_vol_oa_cretxeod_brkfbxeod": {
-				"desc": ["raw_vol_oa_cretxeod(0.25%)_brkfbxeod",
-						"raw_vol_oa_cretxeod(0.50%)_brkfbxeod",
-						"raw_vol_oa_cretxeod(1.00%)_brkfbxeod",
-						"raw_vol_oa_cretxeod(1.50%)_brkfbxeod",
-						"raw_vol_oa_cretxeod(2.00%)_brkfbxeod"]
+				"desc": ["raw_vol_oa_cretxeod(0.062500%)_brkfbxeod",
+						"raw_vol_oa_cretxeod(0.125000%)_brkfbxeod",
+						"raw_vol_oa_cretxeod(0.250000%)_brkfbxeod",
+						"raw_vol_oa_cretxeod(0.500000%)_brkfbxeod",
+						"raw_vol_oa_cretxeod(1.000000%)_brkfbxeod",
+						"raw_vol_oa_cretxeod(2.000000%)_brkfbxeod",
+						"raw_vol_oa_cretxeod(3.000000%)_brkfbxeod",
+						"raw_vol_oa_cretxeod(4.000000%)_brkfbxeod",
+						"raw_vol_oa_cretxeod(5.000000%)_brkfbxeod",
+						"raw_vol_oa_cretxeod(6.000000%)_brkfbxeod",
+						"raw_vol_oa_cretxeod(7.000000%)_brkfbxeod",
+						"raw_vol_oa_cretxeod(8.000000%)_brkfbxeod"]
 			},
 			"raw_vol_lh_cretxeod_brkfbxeod": {
-				"desc": ["raw_vol_lh_cretxeod(0.25%)_brkfbxeod",
-						"raw_vol_lh_cretxeod(0.50%)_brkfbxeod",
-						"raw_vol_lh_cretxeod(1.00%)_brkfbxeod",
-						"raw_vol_lh_cretxeod(1.50%)_brkfbxeod",
-						"raw_vol_lh_cretxeod(2.00%)_brkfbxeod"]
+				"desc": ["raw_vol_lh_cretxeod(0.062500%)_brkfbxeod",
+						"raw_vol_lh_cretxeod(0.125000%)_brkfbxeod",
+						"raw_vol_lh_cretxeod(0.250000%)_brkfbxeod",
+						"raw_vol_lh_cretxeod(0.500000%)_brkfbxeod",
+						"raw_vol_lh_cretxeod(1.000000%)_brkfbxeod",
+						"raw_vol_lh_cretxeod(2.000000%)_brkfbxeod",
+						"raw_vol_lh_cretxeod(3.000000%)_brkfbxeod",
+						"raw_vol_lh_cretxeod(4.000000%)_brkfbxeod",
+						"raw_vol_lh_cretxeod(5.000000%)_brkfbxeod",
+						"raw_vol_lh_cretxeod(6.000000%)_brkfbxeod",
+						"raw_vol_lh_cretxeod(7.000000%)_brkfbxeod",
+						"raw_vol_lh_cretxeod(8.000000%)_brkfbxeod"]
 			}
 		}
 	}

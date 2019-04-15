@@ -2,7 +2,7 @@
 	"features": [
 		["norm", "dnorm_raw_pba_ohlca"]
 	],
-	"labels": "mvp_labels_eod.json",
-	"targets": "mvp_targets_eod.json",
+	"labels": "labels.json",
+	"targets": "targets.json",
 	"row_masks": "row_masks.json"
 }

@@ -1,0 +1,49 @@
+{
+	"brkfbxeod": {
+		"all": null,
+		"subsets": {
+			"raw_pba_oc_cretxeod_brkfbxeod": {
+				"exact": ["pba_oc"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			"raw_pba_oa_cretxeod_brkfbxeod": {
+				"exact": ["pba_oa"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			"raw_pba_lh_cretxeod_brkfbxeod": {
+				"exact": ["pba_lh"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			"raw_vol_oc_cretxeod_brkfbxeod": {
+				"exact": ["vol_oc"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			"raw_vol_oa_cretxeod_brkfbxeod": {
+				"exact": ["vol_oa"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			"raw_vol_lh_cretxeod_brkfbxeod": {
+				"exact": ["vol_lh"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			}
+		}
+	}
+}

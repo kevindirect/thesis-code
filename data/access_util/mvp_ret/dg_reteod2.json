@@ -11,12 +11,6 @@
 						"raw_pba_oc_retxeod(0.5*std,1)_reteod", "raw_pba_oc_retxeod(1*std,1)_reteod", "raw_pba_oc_retxeod(2*std,1)_reteod",
 						"raw_pba_oc_retxeod(0.5*max,1)_reteod", "raw_pba_oc_retxeod(1*max,1)_reteod", "raw_pba_oc_retxeod(2*max,1)_reteod",
 						"raw_pba_oc_retxeod(0.5*min,1)_reteod", "raw_pba_oc_retxeod(1*min,1)_reteod", "raw_pba_oc_retxeod(2*min,1)_reteod"]
-			},
-			"raw_pba_oa_retxeod_reteod": {
-				"desc": ["raw_pba_oa_retxeod(0.5*avg,1)_reteod", "raw_pba_oa_retxeod(1*avg,1)_reteod", "raw_pba_oa_retxeod(2*avg,1)_reteod",
-						"raw_pba_oa_retxeod(0.5*std,1)_reteod", "raw_pba_oa_retxeod(1*std,1)_reteod", "raw_pba_oa_retxeod(2*std,1)_reteod",
-						"raw_pba_oa_retxeod(0.5*max,1)_reteod", "raw_pba_oa_retxeod(1*max,1)_reteod", "raw_pba_oa_retxeod(2*max,1)_reteod",
-						"raw_pba_oa_retxeod(0.5*min,1)_reteod", "raw_pba_oa_retxeod(1*min,1)_reteod", "raw_pba_oa_retxeod(2*min,1)_reteod"]
 			}
 		}
 	}

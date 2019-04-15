@@ -1,0 +1,71 @@
+{
+	"reteod": {
+		"all": {
+			"stage": "mutate",
+			"mutate_type": "reteod",
+			"raw_cat": "us_equity_index"
+		},
+		"subsets": {
+			"raw_pba_oc_retxeod_reteod": {
+				"desc": ["raw_pba_oc_retxeod(1.000000%)_reteod",
+						"raw_pba_oc_retxeod(2.000000%)_reteod",
+						"raw_pba_oc_retxeod(3.000000%)_reteod",
+						"raw_pba_oc_retxeod(4.000000%)_reteod",
+						"raw_pba_oc_retxeod(5.000000%)_reteod",
+						"raw_pba_oc_retxeod(6.000000%)_reteod",
+						"raw_pba_oc_retxeod(7.000000%)_reteod",
+						"raw_pba_oc_retxeod(8.000000%)_reteod"]
+			},
+			"raw_pba_oa_retxeod_reteod": {
+				"desc": ["raw_pba_oa_retxeod(1.000000%)_reteod",
+						"raw_pba_oa_retxeod(2.000000%)_reteod",
+						"raw_pba_oa_retxeod(3.000000%)_reteod",
+						"raw_pba_oa_retxeod(4.000000%)_reteod",
+						"raw_pba_oa_retxeod(5.000000%)_reteod",
+						"raw_pba_oa_retxeod(6.000000%)_reteod",
+						"raw_pba_oa_retxeod(7.000000%)_reteod",
+						"raw_pba_oa_retxeod(8.000000%)_reteod"]
+			},
+			"raw_pba_lh_retxeod_reteod": {
+				"desc": ["raw_pba_lh_retxeod(1.000000%)_reteod",
+						"raw_pba_lh_retxeod(2.000000%)_reteod",
+						"raw_pba_lh_retxeod(3.000000%)_reteod",
+						"raw_pba_lh_retxeod(4.000000%)_reteod",
+						"raw_pba_lh_retxeod(5.000000%)_reteod",
+						"raw_pba_lh_retxeod(6.000000%)_reteod",
+						"raw_pba_lh_retxeod(7.000000%)_reteod",
+						"raw_pba_lh_retxeod(8.000000%)_reteod"]
+			},
+			"raw_vol_oc_retxeod_reteod": {
+				"desc": ["raw_vol_oc_retxeod(1.000000%)_reteod",
+						"raw_vol_oc_retxeod(2.000000%)_reteod",
+						"raw_vol_oc_retxeod(3.000000%)_reteod",
+						"raw_vol_oc_retxeod(4.000000%)_reteod",
+						"raw_vol_oc_retxeod(5.000000%)_reteod",
+						"raw_vol_oc_retxeod(6.000000%)_reteod",
+						"raw_vol_oc_retxeod(7.000000%)_reteod",
+						"raw_vol_oc_retxeod(8.000000%)_reteod"]
+			},
+			"raw_vol_oa_retxeod_reteod": {
+				"desc": ["raw_vol_oa_retxeod(1.000000%)_reteod",
+						"raw_vol_oa_retxeod(2.000000%)_reteod",
+						"raw_vol_oa_retxeod(3.000000%)_reteod",
+						"raw_vol_oa_retxeod(4.000000%)_reteod",
+						"raw_vol_oa_retxeod(5.000000%)_reteod",
+						"raw_vol_oa_retxeod(6.000000%)_reteod",
+						"raw_vol_oa_retxeod(7.000000%)_reteod",
+						"raw_vol_oa_retxeod(8.000000%)_reteod"]
+			},
+			"raw_vol_lh_retxeod_reteod": {
+				"desc": ["raw_vol_lh_retxeod(1.000000%)_reteod",
+						"raw_vol_lh_retxeod(2.000000%)_reteod",
+						"raw_vol_lh_retxeod(3.000000%)_reteod",
+						"raw_vol_lh_retxeod(4.000000%)_reteod",
+						"raw_vol_lh_retxeod(5.000000%)_reteod",
+						"raw_vol_lh_retxeod(6.000000%)_reteod",
+						"raw_vol_lh_retxeod(7.000000%)_reteod",
+						"raw_vol_lh_retxeod(8.000000%)_reteod"]
+			}
+		}
+	}
+}

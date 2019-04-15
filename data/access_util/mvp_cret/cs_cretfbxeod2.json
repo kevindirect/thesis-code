@@ -8,13 +8,6 @@
 				"endswith": [],
 				"regex": [],
 				"exclude": null
-			},
-			"raw_pba_oa_cretxeod_cretfbxeod": {
-				"exact": ["pba_oa"],
-				"startswith": [],
-				"endswith": [],
-				"regex": [],
-				"exclude": null
 			}
 		}
 	}

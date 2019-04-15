@@ -2,5 +2,6 @@
 	"features": [
 		["srf", "drl"]
 	],
-	"labels": "labels.json"
+	"labels": "labels.json",
+	"targets": "targets.json"
 }

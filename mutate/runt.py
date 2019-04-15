@@ -14,6 +14,26 @@ from data.access_util import df_getters as dg, col_subsetters2 as cs2
 from mutate.common import default_runt_dir_name, default_trfs_dir_name
 from mutate.runt_util import RUNT_FN_TRANSLATOR, RUNT_TYPE_TRANSLATOR, RUNT_NMAP_TRANSLATOR, RUNT_FREQ_TRANSLATOR
 
+"""
+TODO:
+	* Default: Run soft sync based on changes to specified graph/runt-dir and datetime of last run
+		* Serialize a LAST_RUNTED datetime variable and reload it on each runt, and write to it at the end of each runt
+		* Use git or another serialized variable to check if runt_dir had been changed later than LAST_RUNTED
+			* If true, run soft sync
+	* Parellilize the running of transforms (dask?)
+		* If using dask:
+			* Soft - (default) only compute dfs that are out of date or aren't in the data record
+			* Hard - compute all dfs for each each step run (overwrite existing)
+	* Log the results of this script to a file
+	* Add more commandline options:
+		- s (--sync=): syncs steps provided (if none are provided looks in visited node history)
+		- d (--deps): soft sync dependencies in addition to steps
+		- h (--hard): hard syncing of steps (and dependencies if -d is set)
+		- c (--clean): removes records from data_record that are no longer in the specified graph out of record and disk
+
+	* Autogenerate basic access utils for all dumped data
+		- Enumerate all metadata about the dumped data
+"""
 
 def run_transforms(argv):
 	logging.basicConfig(stream=sys.stdout, level=logging.INFO)

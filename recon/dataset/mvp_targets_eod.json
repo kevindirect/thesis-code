@@ -1,7 +1,0 @@
-{
-	"targets": [
-		["mvp_ret", "reteod_raw_pba_oc"],
-		["mvp_ret", "reteod1_raw_pba_oc"],
-		["mvp_ret", "reteod2_raw_pba_oc"]
-	]
-}

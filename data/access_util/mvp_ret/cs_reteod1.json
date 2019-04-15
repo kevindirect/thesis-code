@@ -8,13 +8,6 @@
 				"endswith": [],
 				"regex": [],
 				"exclude": null
-			},
-			"raw_pba_oa_retxeod_reteod": {
-				"exact": ["pba_oa"],
-				"startswith": [],
-				"endswith": [],
-				"regex": [],
-				"exclude": null
 			}
 		}
 	}
