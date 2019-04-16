@@ -1742,4 +1742,4 @@ class benchmark(object):
 
 		if (not self.suppress):
 			delta_str = humanize.naturaltime(self.delta) if (self.humanized) else str(self.delta)
-			logging.warning('{msg}: {t}'.format(msg=self.msg, t=delta_str).remove(" ago"))
+			logging.warning('{msg}: {t}'.format(msg=self.msg, t=delta_str).rstrip(" ago"))
