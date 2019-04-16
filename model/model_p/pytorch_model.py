@@ -11,7 +11,6 @@ import pandas as pd
 from hyperopt import hp, STATUS_OK
 import torch
 from torch.utils.data import TensorDataset, DataLoader
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from tensorboardX import SummaryWriter
 
 from common_util import MODEL_DIR, identity_fn, is_type, isnt, np_inner, get0
@@ -36,9 +35,6 @@ class Model:
 		}
 		self.space = {**default_space, **other_space}
 		self.tbx = lambda params, logdir: SummaryWriter(logdir) # Creates TensorBoardX logger
-		self.metrics_fns = {
-			'acc': accuracy_score
-		}
 
 	def get_space(self):
 		return self.space
@@ -119,7 +115,7 @@ class Model:
 		Takes in final numpy data and returns torch DataLoader over torch tensor minibatches of specified torch device.
 		"""
 		f = torch.tensor(data[0], dtype=torch.float32, device=device, requires_grad=True)
-		if (params['loss'] in ['bce', 'bcel']):
+		if (params['loss'] in ['bce', 'bcel', 'mae', 'mse']):
 			l = [torch.tensor(d, dtype=torch.float32, device=device, requires_grad=False) for d in data[1:]]
 		elif (params['loss'] in ['ce', 'nll']):
 			l = [torch.tensor(d, dtype=torch.int64, device=device, requires_grad=False).squeeze() for d in data[1:]]
@@ -147,19 +143,19 @@ class Model:
 		# logging.debug('batch loss:   {}'.format(loss.item()))
 		return loss.item(), len(feat_batch), metrics, (max_batch.exp(), pred_batch.float())
 
-	def make_model(self, params, input_shape):
+	def make_model(self, params, input_shape, *args, **kwargs):
 		"""
 		Define, compile, and return a model over params.
 		Concrete model subclasses must implement this.
 		"""
 		pass
 
-	def get_model(self, params, input_shape):
+	def get_model(self, params, input_shape, *args, **kwargs):
 		"""
 		Wrapper around make_model that reports/handles errors.
 		"""
 		try:
-			model = self.make_model(params, input_shape)
+			model = self.make_model(params, input_shape, *args, **kwargs)
 		except Exception as e:
 			logging.error('Error during model creation: {}'.format(str(e)))
 			raise e

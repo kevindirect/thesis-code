@@ -153,9 +153,9 @@ class TemporalConvNet(nn.Module):
 		return self.network(x)
 
 
-class TCN_Classifier(nn.Module):
+class TCN(nn.Module):
 	"""
-	TCN Based Classifier Network
+	TCN Based Network
 
 	Args:
 		num_input_channels (int): number of input channels
@@ -167,7 +167,7 @@ class TCN_Classifier(nn.Module):
 		max_attn_len (int > 0): max length of attention (only relevant if attention is set to True)
 	"""
 	def __init__(self, num_input_channels, channels, num_outputs=1, kernel_size=2, dropout=0.2, attention=False, max_attn_len=80):
-		super(TCN_Classifier, self).__init__()
+		super(TCN, self).__init__()
 		self.tcn = TemporalConvNet(num_input_channels, channels, kernel_size=kernel_size, dropout=dropout, attention=attention, max_attn_len=max_attn_len)
 		if (attention):
 			self.out = nn.Linear(max_attn_len, num_outputs) # TODO - verify correctness of using max_attn_len as input size to output layer

@@ -1,0 +1,5 @@
+{
+	"features": "mvp_targets.json",
+	"labels": "mvp_labels.json",
+	"targets": "mvp_targets.json"
+}

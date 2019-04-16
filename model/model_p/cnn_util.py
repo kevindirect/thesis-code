@@ -120,7 +120,7 @@ class CNN_Classifier(nn.Module):
 		pool_kernel_size = kernel_size
 		pool_stride = 2
 		pool_padding = 0
-		self.pool = nn.AvgPool1d(kernel_size=pool_kernel_size, stride=pool_stride, padding=pool_padding, ceil_mode=False)
+		# self.pool = nn.AvgPool1d(kernel_size=pool_kernel_size, stride=pool_stride, padding=pool_padding, ceil_mode=False)
 		self.linear = nn.Linear(channels[-1], num_outputs)
 		self.logprob = nn.LogSoftmax(dim=1)
 

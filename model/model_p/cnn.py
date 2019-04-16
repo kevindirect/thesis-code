@@ -11,14 +11,14 @@ from hyperopt import hp, STATUS_OK
 
 from common_util import MODEL_DIR
 from model.common import PYTORCH_MODELS_DIR, ERROR_CODE, TEST_RATIO, VAL_RATIO
-from model.model_p.binary_classifier import BinaryClassifier
+from model.model_p.classifier import Classifier
 from model.model_p.temporal_mixin import TemporalMixin
 from model.model_p.cnn_util import CNN_Classifier
 
 
-class BinaryCNN(TemporalMixin, BinaryClassifier):
+class CNN_CLF(TemporalMixin, Classifier):
 	"""
-	Top level CNN Binary Classifer.
+	Top level CNN Classifer.
 
 	Parameters:
 		input_windows (int > 0): Number of aggregation windows in the input layer
@@ -35,13 +35,13 @@ class BinaryCNN(TemporalMixin, BinaryClassifier):
 			'dilation': hp.choice('dilation', [True]),
 			'residual': hp.choice('residual', [True])
 		}
-		super(BinaryCNN, self).__init__({**default_space, **other_space})
+		super(CNN_CLF, self).__init__({**default_space, **other_space})
 
-	def make_model(self, params, num_inputs):
+	def make_model(self, params, num_inputs, num_outputs=2):
 		window_size = num_inputs
 		eff_history = window_size * params['input_windows']  								# Effective history = window_size * input_windows
 		real_topology = window_size * np.array(params['topology'])							# Scale topology by the window size
 		real_topology = np.clip(real_topology, a_min=1, a_max=None).astype(int)				# Make sure that layer outputs are always greater than zero
-		mdl = CNN_Classifier(num_input_channels=1, channels=real_topology.tolist(), num_outputs=2, kernel_size=params['kernel_size'],
+		mdl = CNN_Classifier(num_input_channels=1, channels=real_topology.tolist(), num_outputs=num_outputs, kernel_size=params['kernel_size'],
 								stride=params['stride'], dilation=params['dilation'], residual=params['residual'])
 		return mdl
