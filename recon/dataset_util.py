@@ -24,10 +24,20 @@ flr_asset_match = lambda fp, lp, rp: asset_match(fp, lp) and asset_match(fp, rp)
 flr_src_match = lambda fp, lp, rp: src_match(fp, rp)
 flr_constraint = lambda fp, lp, rp: flr_asset_match(fp, lp, rp) and flr_src_match(fp, lp, rp)
 
+flt_parent_match = lambda fp, lp, tp: parent_match(lp, tp)
+flt_asset_match = lambda fp, lp, tp: asset_match(fp, lp) and asset_match(fp, tp)
+flt_constraint = lambda fp, lp, tp: flt_parent_match(fp, lp, tp) and flt_asset_match(fp, lp, tp)
+
 fltr_parent_match = lambda fp, lp, tp, rp: parent_match(lp, tp)
 fltr_asset_match = lambda fp, lp, tp, rp: asset_match(fp, lp) and asset_match(fp, tp) and asset_match(fp, rp)
 fltr_src_match = lambda fp, lp, tp, rp: src_match(fp, rp)
 fltr_constraint = lambda fp, lp, tp, rp: fltr_parent_match(fp, lp, tp, rp) and fltr_asset_match(fp, lp, tp, rp) and fltr_src_match(fp, lp, tp, rp)
+
+GEN_GROUP_CONSTRAINTS = {
+	'flr_constraint': flr_constraint,
+	'flt_constraint': flt_constraint,
+	'fltr_constraint': fltr_constraint
+}
 
 def gen_group(dataset, group=['features', 'labels', 'targets', 'row_masks'], out=['dfs'], constraint=fltr_constraint):
 	"""

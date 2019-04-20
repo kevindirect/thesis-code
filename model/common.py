@@ -20,6 +20,7 @@ from tensorflow.train import RMSPropOptimizer, AdamOptimizer
 from tensorflow.nn import sparse_softmax_cross_entropy_with_logits, softmax_cross_entropy_with_logits_v2
 
 # PACKAGE CONSTANTS
+XG_DIR = MODEL_DIR +'xg' +sep
 DATASET_DIR = RECON_DIR +'dataset' +sep
 FILTERSET_DIR = RECON_DIR +'filterset' +sep
 HOPT_WORKER_BIN = 'hyperopt-mongo-worker'
@@ -80,6 +81,7 @@ default_ray_config = {
 }
 default_ray_trial_resources = {"cpu": 2, "gpu": 1}
 default_model = 'BinTCN'
+default_xg = 'xg0_reteod_direod.json'
 default_dataset = 'xg0_reteod_direod.json'
 default_backend = 'pytorch'
 default_trials_count = 100

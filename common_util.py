@@ -16,7 +16,7 @@ import collections.abc
 from contextlib import suppress
 from difflib import SequenceMatcher
 from collections import defaultdict, MutableMapping, OrderedDict, ChainMap
-from itertools import product, chain, tee, islice, chain, zip_longest
+from itertools import product, chain, tee, islice, zip_longest
 from functools import reduce, partial, wraps
 from datetime import datetime, date, timedelta
 from timeit import default_timer

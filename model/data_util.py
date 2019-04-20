@@ -11,9 +11,9 @@ import numpy as np
 import pandas as pd
 from dask import delayed, compute
 
-from common_util import ALL_COLS, is_type, identity_fn, compose, dcompose, pd_idx_rename, pd_dti_idx_date_only, filter_cols_below, reindex_on_time_mask, df_downsample_transpose, pd_single_ser, ser_shift, pd_common_idx_rows, chained_filter
-from model.common import EXPECTED_NUM_HOURS
-from recon.dataset_util import gen_group
+from common_util import ALL_COLS, is_type, identity_fn, load_json, compose, dcompose, pd_idx_rename, pd_dti_idx_date_only, filter_cols_below, reindex_on_time_mask, df_downsample_transpose, pd_single_ser, ser_shift, pd_common_idx_rows, chained_filter
+from model.common import EXPECTED_NUM_HOURS, XG_DIR, DATASET_DIR
+from recon.dataset_util import GEN_GROUP_CONSTRAINTS, no_constraint, prep_dataset, gen_group
 from mutate.label_util import prep_labels
 
 
@@ -153,8 +153,73 @@ def prepare_masked_labels(labels_df, label_types, label_filter):
 
 	return timezone_fixed
 
+def single_prep_fn(fn):
+	"""
+	Wraps a single function into a delayable prepreocessing function
+
+	Args:
+		fn: function that takes in data and returns data
+
+	Returns:
+		function with signature "function(object, delayed)"
+	"""
+	def prep_fn(pd_obj, delayed=False):
+		preproc_fn = dcompose(fn) if (delayed) else fn
+		return preproc_fn(pd_obj)
+	return prep_fn
+
+
+""" ********** DATA PREP TRANSLATORS ********** """
+COMMON_PREP_FNS = {
+	'pd_common_idx_rows': pd_common_idx_rows,
+}
+
+DATA_PREP_FNS = {
+	'prep_transpose_data': prepare_transpose_data,
+	'prep_label_data': prepare_label_data,
+	'prep_target_data': prepare_target_data,
+	'pd_idx_date_only': single_prep_fn(pd_dti_idx_date_only)
+}
+
 
 """ ********** DATA GENERATORS ********** """
+def xgdg(xg_fname, delayed=False, **kwargs):
+	"""
+	Experiment Group Data Generator
+	Yields data over an experiment group.
+
+	Args:
+		xg_fname (str): experiment group filename
+		delayed (bool): whether or not to delay computation, only relevant if 'how' is set to 'df_to_df'
+		kwargs: arguments to pass to prep_dataset
+
+	Yields from:
+		Generator of tuples of metadata/data
+	"""
+	xg_dict = load_json(xg_fname, dir_path=XG_DIR)
+	dataset_dict = load_json(xg_dict['dataset'], dir_path=DATASET_DIR)
+	dataset = prep_dataset(dataset_dict, **kwargs)
+	constraint_fn = GEN_GROUP_CONSTRAINTS.get(xg_dict['constraint'], no_constraint)
+	common_prep_fn = COMMON_PREP_FNS.get(xg_dict['prep_fn'].get('common', None), pd_common_idx_rows)
+
+	for paths, recs, dfs in gen_group(dataset, group=xg_dict['parts'], out=['recs', 'dfs'], constraint=constraint_fn):
+		dpaths = {part: path for part, path in zip(xg_dict['parts'], paths)}
+		drecs = {part: rec for part, rec in zip(xg_dict['parts'], recs)}
+		ddfs = {part: df for part, df in zip(xg_dict['parts'], dfs)}
+		opaths = list(map(lambda x: dpaths[x[0]], xg_dict['how']))
+		orecs = list(map(lambda x: drecs[x[0]], xg_dict['how']))
+
+		transformed = []
+		for parts in xg_dict['how']:
+			prep_fn = DATA_PREP_FNS.get(xg_dict['prep_fn'].get(parts[0], None), identity_fn)
+			data = map(lambda x: ddfs[x], parts) if (delayed) else map(lambda x: ddfs[x].compute(), parts)
+			transformed.append(prep_fn(*data, delayed=delayed).dropna(axis=0, how='all'))
+
+		if (delayed):
+			yield (opaths, orecs, dcompose(common_prep_fn)(*transformed))
+		else:
+			yield (opaths, orecs, common_prep_fn(*transformed))
+
 def datagen(dataset, feat_prep_fn=identity_fn, label_prep_fn=identity_fn, target_prep_fn=identity_fn, common_prep_fn=pd_common_idx_rows, how='df_to_ser', delayed=False):
 	"""
 	Yield from data generation function.

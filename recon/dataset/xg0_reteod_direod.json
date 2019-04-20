@@ -1,5 +1,7 @@
 {
-	"features": "mvp_targets.json",
+	"features": [
+		["mvp_ret", "reteod"]
+	],
 	"labels": "mvp_labels.json",
 	"targets": "mvp_targets.json"
 }
