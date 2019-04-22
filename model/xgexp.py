@@ -35,10 +35,11 @@ def xgexp(argv):
 
 	mod_obj = CLF_MAP[backend_name][model_code]()
 	mod_name = get_class_name(mod_obj)
+	xg_name = xg_fname.rstrip('.json')
 
 	logging.info('model: {}'.format(mod_name))
 	logging.info('backend: {}'.format(backend_name))
-	logging.info('xg: {}'.format(xg_fname))
+	logging.info('xg: {}'.format(xg_name))
 	logging.info('assets: {}'.format(str('all' if (assets==None) else ', '.join(assets))))
 
 	with MongoServer() as db:
@@ -49,9 +50,9 @@ def xgexp(argv):
 			frec, lrec, trec = recs
 			meta = {
 				'group': {
-					'name': '{asset},{xg},{model}_{backend0}'.format(asset=asset_name, xg=xg_fname, model=mod_name, backend0=backend_name[0]),
+					'name': '{asset},{xg},{model}_{backend0}'.format(asset=asset_name, xg=xg_name, model=mod_name, backend0=backend_name[0]),
 					'asset': asset_name,
-					'xg': xg_fname.rstrip('.json'),
+					'xg': xg_name,
 					'backend': backend_name,
 					'model': mod_name
 				},
