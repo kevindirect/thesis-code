@@ -33,7 +33,10 @@ class TCN_CLF(TemporalMixin, Classifier):
 	def __init__(self, other_space={}):
 		default_space = {
 			'input_windows': hp.uniform('input_windows', 3, 20),
-			'topology': hp.choice('topology', [[5, 3], [3, 5, 1], [3, 5, 7], [3, 1, 3], [3, 5, 3], [5, 7, 9]]),
+			'topology': hp.choice('topology', [[1, 1], [1, 3], [1, 5], [1, 7],
+												[3, 1], [3, 3], [3, 5], [3, 7],
+												[5, 1], [5, 3], [5, 5], [5, 7],
+												[7, 1], [7, 3], [7, 5], [7, 7]]),
 			'kernel_size': hp.uniform('kernel_size', 2, 10),
 			'dropout': hp.uniform('dropout', .01, .80),
 			'attention': hp.choice('attention', [False]),
@@ -66,7 +69,10 @@ class TCN_REG(TemporalMixin, Regressor):
 	def __init__(self, other_space={}):
 		default_space = {
 			'input_windows': hp.uniform('input_windows', 3, 20),
-			'topology': hp.choice('topology', [[5, 3], [3, 5, 1], [3, 5, 7], [3, 1, 3], [3, 5, 3], [5, 7, 9]]),
+			'topology': hp.choice('topology', [[1, 1], [1, 3], [1, 5], [1, 7],
+												[3, 1], [3, 3], [3, 5], [3, 7],
+												[5, 1], [5, 3], [5, 5], [5, 7],
+												[7, 1], [7, 3], [7, 5], [7, 7]]),
 			'kernel_size': hp.uniform('kernel_size', 2, 10),
 			'dropout': hp.uniform('dropout', .01, .80),
 			'attention': hp.choice('attention', [False]),

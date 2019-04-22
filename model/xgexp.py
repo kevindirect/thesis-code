@@ -6,6 +6,7 @@ import os
 from os import sep
 from os.path import basename
 import copy
+import time
 import subprocess
 import logging
 
@@ -15,7 +16,7 @@ from hyperopt import fmin, tpe, Trials
 from hyperopt.mongoexp import MongoTrials
 
 from common_util import CRUNCH_DIR, REPORT_DIR, JSON_SFX_LEN, makedir_if_not_exists, get_class_name, str_to_list, get_cmd_args, load_json, benchmark
-from model.common import XG_DIR, DATASET_DIR, HOPT_WORKER_BIN, default_model, default_backend, default_xg, default_trials_count
+from model.common import XG_DIR, HOPT_WORKER_BIN, default_model, default_backend, default_xg, default_trials_count
 from model.model_util import CLF_MAP
 from model.data_util import datagen, prepare_transpose_data, prepare_label_data, prepare_target_data
 from recon.dataset_util import prep_dataset
@@ -43,30 +44,31 @@ def xgexp(argv):
 	with MongoServer() as db:
 		for i, (paths, recs, dfs) in enumerate(xgdg(xg_fname, delayed=True, assets=assets, filters_map=None)):
 			logging.info('parent exp {}'.format(i))
-			# asset_name = fpath[0]
-			# assert(asset_name==lpath[0])
-			# meta = {
-			# 	'group': {
-			# 		'name': '{asset},{dataset},{model}_{backend0}'.format(asset=asset_name, dataset=dataset_name, model=mod_name, backend0=backend_name[0]),
-			# 		'asset': asset_name,
-			# 		'dataset': dataset_name,
-			# 		'backend': backend_name,
-			# 		'model': mod_name
-			# 	},
-			# 	'exp': {
-			# 		'name': '{feat},{lab},{dir}',
-			# 		'feat': '{featdf}[{featcol}]'.format(featdf=frec.desc, featcol=fcol),
-			# 		'lab': '{labdf}[{labcol}]'.format(labdf=lrec.desc, labcol=lcol),
-			# 		'dir': '{dir}'
-			# 	}
-			# }
-			# pos_label, neg_label = pd_binary_clip(label)
-			# pos_meta, neg_meta = copy.deepcopy(meta), copy.deepcopy(meta)
-			# pos_meta['exp']['dir'], neg_meta['exp']['dir'] = 'pos', 'neg'
-			# pos_meta['exp']['name'], neg_meta['exp']['name'] = pos_meta['exp']['name'].format(**pos_meta['exp']), neg_meta['exp']['name'].format(**neg_meta['exp'])
-
-			# run_model(mod_obj, feature, pos_label, pos_meta, db, trials_count)
-			# run_model(mod_obj, feature, neg_label, neg_meta, db, trials_count)
+			asset_name = paths[0][0]
+			assert(asset_name==paths[1][0]==paths[2][0])
+			frec, lrec, trec = recs
+			meta = {
+				'group': {
+					'name': '{asset},{xg},{model}_{backend0}'.format(asset=asset_name, xg=xg_fname, model=mod_name, backend0=backend_name[0]),
+					'asset': asset_name,
+					'xg': xg_fname.rstrip('.json'),
+					'backend': backend_name,
+					'model': mod_name
+				},
+				'exp': {
+					'name': '{feat},{lab},{dir}',
+					'feat': '{featdf}[{featcol}]'.format(featdf=frec.desc, featcol=ALL_COLS),
+					'lab': '{labdf}[{labcol}]'.format(labdf=lrec.desc, labcol=ALL_COLS),
+					'dir': '{dir}'
+				}
+			}
+			f, l, t = dfs.compute()
+			pos_l, neg_l = pd_binary_clip(label)
+			pos_meta, neg_meta = copy.deepcopy(meta), copy.deepcopy(meta)
+			pos_meta['exp']['dir'], neg_meta['exp']['dir'] = 'pos', 'neg'
+			pos_meta['exp']['name'], neg_meta['exp']['name'] = pos_meta['exp']['name'].format(**pos_meta['exp']), neg_meta['exp']['name'].format(**neg_meta['exp'])
+			run_model(mod_obj, f, pos_l, pos_meta, db, trials_count)
+			run_model(mod_obj, f, neg_l, neg_meta, db, trials_count)
 
 
 def run_model(mdl, features, labels, meta, db, max_evals):
@@ -89,7 +91,7 @@ def run_model(mdl, features, labels, meta, db, max_evals):
 		worker = subprocess.Popen(worker_args, stdout=db.fnull, stderr=subprocess.STDOUT, shell=False)
 		logging.info('started worker: {}'.format(' '.join(worker_args)))
 		trials = MongoTrials(db.get_mongodb_trials_uri(db_name=db_name), exp_key=exp_name)
-		# TODO - maybe add a sleep here to give hyperopt mongo worker time to get up and running
+		time.sleep(3)
 	else:
 		trials = Trials()
 	best = fmin(obj, mdl.get_space(), algo=tpe.suggest, max_evals=max_evals, trials=trials)
