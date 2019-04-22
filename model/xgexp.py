@@ -18,7 +18,7 @@ from hyperopt.mongoexp import MongoTrials
 from common_util import CRUNCH_DIR, REPORT_DIR, JSON_SFX_LEN, makedir_if_not_exists, get_class_name, str_to_list, get_cmd_args, load_json, benchmark
 from model.common import XG_DIR, HOPT_WORKER_BIN, default_model, default_backend, default_xg, default_trials_count
 from model.model_util import CLF_MAP
-from model.data_util import datagen, prepare_transpose_data, prepare_label_data, prepare_target_data
+from model.data_util import xgdg
 from recon.dataset_util import prep_dataset
 from recon.split_util import pd_binary_clip
 from report.mongo_server import MongoServer
