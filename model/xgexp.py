@@ -63,7 +63,7 @@ def xgexp(argv):
 				}
 			}
 			f, l, t = dfs.compute()
-			pos_l, neg_l = pd_binary_clip(label)
+			pos_l, neg_l = pd_binary_clip(l)
 			pos_meta, neg_meta = copy.deepcopy(meta), copy.deepcopy(meta)
 			pos_meta['exp']['dir'], neg_meta['exp']['dir'] = 'pos', 'neg'
 			pos_meta['exp']['name'], neg_meta['exp']['name'] = pos_meta['exp']['name'].format(**pos_meta['exp']), neg_meta['exp']['name'].format(**neg_meta['exp'])
