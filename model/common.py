@@ -80,7 +80,7 @@ default_ray_config = {
 	}
 }
 default_ray_trial_resources = {"cpu": 2, "gpu": 1}
-default_model = 'BinTCN'
+default_model = 'TCN'
 default_xg = 'xg0_reteod_direod.json'
 default_dataset = 'xg0_reteod_direod.json'
 default_backend = 'pytorch'
