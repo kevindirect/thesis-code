@@ -92,7 +92,7 @@ def run_model(mdl, features, labels, meta, db, max_evals):
 		worker = subprocess.Popen(worker_args, stdout=db.fnull, stderr=subprocess.STDOUT, shell=False)
 		logging.info('started worker: {}'.format(' '.join(worker_args)))
 		trials = MongoTrials(db.get_mongodb_trials_uri(db_name=db_name), exp_key=exp_name)
-		time.sleep(3)
+		# time.sleep(3)
 	else:
 		trials = Trials()
 	best = fmin(obj, mdl.get_space(), algo=tpe.suggest, max_evals=max_evals, trials=trials)
