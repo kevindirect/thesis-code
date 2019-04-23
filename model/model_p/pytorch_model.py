@@ -34,7 +34,7 @@ class Model:
 			'batch_size': hp.choice('batch_size', [128, 256])
 		}
 		self.space = {**default_space, **other_space}
-		self.tbx = lambda params, logdir: SummaryWriter(logdir) # Creates TensorBoardX logger
+		self.tbx = lambda params, logdir: SummaryWriter(log_dir=logdir) # Creates TensorBoardX logger
 
 	def get_space(self):
 		return self.space
