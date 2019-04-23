@@ -30,7 +30,7 @@ class Model:
 	"""
 	def __init__(self, other_space={}):
 		default_space = {
-			'epochs': hp.choice('epochs', [200]),
+			'epochs': hp.quniform('epochs', 100, 500, 100),
 			'batch_size': hp.choice('batch_size', [128, 256])
 		}
 		self.space = {**default_space, **other_space}
