@@ -39,8 +39,8 @@ class TCN_CLF(TemporalMixin, Classifier):
 												[7, 1], [7, 3], [7, 5], [7, 7]]),
 			'kernel_size': hp.quniform('kernel_size', 2, 16, 1),
 			'dropout': hp.uniform('dropout', .01, .80),
-			'attention': hp.choice('attention', [False]),
-			'max_attn_len': hp.quniform('max_attn_len', 24, 120, 1)
+			'attention': False # hp.choice('attention', [False]),
+			'max_attn_len': 120 # hp.quniform('max_attn_len', 24, 120, 1)
 		}
 		super(TCN_CLF, self).__init__({**default_space, **other_space})
 
@@ -75,8 +75,8 @@ class TCN_REG(TemporalMixin, Regressor):
 												[7, 1], [7, 3], [7, 5], [7, 7]]),
 			'kernel_size': hp.quniform('kernel_size', 2, 16, 1),
 			'dropout': hp.uniform('dropout', .01, .80),
-			'attention': hp.choice('attention', [False]),
-			'max_attn_len': hp.quniform('max_attn_len', 24, 120, 1)
+			'attention': False # hp.choice('attention', [False]),
+			'max_attn_len': 120 # hp.quniform('max_attn_len', 24, 120, 1)
 		}
 		super(TCN_REG, self).__init__({**default_space, **other_space})
 
