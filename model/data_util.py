@@ -102,6 +102,27 @@ def prepare_transpose_data(feature_df, row_masks_df, delayed=False):
 	prep_fn = dcompose(*preproc) if (delayed) else compose(*preproc)
 	return prep_fn(feature_df, row_masks_df)
 
+def prepare_trmi_buzzless(feature_df, delayed=False):
+	"""
+	TODO
+	Converts a 
+
+	Args:
+		feature_df (pd.DataFrame): DataFrame
+		delayed (boolean): Whether or not to create a delayed function composition
+
+	Returns:
+		pd.DataFrame or dask Delayed object
+	"""
+	preproc = (
+				filter_cols_below,			# Filters out columns with 90% or less of their data missing (relative to the most populated column)
+				prune_nulls,				# Removes or fills any last null data
+				pd_dti_idx_date_only		# Removes the time component of the DatetimeIndex index 
+			)
+	prep_fn = dcompose(*preproc) if (delayed) else compose(*preproc)
+	return prep_fn(feature_df)
+
+
 def prepare_label_data(label_ser, delayed=False):
 	"""
 	Converts a single indexed intraday DataFrame into a MultiIndexed daily DataFrame.

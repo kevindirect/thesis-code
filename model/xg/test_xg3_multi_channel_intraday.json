@@ -1,0 +1,11 @@
+{
+	"dataset": "dnorm_dmx_raw_pba_ohlca.json",
+	"constraint": "fltr_constraint",
+	"parts": ["features", "labels", "targets", "row_masks"],
+	"how": [["features", "row_masks"], ["labels"], ["targets"]],
+	"prep_fn": {
+		"features": "prep_feature_data",
+		"labels": "prep_label_data",
+		"targets": "prep_target_data"
+	}
+}

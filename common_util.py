@@ -8,6 +8,7 @@ from os import sep, path, makedirs, walk, listdir, rmdir
 from os.path import dirname, basename, realpath, normpath, exists, isfile, getsize, join as path_join
 import socket
 from json import load, dump, dumps
+import re
 import math
 import numbers
 import operator

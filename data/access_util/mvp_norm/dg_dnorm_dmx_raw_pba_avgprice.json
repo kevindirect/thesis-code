@@ -1,16 +1,4 @@
 {
-	"dzn": {
-		"all": {
-			"stage": "mutate",
-			"mutate_type": "dzn",
-			"raw_cat": "us_equity_index"
-		},
-		"subsets": {
-			"raw_pba": {
-				"desc": "raw_pba_dzn"
-			}
-		}
-	},
 	"dmx": {
 		"all": {
 			"stage": "mutate",

@@ -1,0 +1,49 @@
+{
+	"drl": {
+		"all": null,
+		"subsets": {
+			"raw_trmi_etf_v2_N": {
+				"exact": ["etf_v2_buzz_N", "etf_v2_relativeBuzz_N"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			"raw_trmi_etf_v2_S": {
+				"exact": ["etf_v2_buzz_S", "etf_v2_relativeBuzz_S"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			"raw_trmi_etf_v3_N": {
+				"exact": ["etf_v3_buzz_N"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			"raw_trmi_etf_v3_S": {
+				"exact": ["etf_v3_buzz_S"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			"raw_trmi_mkt_v3_N": {
+				"exact": ["mkt_v3_stockIndexBuzz_N", "mkt_v3_bondBuzz_N", "mkt_v3_ratesBuzz_N"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			"raw_trmi_mkt_v3_S": {
+				"exact": ["mkt_v3_stockIndexBuzz_S", "mkt_v3_bondBuzz_S", "mkt_v3_ratesBuzz_S"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			}
+		}
+	}
+}

@@ -1,0 +1,11 @@
+{
+	"dataset": "drl_raw_trmi_buzzless.json",
+	"constraint": "flt_constraint",
+	"parts": ["features", "labels", "targets"],
+	"how": [["features"], ["labels"], ["targets"]],
+	"prep_fn": {
+		"features": "pd_idx_date_only",
+		"labels": "prep_label_data",
+		"targets": "prep_target_data"
+	}
+}
