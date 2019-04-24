@@ -22,6 +22,7 @@ def tcn_fix_params(params):
 	Fix parameters sampled from hyperopt space dictionary.
 	"""
 	params['epochs'] = int(params['epochs'])
+	params['batch_size'] = int(params['batch_size'])
 	params['input_windows'] = int(params['input_windows'])
 	params['kernel_size'] = int(params['kernel_size'])
 	params['max_attn_len'] = int(params['max_attn_len'])	
