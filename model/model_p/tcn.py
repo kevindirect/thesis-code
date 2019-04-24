@@ -45,6 +45,11 @@ class TCN_CLF(TemporalMixin, Classifier):
 		super(TCN_CLF, self).__init__({**default_space, **other_space})
 
 	def make_model(self, params, input_shape, num_outputs=2):
+		params['epochs'] = int(params['epochs'])
+		params['input_windows'] = int(params['input_windows'])
+		params['kernel_size'] = int(params['kernel_size'])
+		params['max_attn_len'] = int(params['max_attn_len'])
+
 		window_size = input_shape[1]
 		eff_history = window_size * params['input_windows']  								# Effective history = window_size * input_windows
 		real_topology = window_size * np.array(params['topology'])							# Scale topology by the window size
@@ -81,6 +86,11 @@ class TCN_REG(TemporalMixin, Regressor):
 		super(TCN_REG, self).__init__({**default_space, **other_space})
 
 	def make_model(self, params, input_shape, num_outputs=1):
+		params['epochs'] = int(params['epochs'])
+		params['input_windows'] = int(params['input_windows'])
+		params['kernel_size'] = int(params['kernel_size'])
+		params['max_attn_len'] = int(params['max_attn_len'])
+
 		window_size = input_shape[1]
 		eff_history = window_size * params['input_windows']  								# Effective history = window_size * input_windows
 		real_topology = window_size * np.array(params['topology'])							# Scale topology by the window size

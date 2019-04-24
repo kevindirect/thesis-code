@@ -13,7 +13,7 @@ import torch
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from hyperopt import hp, STATUS_OK, STATUS_FAIL
 
-from common_util import MODEL_DIR, isnt, makedir_if_not_exists, remove_keys, dump_json, str_now, one_minus, is_type, midx_split, pd_midx_to_arr
+from common_util import MODEL_DIR, REPORT_DIR, isnt, makedir_if_not_exists, remove_keys, dump_json, str_now, one_minus, is_type, midx_split, pd_midx_to_arr
 from model.common import PYTORCH_MODELS_DIR, ERROR_CODE, VAL_RATIO, TEST_RATIO, PYTORCH_LOSS_TRANSLATOR, PYTORCH_OPT_TRANSLATOR
 from model.model_p.pytorch_model import Model
 from recon.split_util import index_three_split
@@ -82,6 +82,7 @@ class Classifier(Model):
 		"""
 		exp_meta = exp_meta or {}
 		exp_meta['params'] = remove_keys(dict(locals().items()), ['self', 'features', 'labels', 'exp_meta'])
+		exp_meta['params']['exp_logdir'] = exp_meta['params']['exp_logdir'].lstrip(REPORT_DIR)
 		exp_meta['data'] = {'size': labels.size, 'lab_dist': labels.value_counts(normalize=True).to_dict()}
 		if (exp_logdir is not None):
 			makedir_if_not_exists(exp_logdir)
