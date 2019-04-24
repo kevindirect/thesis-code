@@ -4,7 +4,7 @@
 	"parts": ["features", "labels", "targets", "row_masks"],
 	"how": [["features", "row_masks"], ["labels"], ["targets"]],
 	"prep_fn": {
-		"features": "prep_feature_data",
+		"features": "prep_transpose_data",
 		"labels": "prep_label_data",
 		"targets": "prep_target_data"
 	}
