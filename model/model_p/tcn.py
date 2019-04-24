@@ -58,12 +58,12 @@ class TCN_CLF(TemporalMixin, Classifier):
 	def fix_params(self, params):
 		tcn_fix_params(params)	
 
-	def make_model(self, params, input_shape, num_outputs=2):
-		window_size = input_shape[1]
+	def make_model(self, params, obs_shape, num_outputs=2):
+		input_channels, window_size = obs_shape
 		eff_history = window_size * params['input_windows']  								# Effective history = window_size * input_windows
 		real_topology = window_size * np.array(params['topology'])							# Scale topology by the window size
 		real_topology = np.clip(real_topology, a_min=1, a_max=None).astype(int)				# Make sure that layer outputs are always greater than zero
-		mdl = TCN(num_input_channels=input_shape[0], channels=real_topology.tolist(), num_outputs=num_outputs, kernel_size=params['kernel_size'],
+		mdl = TCN(num_input_channels=input_channels, channels=real_topology.tolist(), num_outputs=num_outputs, kernel_size=params['kernel_size'],
 							dropout=params['dropout'], attention=params['attention'], max_attn_len=params['max_attn_len'])
 		return mdl
 
@@ -97,16 +97,11 @@ class TCN_REG(TemporalMixin, Regressor):
 	def fix_params(self, params):
 		tcn_fix_params(params)	
 
-	def make_model(self, params, input_shape, num_outputs=1):
-		params['epochs'] = int(params['epochs'])
-		params['input_windows'] = int(params['input_windows'])
-		params['kernel_size'] = int(params['kernel_size'])
-		params['max_attn_len'] = int(params['max_attn_len'])
-
-		window_size = input_shape[1]
+	def make_model(self, params, obs_shape, num_outputs=1):
+		input_channels, window_size = obs_shape
 		eff_history = window_size * params['input_windows']  								# Effective history = window_size * input_windows
 		real_topology = window_size * np.array(params['topology'])							# Scale topology by the window size
 		real_topology = np.clip(real_topology, a_min=1, a_max=None).astype(int)				# Make sure that layer outputs are always greater than zero
-		mdl = TCN(num_input_channels=input_shape[0], channels=real_topology.tolist(), num_outputs=num_outputs, kernel_size=params['kernel_size'],
+		mdl = TCN(num_input_channels=input_channels, channels=real_topology.tolist(), num_outputs=num_outputs, kernel_size=params['kernel_size'],
 							dropout=params['dropout'], attention=params['attention'], max_attn_len=params['max_attn_len'])
 		return mdl

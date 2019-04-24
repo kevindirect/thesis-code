@@ -19,6 +19,22 @@ class TemporalMixin:
 	This is in contrast to models like RNNs where each data point may be a group of timesteps fed in sequence.
 	"""
 
+	def get_obs_shape(self, f_shape):
+		"""
+		Gets the shape of one observation before the final preprocessing.
+		
+		Args:
+			f_shape	(tuple): shape of the feature data
+
+		Returns:
+			A tuple of form (channels, win_size)
+		"""
+		return {
+			len(f_shape)==1: (1, 1),				# (num_obs,)					-> (1, 1)
+			len(f_shape)==2: (f_shape[-1], 1),		# (num_obs, channels)			-> (channels, 1)
+			len(f_shape)==3: f_shape[-2:]			# (num_obs, channels, win_size)	-> (channels, win_size)
+		}.get(True, f_shape[-2:])
+
 	def preproc(self, params, data):
 		"""
 		Reshaping transform for temporal data.
@@ -37,6 +53,13 @@ class TemporalMixin:
 
 		All data after the first tuple item are assumed to be label/target vectors and are reshaped to align with the new first
 		tuple item.
+
+		Args:
+			params (dict): params dictionary
+			data (tuple): tuple of data with features as first element
+
+		Returns:
+			Tuple of reshaped data
 		"""
 		# Reshape features into overlapping moving window samples
 		f = np.array([np.concatenate(vec, axis=-1) for vec in window_iter(data[0], n=params['input_windows'])])

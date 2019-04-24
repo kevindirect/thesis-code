@@ -109,7 +109,7 @@ class Classifier(Model):
 			f_train_np, f_val_np, f_test_np = f_train_pd.values, f_val_pd.values, f_test_pd.values
 		l_train_np, l_val_np, l_test_np = l_train_pd.values, l_val_pd.values, l_test_pd.values
 		# t_train_np, t_val_np, t_test_np = t_train_pd.values, t_val_pd.values, t_test_pd.values
-		input_shape = tuple(f_train_np.shape[-2:]) if (len(f_train_np.shape) < 3) else (1, f_train_np.shape[-1])
+		obs_shape = self.get_obs_shape(f_train_np.shape)
 
 		def objective(params):
 			"""
@@ -136,7 +136,7 @@ class Classifier(Model):
 				dump_json(params, 'params.json', dir_path=trial_logdir)
 
 			dev = torch.device('cuda') if (torch.cuda.is_available()) else torch.device('cpu')
-			mdl = self.get_model(params, input_shape).to(device=dev)
+			mdl = self.get_model(params, obs_shape).to(device=dev)
 			res = self.fit_model(params, trial_logdir, mdl, dev, (f_train_np, l_train_np), val_data=(f_val_np, l_val_np))
 			# dump_json(res, 'results.json', dir_path=trial_logdir)
 

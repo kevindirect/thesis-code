@@ -143,19 +143,19 @@ class Model:
 		# logging.debug('batch loss:   {}'.format(loss.item()))
 		return loss.item(), len(feat_batch), metrics, (max_batch.exp(), pred_batch.float())
 
-	def make_model(self, params, input_shape, *args, **kwargs):
+	def make_model(self, params, obs_shape, *args, **kwargs):
 		"""
 		Define, compile, and return a model over params.
 		Concrete model subclasses must implement this.
 		"""
 		pass
 
-	def get_model(self, params, input_shape, *args, **kwargs):
+	def get_model(self, params, obs_shape, *args, **kwargs):
 		"""
 		Wrapper around make_model that reports/handles errors.
 		"""
 		try:
-			model = self.make_model(params, input_shape, *args, **kwargs)
+			model = self.make_model(params, obs_shape, *args, **kwargs)
 		except Exception as e:
 			logging.error('Error during model creation: {}'.format(str(e)))
 			raise e
