@@ -129,6 +129,7 @@ class Classifier(Model):
 						true_loss_variance: uncertainty of the generalization error, not actually used in tuning
 			"""
 			# try:
+			self.fix_params(params)
 			trial_logdir = str(exp_logdir +str_now() +sep) if (exp_logdir is not None) else None
 			if (trial_logdir is not None):
 				makedir_if_not_exists(trial_logdir)

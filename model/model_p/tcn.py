@@ -17,6 +17,16 @@ from model.model_p.temporal_mixin import TemporalMixin
 from model.model_p.tcn_util import TCN
 
 
+def tcn_fix_params(params):
+	"""
+	Fix parameters sampled from hyperopt space dictionary.
+	"""
+	params['epochs'] = int(params['epochs'])
+	params['input_windows'] = int(params['input_windows'])
+	params['kernel_size'] = int(params['kernel_size'])
+	params['max_attn_len'] = int(params['max_attn_len'])	
+
+
 class TCN_CLF(TemporalMixin, Classifier):
 	"""
 	Top level Temporal CNN Classifer.
@@ -44,12 +54,10 @@ class TCN_CLF(TemporalMixin, Classifier):
 		}
 		super(TCN_CLF, self).__init__({**default_space, **other_space})
 
-	def make_model(self, params, input_shape, num_outputs=2):
-		params['epochs'] = int(params['epochs'])
-		params['input_windows'] = int(params['input_windows'])
-		params['kernel_size'] = int(params['kernel_size'])
-		params['max_attn_len'] = int(params['max_attn_len'])
+	def fix_params(self, params):
+		tcn_fix_params(params)	
 
+	def make_model(self, params, input_shape, num_outputs=2):
 		window_size = input_shape[1]
 		eff_history = window_size * params['input_windows']  								# Effective history = window_size * input_windows
 		real_topology = window_size * np.array(params['topology'])							# Scale topology by the window size
@@ -84,6 +92,9 @@ class TCN_REG(TemporalMixin, Regressor):
 			'max_attn_len': 120 # hp.quniform('max_attn_len', 24, 120, 1)
 		}
 		super(TCN_REG, self).__init__({**default_space, **other_space})
+
+	def fix_params(self, params):
+		tcn_fix_params(params)	
 
 	def make_model(self, params, input_shape, num_outputs=1):
 		params['epochs'] = int(params['epochs'])
