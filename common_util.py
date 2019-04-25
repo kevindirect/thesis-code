@@ -29,7 +29,8 @@ from pandas.tseries.offsets import CustomBusinessDay, CustomBusinessHour
 from pandas.testing import assert_series_equal, assert_frame_equal
 from pandas.api.types import is_numeric_dtype
 import torch
-from dask import delayed
+import dask
+from dask import delayed, compute
 import humanize
 
 
@@ -57,6 +58,9 @@ FMT_EXTS = {
 
 """Default Pandas DF IO format"""
 DF_DATA_FMT = 'parquet'
+
+"""Dask Global Settings"""
+dask.config.set(scheduler='threads')
 
 
 """ ********** SYSTEM UTILS ********** """
@@ -780,6 +784,13 @@ right_join = lambda a, b, l=EMPTY_STR, r=EMPTY_STR, s=True, **kwargs: a.join(b, 
 inner_join = lambda a, b, l=EMPTY_STR, r=EMPTY_STR, s=True, **kwargs: a.join(b, how='inner', lsuffix=l, rsuffix=r, sort=s, **kwargs)
 outer_join = lambda a, b, l=EMPTY_STR, r=EMPTY_STR, s=True, **kwargs: a.join(b, how='outer', lsuffix=l, rsuffix=r, sort=s, **kwargs)
 
+def df_lazy_gba(df, grouper, apply_fn, **kwargs):
+	"""
+	Lazily define a split-apply-combine procedure using Dask.delayed and return the delayed object.
+	Enables a parallel groupby with Dask.
+	"""
+	pass
+
 def pd_rows(pd_obj, idx):
 	"""
 	Return the indexed rows of pd_obj, going from left to right if a MultiIndex is passed in.
@@ -1406,6 +1417,7 @@ def df_downsample_transpose(df, agg_freq=DT_CAL_DAILY_FREQ, col_attr='hour'):
 	stacked = pd.DataFrame(stacked, index=stacked.index, columns=['val'])
 	stacked = pd_idx_rename(stacked, idx_name=['id0', 'id1'])
 
+	# FIXME - this groupby apply can be very slow on some qsingle channel datasets
 	# Group by each aggregation period and apply df_midx_column_unstack
 	unstacked = stacked.groupby(pd.Grouper(level='id0', freq=agg_freq)).apply(df_midx_column_unstack, group_attr=None, col_attr=col_attr)
 

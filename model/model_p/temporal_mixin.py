@@ -24,7 +24,7 @@ class TemporalMixin:
 		Gets the shape of one observation before the final preprocessing.
 		
 		Args:
-			f_shape	(tuple): shape of the feature data
+			f_shape	(tuple): shape of the feature data (in the form of a numpy array)
 
 		Returns:
 			A tuple of form (channels, win_size)
@@ -56,16 +56,24 @@ class TemporalMixin:
 
 		Args:
 			params (dict): params dictionary
-			data (tuple): tuple of data with features as first element
+			data (tuple): tuple of numpy data with features as first element
 
 		Returns:
 			Tuple of reshaped data
 		"""
-		# Reshape features into overlapping moving window samples
-		f = np.array([np.concatenate(vec, axis=-1) for vec in window_iter(data[0], n=params['input_windows'])])
+		obs_shape = self.get_obs_shape(data[0].shape)
+		if (obs_shape[1] == 1):
+			if (obs_shape[0] == 1):
+				f = np.expand_dims(data[0], 1)		# Singleton dim (channels) for single channel, uni-window data
+				if (len(f.shape) == 2):
+					f = np.expand_dims(f, -1)	# Add win_size for originally one-dimensional data
+			else:
+				f = np.expand_dims(data[0], -1)		# Singleton dim (win_size) for single channel, multi-window data
+		else:
+			f = data[0]		# Multi-channel, multi-window data
 
-		if (len(f.shape) == 2):
-			f = np.expand_dims(f, 1) # Add a singleton dimension for uni-dimensional single channel data if needed
+		# Reshape features into overlapping moving window samples
+		f = np.array([np.concatenate(vec, axis=-1) for vec in window_iter(f, n=params['input_windows'])])
 
 		l = []
 		for vec in data[1:]:
