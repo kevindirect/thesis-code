@@ -222,7 +222,7 @@ class Model:
 				logging.debug('{} w[-2:][-2:]: {}'.format(epoch_str, list(model.parameters())[-2:][-2:]))
 
 			if (writer is not None):
-				writer.export_scalars_to_json('results.json')
+				writer.export_scalars_to_json(logdir +'results.json')
 				writer.close()
 
 			results = {
