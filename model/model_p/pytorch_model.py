@@ -131,7 +131,9 @@ class Model:
 		outputs_batch = model(feat_batch)
 		loss = loss_function(outputs_batch, lab_batch)
 		max_batch, pred_batch = torch.max(outputs_batch, dim=1) # Convert network outputs into predictions
-		metrics = {name: fn(lab_batch, pred_batch) for name, fn in self.metrics_fns.items()}
+		lab_batch_cpu = lab_batch.cpu()
+		pred_batch_cpu = pred_batch.cpu()
+		metrics = {name: fn(lab_batch_cpu, pred_batch_cpu) for name, fn in metrics_fns.items()}
 
 		if (optimizer is not None):
 			optimizer.zero_grad()
