@@ -207,7 +207,7 @@ class Model:
 
 				model.eval()
 				with torch.no_grad():
-					Xe, ye = get0(*self.batchify(params, self.preproc(params, val_data), dev, override_batch_size=val_data[-1].size, shuffle_batches=False))
+					Xe, ye = get0(*self.batchify(params, self.preproc(params, val_data), device, override_batch_size=val_data[-1].size, shuffle_batches=False))
 					loss, num, metric, pred = self.batch_loss(params, model, loss_fn, Xe, ye)
 
 				logging.debug('{} val loss: {}'.format(epoch_str, loss))
