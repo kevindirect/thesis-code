@@ -133,7 +133,7 @@ class Model:
 		max_batch, pred_batch = torch.max(outputs_batch, dim=1) # Convert network outputs into predictions
 		lab_batch_cpu = lab_batch.cpu()
 		pred_batch_cpu = pred_batch.cpu()
-		metrics = {name: fn(lab_batch_cpu, pred_batch_cpu) for name, fn in metrics_fns.items()}
+		metrics = {name: fn(lab_batch_cpu, pred_batch_cpu) for name, fn in self.metrics_fns.items()}
 
 		if (optimizer is not None):
 			optimizer.zero_grad()
