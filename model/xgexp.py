@@ -43,7 +43,7 @@ def xgexp(argv):
 	logging.info('assets: {}'.format(str('all' if (assets==None) else ', '.join(assets))))
 
 	with MongoServer() as db:
-		for i, (paths, recs, dfs) in enumerate(xgdg(xg_fname, delayed=True, assets=assets, filters_map=None)):
+		for i, (paths, recs, dfs) in enumerate(xgdg(xg_fname, delayed=False, assets=assets, filters_map=None)):
 			logging.info('parent exp {}'.format(i))
 			asset_name = paths[0][0]
 			assert(asset_name==paths[1][0]==paths[2][0])
@@ -63,7 +63,7 @@ def xgexp(argv):
 					'dir': '{dir}'
 				}
 			}
-			f, l, t = dfs.compute()
+			f, l, t = dfs
 			pos_l, neg_l = pd_binary_clip(l)
 			pos_meta, neg_meta = copy.deepcopy(meta), copy.deepcopy(meta)
 			pos_meta['exp']['dir'], neg_meta['exp']['dir'] = 'pos', 'neg'
