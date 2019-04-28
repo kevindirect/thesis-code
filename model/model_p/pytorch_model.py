@@ -157,7 +157,7 @@ class Model:
 		try:
 			model = self.make_model(params, obs_shape, *args, **kwargs)
 		except Exception as e:
-			logging.error('Error during model creation: {}'.format(str(e)))
+			logging.exception('Error during model creation: {}'.format(str(e)))
 			raise e
 
 		return model
@@ -230,7 +230,7 @@ class Model:
 			}
 
 		except Exception as e:
-			logging.error('Error during model fitting: {}'.format(str(e)))
+			logging.exception('Error during model fitting: {}'.format(str(e)))
 			raise e
 
 		return results
