@@ -25,7 +25,7 @@ def tcn_fix_params(params):
 	params['batch_size'] = int(params['batch_size'])
 	params['input_windows'] = int(params['input_windows'])
 	params['kernel_size'] = int(params['kernel_size'])
-	params['max_attn_len'] = int(params['max_attn_len'])	
+	params['max_attn_len'] = int(params['max_attn_len'])
 
 
 class TCN_CLF(TemporalMixin, Classifier):
@@ -49,14 +49,15 @@ class TCN_CLF(TemporalMixin, Classifier):
 												[5, 1], [5, 3], [5, 5], [5, 7],
 												[7, 1], [7, 3], [7, 5], [7, 7]]),
 			'kernel_size': hp.quniform('kernel_size', 2, 16, 1),
-			'dropout': hp.uniform('dropout', .01, .80),
+			#'dropout': hp.uniform('dropout', .01, .80),
+			'dropout': 0,
 			'attention': False, # hp.choice('attention', [False]),
 			'max_attn_len': 120 # hp.quniform('max_attn_len', 24, 120, 1)
 		}
 		super(TCN_CLF, self).__init__({**default_space, **other_space})
 
 	def fix_params(self, params):
-		tcn_fix_params(params)	
+		tcn_fix_params(params)
 
 	def make_model(self, params, obs_shape, num_outputs=2):
 		input_channels, window_size = obs_shape
@@ -95,7 +96,7 @@ class TCN_REG(TemporalMixin, Regressor):
 		super(TCN_REG, self).__init__({**default_space, **other_space})
 
 	def fix_params(self, params):
-		tcn_fix_params(params)	
+		tcn_fix_params(params)
 
 	def make_model(self, params, obs_shape, num_outputs=1):
 		input_channels, window_size = obs_shape
