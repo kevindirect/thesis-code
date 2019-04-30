@@ -30,8 +30,10 @@ class Model:
 	"""
 	def __init__(self, other_space={}):
 		default_space = {
-			'epochs': hp.quniform('epochs', 100, 500, 100),
-			'batch_size': hp.choice('batch_size', [128, 256])
+			# 'epochs': hp.quniform('epochs', 100, 500, 100),
+			# 'batch_size': hp.choice('batch_size', [128, 256])
+			'epochs': 300,
+			'batch_size': 256
 		}
 		self.space = {**default_space, **other_space}
 		self.tbx = lambda params, logdir: SummaryWriter(log_dir=logdir) # Creates TensorBoardX logger
@@ -45,7 +47,7 @@ class Model:
 	# 			if (hp_type == 'switch'):			# Indicates an hp.choice object
 	# 				choice_list = hp_param_obj.pos_args[1:]
 	# 				chosen = choice_list[hp_idx]
-					
+
 	# 				if (len(chosen.named_args) > 0): # Nested hp.choice
 	# 					for subparam in chosen.named_args:
 	# 						if (is_type(subparam[0], str)):
@@ -53,7 +55,7 @@ class Model:
 	# 							sp_obj = subparam[1]
 	# 							print('dir(sp_obj)', dir(sp_obj))
 	# 							handle_param(subparam[1], sp_obj, 0, sp_name, res)
-					
+
 	# 				chosen_value = chosen.obj
 	# 				if (is_type(chosen, bool, str, int, float)):
 	# 					res[param_name] = chosen_value

@@ -33,7 +33,8 @@ class Classifier(Model):
 			'loss': hp.choice('loss', ['nll']),
 			'opt': hp.choice('opt', [
 			# 	{'name': 'RMSprop', 'lr': hp.choice('RMSprop_lr', [0.002, 0.001, 0.0005])},
-				{'name': 'Adam', 'lr': hp.uniform('Adam_lr', 0.0005, 0.0025)}
+				# {'name': 'Adam', 'lr': hp.uniform('Adam_lr', 0.0005, 0.0025)}
+				{'name': 'Adam', 'lr': 1e-3}
 			])
 		}
 		super(Classifier, self).__init__({**default_space, **other_space})
