@@ -84,20 +84,24 @@ def run_model(mdl, features, labels, meta, db, max_evals):
 
 	if (db is not None):
 		worker_args = [HOPT_WORKER_BIN]
-		worker_args.append('--exp-key={exp}'.format(exp=exp_name))					# XXX - only run this experiment
-		worker_args.append('--max-jobs={max_jobs}'.format(max_jobs=max_evals+20))		# XXX - set jobs to number of trials
+		worker_args.append('--exp-key={exp}'.format(exp=exp_name))
+                # worker_args.append('--last-job-timeout={timeout}'.format(timeout=120))
+                # worker_args.append('--max-consecutive-failures={failures}'.format(failures=10))
+                worker_args.append('--max-jobs={max_jobs}'.format(max_jobs=max_evals))
 		worker_args.append('--mongo={db_uri}'.format(db_uri=db.get_mongodb_uri(db_name=db_name)))
 		worker_args.append('--poll-interval={poll_interval:1.2f}'.format(poll_interval=0.1))
+		# worker_args.append('--reserve-timeout={timeout}'.format(timeout=120))
 		worker_args.append('--workdir={dir}'.format(dir=CRUNCH_DIR))
-		worker_args.append('--no-subprocesses')
+		# worker_args.append('--no-subprocesses')
 		worker_log = open(CRUNCH_DIR+'hmw_logfile.txt', 'w+')
 		worker = subprocess.Popen(worker_args, stdout=worker_log, stderr=subprocess.STDOUT, shell=False)
 		logging.info('started worker: {}'.format(' '.join(worker_args)))
 		trials = MongoTrials(db.get_mongodb_trials_uri(db_name=db_name), exp_key=exp_name)
 	else:
 		trials = Trials()
-	best = fmin(obj, mdl.get_space(), algo=tpe.suggest, max_evals=max_evals, max_queue_len=20, trials=trials)
+	best = fmin(obj, mdl.get_space(), algo=tpe.suggest, catch_eval_exceptions=True, verbose=3, max_evals=max_evals, max_queue_len=int(max_evals//5), trials=trials)
 	print('best idx: {}'.format(best))
+	worker.terminate()
 	worker_log.close()
 	# best_params = exp.params_idx_to_name(best)
 	# print('best params: {}'.format(best_params))
