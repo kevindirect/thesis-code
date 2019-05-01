@@ -1,0 +1,33 @@
+{
+	"group": {
+		"name": "russell_2000,xg0_reteod_direod,TCN_CLF_p",
+		"asset": "russell_2000",
+		"xg": "xg0_reteod_direod",
+		"backend": "pytorch",
+		"model": "TCN_CLF"
+	},
+	"exp": {
+		"name": "raw_pba_oc_retxeod_reteod[:],raw_pba_oc_retxeod_direod[:],pos",
+		"feat": "raw_pba_oc_retxeod_reteod[:]",
+		"lab": "raw_pba_oc_retxeod_direod[:]",
+		"dir": "pos"
+	},
+	"params": {
+		"shuffle": false,
+		"test_ratio": 0.2,
+		"val_ratio": 0.2,
+		"clf_type": "binary",
+		"obj_mode": "min",
+		"obj_agg": "last",
+		"meta_var": null,
+		"meta_obj": "val_loss",
+		"exp_logdir": "ssell_2000/xg0_reteod_direod/TCN_CLF_p/raw_pba_oc_retxeod_reteod[:]/raw_pba_oc_retxeod_direod[:]/pos/"
+	},
+	"data": {
+		"size": 5012,
+		"lab_dist": {
+			"1": 0.5271348762968875,
+			"0": 0.4728651237031125
+		}
+	}
+}
