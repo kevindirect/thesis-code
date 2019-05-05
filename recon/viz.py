@@ -100,11 +100,11 @@ def plot_feature(feature=None, label=None,
 		output = output[output[feature] != -2]
 	if (remove_zeros):
 		output = output[output[feature] != 0]
-		
+
 	#TODO - upper and lower bound filtering (throw out middle)
 		#past_period - number of rows behind the "big moves" to keep in
 		#Need this for delta transforms
-	
+
 	if (combo == 'atomic'):
 		output[combo] = atomic_transform(output[feature])
 	elif (combo == 'delta'):
@@ -127,7 +127,7 @@ def plot_feature(feature=None, label=None,
 			output = output[output[label] == -1]
 		elif (show_class == 'sideways'):
 			output = output[output[label] == 0]
-	
+
 	#TODO - add year specific removal option
 
 	data_space = np.linspace(0, len(output[combo])-1, num=len(output[combo]))
@@ -154,7 +154,7 @@ def i_plot_feature(feature=None, label=None,
 	output.dropna(axis=0, subset=[label], inplace=True) #Drop rows with no label
 	output.dropna(axis=0, subset=[feature], inplace=True)
 	output[label] = output[label].astype(int)
-	
+
 	if (remove_zeros):
 		output = output[output[feature] != 0]
 
@@ -185,7 +185,7 @@ def i_plot_feature(feature=None, label=None,
 			output = output[output[label] < -1]
 		elif (show_class == 'sideways'):
 			output = output[output[label] == 0]
-	
+
 	#TODO - add year specific removal option
 
 	data_space = np.linspace(0, len(output[combo])-1, num=len(output[combo]))
@@ -198,7 +198,7 @@ def i_plot_feature(feature=None, label=None,
 	plt.grid(b=True, which='major', axis='y')
 	#textstr = '$\mu=%.2f$\n$\mathrm{median}=%.2f$\n$\sigma=%.2f$'%(mean, median, sdev)
 
-	norm = mpl.colors.Normalize(vmin=output[label].min(), vmax=output[label].max()) 
+	norm = mpl.colors.Normalize(vmin=output[label].min(), vmax=output[label].max())
 	plt.scatter(data_space, output[combo], c=norm(output[label]), cmap=plt.cm.jet_r)
 	plt.colorbar()
 	plt.show()
@@ -221,7 +221,7 @@ def i_plot_feature(feature=None, label=None,
 	ax[0].plot(class_values, sent_means, 'ok', label='sent_means')
 	ax[0].plot(class_values, combo_means, 'r^', label='combo_means')
 	ax[0].legend()
-	
+
 	ax[1].set_title('variance')
 	ax[1].set_xlabel('label value')
 	ax[1].plot(class_values, sent_vars, 'ok', label='sent_vars')
@@ -236,11 +236,11 @@ def ploty(y, x_start=0, x_step=1):
 	plt.plot(x, y)
 	plt.show()
 
-def plot_ser(ser, title_str='plot', xlabel_str='xlab', ylabel_str='ylab'):
+def plot_ser(ser, title='plot', xlabel='xlab', ylabel='ylab'):
 	plt.figure(figsize=((25, 10)))
-	plt.title(title_str)
-	plt.xlabel(xlabel_str)
-	plt.ylabel(ylabel_str)
+	plt.title(title)
+	plt.xlabel(xlabel)
+	plt.ylabel(ylabel)
 	plt.plot(ser.index, ser)
 	plt.show()
 
@@ -248,14 +248,14 @@ def plot_ser(ser, title_str='plot', xlabel_str='xlab', ylabel_str='ylab'):
 def plot_day_ser(ser, date=None):
 	if (date is None):
 		date = str(np.random.choice(ser.index))[:10]
-	plot_ser(ser[date], title_str=date, xlabel_str='hour', ylabel_str='value')
+	plot_ser(ser[date], title=date, xlabel='hour', ylabel='value')
 
 
-def plot_df(df, title_str='plot', xlabel_str='xlab', ylabel_str='ylab'):
+def plot_df(df, title='plot', xlabel='xlab', ylabel='ylab'):
 	plt.figure(figsize=((25, 10)))
-	plt.title(title_str)
-	plt.xlabel(xlabel_str)
-	plt.ylabel(ylabel_str)
+	plt.title(title)
+	plt.xlabel(xlabel)
+	plt.ylabel(ylabel)
 	[plt.plot(df.index, df.loc[:, col_name], '^', label=str(col_name)) for col_name in df.columns]
 	plt.legend(loc='upper left')
 	plt.show()
@@ -264,7 +264,7 @@ def plot_df(df, title_str='plot', xlabel_str='xlab', ylabel_str='ylab'):
 def plot_day_df(df, date=None):
 	if (date is None):
 		date = str(np.random.choice(df.index))[:10]
-	plot_df(df[date], title_str=date, xlabel_str='hour', ylabel_str='value')
+	plot_df(df[date], title=date, xlabel='hour', ylabel='value')
 
 
 def plot_hist_df(df, column=None, separate_by=None, num_bins=10, **kwargs):
@@ -301,7 +301,7 @@ def plot_hist_df(df, column=None, separate_by=None, num_bins=10, **kwargs):
 # 		layout_prog (str, optional): layout program within ['neato'|'dot'|'twopi'|'circo'|'fdp'|'nop']
 
 # 	Returns:
-# 		pygraphviz AGraph type representation of dictionary 
+# 		pygraphviz AGraph type representation of dictionary
 # 	"""
 # 	graph = pgv.AGraph(dictionary, landscape=landscape)
 # 	graph.graph_attr['label']=graph_name
