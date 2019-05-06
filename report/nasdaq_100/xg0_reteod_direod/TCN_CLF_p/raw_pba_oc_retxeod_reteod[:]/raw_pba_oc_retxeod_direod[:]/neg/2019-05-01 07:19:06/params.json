@@ -1,0 +1,18 @@
+{
+	"attention": false,
+	"batch_size": 256,
+	"dropout": 0,
+	"epochs": 300,
+	"input_windows": 12,
+	"kernel_size": 11,
+	"loss": "nll",
+	"max_attn_len": 120,
+	"opt": {
+		"lr": 0.001,
+		"name": "Adam"
+	},
+	"topology": [
+		5,
+		5
+	]
+}
