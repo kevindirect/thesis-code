@@ -10,7 +10,7 @@
 				"exclude": null
 			},
 			"raw_vol": {
-				"exact": ["vol_open", "vol_high", "vol_low",  "vol_close", "vol_avgPrice", "vol_numTrades"],
+				"exact": ["vol_open", "vol_high", "vol_low", "vol_close", "vol_avgPrice", "vol_numTrades"],
 				"startswith": [],
 				"endswith": [],
 				"regex": [],

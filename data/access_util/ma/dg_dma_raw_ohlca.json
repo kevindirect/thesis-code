@@ -1,0 +1,19 @@
+{
+	"dma": {
+		"all": {
+			"stage": "mutate",
+			"mutate_type": "dma",
+			"raw_cat": "us_equity_index"
+		},
+		"subsets": {
+			"raw_pba": {
+				"desc": ["raw_pba_drf_dma(3)", "raw_pba_drf_dma(5)", "raw_pba_drf_dma(10)", "raw_pba_drf_dma(20)",
+						"raw_pba_drl_dma(3)", "raw_pba_drl_dma(5)", "raw_pba_drl_dma(10)", "raw_pba_drl_dma(20)"]
+			},
+			"raw_vol": {
+				"desc": ["raw_vol_drf_dma(3)", "raw_vol_drf_dma(5)", "raw_vol_drf_dma(10)", "raw_vol_drf_dma(20)",
+						"raw_vol_drl_dma(3)", "raw_vol_drl_dma(5)", "raw_vol_drl_dma(10)", "raw_vol_drl_dma(20)"]
+			}
+		}
+	}
+}

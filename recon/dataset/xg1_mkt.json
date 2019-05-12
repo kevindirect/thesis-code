@@ -1,0 +1,19 @@
+{
+	"features": [
+		["norm", "dnorm_dmx_raw_ohlca"],
+		["norm", "dnorm_dzn_raw_ohlca"],
+		["sym", "sym_dmx_uni_raw_ohlca"],
+		["sym", "sym_dzn_gau_raw_ohlca"],
+		["diff", "diff_raw_ohlca"],
+		["diff", "ddiff_raw_ohlca"],
+		["ffracdiff", "dffracdiff_raw_ohlca"],
+		["ma", "dma_raw_ohlca"],
+		["ret", "reteod"],
+		["brk", "brkfbxeod1"],
+		["cret", "cretfbxeod1"],
+		["dir", "dirfbxeod1"],
+		["ret", "retfbxeod1"]
+	],
+	"labels": "mvp_labels.json",
+	"targets": "mvp_targets.json"
+}

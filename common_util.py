@@ -14,6 +14,7 @@ import numbers
 import operator
 import getopt
 import collections.abc
+from multiprocessing.pool import ThreadPool
 from contextlib import suppress
 from difflib import SequenceMatcher
 from collections import defaultdict, MutableMapping, OrderedDict, ChainMap
@@ -61,6 +62,7 @@ DF_DATA_FMT = 'parquet'
 
 """Dask Global Settings"""
 dask.config.set(scheduler='threads')
+dask.config.set(pool=ThreadPool(32))
 
 
 """ ********** SYSTEM UTILS ********** """
@@ -160,9 +162,9 @@ def list_compare(master, other):
 	Return describing relationship master and other.
 
 	Args:
-		master (list): 
-		other (list): 
-	
+		master (list):
+		other (list):
+
 	Returns:
 		String describing relationship of lists
 	"""
@@ -686,7 +688,7 @@ def np_inner(vals, nums, normalize=True):
 def arr_nonzero(arr, ret_idx=False, idx_norm=False, idx_shf=1):
 	"""
 	Return the the nonzero indices or values if they exists in the array.
-	
+
 	Args:
 		arr (np.array): 1d numpy array
 		ret_idx (bool): boolean to control returning indices or values
@@ -794,7 +796,7 @@ def df_lazy_gba(df, grouper, apply_fn, **kwargs):
 def pd_rows(pd_obj, idx):
 	"""
 	Return the indexed rows of pd_obj, going from left to right if a MultiIndex is passed in.
-	
+
 	Args:
 		pd_obj (pd.Series or pd.DataFrame): Pandas object to index into
 		idx (pd.Index or pd.MultiIndex): Index of selected rows
@@ -993,7 +995,7 @@ def pd_single_ser(pd_obj, col_idx=0, enforce_singleton=True):
 		pd_obj (pd.Series or pd.DataFrame): Pandas object to convert to a single series
 		col_idx (int>=0): Column of DataFrame to return when relevant (only used if 'enforce_singleton' is 'False')
 		enforce_singleton (bool): Whether to only allow pd.Series or single column pd.DataFrame (otherwise throw Exception)
-	
+
 	Returns:
 		Pandas object as singleton
 	"""
@@ -1140,7 +1142,7 @@ def dti_extract_date(dti, date_freq=DT_CAL_DAILY_FREQ, date_tz=None, level=0):
 
 def pd_dti_idx_date_only(pd_obj, date_freq=DT_CAL_DAILY_FREQ, date_tz=None, level=0, deep=False):
 	"""
-	Return DatetimeIndexed pd.Series or pd.DataFrame (single or MultiIndex) with time component of 
+	Return DatetimeIndexed pd.Series or pd.DataFrame (single or MultiIndex) with time component of
 	its index removed. Basically a wrapper around 'dti_extract_date'.
 
 	Args:
@@ -1185,7 +1187,7 @@ def ser_shift(ser, shift_periods=-1, cast_type=None):
 	"""
 	Return shifted series, null dropped before and after.
 	Used mainly for preparing upshifted time series labels or targets.
-	
+
 	Args:
 		ser (pd.Series): series to shift
 		shift_periods (int): number of periods to shift, by default shifts up by one
@@ -1322,7 +1324,7 @@ def df_freq_transpose(df, col_freq='hour'):
 		col_freq (str): columns of result df, must an be attribute of the original df index
 
 	Returns:
-		transposed pd.DataFrame 
+		transposed pd.DataFrame
 	"""
 	transposed = None
 	if (not df.index.empty):
@@ -1361,14 +1363,14 @@ def df_midx_column_unstack(df, group_attr=None, col_attr=None):
 
 	This essentially transposes the sole column of the passed MultiIndex DataFrame into as many columns
 	as there were "groups" at level 0 for all subindexes at level 1.
-	
+
 	This is useful for converting a single or multi-columned intraday time series into a date indexed time series
 	where each column is an hour or minute of the day (this is implemented in df_downsample_transpose by calling
 	stack and then this function in a groupby apply).
 
 	Args:
 		df (pd.DataFrame): DataFrame must have a two level MultiIndex: ['id0', 'id1'] with a single value column named 'val'
-		group_attr (str, Optional): If supplied returns a MultiIndex DataFrame with this attribute as level 0 
+		group_attr (str, Optional): If supplied returns a MultiIndex DataFrame with this attribute as level 0
 		col_attr (str, Optional): If supplied uses this attribute to name the columns
 
 	Returns:
@@ -1458,7 +1460,7 @@ def pd_to_np(fn):
 	def convert(obj):
 		"""
 		Return converted object
-		
+
 		Args:
 			obj (Any): object to cast
 
@@ -1682,7 +1684,7 @@ def pyt_unsqueeze_to(pyt, dim, append_right=True):
 		pyt (torch.tensor): Tensor to unsqueeze
 		dim (int > 0): Desired number of dimensions to unsqueeze to
 		append_right (bool): Whether to append singleton dimensions to the right or left side of tensor
-	
+
 	Returns:
 		Unsqueezed torch.tensor with 'dim' dimensions or more
 	"""
