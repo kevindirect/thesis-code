@@ -1,5 +1,5 @@
 {
-	"dataset": "dnorm_dmx_raw_pba_avgprice.json",
+	"dataset": "hdnorm_dmx_raw_pba_avgprice.json",
 	"constraint": "fltr_constraint",
 	"parts": ["features", "labels", "targets", "row_masks"],
 	"how": [["features", "row_masks"], ["labels"], ["targets"]],

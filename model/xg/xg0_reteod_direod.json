@@ -1,5 +1,5 @@
 {
-	"dataset": "xg0_reteod_direod.json",
+	"dataset": "xg0_dret_ddir.json",
 	"constraint": "flt_constraint",
 	"parts": ["features", "labels", "targets"],
 	"how": [["features"], ["labels"], ["targets"]],
