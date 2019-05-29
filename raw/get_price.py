@@ -1,8 +1,10 @@
-# Kevin Patel
-
+"""
+Kevin Patel
+"""
 import sys
 import getopt
 from os import sep
+
 from common_util import RAW_DIR, load_json, makedir_if_not_exists, dump_df
 from raw.common import default_pricefile, default_pathsfile, default_columnsfile, default_rowsfile, load_csv_no_idx
 
@@ -54,7 +56,7 @@ def get_price(argv):
 	price_clean_rows = rows_dict['price']
 	vol_clean_rows = rows_dict['vol']
 
-	makedir_if_not_exists(RAW_DIR +'price')	
+	makedir_if_not_exists(RAW_DIR +'price')
 	makedir_if_not_exists(RAW_DIR +'vol')
 
 	for asset_code in df['#RIC'].unique():

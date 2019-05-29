@@ -1,5 +1,6 @@
-# Kevin Patel
-
+"""
+Kevin Patel
+"""
 # *********** COMMON TO ALL CRUNCH PACKAGES ***********
 import sys
 from os.path import dirname, realpath
@@ -33,5 +34,5 @@ def load_csv_no_idx(fname, dir_path=None, local_csv=True):
 	if (local_csv and not isfile(fpath)):
 		print(basename(fpath), 'must be in:', dirname(fpath))
 		sys.exit(2)
-	
+
 	return pd.read_csv(fpath)

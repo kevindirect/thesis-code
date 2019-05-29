@@ -1,8 +1,10 @@
-# Kevin Patel
-
+"""
+Kevin Patel
+"""
 import sys
 import os
 from os import sep
+from os.path import basename
 from itertools import product
 import logging
 
@@ -11,14 +13,14 @@ from dask import delayed
 from common_util import MUTATE_DIR, DT_HOURLY_FREQ, DT_CAL_DAILY_FREQ, load_json, dump_json, get_cmd_args, get_variants, best_match, remove_dups_list, list_get_dict, is_empty_df, search_df, benchmark
 from data.data_api import DataAPI
 from data.access_util import df_getters as dg, col_subsetters2 as cs2
-from mutate.common import default_runt_dir_name, default_trfs_dir_name
+from mutate.common import GRAPHS_DIR, TRANSFORMS_DIR
 from mutate.runt_util import RUNT_FN_TRANSLATOR, RUNT_TYPE_TRANSLATOR, RUNT_NMAP_TRANSLATOR, RUNT_FREQ_TRANSLATOR
 
 """
 TODO:
 	* Default: Run soft sync based on changes to specified graph/runt-dir and datetime of last run
 		* Serialize a LAST_RUNTED datetime variable and reload it on each runt, and write to it at the end of each runt
-		* Use git or another serialized variable to check if runt_dir had been changed later than LAST_RUNTED
+		* Use git or another serialized variable to check if GRAPHS_DIR had been changed later than LAST_RUNTED
 			* If true, run soft sync
 	* Parellilize the running of transforms (dask?)
 		* If using dask:
@@ -37,49 +39,29 @@ TODO:
 
 def run_transforms(argv):
 	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-	cmd_arg_list = ['runt_dir=', 'trfs_dir=', 'all']
-	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name='runt')
-	runt_dir_name = cmd_input['runt_dir='] if (cmd_input['runt_dir='] is not None) else default_runt_dir_name
-	trfs_dir_name = cmd_input['trfs_dir='] if (cmd_input['trfs_dir='] is not None) else default_trfs_dir_name
-	runt_all = True if (cmd_input['all'] is not None) else False
+	cmd_arg_list = ['force']
+	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name=basename(__file__))
+	runt_all = True if (cmd_input['force'] is not None) else False
 
-	runt_dir = MUTATE_DIR +runt_dir_name
-	trfs_dir = runt_dir +trfs_dir_name
-
-	# Embargo 2018 data (final validation)
-	date_range = {
-		'id': ('lt', 2018)
-	}
-
-	trf_defaults = load_json('trf_defaults.json', dir_path=runt_dir)
-	graph = load_json('graph.json', dir_path=runt_dir)
-	visited = load_json('visited.json', dir_path=runt_dir)
-	trfs = {}
-
-	logging.info('loading step settings...')
-	for fname in os.listdir(trfs_dir):
-		trf = load_json(fname, dir_path=trfs_dir)
-		trfs[trf['meta']['name']] = trf
+	logging.info('loading settings...')
+	graph = load_json('graph.json', dir_path=GRAPHS_DIR)
+	visited = load_json('visited.json', dir_path=GRAPHS_DIR)
+	trfs = {trf['meta']['name']]: load_json(fname, dir_path=TRANSFORMS_DIR) for fname in os.listdir(TRANSFORMS_DIR)}
 
 	logging.info('running task graph...')
 	for path_name, path in graph.items():
 		for step in path:
 			logging.info('step: {step}'.format(step=str(step)))
 			if (runt_all or step not in visited):
-				step_info = fill_defaults(trfs[step], trf_defaults)
-				process_step(step_info, date_range)
+				process_step(trfs[step])
 
 				if (step not in visited):
 					visited.append(step)
 					logging.info('updating visited...')
-					dump_json(visited, 'visited.json', dir_path=runt_dir)
+					dump_json(visited, 'visited.json', dir_path=GRAPHS_DIR)
 			else:
 				logging.info('already completed, skipping...')
 
-
-def fill_defaults(step_info, defaults):
-	if (step_info['src'] is None): step_info['src'] = defaults['src']
-	return step_info
 
 ROW_MASK_ALT_MAPS = {
 	'thresh': 'raw',
@@ -101,7 +83,7 @@ def get_row_mask_keychain(original_keychain, all_mask_keys):
 	mapped = [best_match(key, all_mask_keys[idx], alt_maps=ROW_MASK_ALT_MAPS) for idx, key in enumerate(original_keychain)]
 	return mapped
 
-def process_step(step_info, date_range):
+def process_step(step_info):
 	meta, fn, var, rm, src, dst = step_info['meta'], step_info['fn'], step_info['var'], step_info['rm'], step_info['src'], step_info['dst']
 
 	# Loading transform, apply, and frequency settings
@@ -129,8 +111,8 @@ def process_step(step_info, date_range):
 	# Run transforms on inputs
 	for key_chain in src_paths:
 		logging.info('data: {}'.format(str('_'.join(key_chain))))
-		src_rec, src_df = list_get_dict(src_recs, key_chain), list_get_dict(src_dfs, key_chain)
-		src_df = src_df.loc[search_df(src_df, date_range), :].dropna(axis=0, how='all')
+		src_rec = list_get_dict(src_recs, key_chain)
+		src_df = list_get_dict(src_dfs, key_chain).dropna(axis=0, how='all')
 
 		# Masking rows in src from row mask
 		if (rm is not None):
@@ -163,7 +145,7 @@ def process_step(step_info, date_range):
 				logging.error(runted_df)
 				raise Exception('Result of transform is an empty DatafFrame')
 			DataAPI.dump(runted_df, entry)
-	
+
 	DataAPI.update_record() # Sync
 
 def get_desc_pfx(kc, base_rec):

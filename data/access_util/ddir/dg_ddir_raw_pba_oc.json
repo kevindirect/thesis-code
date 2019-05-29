@@ -1,0 +1,14 @@
+{
+	"ddir": {
+		"all": {
+			"stage": "mutate",
+			"mutate_type": "ddir",
+			"raw_cat": "us_equity_index"
+		},
+		"subsets": {
+			"raw_pba_oc_hdxret_ddir": {
+				"desc": "raw_pba_oc_hdxret_ddir"
+			}
+		}
+	}
+}

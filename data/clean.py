@@ -1,8 +1,10 @@
-# Kevin Patel
-
+"""
+Kevin Patel
+"""
 import sys
 import os
 import os.path
+from os.path import basename
 import logging
 
 import numpy as np
@@ -15,7 +17,7 @@ from data.data_api import DataAPI
 def clean(argv):
 	logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 	cmd_arg_list = ['cleanfile=']
-	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name='runt')
+	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name=basename(__file__))
 	cleanfile = cmd_input['cleanfile='] if (cmd_input['cleanfile='] is not None) else default_cleanfile
 
 	clean = load_json(cleanfile, dir_path=DATA_DIR)
@@ -35,7 +37,7 @@ def clean(argv):
 		if (in_debug_mode()):
 			logging.debug(clean_dir +' blacklist: ' +'\n' +str('\n'.join(blacklists[clean_dir])))
 
-	logging.info('removing files in blacklists...')			
+	logging.info('removing files in blacklists...')
 	for root_name in blacklists:
 		logging.debug(root_name)
 		for path in blacklists[root_name]:

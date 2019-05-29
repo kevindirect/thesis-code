@@ -1,0 +1,22 @@
+{
+	"meta": {
+		"name": "hdsym",
+		"mtype_from": "name",
+		"rec_fmt": "{sym_type}({num_sym})",
+		"var_fmt": "grid",
+		"res_freq": "hourly"
+	},
+	"fn": {
+		"ser_fn": "sym",
+		"df_fn": "rt",
+		"col_fn": null,
+		"freq": null
+	},
+	"var": {
+		"sym_type": ["gau", "uni"],
+		"num_sym": [2, 3, 4, 8]
+	},
+	"rm": null,
+	"src": ["hdnorm", "hdnorm"],
+	"dst": ["hdsym", "hdsym"]
+}

@@ -1,0 +1,22 @@
+{
+	"meta": {
+		"name": "dxfbret1",
+		"mtype_from": "rec_fmt",
+		"rec_fmt": "dxfbret",
+		"var_fmt": "grid",
+		"res_freq": "cal_daily",
+		"info": "daily expanding first break return with threshold"
+	},
+	"fn": {
+		"ser_fn": "srf",
+		"df_fn": "gagg",
+		"col_fn": null,
+		"freq": "cal_daily"
+	},
+	"var": {
+		"specifier": ["fnz"]
+	},
+	"rm": null,
+	"src": ["hdxret1", "hdxret1"],
+	"dst": ["dxfbret1", "dxfbret1"]
+}

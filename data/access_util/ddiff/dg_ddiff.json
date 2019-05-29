@@ -1,0 +1,23 @@
+{
+	"ddiff": {
+		"all": {
+			"stage": "mutate",
+			"mutate_type": "ddiff",
+			"raw_cat": "us_equity_index"
+		},
+		"subsets": {
+			"raw_pba": {
+				"desc": ["raw_pba_drl_ddiff(1)", "raw_pba_drl_ddiff(2)"]
+			},
+			"raw_vol": {
+				"desc": ["raw_vol_drl_ddiff(1)", "raw_vol_drl_ddiff(2)"]
+			},
+			"raw_trmi_v2": {
+				"desc": ["raw_trmi_v2_drl_ddiff(1)", "raw_trmi_v2_drl_ddiff(2)"]
+			},
+			"raw_trmi_v3": {
+				"desc": ["raw_trmi_v3_drl_ddiff(1)", "raw_trmi_v3_drl_ddiff(2)"]
+			}
+		}
+	}
+}

@@ -1,5 +1,6 @@
-# Kevin Patel
-
+"""
+Kevin Patel
+"""
 import sys
 import os
 from functools import partial
@@ -69,7 +70,7 @@ NORM_FUN_MAP = {
 def day_norm(df, transform_fn, freq=DT_CAL_DAILY_FREQ):
 	if (freq is None):
 		freq = get_custom_biz_freq(df)
-	return df.groupby(pd.Grouper(freq=freq)).transform(transform_fn) 
+	return df.groupby(pd.Grouper(freq=freq)).transform(transform_fn)
 
 
 """ ********** SEGMENTATION ********** """
@@ -79,7 +80,7 @@ DEF_PIP_METHOD = 'vd'
 def pip_df(df, pattern_size=DEF_PATTERN_SIZE, method=DEF_PIP_METHOD):
 	"""
 	Perceptually Important Points: Choose points by distance to points already in pattern.
-	
+
 	This implementation assumes all points are equally spaced.
 	"""
 	distance_fun = {
@@ -95,7 +96,7 @@ def pip_df(df, pattern_size=DEF_PATTERN_SIZE, method=DEF_PIP_METHOD):
 		"""
 		if (left == right):
 			raise ValueError('Zero Division')
-		
+
 		md, md_iloc = 0, 0
 		left_xy = (left, ser.iloc[left])
 		right_xy = (right, ser.iloc[right])
@@ -133,7 +134,7 @@ def pip_df(df, pattern_size=DEF_PATTERN_SIZE, method=DEF_PIP_METHOD):
 		else:
 			pattern = ser
 		return pattern
-	
+
 	# TODO - HANDLE ALL DAYS WITH LESS THAN pattern_size number of points
 	# Options:
 	#     - greater: run pip
@@ -227,7 +228,7 @@ def encode_df(df, breakpoint_dict, num_sym, numeric_symbols=True):
 
 	Args:
 		df (pd.DataFrame):
-		breakpoint_dict (dict): 
+		breakpoint_dict (dict):
 		num_sym (int): alphabet size
 		max_seg (int): max number of letters per word
 		numeric_symbols (boolean): numeric or non-numeric symbols
@@ -281,7 +282,7 @@ def encode_df(df, breakpoint_dict, num_sym, numeric_symbols=True):
 # 		code = segs.map(symbolize_value, gaussian_brks, gaussian_syms).str.cat(sep=',')
 # 		return code
 
-# 	cust = get_custom_biz_freq(df) 
+# 	cust = get_custom_biz_freq(df)
 # 	# XXX - Known Issue: some thresh group data is lost after saxify (rows that are not non-null in all columns)
 # 	# UPDATE: This is probably an issue with normalize, not with saxing
 # 	saxed = df.groupby(pd.Grouper(freq=cust)).aggregate(sax_ser)
@@ -294,7 +295,7 @@ def encode_df(df, breakpoint_dict, num_sym, numeric_symbols=True):
 K Means Clustering
 
 Requirements:
-	- Stationary Intraday Time Series 
+	- Stationary Intraday Time Series
 
 """
 

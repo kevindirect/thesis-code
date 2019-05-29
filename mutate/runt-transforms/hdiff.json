@@ -1,0 +1,21 @@
+{
+	"meta": {
+		"name": "hdiff",
+		"mtype_from": "name",
+		"rec_fmt": "hdiff({num_periods})",
+		"var_fmt": "grid",
+		"res_freq": "hourly"
+	},
+	"fn": {
+		"ser_fn": "diff",
+		"df_fn": "gbt",
+		"col_fn": null,
+		"freq": "cal_daily"
+	},
+	"var": {
+		"num_periods": [1]
+	},
+	"rm": ["hrm", "hrm"],
+	"src": ["raw", "raw"],
+	"dst": ["hdiff", "hdiff"]
+}

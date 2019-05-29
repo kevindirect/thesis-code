@@ -1,7 +1,6 @@
 """
 Kevin Patel
 """
-
 import sys
 import os
 from functools import partial
@@ -15,8 +14,7 @@ from common_util import DT_HOURLY_FREQ, DT_BIZ_DAILY_FREQ, DT_CAL_DAILY_FREQ, co
 from common_util import ser_range_center_clip, pd_slot_shift, concat_map, substr_ad_map, all_equal, first_element, first_letter_concat, arr_nonzero, apply_nz_nn, one_minus
 from mutate.common import STANDARD_DAY_LEN
 from mutate.pattern_util import gaussian_breakpoints, uniform_breakpoints, get_sym_list, symbolize_value
-from mutate.fracdiff import get_weights
-from mutate.label_util import UP, DOWN, SIDEWAYS, fastbreak_eod_fct, fastbreak_fct, confidence_fct, fastbreak_confidence_fct
+from mutate.fracdiff_util import get_weights
 
 
 """ ********** APPLY FUNCTIONS ********** """
@@ -68,12 +66,47 @@ def statistic(stat_type, abs_val=True, agg_freq='cal_daily'):
 def difference(num_periods):
 	return lambda ser: ser.diff(periods=num_periods)
 
-def moving(stat_type, periods=1):
-	stat_fn = STAT_FN_MAP[stat_type]
-	return lambda ser: ser.rolling(window=periods, min_periods=periods).agg(stat_fn)
+zscore_rank = lambda ser: (ser.iloc[-1]-ser.mean()) / ser.std()
+min_max_rank = lambda ser: 2 * ((ser.iloc[-1]-ser.min()) / (ser.max()-ser.min())) - 1
+ordinal_rank = lambda ser, normalize=True: ser.rank(numeric_only=True, ascending=True, pct=normalize).iloc[-1]
+percentile_rank = lambda ser: (ser.iloc[-1]-ser.min()) / (ser.max()-ser.min())
 
-def moving_average(num_periods):
-	return lambda ser: ser.rolling(window=num_periods, min_periods=num_periods).mean()
+def simple_moving_window(stat_type, num_periods):
+	fn = {
+		'avg': lambda ser: ser.rolling(window=num_periods, min_periods=1).avg(),
+		'std': lambda ser: ser.rolling(window=num_periods, min_periods=1).std(),
+		'var': lambda ser: ser.rolling(window=num_periods, min_periods=1).var(),
+		'zsc': lambda ser: ser.rolling(window=num_periods, min_periods=1).apply(zscore_rank),
+		'mmx': lambda ser: ser.rolling(window=num_periods, min_periods=1).apply(min_max_rank),
+		'pct': lambda ser: ser.rolling(window=num_periods, min_periods=1).apply(percentile_rank),
+		'ord': lambda ser: ser.rolling(window=num_periods, min_periods=1).apply(ordinal_rank),
+		'min': lambda ser: ser.rolling(window=num_periods, min_periods=1).min(),
+		'max': lambda ser: ser.rolling(window=num_periods, min_periods=1).max(),
+		'skw': lambda ser: ser.rolling(window=num_periods, min_periods=1).skew(),
+		'krt': lambda ser: ser.rolling(window=num_periods, min_periods=1).kurt()
+		,
+	}.get(stat_type)
+	return fn
+
+def expanding_window(stat_type):
+	fn = {
+		'avg': lambda ser: ser.expanding(min_periods=1).avg(),
+		'std': lambda ser: ser.expanding(min_periods=1).avg(),
+		'var': lambda ser: ser.expanding(min_periods=1).avg(),
+		'zsc': lambda ser: ser.expanding(min_periods=1).apply(zscore_rank),
+		'mmx': lambda ser: ser.expanding(min_periods=1).apply(min_max_rank),
+		'pct': lambda ser: ser.expanding(min_periods=1).apply(percentile_rank),
+		'ord': lambda ser: ser.expanding(min_periods=1).apply(ordinal_rank)
+	}.get(stat_type)
+	return fn
+
+def exponential_moving_window(stat_type, num_periods):
+	fn = {
+		'avg': lambda ser: ser.ewm(span=num_periods, min_periods=1).avg(),
+		'std': lambda ser: ser.ewm(span=num_periods, min_periods=1).std(),
+		'var': lambda ser: ser.ewm(span=num_periods, min_periods=1).var()
+	}.get(stat_type)
+	return fn
 
 RETURN_FN_MAP = {
 	"spread": (lambda slow_ser, fast_ser: fast_ser - slow_ser),
@@ -133,9 +166,9 @@ def sign(val):
 		return None
 	else:
 		return {
-			val > 0: UP,
-			val < 0: DOWN,
-			val == 0: SIDEWAYS
+			val > 0: 1,
+			val < 0: -1,
+			val == 0: 0
 		}.get(True)
 
 def signify():
@@ -154,25 +187,10 @@ def binary_sign_difference_count():
 	"""
 	pass
 
-def expanding_fracdiff(d, size, thresh):
+def fracdiff(d, thresh=None, size=None):
 	"""
-	Expanding Window Fractional Differencing
-	XXX - Implement
-	"""
-	pass
-# 	def expanding_fracdiff(ser):
-# 		_ser = ser.dropna()
-# 		weights = get_weights(d, size=_ser.size, thresh=thresh)
-# 		# Determine initial calcs to be skipped based on weight-loss threshold
-# 		weight_changes = np.cumsum(abs(weights))
-# 		weight_changes /= weight_changes[-1]
-# 		skip = weight_changes[weight_changes > thresh].shape[0]
-
-# 	return lambda ser: ser.transform(dot_weights_fn)
-
-def fixed_fracdiff(d, size, thresh):
-	"""
-	Fixed Window Fractional Differencing
+	Fractional Differencing
+	Will be Expanding, Fixed Window, or Lower Bound of the two depending on the parameters passed in
 	"""
 	weights = get_weights(d, size=size, thresh=thresh)
 	dot_weights_fn = lambda ser: ser.dot(weights)
@@ -204,8 +222,7 @@ def symbolize(sym_type, num_sym, numeric_symbols=True):
 	Return:
 		symbol encoder function
 	"""
-	breakpoint_dict = SYM_MAP[sym_type]
-	breakpoints = breakpoint_dict[num_sym]
+	breakpoints = SYM_MAP[sym_type][num_sym]
 	symbols = get_sym_list(breakpoints, numeric_symbols=numeric_symbols)
 	encoder = partial(symbolize_value, breakpoints=breakpoints, symbols=symbols)
 
@@ -288,9 +305,10 @@ RUNT_FN_TRANSLATOR = {
 	"ret": returnify,
 	"retx": expanding_returnify,
 	"vretx": variable_expanding_returnify,
-	"efracdiff": expanding_fracdiff,
-	"ffracdiff": fixed_fracdiff,
-	"ma": moving_average,
+	"fracdiff": fracdiff,
+	"smw": simple_moving_window,
+	"xw": expanding_window,
+	"emw": exponential_moving_window,
 	"norm": normalize,
 	"sym": symbolize,
 	"srf": single_row_filter,

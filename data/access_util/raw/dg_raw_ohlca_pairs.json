@@ -1,0 +1,17 @@
+{
+	"raw_ohlca_pairs": {
+		"all": {
+			"stage": "raw",
+			"raw_cat": "us_equity_index",
+			"desc": "raw"
+		},
+		"subsets": {
+			"raw_pba_oc": {},
+			"raw_pba_oa": {},
+			"raw_pba_lh": {},
+			"raw_vol_oc": {},
+			"raw_vol_oa": {},
+			"raw_vol_lh": {}
+		}
+	}
+}

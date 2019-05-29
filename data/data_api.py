@@ -1,5 +1,6 @@
-# Kevin Patel
-
+"""
+Kevin Patel
+"""
 import sys
 from os import sep
 from os.path import isfile, getsize
@@ -27,7 +28,7 @@ class DataAPI:
 		"""
 		Global storage structure for the storage of dataframe records dumped by other stages.
 		Currently only supports single threaded access.
-		
+
 		Entry:
 			id (int): integer id
 			name (str): filename of df on disk
@@ -119,7 +120,7 @@ class DataAPI:
 
 			def load_rec_df(rec):
 				return rec, load_df(rec.name, dir_path=DATA_DIR+rec.dir, dti_freq=rec.freq, **kwargs)
-			
+
 			return load_rec_df
 
 		@classmethod
@@ -161,7 +162,7 @@ class DataAPI:
 			cls.DataRecordAPI.reset_record()
 			logging.warning('DataAPI initialize: Data record not found, loading empty record')
 
-	
+
 	@classmethod
 	def print_record(cls):
 		print(cls.DataRecordAPI.get_record_view())
@@ -298,7 +299,7 @@ class DataAPI:
 	def dump(cls, df, entry, **kwargs):
 		cls.DataRecordAPI.assert_valid_entry(entry)
 		cls.DataRecordAPI.dump(df, entry, **kwargs)
-	
+
 	@classmethod
 	def update_record(cls):
 		cls.DataRecordAPI.dump_record()

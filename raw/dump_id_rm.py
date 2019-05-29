@@ -1,5 +1,6 @@
-# Kevin Patel
-
+"""
+Kevin Patel
+"""
 import sys
 import getopt
 import logging

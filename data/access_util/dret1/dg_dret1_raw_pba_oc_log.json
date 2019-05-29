@@ -1,0 +1,21 @@
+{
+	"dret": {
+		"all": {
+			"stage": "mutate",
+			"mutate_type": "dret",
+			"raw_cat": "us_equity_index"
+		},
+		"subsets": {
+			"raw_pba_oc_hdxret_dret": {
+				"desc": ["raw_pba_oc_hdxret(0.062500%)_dret",
+						"raw_pba_oc_hdxret(0.125000%)_dret",
+						"raw_pba_oc_hdxret(0.250000%)_dret",
+						"raw_pba_oc_hdxret(0.500000%)_dret",
+						"raw_pba_oc_hdxret(1.000000%)_dret",
+						"raw_pba_oc_hdxret(2.000000%)_dret",
+						"raw_pba_oc_hdxret(4.000000%)_dret",
+						"raw_pba_oc_hdxret(8.000000%)_dret"]
+			}
+		}
+	}
+}

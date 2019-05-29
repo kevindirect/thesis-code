@@ -1,0 +1,29 @@
+{
+	"hdxret": {
+		"all": {
+			"stage": "mutate",
+			"mutate_type": "hdxret",
+			"raw_cat": "us_equity_index"
+		},
+		"subsets": {
+			"raw_pba_oc_hdxret": {
+				"desc": "raw_pba_oc_hdxret"
+			},
+			"raw_pba_oa_hdxret": {
+				"desc": "raw_pba_oa_hdxret"
+			},
+			"raw_pba_lh_hdxret": {
+				"desc": "raw_pba_lh_hdxret"
+			},
+			"raw_vol_oc_hdxret": {
+				"desc": "raw_vol_oc_hdxret"
+			},
+			"raw_vol_oa_hdxret": {
+				"desc": "raw_vol_oa_hdxret"
+			},
+			"raw_vol_lh_hdxret": {
+				"desc": "raw_vol_lh_hdxret"
+			}
+		}
+	}
+}

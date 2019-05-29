@@ -1,0 +1,71 @@
+{
+	"dxfbcret": {
+		"all": {
+			"stage": "mutate",
+			"mutate_type": "dxfbcret",
+			"raw_cat": "us_equity_index"
+		},
+		"subsets": {
+			"raw_pba_oc_hdxcret_dxfbcret": {
+				"desc": ["raw_pba_oc_hdxcret(1.000000%)_dxfbcret",
+						"raw_pba_oc_hdxcret(2.000000%)_dxfbcret",
+						"raw_pba_oc_hdxcret(3.000000%)_dxfbcret",
+						"raw_pba_oc_hdxcret(4.000000%)_dxfbcret",
+						"raw_pba_oc_hdxcret(5.000000%)_dxfbcret",
+						"raw_pba_oc_hdxcret(6.000000%)_dxfbcret",
+						"raw_pba_oc_hdxcret(7.000000%)_dxfbcret",
+						"raw_pba_oc_hdxcret(8.000000%)_dxfbcret"]
+			},
+			"raw_pba_oa_hdxcret_dxfbcret": {
+				"desc": ["raw_pba_oa_hdxcret(1.000000%)_dxfbcret",
+						"raw_pba_oa_hdxcret(2.000000%)_dxfbcret",
+						"raw_pba_oa_hdxcret(3.000000%)_dxfbcret",
+						"raw_pba_oa_hdxcret(4.000000%)_dxfbcret",
+						"raw_pba_oa_hdxcret(5.000000%)_dxfbcret",
+						"raw_pba_oa_hdxcret(6.000000%)_dxfbcret",
+						"raw_pba_oa_hdxcret(7.000000%)_dxfbcret",
+						"raw_pba_oa_hdxcret(8.000000%)_dxfbcret"]
+			},
+			"raw_pba_lh_hdxcret_dxfbcret": {
+				"desc": ["raw_pba_lh_hdxcret(1.000000%)_dxfbcret",
+						"raw_pba_lh_hdxcret(2.000000%)_dxfbcret",
+						"raw_pba_lh_hdxcret(3.000000%)_dxfbcret",
+						"raw_pba_lh_hdxcret(4.000000%)_dxfbcret",
+						"raw_pba_lh_hdxcret(5.000000%)_dxfbcret",
+						"raw_pba_lh_hdxcret(6.000000%)_dxfbcret",
+						"raw_pba_lh_hdxcret(7.000000%)_dxfbcret",
+						"raw_pba_lh_hdxcret(8.000000%)_dxfbcret"]
+			},
+			"raw_vol_oc_hdxcret_dxfbcret": {
+				"desc": ["raw_vol_oc_hdxcret(1.000000%)_dxfbcret",
+						"raw_vol_oc_hdxcret(2.000000%)_dxfbcret",
+						"raw_vol_oc_hdxcret(3.000000%)_dxfbcret",
+						"raw_vol_oc_hdxcret(4.000000%)_dxfbcret",
+						"raw_vol_oc_hdxcret(5.000000%)_dxfbcret",
+						"raw_vol_oc_hdxcret(6.000000%)_dxfbcret",
+						"raw_vol_oc_hdxcret(7.000000%)_dxfbcret",
+						"raw_vol_oc_hdxcret(8.000000%)_dxfbcret"]
+			},
+			"raw_vol_oa_hdxcret_dxfbcret": {
+				"desc": ["raw_vol_oa_hdxcret(1.000000%)_dxfbcret",
+						"raw_vol_oa_hdxcret(2.000000%)_dxfbcret",
+						"raw_vol_oa_hdxcret(3.000000%)_dxfbcret",
+						"raw_vol_oa_hdxcret(4.000000%)_dxfbcret",
+						"raw_vol_oa_hdxcret(5.000000%)_dxfbcret",
+						"raw_vol_oa_hdxcret(6.000000%)_dxfbcret",
+						"raw_vol_oa_hdxcret(7.000000%)_dxfbcret",
+						"raw_vol_oa_hdxcret(8.000000%)_dxfbcret"]
+			},
+			"raw_vol_lh_hdxcret_dxfbcret": {
+				"desc": ["raw_vol_lh_hdxcret(1.000000%)_dxfbcret",
+						"raw_vol_lh_hdxcret(2.000000%)_dxfbcret",
+						"raw_vol_lh_hdxcret(3.000000%)_dxfbcret",
+						"raw_vol_lh_hdxcret(4.000000%)_dxfbcret",
+						"raw_vol_lh_hdxcret(5.000000%)_dxfbcret",
+						"raw_vol_lh_hdxcret(6.000000%)_dxfbcret",
+						"raw_vol_lh_hdxcret(7.000000%)_dxfbcret",
+						"raw_vol_lh_hdxcret(8.000000%)_dxfbcret"]
+			}
+		}
+	}
+}

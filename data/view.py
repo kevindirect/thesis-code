@@ -1,5 +1,6 @@
-# Kevin Patel
-
+"""
+Kevin Patel
+"""
 import sys
 import os
 import getopt
@@ -72,6 +73,6 @@ def view(argv):
 
 		print('\n')
 
-	
+
 if __name__ == '__main__':
 	view(sys.argv[1:])

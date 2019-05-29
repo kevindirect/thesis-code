@@ -1,0 +1,95 @@
+{
+	"dxfbdir": {
+		"all": {
+			"stage": "mutate",
+			"mutate_type": "dxfbdir",
+			"raw_cat": "us_equity_index"
+		},
+		"subsets": {
+			"raw_pba_oc_hdxcret_dxfbdir": {
+				"desc": ["raw_pba_oc_hdxcret(0.062500%)_dxfbdir",
+						"raw_pba_oc_hdxcret(0.125000%)_dxfbdir",
+						"raw_pba_oc_hdxcret(0.250000%)_dxfbdir",
+						"raw_pba_oc_hdxcret(0.500000%)_dxfbdir",
+						"raw_pba_oc_hdxcret(1.000000%)_dxfbdir",
+						"raw_pba_oc_hdxcret(2.000000%)_dxfbdir",
+						"raw_pba_oc_hdxcret(3.000000%)_dxfbdir",
+						"raw_pba_oc_hdxcret(4.000000%)_dxfbdir",
+						"raw_pba_oc_hdxcret(5.000000%)_dxfbdir",
+						"raw_pba_oc_hdxcret(6.000000%)_dxfbdir",
+						"raw_pba_oc_hdxcret(7.000000%)_dxfbdir",
+						"raw_pba_oc_hdxcret(8.000000%)_dxfbdir"]
+			},
+			"raw_pba_oa_hdxcret_dxfbdir": {
+				"desc": ["raw_pba_oa_hdxcret(0.062500%)_dxfbdir",
+						"raw_pba_oa_hdxcret(0.125000%)_dxfbdir",
+						"raw_pba_oa_hdxcret(0.250000%)_dxfbdir",
+						"raw_pba_oa_hdxcret(0.500000%)_dxfbdir",
+						"raw_pba_oa_hdxcret(1.000000%)_dxfbdir",
+						"raw_pba_oa_hdxcret(2.000000%)_dxfbdir",
+						"raw_pba_oa_hdxcret(3.000000%)_dxfbdir",
+						"raw_pba_oa_hdxcret(4.000000%)_dxfbdir",
+						"raw_pba_oa_hdxcret(5.000000%)_dxfbdir",
+						"raw_pba_oa_hdxcret(6.000000%)_dxfbdir",
+						"raw_pba_oa_hdxcret(7.000000%)_dxfbdir",
+						"raw_pba_oa_hdxcret(8.000000%)_dxfbdir"]
+			},
+			"raw_pba_lh_hdxcret_dxfbdir": {
+				"desc": ["raw_pba_lh_hdxcret(0.062500%)_dxfbdir",
+						"raw_pba_lh_hdxcret(0.125000%)_dxfbdir",
+						"raw_pba_lh_hdxcret(0.250000%)_dxfbdir",
+						"raw_pba_lh_hdxcret(0.500000%)_dxfbdir",
+						"raw_pba_lh_hdxcret(1.000000%)_dxfbdir",
+						"raw_pba_lh_hdxcret(2.000000%)_dxfbdir",
+						"raw_pba_lh_hdxcret(3.000000%)_dxfbdir",
+						"raw_pba_lh_hdxcret(4.000000%)_dxfbdir",
+						"raw_pba_lh_hdxcret(5.000000%)_dxfbdir",
+						"raw_pba_lh_hdxcret(6.000000%)_dxfbdir",
+						"raw_pba_lh_hdxcret(7.000000%)_dxfbdir",
+						"raw_pba_lh_hdxcret(8.000000%)_dxfbdir"]
+			},
+			"raw_vol_oc_hdxcret_dxfbdir": {
+				"desc": ["raw_vol_oc_hdxcret(0.062500%)_dxfbdir",
+						"raw_vol_oc_hdxcret(0.125000%)_dxfbdir",
+						"raw_vol_oc_hdxcret(0.250000%)_dxfbdir",
+						"raw_vol_oc_hdxcret(0.500000%)_dxfbdir",
+						"raw_vol_oc_hdxcret(1.000000%)_dxfbdir",
+						"raw_vol_oc_hdxcret(2.000000%)_dxfbdir",
+						"raw_vol_oc_hdxcret(3.000000%)_dxfbdir",
+						"raw_vol_oc_hdxcret(4.000000%)_dxfbdir",
+						"raw_vol_oc_hdxcret(5.000000%)_dxfbdir",
+						"raw_vol_oc_hdxcret(6.000000%)_dxfbdir",
+						"raw_vol_oc_hdxcret(7.000000%)_dxfbdir",
+						"raw_vol_oc_hdxcret(8.000000%)_dxfbdir"]
+			},
+			"raw_vol_oa_hdxcret_dxfbdir": {
+				"desc": ["raw_vol_oa_hdxcret(0.062500%)_dxfbdir",
+						"raw_vol_oa_hdxcret(0.125000%)_dxfbdir",
+						"raw_vol_oa_hdxcret(0.250000%)_dxfbdir",
+						"raw_vol_oa_hdxcret(0.500000%)_dxfbdir",
+						"raw_vol_oa_hdxcret(1.000000%)_dxfbdir",
+						"raw_vol_oa_hdxcret(2.000000%)_dxfbdir",
+						"raw_vol_oa_hdxcret(3.000000%)_dxfbdir",
+						"raw_vol_oa_hdxcret(4.000000%)_dxfbdir",
+						"raw_vol_oa_hdxcret(5.000000%)_dxfbdir",
+						"raw_vol_oa_hdxcret(6.000000%)_dxfbdir",
+						"raw_vol_oa_hdxcret(7.000000%)_dxfbdir",
+						"raw_vol_oa_hdxcret(8.000000%)_dxfbdir"]
+			},
+			"raw_vol_lh_hdxcret_dxfbdir": {
+				"desc": ["raw_vol_lh_hdxcret(0.062500%)_dxfbdir",
+						"raw_vol_lh_hdxcret(0.125000%)_dxfbdir",
+						"raw_vol_lh_hdxcret(0.250000%)_dxfbdir",
+						"raw_vol_lh_hdxcret(0.500000%)_dxfbdir",
+						"raw_vol_lh_hdxcret(1.000000%)_dxfbdir",
+						"raw_vol_lh_hdxcret(2.000000%)_dxfbdir",
+						"raw_vol_lh_hdxcret(3.000000%)_dxfbdir",
+						"raw_vol_lh_hdxcret(4.000000%)_dxfbdir",
+						"raw_vol_lh_hdxcret(5.000000%)_dxfbdir",
+						"raw_vol_lh_hdxcret(6.000000%)_dxfbdir",
+						"raw_vol_lh_hdxcret(7.000000%)_dxfbdir",
+						"raw_vol_lh_hdxcret(8.000000%)_dxfbdir"]
+			}
+		}
+	}
+}

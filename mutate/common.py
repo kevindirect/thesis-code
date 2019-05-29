@@ -1,5 +1,6 @@
-# Kevin Patel
-
+"""
+Kevin Patel
+"""
 # *********** COMMON TO ALL CRUNCH PACKAGES ***********
 import sys
 from os.path import dirname, realpath
@@ -19,11 +20,8 @@ STANDARD_DAY_LEN = 8 # standard eight hour trading day
 
 # PACKAGE DEFAULTS
 dum = 0
-default_threshfile = 'thresh_all.json'
-default_label_threshfile = 'label_thresh_mvp.json'
-default_labelfile = 'label_mvp.json'
-default_runt_dir_name = 'runt' +sep
-default_trfs_dir_name = 'trfs' +sep
+GRAPHS_DIR = MUTATE_DIR +'runt-graphs' +sep
+TRANSFORMS_DIR = MUTATE_DIR +'runt-transforms' +sep
 default_num_sym = 4
 default_max_seg = STANDARD_DAY_LEN
 

@@ -1,0 +1,23 @@
+{
+	"meta": {
+		"name": "dxfbdir2",
+		"mtype_from": "rec_fmt",
+		"rec_fmt": "dxfbdir",
+		"var_fmt": "grid",
+		"res_freq": "cal_daily",
+		"info": "daily expanding first break return direction with variable threshold"
+	},
+	"fn": {
+		"ser_fn": "srf",
+		"df_fn": "gagg",
+		"col_fn": null,
+		"freq": "cal_daily"
+	},
+	"var": {
+		"specifier": ["fnz"],
+		"map_fn": ["sgn"]
+	},
+	"rm": null,
+	"src": ["hdxcret2", "hdxcret2"],
+	"dst": ["dxfbdir2", "dxfbdir2"]
+}

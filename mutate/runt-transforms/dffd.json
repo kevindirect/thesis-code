@@ -1,0 +1,24 @@
+{
+	"meta": {
+		"name": "dffd",
+		"mtype_from": "name",
+		"rec_fmt": "dffd({d:f},{thresh:f})",
+		"var_fmt": "grid",
+		"res_freq": "cal_daily",
+		"info": "daily fixed window fracdiff"
+	},
+	"fn": {
+		"ser_fn": "fracdiff",
+		"df_fn": "rt",
+		"col_fn": null,
+		"freq": "cal_daily"
+	},
+	"var": {
+		"d": [0.2, 0.4, 0.5, 0.6, 0.8, 1.5],
+		"size": [null],
+		"thresh": [1e-2]
+	},
+	"rm": null,
+	"src": ["dr", "dr_raw_ohlca"],
+	"dst": ["dffd", "dffd"]
+}

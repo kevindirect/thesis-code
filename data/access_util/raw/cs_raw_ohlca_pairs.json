@@ -1,0 +1,49 @@
+{
+	"raw_ohlca_pairs": {
+		"all": null,
+		"subsets": {
+			"raw_pba_oc": {
+				"exact": ["pba_open", "pba_close"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			"raw_pba_oa": {
+				"exact": ["pba_open", "pba_avgPrice"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			"raw_pba_lh": {
+				"exact": ["pba_low", "pba_high"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			"raw_vol_oc": {
+				"exact": ["vol_open", "vol_close"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			"raw_vol_oa": {
+				"exact": ["vol_open", "vol_avgPrice"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			"raw_vol_lh": {
+				"exact": ["vol_low", "vol_high"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			}
+		}
+	}
+}

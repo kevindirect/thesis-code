@@ -1,0 +1,21 @@
+{
+	"meta": {
+		"name": "hdnorm",
+		"mtype_from": "rec_fmt",
+		"rec_fmt": "{norm_type}",
+		"var_fmt": "grid",
+		"res_freq": "hourly"
+	},
+	"fn": {
+		"ser_fn": "norm",
+		"df_fn": "gbt",
+		"col_fn": null,
+		"freq": "cal_daily"
+	},
+	"var": {
+		"norm_type": ["dzn", "dmx"]
+	},
+	"rm": null,
+	"src": ["hdnorm", "pre_hdnorm"],
+	"dst": ["hdnorm", "hdnorm"]
+}

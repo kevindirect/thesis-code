@@ -1,0 +1,22 @@
+{
+	"meta": {
+		"name": "ddiff",
+		"mtype_from": "name",
+		"rec_fmt": "ddiff({num_periods})",
+		"var_fmt": "grid",
+		"res_freq": "cal_daily",
+		"info": "daily differenced data"
+	},
+	"fn": {
+		"ser_fn": "diff",
+		"df_fn": "rt",
+		"col_fn": null,
+		"freq": "cal_daily"
+	},
+	"var": {
+		"num_periods": [1, 2]
+	},
+	"rm": null,
+	"src": ["dr", "dr"],
+	"dst": ["ddiff", "ddiff"]
+}

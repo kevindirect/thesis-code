@@ -1,0 +1,24 @@
+{
+	"meta": {
+		"name": "hdxcret1",
+		"mtype_from": "rec_fmt",
+		"rec_fmt": "c{ret_type}xeod({thresh:%})",
+		"var_fmt": "grid",
+		"res_freq": "hourly",
+		"info": "hourly, daily expanding clipped return with nonzero threshold, same as hdxret1 but with clip->true"
+	},
+	"fn": {
+		"ser_fn": "retx",
+		"df_fn": "btw",
+		"col_fn": "sami",
+		"freq": "hourly"
+	},
+	"var": {
+		"ret_type": ["ret"],
+		"thresh": [6.25e-4, 1.25e-3, 2.5e-3, 5e-3, 1e-2, 2e-2, 3e-2, 4e-2, 5e-2, 6e-2, 7e-2, 8e-2],
+		"clip": [true]
+	},
+	"rm": ["hrm", "hrm"],
+	"src": ["raw", "raw_ohlca_pairs"],
+	"dst": ["hdxcret1", "hdxcret1"]
+}

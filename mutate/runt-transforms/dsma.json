@@ -1,0 +1,22 @@
+{
+	"meta": {
+		"name": "dsma",
+		"mtype_from": "name",
+		"rec_fmt": "dsma({num_periods})",
+		"var_fmt": "grid",
+		"res_freq": "cal_daily",
+		"info": "daily frequency simple moving average"
+	},
+	"fn": {
+		"ser_fn": "ma",
+		"df_fn": "rt",
+		"col_fn": null,
+		"freq": null
+	},
+	"var": {
+		"num_periods": [3, 5, 10, 20]
+	},
+	"rm": null,
+	"src": ["dr", "dr"],
+	"dst": ["dsma", "dsma"]
+}

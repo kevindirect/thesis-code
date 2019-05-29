@@ -1,0 +1,21 @@
+{
+	"meta": {
+		"name": "dr",
+		"mtype_from": "rec_fmt",
+		"rec_fmt": "dr{specifier}",
+		"var_fmt": "grid",
+		"res_freq": "cal_daily"
+	},
+	"fn": {
+		"ser_fn": "srf",
+		"df_fn": "gagg",
+		"col_fn": null,
+		"freq": "cal_daily"
+	},
+	"var": {
+		"specifier": ["f", "l"]
+	},
+	"rm": ["hrm", "hrm"],
+	"src": ["raw", "raw"],
+	"dst": ["dr", "dr"]
+}

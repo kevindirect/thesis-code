@@ -1,8 +1,10 @@
-# Kevin Patel
-
+"""
+Kevin Patel
+"""
 import sys
 import getopt
 from os import sep
+
 from common_util import RAW_DIR, load_json, makedir_if_not_exists, dump_df
 from raw.common import TRMI_CONFIG_FNAME, TRMI_CONFIG_DIR, default_pathsfile, load_csv_no_idx
 
