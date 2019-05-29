@@ -1,5 +1,6 @@
-# Kevin Patel
-
+"""
+Kevin Patel
+"""
 import sys
 import os
 import logging
@@ -36,5 +37,5 @@ def extract_pipeline(dictionary):
 	pipeline_steps = [(step_name, translate_step(step_name)) for step_name in dictionary['steps']]
 	logging.debug('pipeline structure: ' +str(pipeline_steps))
 	pipeline = Pipeline(steps=pipeline_steps)
-	
+
 	return pipeline, dictionary['grid']

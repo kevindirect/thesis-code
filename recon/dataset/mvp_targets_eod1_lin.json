@@ -1,6 +1,6 @@
 {
 	"targets": [
-		["mvp_ret", "reteod"],
-		["mvp_ret", "reteod1_lin"]
+		["dret", "dret_raw_pba_oc"],
+		["dret1", "dret1_raw_pba_oc_lin"]
 	]
 }

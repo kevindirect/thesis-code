@@ -1,6 +1,6 @@
 {
 	"features": [
-		["norm", "dnorm_dmx_raw_pba_ohlca"]
+		["hdnorm", "hdnorm_raw_pba_ohlca"]
 	],
 	"labels": "mvp_labels.json",
 	"targets": "mvp_targets.json",

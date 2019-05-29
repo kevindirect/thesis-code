@@ -1,7 +1,6 @@
 {
 	"features": [
-		["norm", "dnorm"],
-		["sym", "sym"]
+		["hdnorm", "hdnorm_raw_ohlca"]
 	],
 	"labels": "labels.json",
 	"targets": "targets.json",

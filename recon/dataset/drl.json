@@ -1,6 +1,6 @@
 {
 	"features": [
-		["srf", "drl"]
+		["dr", "drl"]
 	],
 	"labels": "labels.json",
 	"targets": "targets.json"

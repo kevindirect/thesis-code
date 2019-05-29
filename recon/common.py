@@ -1,5 +1,6 @@
-# Kevin Patel
-
+"""
+Kevin Patel
+"""
 # *********** COMMON TO ALL CRUNCH PACKAGES ***********
 import sys
 from os.path import dirname, realpath

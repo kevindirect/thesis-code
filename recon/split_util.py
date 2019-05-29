@@ -1,5 +1,6 @@
-# Kevin Patel
-
+"""
+Kevin Patel
+"""
 import sys
 import os
 import logging
@@ -37,7 +38,7 @@ def index_three_split(*pd_idx, val_ratio=.2, test_ratio=.2, shuffle=False):
 
 	Args:
 		pd_idx (sequence of pandas indexes): the indexes to three split
-		val_ratio (float ∈ [0, 1]): proportion of total data used for validation 
+		val_ratio (float ∈ [0, 1]): proportion of total data used for validation
 		test_ratio (float ∈ [0, 1]): proportion of total data used for test
 
 	Returns:
@@ -58,7 +59,7 @@ def get_train_test_split(feats, lab, test_ratio=.8, to_np=True, shuffle=False):
 	Args:
 		feats (pd.DataFrame or ndarray): features dataframe
 		lab (pd.Series or ndarray): label series
-		test_ratio (float ∈ [0, 1]): proportion of total data used for test 
+		test_ratio (float ∈ [0, 1]): proportion of total data used for test
 		to_np (bool): boolean determines whether to convert input to numpy types
 
 	Returns:
@@ -99,5 +100,5 @@ def extract_cv_splitter(dictionary):
 	Converts a passed pipeline dictionary into a sklearn Pipeline object and parameter grid
 	"""
 	cv_splitter = translate_cv(dictionary['name'], cv_params=dictionary['params'])
-	
+
 	return cv_splitter

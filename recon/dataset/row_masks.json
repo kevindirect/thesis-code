@@ -1,5 +1,5 @@
 {
 	"row_masks": [
-		["raw", "id_rm"]
+		["hrm", "hrm"]
 	]
 }

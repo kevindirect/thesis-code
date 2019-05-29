@@ -1,7 +1,6 @@
 """
 Kevin Patel
 """
-
 import sys
 import os
 from os import sep
@@ -19,7 +18,7 @@ from recon.label_util import shift_label
 def feat_label_apply(feat_df, feat_df_desc, label_df, apply_fn, label_shift=-1):
 	"""
 	Return matrix of test result for a feature/label apply function.
-	
+
 	Args:
 		feat_df (pd.DataFrame): df of feature series
 		feat_df_desc (str): string that uniquely identifies feat_df
@@ -59,7 +58,7 @@ def count(a, b, method='ratio_count'):
 	c = pd.Series([None, None, None, None, None, None, None, None, None, None], name='c')		# 0 non-null
 	d = pd.Series([0, 1, 2, 3,	4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14], name='d')				# 15 non-null
 	e = pd.Series([0, 1, 2, None, 4, None, 6, 7, 8, 9, 10, 11, 12, None, 14], name='e')			# 12 non-null
-	
+
 	count(a, b) # expected 1
 	count(b, a) # expected .8
 

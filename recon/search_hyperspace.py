@@ -1,5 +1,6 @@
-# Kevin Patel
-
+"""
+Kevin Patel
+"""
 import sys
 import os
 import getopt
@@ -83,7 +84,7 @@ def search_hyperspace(argv):
 		for ret_ser_name, lab_df in gen_label_dfs(labels, labels_paths, asset):
 			logging.info('OG return series: ' +ret_ser_name)
 			rep_list = []
-			
+
 			for lab_col_name in lab_df:
 				logging.info(lab_col_name)
 				lab_col_shf_df = lab_df[[lab_col_name]].dropna().shift(periods=-1, freq=None, axis=0).dropna().astype(int)

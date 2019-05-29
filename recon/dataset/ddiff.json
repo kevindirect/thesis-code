@@ -1,7 +1,7 @@
 {
 	"features": [
-		["ffracdiff", "dffracdiff"],
-		["diff", "ddiff"]
+		["dffd", "dffd"],
+		["ddiff", "ddiff"]
 	],
 	"labels": "labels.json",
 	"targets": "targets.json"

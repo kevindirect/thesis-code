@@ -1,6 +1,6 @@
 {
 	"features": [
-		["srf", "drl_raw_trmi_buzzless"]
+		["dr", "drl_raw_trmi_buzzless"]
 	],
 	"labels": "mvp_labels.json",
 	"targets": "mvp_targets.json"

@@ -1,5 +1,6 @@
-# Kevin Patel
-
+"""
+Kevin Patel
+"""
 import sys
 import os
 import logging
@@ -68,7 +69,7 @@ def clfHyperFit(feat, lbl, t1, pipe_clf, param_grid, cv=3, bagging=[0,None,1.], 
 	Args:
 
 	Returns:
-		
+
 	"""
 	if (set(lbl.values)=={0,1}):
 		scoring = 'f1'
@@ -96,7 +97,7 @@ def clfHyperFit(feat, lbl, t1, pipe_clf, param_grid, cv=3, bagging=[0,None,1.], 
 def cv_hyper_fit(feat_mat, label_arr, pipe_clf, param_grid, cv_splitter, scoring='neg log loss'):
 	"""
 	Optimizes hyperparameters of the classifier according to the passed options.
-	
+
 	Args:
 		feat_map (np.array)
 		label_arr (np.array)

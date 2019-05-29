@@ -1,5 +1,6 @@
-# Kevin Patel
-
+"""
+Kevin Patel
+"""
 import sys
 import os
 import getopt
@@ -44,6 +45,6 @@ def show_res(argv):
 	for res_df_name, res_df in res_dfs.items():
 		print(res_df_name)
 		print(res_df.groupby('label_name')[['best_score']].describe())
-	
+
 if __name__ == '__main__':
 	show_res(sys.argv[1:])
