@@ -1,65 +1,65 @@
 {
 	"dow_jones": {
-		"raw_pba": {
-			"intraday": {
+		"pba": {
+			"intraday_hourly": {
 				"time_range": ["08:00", "16:00"],
 				"target_tz": "US/Eastern",
-				"desc_sfx": "intraday_row_mask"
+				"type": "hrm"
 			}
 		},
-		"raw_vol": {
-			"intraday": {
+		"vol": {
+			"intraday_hourly": {
 				"time_range": ["08:00", "16:00"],
 				"target_tz": "US/Eastern",
-				"desc_sfx": "intraday_row_mask"
+				"type": "hrm"
 			}
 		}
 	},
 	"sp_500": {
-		"raw_pba": {
-			"intraday": {
+		"pba": {
+			"intraday_hourly": {
 				"time_range": ["08:00", "16:00"],
 				"target_tz": "US/Eastern",
-				"desc_sfx": "intraday_row_mask"
+				"type": "hrm"
 			}
 		},
-		"raw_vol": {
-			"intraday": {
+		"vol": {
+			"intraday_hourly": {
 				"time_range": ["08:00", "16:00"],
 				"target_tz": "US/Eastern",
-				"desc_sfx": "intraday_row_mask"
+				"type": "hrm"
 			}
 		}
 	},
 	"nasdaq_100": {
-		"raw_pba": {
-			"intraday": {
+		"pba": {
+			"intraday_hourly": {
 				"time_range": ["08:00", "16:00"],
 				"target_tz": "US/Eastern",
-				"desc_sfx": "intraday_row_mask"
+				"type": "hrm"
 			}
 		},
-		"raw_vol": {
-			"intraday": {
+		"vol": {
+			"intraday_hourly": {
 				"time_range": ["08:00", "16:00"],
 				"target_tz": "US/Eastern",
-				"desc_sfx": "intraday_row_mask"
+				"type": "hrm"
 			}
 		}
 	},
 	"russell_2000": {
-		"raw_pba": {
-			"intraday": {
+		"pba": {
+			"intraday_hourly": {
 				"time_range": ["08:00", "16:00"],
 				"target_tz": "US/Eastern",
-				"desc_sfx": "intraday_row_mask"
+				"type": "hrm"
 			}
 		},
-		"raw_vol": {
-			"intraday": {
+		"vol": {
+			"intraday_hourly": {
 				"time_range": ["08:00", "16:00"],
 				"target_tz": "US/Eastern",
-				"desc_sfx": "intraday_row_mask"
+				"type": "hrm"
 			}
 		}
 	}

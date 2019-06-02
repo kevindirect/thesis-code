@@ -2,41 +2,41 @@
 	"dffd": {
 		"all": {
 			"stage": "mutate",
-			"mutate_type": "dffd",
-			"raw_cat": "us_equity_index"
+			"type": "dffd",
+			"cat": "us_equity_index"
 		},
 		"subsets": {
-			"raw_pba": {
-				"desc": ["raw_pba_drl_dffd(0.200000,0.010000)", "raw_pba_drl_dffd(0.200000,0.100000)",
-						"raw_pba_drl_dffd(0.400000,0.010000)", "raw_pba_drl_dffd(0.400000,0.100000)",
-						"raw_pba_drl_dffd(0.500000,0.010000)", "raw_pba_drl_dffd(0.500000,0.100000)",
-						"raw_pba_drl_dffd(0.600000,0.010000)", "raw_pba_drl_dffd(0.600000,0.100000)",
-						"raw_pba_drl_dffd(0.800000,0.010000)", "raw_pba_drl_dffd(0.800000,0.100000)",
-						"raw_pba_drl_dffd(1.500000,0.010000)", "raw_pba_drl_dffd(1.500000,0.100000)"]
+			"pba": {
+				"desc": ["pba_drl_dffd(0.200000,0.010000)", "pba_drl_dffd(0.200000,0.100000)",
+						"pba_drl_dffd(0.400000,0.010000)", "pba_drl_dffd(0.400000,0.100000)",
+						"pba_drl_dffd(0.500000,0.010000)", "pba_drl_dffd(0.500000,0.100000)",
+						"pba_drl_dffd(0.600000,0.010000)", "pba_drl_dffd(0.600000,0.100000)",
+						"pba_drl_dffd(0.800000,0.010000)", "pba_drl_dffd(0.800000,0.100000)",
+						"pba_drl_dffd(1.500000,0.010000)", "pba_drl_dffd(1.500000,0.100000)"]
 			},
-			"raw_vol": {
-				"desc": ["raw_vol_drl_dffd(0.200000,0.010000)", "raw_vol_drl_dffd(0.200000,0.100000)",
-						"raw_vol_drl_dffd(0.400000,0.010000)", "raw_vol_drl_dffd(0.400000,0.100000)",
-						"raw_vol_drl_dffd(0.500000,0.010000)", "raw_vol_drl_dffd(0.500000,0.100000)",
-						"raw_vol_drl_dffd(0.600000,0.010000)", "raw_vol_drl_dffd(0.600000,0.100000)",
-						"raw_vol_drl_dffd(0.800000,0.010000)", "raw_vol_drl_dffd(0.800000,0.100000)",
-						"raw_vol_drl_dffd(1.500000,0.010000)", "raw_vol_drl_dffd(1.500000,0.100000)"]
+			"vol": {
+				"desc": ["vol_drl_dffd(0.200000,0.010000)", "vol_drl_dffd(0.200000,0.100000)",
+						"vol_drl_dffd(0.400000,0.010000)", "vol_drl_dffd(0.400000,0.100000)",
+						"vol_drl_dffd(0.500000,0.010000)", "vol_drl_dffd(0.500000,0.100000)",
+						"vol_drl_dffd(0.600000,0.010000)", "vol_drl_dffd(0.600000,0.100000)",
+						"vol_drl_dffd(0.800000,0.010000)", "vol_drl_dffd(0.800000,0.100000)",
+						"vol_drl_dffd(1.500000,0.010000)", "vol_drl_dffd(1.500000,0.100000)"]
 			},
-			"raw_trmi_v2": {
-				"desc": ["raw_trmi_v2_drl_dffd(0.200000,0.010000)", "raw_trmi_v2_drl_dffd(0.200000,0.100000)",
-						"raw_trmi_v2_drl_dffd(0.400000,0.010000)", "raw_trmi_v2_drl_dffd(0.400000,0.100000)",
-						"raw_trmi_v2_drl_dffd(0.500000,0.010000)", "raw_trmi_v2_drl_dffd(0.500000,0.100000)",
-						"raw_trmi_v2_drl_dffd(0.600000,0.010000)", "raw_trmi_v2_drl_dffd(0.600000,0.100000)",
-						"raw_trmi_v2_drl_dffd(0.800000,0.010000)", "raw_trmi_v2_drl_dffd(0.800000,0.100000)",
-						"raw_trmi_v2_drl_dffd(1.500000,0.010000)", "raw_trmi_v2_drl_dffd(1.500000,0.100000)"]
+			"trmi_v2": {
+				"desc": ["trmi_v2_drl_dffd(0.200000,0.010000)", "trmi_v2_drl_dffd(0.200000,0.100000)",
+						"trmi_v2_drl_dffd(0.400000,0.010000)", "trmi_v2_drl_dffd(0.400000,0.100000)",
+						"trmi_v2_drl_dffd(0.500000,0.010000)", "trmi_v2_drl_dffd(0.500000,0.100000)",
+						"trmi_v2_drl_dffd(0.600000,0.010000)", "trmi_v2_drl_dffd(0.600000,0.100000)",
+						"trmi_v2_drl_dffd(0.800000,0.010000)", "trmi_v2_drl_dffd(0.800000,0.100000)",
+						"trmi_v2_drl_dffd(1.500000,0.010000)", "trmi_v2_drl_dffd(1.500000,0.100000)"]
 			},
-			"raw_trmi_v3": {
-				"desc": ["raw_trmi_v3_drl_dffd(0.200000,0.010000)", "raw_trmi_v3_drl_dffd(0.200000,0.100000)",
-						"raw_trmi_v3_drl_dffd(0.400000,0.010000)", "raw_trmi_v3_drl_dffd(0.400000,0.100000)",
-						"raw_trmi_v3_drl_dffd(0.500000,0.010000)", "raw_trmi_v3_drl_dffd(0.500000,0.100000)",
-						"raw_trmi_v3_drl_dffd(0.600000,0.010000)", "raw_trmi_v3_drl_dffd(0.600000,0.100000)",
-						"raw_trmi_v3_drl_dffd(0.800000,0.010000)", "raw_trmi_v3_drl_dffd(0.800000,0.100000)",
-						"raw_trmi_v3_drl_dffd(1.500000,0.010000)", "raw_trmi_v3_drl_dffd(1.500000,0.100000)"]
+			"trmi_v3": {
+				"desc": ["trmi_v3_drl_dffd(0.200000,0.010000)", "trmi_v3_drl_dffd(0.200000,0.100000)",
+						"trmi_v3_drl_dffd(0.400000,0.010000)", "trmi_v3_drl_dffd(0.400000,0.100000)",
+						"trmi_v3_drl_dffd(0.500000,0.010000)", "trmi_v3_drl_dffd(0.500000,0.100000)",
+						"trmi_v3_drl_dffd(0.600000,0.010000)", "trmi_v3_drl_dffd(0.600000,0.100000)",
+						"trmi_v3_drl_dffd(0.800000,0.010000)", "trmi_v3_drl_dffd(0.800000,0.100000)",
+						"trmi_v3_drl_dffd(1.500000,0.010000)", "trmi_v3_drl_dffd(1.500000,0.100000)"]
 			}
 		}
 	}

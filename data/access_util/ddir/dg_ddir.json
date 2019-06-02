@@ -2,27 +2,21 @@
 	"ddir": {
 		"all": {
 			"stage": "mutate",
-			"mutate_type": "ddir",
-			"raw_cat": "us_equity_index"
+			"type": "ddir",
+			"cat": "us_equity_index"
 		},
 		"subsets": {
-			"raw_pba_oc_hdxret_ddir": {
-				"desc": "raw_pba_oc_hdxret_ddir"
+			"pba_oc_hdxret_ddir": {
+				"desc": "pba_oc_hdxret_ddir"
 			},
-			"raw_pba_oa_hdxret_ddir": {
-				"desc": "raw_pba_oa_hdxret_ddir"
+			"pba_lh_hdxret_ddir": {
+				"desc": "pba_lh_hdxret_ddir"
 			},
-			"raw_pba_lh_hdxret_ddir": {
-				"desc": "raw_pba_lh_hdxret_ddir"
+			"vol_oc_hdxret_ddir": {
+				"desc": "vol_oc_hdxret_ddir"
 			},
-			"raw_vol_oc_hdxret_ddir": {
-				"desc": "raw_vol_oc_hdxret_ddir"
-			},
-			"raw_vol_oa_hdxret_ddir": {
-				"desc": "raw_vol_oa_hdxret_ddir"
-			},
-			"raw_vol_lh_hdxret_ddir": {
-				"desc": "raw_vol_lh_hdxret_ddir"
+			"vol_lh_hdxret_ddir": {
+				"desc": "vol_lh_hdxret_ddir"
 			}
 		}
 	}

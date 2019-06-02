@@ -2,14 +2,14 @@
 	"dzn_gau": {
 		"all": null,
 		"subsets": {
-			"raw_pba": {
+			"pba": {
 				"exact": ["pba_open", "pba_high", "pba_low", "pba_close", "pba_avgPrice"],
 				"startswith": [],
 				"endswith": [],
 				"regex": [],
 				"exclude": null
 			},
-			"raw_vol": {
+			"vol": {
 				"exact": ["vol_open", "vol_high", "vol_low", "vol_close", "vol_avgPrice"],
 				"startswith": [],
 				"endswith": [],
@@ -21,14 +21,14 @@
 	"dmx_uni": {
 		"all": null,
 		"subsets": {
-			"raw_pba": {
+			"pba": {
 				"exact": ["pba_open", "pba_high", "pba_low", "pba_close", "pba_avgPrice"],
 				"startswith": [],
 				"endswith": [],
 				"regex": [],
 				"exclude": null
 			},
-			"raw_vol": {
+			"vol": {
 				"exact": ["vol_open", "vol_high", "vol_low", "vol_close", "vol_avgPrice"],
 				"startswith": [],
 				"endswith": [],

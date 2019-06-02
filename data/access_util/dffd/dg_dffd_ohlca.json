@@ -1,0 +1,27 @@
+{
+	"dffd": {
+		"all": {
+			"stage": "mutate",
+			"type": "dffd",
+			"cat": "us_equity_index"
+		},
+		"subsets": {
+			"pba": {
+				"desc": ["pba_drl_dffd(0.200000,0.010000)", "pba_drl_dffd(0.200000,0.100000)",
+						"pba_drl_dffd(0.400000,0.010000)", "pba_drl_dffd(0.400000,0.100000)",
+						"pba_drl_dffd(0.500000,0.010000)", "pba_drl_dffd(0.500000,0.100000)",
+						"pba_drl_dffd(0.600000,0.010000)", "pba_drl_dffd(0.600000,0.100000)",
+						"pba_drl_dffd(0.800000,0.010000)", "pba_drl_dffd(0.800000,0.100000)",
+						"pba_drl_dffd(1.500000,0.010000)", "pba_drl_dffd(1.500000,0.100000)"]
+			},
+			"vol": {
+				"desc": ["vol_drl_dffd(0.200000,0.010000)", "vol_drl_dffd(0.200000,0.100000)",
+						"vol_drl_dffd(0.400000,0.010000)", "vol_drl_dffd(0.400000,0.100000)",
+						"vol_drl_dffd(0.500000,0.010000)", "vol_drl_dffd(0.500000,0.100000)",
+						"vol_drl_dffd(0.600000,0.010000)", "vol_drl_dffd(0.600000,0.100000)",
+						"vol_drl_dffd(0.800000,0.010000)", "vol_drl_dffd(0.800000,0.100000)",
+						"vol_drl_dffd(1.500000,0.010000)", "vol_drl_dffd(1.500000,0.100000)"]
+			}
+		}
+	}
+}

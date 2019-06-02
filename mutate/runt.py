@@ -154,7 +154,7 @@ def get_desc_pfx(kc, base_rec):
 	"""
 	if (base_rec.stage=='raw' and base_rec.desc=='raw'):
 		return kc[-1]
-	elif (base_rec.stage=='mutate' and base_rec.desc=='fth thresh' and base_rec.mutate_type=='thresh'):
+	elif (base_rec.stage=='mutate' and base_rec.desc=='fth thresh' and base_rec.type=='thresh'):
 		return kc[-1]
 	else:
 		return base_rec.desc
@@ -167,8 +167,8 @@ def make_runt_entry(desc, mutate_freq, mutate_type, base_rec):
 		'root': base_rec.root,
 		'basis': base_rec.name,
 		'stage': 'mutate',
-		'mutate_type': mutate_type,
-		'raw_cat': base_rec.raw_cat,
+		'type': mutate_type,
+		'cat': base_rec.cat,
 		'hist': '->'.join([prev_hist, str('mutate_' +mutate_type)]),
 		'desc': desc
 	}

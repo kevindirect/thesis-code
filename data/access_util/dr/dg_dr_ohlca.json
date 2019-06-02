@@ -1,0 +1,32 @@
+{
+	"drf": {
+		"all": {
+			"stage": "mutate",
+			"type": "drf",
+			"cat": "us_equity_index"
+		},
+		"subsets": {
+			"pba": {
+				"desc": "pba_drf"
+			},
+			"vol": {
+				"desc": "vol_drf"
+			}
+		}
+	},
+	"drl": {
+		"all": {
+			"stage": "mutate",
+			"type": "drl",
+			"cat": "us_equity_index"
+		},
+		"subsets": {
+			"pba": {
+				"desc": "pba_drl"
+			},
+			"vol": {
+				"desc": "vol_drl"
+			}
+		}
+	}
+}

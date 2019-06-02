@@ -1,0 +1,17 @@
+{
+	"ddiff": {
+		"all": {
+			"stage": "mutate",
+			"type": "ddiff",
+			"cat": "us_equity_index"
+		},
+		"subsets": {
+			"pba": {
+				"desc": ["pba_drl_ddiff(1)", "pba_drl_ddiff(2)"]
+			},
+			"vol": {
+				"desc": ["vol_drl_ddiff(1)", "vol_drl_ddiff(2)"]
+			}
+		}
+	}
+}

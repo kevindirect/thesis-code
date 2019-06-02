@@ -1,0 +1,17 @@
+{
+	"dret": {
+		"all": {
+			"stage": "mutate",
+			"type": "dret",
+			"cat": "us_equity_index"
+		},
+		"subsets": {
+			"pba_oc_hdxret_dret": {
+				"desc": ["pba_oc_hdxret(0.5*avg,1)_dret", "pba_oc_hdxret(1*avg,1)_dret", "pba_oc_hdxret(2*avg,1)_dret",
+						"pba_oc_hdxret(0.5*std,1)_dret", "pba_oc_hdxret(1*std,1)_dret", "pba_oc_hdxret(2*std,1)_dret",
+						"pba_oc_hdxret(0.5*max,1)_dret", "pba_oc_hdxret(1*max,1)_dret", "pba_oc_hdxret(2*max,1)_dret",
+						"pba_oc_hdxret(0.5*min,1)_dret", "pba_oc_hdxret(1*min,1)_dret", "pba_oc_hdxret(2*min,1)_dret"]
+			}
+		}
+	}
+}

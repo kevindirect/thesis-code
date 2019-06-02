@@ -1,0 +1,21 @@
+{
+	"hlogret": {
+		"all": null,
+		"subsets": {
+			"pba_hlogret": {
+				"exact": ["pba_oc", "pba_lh"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			"vol_hlogret": {
+				"exact": ["vol_oc", "vol_lh"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			}
+		}
+	}
+}

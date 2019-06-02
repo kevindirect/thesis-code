@@ -2,21 +2,21 @@
 	"raw": {
 		"all": null,
 		"subsets": {
-			"raw_pba": {
+			"pba": {
 				"exact": ["pba_open", "pba_high", "pba_low", "pba_close", "pba_avgPrice"],
 				"startswith": [],
 				"endswith": [],
 				"regex": [],
 				"exclude": null
 			},
-			"raw_vol": {
+			"vol": {
 				"exact": ["vol_open", "vol_high", "vol_low", "vol_close", "vol_avgPrice"],
 				"startswith": [],
 				"endswith": [],
 				"regex": [],
 				"exclude": null
 			},
-			"raw_trmi": {
+			"trmi": {
 				"exact": [],
 				"startswith": ["enm", "etf", "mkt"],
 				"endswith": [],
@@ -29,7 +29,7 @@
 					"exclude": null
 				}
 			},
-			"raw_trmi_v2": {
+			"trmi_v2": {
 				"exact": [],
 				"startswith": ["enm_v2", "etf_v2"],
 				"endswith": [],
@@ -42,7 +42,7 @@
 					"exclude": null
 				}
 			},
-			"raw_trmi_v3": {
+			"trmi_v3": {
 				"exact": [],
 				"startswith": ["enm_v3", "etf_v3", "mkt_v3"],
 				"endswith": [],

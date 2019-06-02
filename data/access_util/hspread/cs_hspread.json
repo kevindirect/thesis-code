@@ -1,0 +1,21 @@
+{
+	"hspread": {
+		"all": null,
+		"subsets": {
+			"pba_hspread": {
+				"exact": ["pba_oc", "pba_lh"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			"vol_hspread": {
+				"exact": ["vol_oc", "vol_lh"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			}
+		}
+	}
+}

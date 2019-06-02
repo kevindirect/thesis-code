@@ -1,0 +1,14 @@
+{
+	"dret": {
+		"all": {
+			"stage": "mutate",
+			"type": "dret",
+			"raw_cat": "us_equity_index"
+		},
+		"subsets": {
+			"raw_pba_oc_hdxret_dret": {
+				"desc": "raw_pba_oc_hdxret_dret"
+			}
+		}
+	}
+}

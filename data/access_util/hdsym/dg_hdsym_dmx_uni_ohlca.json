@@ -1,0 +1,17 @@
+{
+	"dmx_uni": {
+		"all": {
+			"stage": "mutate",
+			"type": "hdsym",
+			"cat": "us_equity_index"
+		},
+		"subsets": {
+			"pba": {
+				"desc": ["pba_dmx_uni(2)", "pba_dmx_uni(3)", "pba_dmx_uni(4)", "pba_dmx_uni(8)"]
+			},
+			"vol": {
+				"desc": ["vol_dmx_uni(2)", "vol_dmx_uni(3)", "vol_dmx_uni(4)", "vol_dmx_uni(8)"]
+			}
+		}
+	}
+}

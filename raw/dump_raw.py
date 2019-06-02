@@ -48,9 +48,10 @@ def dump_raw(argv):
 		entry = {
 			'root': equity,
 			'basis': equity,
+			'type': 'raw',
 			'stage': 'raw',
 			'desc': 'raw'
-			'raw_cat': cat_map(file_list['price'])
+			'cat': cat_map(file_list['price'])
 		}
 		print('\tdumping', end='...', flush=True)
 		joined.index = series_to_dti(joined.index) # XXX - move index conversion to dti upstream

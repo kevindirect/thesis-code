@@ -2,42 +2,28 @@
 	"dxfbval": {
 		"all": null,
 		"subsets": {
-			"raw_pba_oc_hdxcret_dxfbval": {
+			"pba_oc_hdxcret_dxfbval": {
 				"exact": ["pba_oc"],
 				"startswith": [],
 				"endswith": [],
 				"regex": [],
 				"exclude": null
 			},
-			"raw_pba_oa_hdxcret_dxfbval": {
-				"exact": ["pba_oa"],
-				"startswith": [],
-				"endswith": [],
-				"regex": [],
-				"exclude": null
-			},
-			"raw_pba_lh_hdxcret_dxfbval": {
+			"pba_lh_hdxcret_dxfbval": {
 				"exact": ["pba_lh"],
 				"startswith": [],
 				"endswith": [],
 				"regex": [],
 				"exclude": null
 			},
-			"raw_vol_oc_hdxcret_dxfbval": {
+			"vol_oc_hdxcret_dxfbval": {
 				"exact": ["vol_oc"],
 				"startswith": [],
 				"endswith": [],
 				"regex": [],
 				"exclude": null
 			},
-			"raw_vol_oa_hdxcret_dxfbval": {
-				"exact": ["vol_oa"],
-				"startswith": [],
-				"endswith": [],
-				"regex": [],
-				"exclude": null
-			},
-			"raw_vol_lh_hdxcret_dxfbval": {
+			"vol_lh_hdxcret_dxfbval": {
 				"exact": ["vol_lh"],
 				"startswith": [],
 				"endswith": [],

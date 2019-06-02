@@ -1,0 +1,22 @@
+{
+	"meta": {
+		"name": "hspread",
+		"mtype_from": "rec_fmt",
+		"rec_fmt": "h{ret_type}",
+		"var_fmt": "grid",
+		"res_freq": "hourly",
+		"info": "hourly spread"
+	},
+	"fn": {
+		"ser_fn": "ret",
+		"df_fn": "btw",
+		"col_fn": "sami",
+		"freq": "hourly"
+	},
+	"var": {
+		"ret_type": ["spread"]
+	},
+	"rm": ["hrm", "hrm"],
+	"src": ["hohlca", "hohlca_pairs"],
+	"dst": ["hspread", "hspread"]
+}

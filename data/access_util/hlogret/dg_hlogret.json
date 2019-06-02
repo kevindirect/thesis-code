@@ -1,0 +1,17 @@
+{
+	"hlogret": {
+		"all": {
+			"stage": "mutate",
+			"type": "hlogret",
+			"cat": "us_equity_index"
+		},
+		"subsets": {
+			"pba_hlogret": {
+				"desc": "pba_hlogret"
+			},
+			"vol_hlogret": {
+				"desc": "vol_hlogret"
+			}
+		}
+	}
+}

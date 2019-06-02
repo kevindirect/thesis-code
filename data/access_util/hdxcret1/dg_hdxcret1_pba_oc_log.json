@@ -1,0 +1,28 @@
+{
+	"hdxcret": {
+		"all": {
+			"stage": "mutate",
+			"mutate_type": ["hdxcret(0.062500%)",
+					"hdxcret(0.125000%)",
+					"hdxcret(0.250000%)",
+					"hdxcret(0.500000%)",
+					"hdxcret(1.000000%)",
+					"hdxcret(2.000000%)",
+					"hdxcret(4.000000%)",
+					"hdxcret(8.000000%)"],
+			"cat": "us_equity_index"
+		},
+		"subsets": {
+			"pba_oc_hdxcret": {
+				"desc": ["pba_oc_hdxcret(0.062500%)",
+						"pba_oc_hdxcret(0.125000%)",
+						"pba_oc_hdxcret(0.250000%)",
+						"pba_oc_hdxcret(0.500000%)",
+						"pba_oc_hdxcret(1.000000%)",
+						"pba_oc_hdxcret(2.000000%)",
+						"pba_oc_hdxcret(4.000000%)",
+						"pba_oc_hdxcret(8.000000%)"]
+			}
+		}
+	}
+}

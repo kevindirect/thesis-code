@@ -2,7 +2,7 @@
 	"raw_vol_ohlca": {
 		"all": null,
 		"subsets": {
-			"raw_vol": {
+			"vol": {
 				"exact": ["vol_open", "vol_high", "vol_low", "vol_close", "vol_avgPrice"],
 				"startswith": [],
 				"endswith": [],

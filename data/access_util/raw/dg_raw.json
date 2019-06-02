@@ -2,15 +2,16 @@
 	"raw": {
 		"all": {
 			"stage": "raw",
-			"raw_cat": "us_equity_index",
+			"type": "raw",
+			"cat": "us_equity_index",
 			"desc": "raw"
 		},
 		"subsets": {
-			"raw_pba": {},
-			"raw_vol": {},
-			"raw_trmi": {},
-			"raw_trmi_v2": {},
-			"raw_trmi_v3": {}
+			"pba": {},
+			"vol": {},
+			"trmi": {},
+			"trmi_v2": {},
+			"trmi_v3": {}
 		}
 	}
 }

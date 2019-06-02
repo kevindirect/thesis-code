@@ -2,14 +2,14 @@
 	"hrm": {
 		"all": null,
 		"subsets": {
-			"raw_pba": {
+			"pba": {
 				"exact": ["times"],
 				"startswith": [],
 				"endswith": [],
 				"regex": [],
 				"exclude": null
 			},
-			"raw_vol": {
+			"vol": {
 				"exact": ["times"],
 				"startswith": [],
 				"endswith": [],

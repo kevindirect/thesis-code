@@ -2,27 +2,15 @@
 	"hret": {
 		"all": {
 			"stage": "mutate",
-			"mutate_type": "hret",
-			"raw_cat": "us_equity_index"
+			"type": "hret",
+			"cat": "us_equity_index"
 		},
 		"subsets": {
-			"raw_pba_oc_hret": {
-				"desc": "raw_pba_oc_hret"
+			"pba_hret": {
+				"desc": "pba_hret"
 			},
-			"raw_pba_oa_hret": {
-				"desc": "raw_pba_oa_hret"
-			},
-			"raw_pba_lh_hret": {
-				"desc": "raw_pba_lh_hret"
-			},
-			"raw_vol_oc_hret": {
-				"desc": "raw_vol_oc_hret"
-			},
-			"raw_vol_oa_hret": {
-				"desc": "raw_vol_oa_hret"
-			},
-			"raw_vol_lh_hret": {
-				"desc": "raw_vol_lh_hret"
+			"vol_hret": {
+				"desc": "vol_hret"
 			}
 		}
 	}

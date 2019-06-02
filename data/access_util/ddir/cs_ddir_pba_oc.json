@@ -1,0 +1,14 @@
+{
+	"ddir": {
+		"all": null,
+		"subsets": {
+			"pba_oc_hdxret_ddir": {
+				"exact": ["pba_oc"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			}
+		}
+	}
+}

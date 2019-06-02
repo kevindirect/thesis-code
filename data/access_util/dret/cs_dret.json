@@ -9,13 +9,6 @@
 				"regex": [],
 				"exclude": null
 			},
-			"raw_pba_oa_hdxret_dret": {
-				"exact": ["pba_oa"],
-				"startswith": [],
-				"endswith": [],
-				"regex": [],
-				"exclude": null
-			},
 			"raw_pba_lh_hdxret_dret": {
 				"exact": ["pba_lh"],
 				"startswith": [],
@@ -25,13 +18,6 @@
 			},
 			"raw_vol_oc_hdxret_dret": {
 				"exact": ["vol_oc"],
-				"startswith": [],
-				"endswith": [],
-				"regex": [],
-				"exclude": null
-			},
-			"raw_vol_oa_hdxret_dret": {
-				"exact": ["vol_oa"],
 				"startswith": [],
 				"endswith": [],
 				"regex": [],

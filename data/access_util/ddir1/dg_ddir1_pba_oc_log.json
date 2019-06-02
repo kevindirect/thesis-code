@@ -1,0 +1,21 @@
+{
+	"ddir": {
+		"all": {
+			"stage": "mutate",
+			"mutate_type": "ddir",
+			"cat": "us_equity_index"
+		},
+		"subsets": {
+			"pba_oc_hdxret_ddir": {
+				"desc": ["pba_oc_hdxret(0.062500%)_ddir",
+						"pba_oc_hdxret(0.125000%)_ddir",
+						"pba_oc_hdxret(0.250000%)_ddir",
+						"pba_oc_hdxret(0.500000%)_ddir",
+						"pba_oc_hdxret(1.000000%)_ddir",
+						"pba_oc_hdxret(2.000000%)_ddir",
+						"pba_oc_hdxret(4.000000%)_ddir",
+						"pba_oc_hdxret(8.000000%)_ddir"]
+			}
+		}
+	}
+}

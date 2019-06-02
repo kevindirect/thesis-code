@@ -1,0 +1,21 @@
+{
+	"raw_gmtoffset": {
+		"all": null,
+		"subsets": {
+			"pba": {
+				"exact": ["pba_gmtOffset"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			},
+			"vol": {
+				"exact": ["vol_gmtOffset"],
+				"startswith": [],
+				"endswith": [],
+				"regex": [],
+				"exclude": null
+			}
+		}
+	}
+}

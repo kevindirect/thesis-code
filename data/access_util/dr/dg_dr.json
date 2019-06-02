@@ -2,42 +2,42 @@
 	"drf": {
 		"all": {
 			"stage": "mutate",
-			"mutate_type": "drf",
-			"raw_cat": "us_equity_index"
+			"type": "drf",
+			"cat": "us_equity_index"
 		},
 		"subsets": {
-			"raw_pba": {
-				"desc": "raw_pba_drf"
+			"pba": {
+				"desc": "pba_drf"
 			},
-			"raw_vol": {
-				"desc": "raw_vol_drf"
+			"vol": {
+				"desc": "vol_drf"
 			},
-			"raw_trmi_v2": {
-				"desc": "raw_trmi_v2_drf"
+			"trmi_v2": {
+				"desc": "trmi_v2_drf"
 			},
-			"raw_trmi_v3": {
-				"desc": "raw_trmi_v3_drf"
+			"trmi_v3": {
+				"desc": "trmi_v3_drf"
 			}
 		}
 	},
 	"drl": {
 		"all": {
 			"stage": "mutate",
-			"mutate_type": "drl",
-			"raw_cat": "us_equity_index"
+			"type": "drl",
+			"cat": "us_equity_index"
 		},
 		"subsets": {
-			"raw_pba": {
-				"desc": "raw_pba_drl"
+			"pba": {
+				"desc": "pba_drl"
 			},
-			"raw_vol": {
-				"desc": "raw_vol_drl"
+			"vol": {
+				"desc": "vol_drl"
 			},
-			"raw_trmi_v2": {
-				"desc": "raw_trmi_v2_drl"
+			"trmi_v2": {
+				"desc": "trmi_v2_drl"
 			},
-			"raw_trmi_v3": {
-				"desc": "raw_trmi_v3_drl"
+			"trmi_v3": {
+				"desc": "trmi_v3_drl"
 			}
 		}
 	}
