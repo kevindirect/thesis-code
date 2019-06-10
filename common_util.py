@@ -1,8 +1,13 @@
+#                                __
+#    ____________  ______  _____/ /_
+#   / ___/ ___/ / / / __ \/ ___/ __ \
+#  / /__/ /  / /_/ / / / / /__/ / / /
+#  \___/_/   \__,_/_/ /_/\___/_/ /_/
+# global project common utilities.
 """
 System level settings/constants and common utilities for all crunch subpackages.
 Kevin Patel
 """
-
 import sys
 from os import sep, path, makedirs, walk, listdir, rmdir
 from os.path import dirname, basename, realpath, normpath, exists, isfile, getsize, join as path_join
@@ -123,6 +128,21 @@ wrap_parens = lambda string: '(' +string +')'
 
 def str_to_list(string, delimiter=',', cast_to=str):
 	return list(map(cast_to, map(str.strip, string.split(delimiter))))
+
+def find_numbers(string, ints=True):
+	"""
+	Return numbers found in a string
+
+	Written by Marc Maxmeister
+	Source: https://stackoverflow.com/questions/4289331/how-to-extract-numbers-from-a-string-in-python
+	"""
+	numexp = re.compile(r'[-]?\d[\d,]*[\.]?[\d{2}]*') #optional - in front
+	numbers = numexp.findall(string)
+	numbers = [x.replace(',','') for x in numbers]
+	if (ints):
+		return [int(x.replace(',','').split('.')[0]) for x in numbers]
+	else:
+		return numbers
 
 """Datetime"""
 dt_now = lambda: datetime.now()
@@ -430,30 +450,81 @@ def dict_path(dictionary, path=None, stop_cond=lambda v: not isinstance(v, dict)
 			for unfinished in dict_path(val, newpath, stop_cond=stop_cond):
 				yield unfinished
 
+def get_grid_variants(grid):
+	"""
+	Return possible combos of key-value maps of a structure of arrays.
+
+	Args:
+		grid (dict): an SOA-like dictionary
+
+	Returns:
+		list of dictionaries representing all combinations of key-values
+
+	Example:
+	{
+		a: [1, 2, 3],
+		b: [4, 5, 6]
+	}
+	maps to:
+	[
+		{a: 1, b: 4}, {a: 1, b: 5}, {a: 1, b: 6},
+		{a: 2, b: 4}, {a: 2, b: 5}, {a: 2, b: 6},
+		{a: 3, b: 4}, {a: 3, b: 5}, {a: 3, b: 6}
+	]
+	"""
+	names, combos = list(grid.keys()), list(product(*grid.values()))
+	variants = [{names[idx]: value for idx, value in enumerate(combo)} for combo in combos]
+	return variants
+
+def get_list_variants(grid_groups):
+	"""
+	Return possible combos of key-value maps of a list of multiple structure of arrays.
+
+	Args:
+		grid_groups (list): a list of SOA-like dictionaries
+
+	Returns:
+		A list of tuples of all dictionary combinations
+
+	Example:
+	[
+		{
+			a: [1, 2],
+			b: [3, 4]
+		},
+		{
+			a: [1, 2],
+			c: [5, 6]
+		}
+	]
+	maps to:
+	[
+		({'a': 1, 'b': 3}, {'a': 1, 'c': 5}), ({'a': 1, 'b': 3}, {'a': 1, 'c': 6}), ({'a': 1, 'b': 3}, {'a': 2, 'c': 5}), ({'a': 1, 'b': 3}, {'a': 2, 'c': 6}),
+		({'a': 1, 'b': 4}, {'a': 1, 'c': 5}), ({'a': 1, 'b': 4}, {'a': 1, 'c': 6}), ({'a': 1, 'b': 4}, {'a': 2, 'c': 5}), ({'a': 1, 'b': 4}, {'a': 2, 'c': 6}),
+		({'a': 2, 'b': 3}, {'a': 1, 'c': 5}), ({'a': 2, 'b': 3}, {'a': 1, 'c': 6}), ({'a': 2, 'b': 3}, {'a': 2, 'c': 5}), ({'a': 2, 'b': 3}, {'a': 2, 'c': 6}),
+		({'a': 2, 'b': 4}, {'a': 1, 'c': 5}), ({'a': 2, 'b': 4}, {'a': 1, 'c': 6}), ({'a': 2, 'b': 4}, {'a': 2, 'c': 5}), ({'a': 2, 'b': 4}, {'a': 2, 'c': 6})
+	]
+	"""
+	grid_variants = [get_grid_variants(grid) for grid in grid_groups]
+	variants = [combo for combo in product(*grid_variants)]
+	return variants
+
 def get_variants(mappings, fmt='grid'):
 	"""
 	Return all possible combinations of key-value maps as a list of dictionaries.
+	There are two modes, named after the input format of the data: grid and list.
 
-	{
-		a: [1, 2, 3],
-		b: [4, 5, 6],
-	}
+	Args:
+		mappings (dict|list): mapping to get combos of
+		fmt ('grid'|'list'): mode
 
-	would be mapped to
-
-	[
-		{a: 1, b: 4}, {a: 2, b: 4}, {a: 3, b: 4},
-		{a: 1, b: 5}, {a: 2, b: 5}, {a: 3, b: 5},
-		{a: 1, b: 6}, {a: 2, b: 6}, {a: 3, b: 6}
-	]
+	Returns:
+		List of variants
 	"""
-	if (fmt == 'grid'):
-		names, combos = list(mappings.keys()), list(product(*mappings.values()))
-		variants = [{names[idx]: value for idx, value in enumerate(combo)} for combo in combos]
-	elif (fmt == 'list'):
-		pass # XXX - Implement
-
-	return variants
+	return {
+		'grid': get_grid_variants(mappings),
+		'list': get_list_variants(mappings)
+	}.get(fmt)
 
 """Function"""
 def compose(*fns):
@@ -1161,15 +1232,31 @@ def pd_dti_idx_date_only(pd_obj, date_freq=DT_CAL_DAILY_FREQ, date_tz=None, leve
 	pd_obj.index = dti_extract_date(pd_obj.index, date_freq=date_freq, date_tz=date_tz, level=level)
 	return pd_obj
 
+def series_to_dti_noreindex(ser, fmt=DT_FMT_YMD_HM, utc=True, exact=True, freq=DT_HOURLY_FREQ):
+	"""
+	Return object (str) dtyped series as DatetimeIndex dtyped series.
+	Sets the global project default for str -> DateTimeIndex conversion.
+	Does not set the frequency.
+	"""
+	dti = pd.to_datetime(ser, format=fmt, utc=utc, exact=exact)
+	if (freq==DT_HOURLY_FREQ):
+		assert(np.all(dti.minute==0) and np.all(dti.second==0) and np.all(dti.microsecond==0) and np.all(dti.nanosecond==0))
+	return dti
+
 def series_to_dti(ser, fmt=DT_FMT_YMD_HM, utc=True, exact=True, freq=DT_HOURLY_FREQ):
 	"""
 	Return object (str) dtyped series as DatetimeIndex dtyped series.
 	Sets the global project default for str -> DateTimeIndex conversion.
 	"""
-	dti = pd.to_datetime(ser, format=fmt, utc=utc, exact=exact)
-	dti.freq = pd.tseries.frequencies.to_offset(freq)
-	assert(np.all(dti.minute==0) and np.all(dti.second==0) and np.all(dti.microsecond==0) and np.all(dti.nanosecond==0))
+	dti = series_to_dti_noreindex(ser, fmt=fmt, utc=utc, exact=exact, freq=freq)
+	dti.freq = pd.tseries.frequencies.to_offset(freq) #XXX breaks when there are any missing indexes
+	if (freq==DT_HOURLY_FREQ):
+		assert(np.all(dti.minute==0) and np.all(dti.second==0) and np.all(dti.microsecond==0) and np.all(dti.nanosecond==0))
 	return dti
+
+def get_missing_dti(dti, freq):
+	full = pd.date_range(start=dti.min(), end=dti.max(), freq=freq)
+	return full.difference(dti)
 
 def get_missing_dt(ser, ref=DT_BIZ_DAILY_FREQ):
 	"""
@@ -1419,7 +1506,7 @@ def df_downsample_transpose(df, agg_freq=DT_CAL_DAILY_FREQ, col_attr='hour'):
 	stacked = pd.DataFrame(stacked, index=stacked.index, columns=['val'])
 	stacked = pd_idx_rename(stacked, idx_name=['id0', 'id1'])
 
-	# FIXME - this groupby apply can be very slow on some qsingle channel datasets
+	# FIXME - this groupby apply can be very slow on some single channel datasets
 	# Group by each aggregation period and apply df_midx_column_unstack
 	unstacked = stacked.groupby(pd.Grouper(level='id0', freq=agg_freq)).apply(df_midx_column_unstack, group_attr=None, col_attr=col_attr)
 
