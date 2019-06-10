@@ -2,41 +2,24 @@
 Kevin Patel
 """
 import sys
-import getopt
 from os import sep
+from os.path import basename
+import logging
 
-from common_util import RAW_DIR, load_json, makedir_if_not_exists, dump_df
+from common_util import RAW_DIR, load_json, get_cmd_args, isnt, makedir_if_not_exists, dump_df
 from raw.common import default_pricefile, default_pathsfile, default_columnsfile, default_rowsfile, load_csv_no_idx
 
 
 def get_price(argv):
-	usage = lambda: print('get_price.py [-f <filename> -p <pathsfile> -c <columnsfile> -r <rowsfile>]')
-	pricefile = default_pricefile
-	pathsfile = default_pathsfile
-	columnsfile = default_columnsfile
-	rowsfile = default_rowsfile
+	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+	cmd_args_list = ['filename=', 'pathsfile=', 'columnsfile=', 'rowsfile=']
+	cmd_args = get_cmd_args(argv, cmd_args_listi, script_name=basename(__file__))
+	pricefile = default_pricefile if (isnt(cmd_args['filename='])) else cmd_args['filename=']
+	pathsfile = default_pathsfile if (isnt(cmd_args['pathsfile='])) else cmd_args['pathsfile=']
+	columnsfile = default_columnsfile if (isnt(cmd_args['columnsfile='])) else cmd_args['columnsfile=']
+	rowsfile = default_rowsfile if (isnt(cmd_args['rowsfile='])) else cmd_args['rowsfile=']
 
-	MONTH_NUM = {'JAN': '01', 'FEB': '02', 'MAR': '03', 'APR': '04', 'MAY': '05', 'JUN': '06',
-				'JUL': '07', 'AUG': '08', 'SEP': '09', 'OCT': '10', 'NOV': '11', 'DEC': '12'}
-
-	try:
-		opts, args = getopt.getopt(argv,'hf:p:c:r:',['help', 'filename=', 'pathsfile=', 'columnsfile=', 'rowsfile='])
-	except getopt.GetoptError:
-		usage()
-		sys.exit(2)
-
-	for opt, arg in opts:
-		if opt in ('-h', '--help'):
-			usage()
-			sys.exit()
-		elif opt in ('-f', '--filename'):
-			pricefile = arg
-		elif opt in ('-p', '--pathsfile'):
-			pathsfile = arg
-		elif opt in ('-c', '--columnsfile'):
-			columnsfile = arg
-		elif opt in ('-r', '--rowsfile'):
-			rowsfile = arg
+	MONTH_NUM = {'JAN': '01', 'FEB': '02', 'MAR': '03', 'APR': '04', 'MAY': '05', 'JUN': '06', 'JUL': '07', 'AUG': '08', 'SEP': '09', 'OCT': '10', 'NOV': '11', 'DEC': '12'}
 
 	# load pricefile into a dataframe with a generated index
 	df = load_csv_no_idx(pricefile, dir_path=RAW_DIR)

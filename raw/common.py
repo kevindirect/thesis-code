@@ -1,3 +1,8 @@
+#     _________ __      __
+#    / ___/ __ `/ | /| / /
+#   / /  / /_/ /| |/ |/ /
+#  /_/   \__,_/ |__/|__/
+# raw stage common.
 """
 Kevin Patel
 """
@@ -8,8 +13,6 @@ from os.path import dirname, realpath
 sys.path.insert(0, dirname(dirname(dirname(realpath(sys.argv[0])))))
 
 # ********** SPECIFIC TO THIS CRUNCH PACKAGE **********
-# RAW
-
 from os.path import basename, isfile
 import pandas as pd
 from common_util import CRUNCH_DIR, RAW_DIR
@@ -22,6 +25,7 @@ GMT_OFFSET_COL_SFX = 'gmtOffset'
 # PACKAGE DEFAULTS
 default_pricefile = 'richard@marketpsychdata.com--N166567660.csv'
 default_pathsfile = 'paths.json'
+default_sample_delta = 'hourly'   			# daily, hourly, or minutely
 default_columnsfile = 'columns.json'
 default_rowsfile = 'rows.json'
 default_joinsfile = 'joins.json'

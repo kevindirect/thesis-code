@@ -5,7 +5,7 @@ import sys
 from os.path import basename
 import logging
 
-from common_util import RAW_DIR, DT_HOURLY_FREQ, get_cmd_args, load_json, load_df, series_to_dti, right_join, outer_join, list_get_dict, get_time_mask
+from common_util import RAW_DIR, DT_HOURLY_FREQ, get_cmd_args, isnt, load_json, load_df, series_to_dti, right_join, outer_join, list_get_dict, get_time_mask
 from raw.common import GMT_OFFSET_COL_SFX, default_row_masksfile
 from data.data_api import DataAPI
 from data.access_util import df_getters as dg, col_subsetters as cs
@@ -15,7 +15,7 @@ def dump_row_masks(argv):
 	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 	cmd_arg_list = ['row_masksfile=']
 	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name=basename(__file__))
-	row_masksfile = cmd_input['row_masksfile='] if (cmd_input['row_masksfile='] is not None) else default_row_masksfile
+	row_masksfile = default_row_masksfile if (isnt(cmd_input['row_masksfile='])) else cmd_input['row_masksfile=']
 	row_masks = load_json(row_masksfile, dir_path=RAW_DIR)
 
 	raw_gmt = ['raw', 'raw_gmtoffset']
@@ -29,11 +29,11 @@ def dump_row_masks(argv):
 		logging.info(asset_name)
 
 		for mask_type, mask in row_masks[asset_name][data_subset].items():
-			logging.info('mask name: ' +str(mask_type))
+			logging.info('mask name: {}'.format(mask_type))
 			mask_df = get_time_mask(raw_df, offset_col_name=gmt_col, offset_tz=mask['target_tz'], time_range=mask['time_range'])
 			desc = '_'.join([data_subset, mask['type']])
 			entry = make_rm_entry(mask['type'], desc, raw_rec)
-			logging.info('dumping ' +str(desc) +'...')
+			logging.info('dumping {}...'.format(desc))
 			logging.debug(mask_df)
 			DataAPI.dump(mask_df, entry)
 

@@ -2,43 +2,26 @@
 Kevin Patel
 """
 import sys
-import getopt
 from os import sep
+from os.path import basename
+import logging
 
-from common_util import RAW_DIR, load_json, makedir_if_not_exists, dump_df
-from raw.common import TRMI_CONFIG_FNAME, TRMI_CONFIG_DIR, default_pathsfile, load_csv_no_idx
+from common_util import RAW_DIR, get_cmd_args, isnt, load_json, find_numbers, makedir_if_not_exists, dump_df
+from raw.common import TRMI_CONFIG_FNAME, TRMI_CONFIG_DIR, default_pathsfile, default_sample_delta, load_csv_no_idx
 
 
 def get_trmi(argv):
-	usage = lambda: print('get_trmi.py [-p <pathsfile> -k -t]')
+	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+	cmd_arg_list = ['pathsfile=', 'sample_delta=', 'keep_ns', 'test']
+	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name=basename(__file__))
+	pathsfile = default_pathsfile if (isnt(cmd_input['pathsfile='])) else cmd_input['pathsfile=']
+	per = default_sample_delta if (isnt(cmd_input['sample_delta='])) else cmd_input['sample_delta=']
+	keep_ns = False if (isnt(cmd_input['keep_ns'])) else cmd_input['keep_ns']
+	is_test = False if (isnt(cmd_input['test'])) else cmd_input['test']
+	start_end = {'start': '2015-08-01', 'end':'2015-08-03'} if (is_test) else {'start': '1996-01-01', 'end':'2018-01-10'}
 
 	# trmi.json file contains api url and key
 	trmi = load_json(TRMI_CONFIG_FNAME, dir_path=TRMI_CONFIG_DIR)
-
-	# Default Parameters
-	per = 'hourly'   			# daily, hourly, or minutely
-	pathsfile = default_pathsfile
-	keep_ns = False
-	is_test = False
-	startend = {'start': '1996-01-01', 'end':'2018-01-10'}
-
-	try:
-		opts, args = getopt.getopt(argv,'hp:kt', ['help', 'pathsfile=', 'keep_ns', 'test'])
-	except getopt.GetoptError:
-		usage()
-		sys.exit(2)
-
-	for opt, arg in opts:
-		if opt in ('-h', '--help'):
-			usage()
-			sys.exit()
-		elif opt in ('-p', '--pathsfile'):
-			pathsfile = arg
-		elif opt in ('-k', '--keep_ns'):
-			keep_ns = True
-		elif opt in ('-t', '--test'):
-			is_test = True
-			startend = {'start': '2015-08-01', 'end':'2015-08-03'}
 
 	# pathsfile tells script what to pull from the api and where to put it
 	trmi_paths = load_json(pathsfile, dir_path=RAW_DIR)['trmi']
@@ -46,6 +29,7 @@ def get_trmi(argv):
 	dropfirst = ['id', 'Date', 'Asset']
 	join_cols = ['assetCode', 'windowTimestamp']
 	for ver, groups in trmi_paths.items():
+		ver_num = find_numbers(ver, ints=True)[-1]
 		for group, assets in groups.items():
 			endpoint = make_csv_group_request_url(group, assets, ver, per, startend, trmi['api']['url'], trmi['api']['key'])
 			print(group, endpoint)
@@ -80,8 +64,8 @@ def get_trmi(argv):
 				else:
 					merged.rename(columns={'ver_N': 'ver'}, inplace=True)
 
-			# Last step before splitting: prefix all data columns with last three letters of group name and trmi version
-			merged.columns = merged.columns.map(lambda s: str(group[-3:] +'_' +ver +'_' +s) if s not in join_cols else s)
+			# Last step before splitting: prefix all data columns with last three letters of group name and trmi version number
+			merged.columns = merged.columns.map(lambda s: '{gid}{vn}_{col}'.format(gid=group[-3:], vn=ver_num, col=s) if (s not in join_cols) else s)
 
 			for asset in assets:
 				print('\t' +asset, end='...', flush=True)
