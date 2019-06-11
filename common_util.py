@@ -19,6 +19,7 @@ import numbers
 import operator
 import getopt
 import collections.abc
+from collections import Mapping
 from multiprocessing.pool import ThreadPool
 from contextlib import suppress
 from difflib import SequenceMatcher
@@ -31,6 +32,7 @@ import logging
 
 import numpy as np
 import pandas as pd
+from graphviz import Digraph
 from pandas.tseries.offsets import CustomBusinessDay, CustomBusinessHour
 from pandas.testing import assert_series_equal, assert_frame_equal
 from pandas.api.types import is_numeric_dtype
@@ -310,6 +312,8 @@ class NestedDefaultDict(MutableMapping):
 		yield from filter(lambda k: k[:len(key)]==key, self.keys())
 
 	def __setitem__(self, key, value):
+		# TODO - Fix bug, NDD should be able to take a list keychain directly
+		# list_get_dict and list_set_dict shouldn't be necessary
 		"""
 		Set an item in the object.
 		If the value to set is a NestedDefaultDict, then it will be grafted on at the specified location,
@@ -340,6 +344,8 @@ class NestedDefaultDict(MutableMapping):
 				self.keychains.append(key)
 
 	def __getitem__(self, key):
+		# TODO - Fix bug, NDD should be able to take a list keychain directly
+		# list_get_dict and list_set_dict shouldn't be necessary
 		"""
 		Get an item.
 
@@ -352,7 +358,7 @@ class NestedDefaultDict(MutableMapping):
 		Raises:
 			ValueError if the key doesn't exist
 		"""
-		if key in self.keychains:
+		if (key in self.keychains):
 			return reduce(operator.getitem, key, self.tree)[NestedDefaultDict.KEY_END]
 		else:
 			raise ValueError("Attempted key doesn\'t exist")
@@ -361,7 +367,7 @@ class NestedDefaultDict(MutableMapping):
 		"""
 		Delete an item.
 		Only deletes that exact key and item: if ['a', 'b', 'c'] and ['a', 'b', 'c', 'd'] exists and the key ['a', 'b', 'c'] is deleted,
-		then ['a', 'b', 'c'] will continue to exist.
+		then ['a', 'b', 'c', 'd'] will continue to exist.
 
 		Args:
 			key (list): list of keys
@@ -372,7 +378,7 @@ class NestedDefaultDict(MutableMapping):
 		Raises:
 			ValueError if the key doesn't exist
 		"""
-		if key in self.keychains:
+		if (key in self.keychains):
 			del reduce(operator.getitem, key, self.tree)[NestedDefaultDict.KEY_END]
 			self.keychains.remove(key)
 		else:
@@ -1375,12 +1381,14 @@ def get_time_mask(df, offset_col_name=None, offset_unit=DT_HOURLY_FREQ, offset_t
 	mask_df = pd.DataFrame(data={'times': df.index}, index=df.index)
 
 	if (offset_col_name is not None):
+	    # Convert a base timezone to a target via an offset (for example UTC to US/Eastern)
 		lt_offset = pd.TimedeltaIndex(data=df.loc[:, offset_col_name], unit=offset_unit)
 		mask_df['times'] = mask_df['times'] + lt_offset
 		if (offset_tz is not None):
 			mask_df['times'] = mask_df['times'].tz_convert(offset_tz)
 
 	if (time_range is not None):
+		# Filter indices within a given range
 		indices = pd.DatetimeIndex(mask_df['times']).indexer_between_time(time_range[0], time_range[1])
 		mask_df = mask_df.iloc[indices]
 
@@ -1784,6 +1792,71 @@ def pyt_unsqueeze_to(pyt, dim, append_right=True):
 			pyt = pyt.unsqueeze(dim=append_dim)
 
 	return pyt
+
+
+""" ********** GRAPHVIZ UTILS ********** """
+def dict2dag(d, remap=None, list_max=None, **kwargs):
+	"""
+	Interpret a simple JSON style dictionary as a graphviz directed acyclic graph.
+
+	Args:
+		d (dictionary): dictionary to translate into a graphviz Digraph
+		remap (dictionary, optional): node label remaps
+		list_max(int>0, optional): limit for nodes in a list to display; only applies to primitive lists
+		kwargs: arguments for graphviz.Digraph(...) constructor, such as
+			* name (str): graph name
+			* format (str): rendering output format ('pdf, 'png', 'svg', ...)
+			* engine (str): layout engine ('dot', 'neato', 'circo', 'fdp', 'twopi', ...)
+			* graph_attr (dict): graph attributes
+			* node_attr (dict): global node attribute defaults
+			* edge_attr (dict): global edge attribute defaults
+
+	Returns:
+		graphviz.Digraph object representation of dictionary
+	"""
+	prim = (bool, int, float, str)
+	list_max = None if (isnt(list_max)) else max(3, list_max)
+	graph, stk, gid = Digraph(**kwargs), [], 0
+
+	def add_node(lbl, gid, pid=None, shape=None):
+		"""
+		Add node to the graph; add an edge to the node if it has a parent.
+		"""
+		nid = str(gid); gid+=1
+		graph.node(nid, label=lbl if (isnt(remap)) else remap.get(lbl, lbl), shape=shape)
+		if (pid is not None):
+			graph.edge(head_name=nid, tail_name=pid)
+		return gid, nid
+
+	def add_subg(mapping, gid, pid=None, shape=None):
+		"""
+		Add a subgraph to the graph (not a graphviz subgraph).
+		"""
+		for lbl, cs in mapping.items():
+			gid, nid = add_node(lbl, gid, pid, shape)
+			stk.append((nid, cs))
+		return gid
+
+	gid = add_subg(d, gid)
+	while (stk):
+		pid, cs = stk.pop()
+
+		if (is_type(cs, prim)):
+			gid, _ = add_node(cs, gid, pid)
+		elif (is_type(cs, Mapping)):
+			gid = add_subg(cs, gid, pid)
+		elif (is_type(cs, list)):
+			if (is_type(list_max, int) and len(cs)>list_max and all([is_type(c, prim) for c in cs])):
+				cell = '<f{i}> {s}'
+				cells = [cell.format(i=i, s=cs[i]) for i in range(list_max-2)]
+				cells.extend([cell.format(i=list_max-2, s='...'), cell.format(i=list_max-1, s=cs[-1])])
+				gid, _ = add_node('|'.join(cells), gid, pid, shape='record')
+			else:
+				stk.extend([(pid, c) for c in cs])
+		else:
+			raise ValueError('Dict contains an illegal type: type({})=\'{}\''.format(str(cs), type(cs)))
+
+	return graph
 
 
 """ ********** DEBUGGING UTILS ********** """
