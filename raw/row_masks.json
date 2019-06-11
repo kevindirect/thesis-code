@@ -13,6 +13,20 @@
 				"target_tz": "US/Eastern",
 				"type": "hrm"
 			}
+		},
+		"trmi2": {
+			"intraday_hourly": {
+				"time_range": ["08:00", "16:00"],
+				"target_tz": "US/Eastern",
+				"type": "hrm"
+			}
+		},
+		"trmi3": {
+			"intraday_hourly": {
+				"time_range": ["08:00", "16:00"],
+				"target_tz": "US/Eastern",
+				"type": "hrm"
+			}
 		}
 	},
 	"sp_500": {
@@ -24,6 +38,20 @@
 			}
 		},
 		"vol": {
+			"intraday_hourly": {
+				"time_range": ["08:00", "16:00"],
+				"target_tz": "US/Eastern",
+				"type": "hrm"
+			}
+		},
+		"trmi2": {
+			"intraday_hourly": {
+				"time_range": ["08:00", "16:00"],
+				"target_tz": "US/Eastern",
+				"type": "hrm"
+			}
+		},
+		"trmi3": {
 			"intraday_hourly": {
 				"time_range": ["08:00", "16:00"],
 				"target_tz": "US/Eastern",
@@ -45,6 +73,20 @@
 				"target_tz": "US/Eastern",
 				"type": "hrm"
 			}
+		},
+		"trmi2": {
+			"intraday_hourly": {
+				"time_range": ["08:00", "16:00"],
+				"target_tz": "US/Eastern",
+				"type": "hrm"
+			}
+		},
+		"trmi3": {
+			"intraday_hourly": {
+				"time_range": ["08:00", "16:00"],
+				"target_tz": "US/Eastern",
+				"type": "hrm"
+			}
 		}
 	},
 	"russell_2000": {
@@ -56,6 +98,20 @@
 			}
 		},
 		"vol": {
+			"intraday_hourly": {
+				"time_range": ["08:00", "16:00"],
+				"target_tz": "US/Eastern",
+				"type": "hrm"
+			}
+		},
+		"trmi2": {
+			"intraday_hourly": {
+				"time_range": ["08:00", "16:00"],
+				"target_tz": "US/Eastern",
+				"type": "hrm"
+			}
+		},
+		"trmi3": {
 			"intraday_hourly": {
 				"time_range": ["08:00", "16:00"],
 				"target_tz": "US/Eastern",

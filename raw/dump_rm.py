@@ -20,23 +20,28 @@ def dump_row_masks(argv):
 
 	raw_gmt = ['raw', 'raw_gmtoffset']
 	raw_dg, raw_cs = list_get_dict(dg, raw_gmt), list_get_dict(cs, raw_gmt)
-	raw_paths, raw_recs, raw_dfs = DataAPI.load_from_dg(raw_dg, raw_cs, subset=['pba', 'vol'])
+	raw_paths, raw_recs, raw_dfs = DataAPI.load_from_dg(raw_dg, raw_cs, subset=['pba', 'vol', 'trmi2', 'trmi3'])
 
 	for key_chain in raw_paths:
+		logging.info(str(key_chain))
 		asset_name, data_subset = key_chain[0], key_chain[-1]
 		raw_rec, raw_df = list_get_dict(raw_recs, key_chain), list_get_dict(raw_dfs, key_chain)
-		gmt_col = '_'.join([data_subset[-3:], GMT_OFFSET_COL_SFX])
-		logging.info(asset_name)
+		gmt_col = raw_df.columns[0]
+		assert(gmt_col.endswith(GMT_OFFSET_COL_SFX))
+		if (raw_df.shape[1] > 1):
+			# This method may lead to error if the time_range includes the times when Daylight savings is switched on/off
+			raw_df = raw_df.fillna(method='ffill', axis=0)
+			logging.info('Found more than one column, ffilled null values')
+		logging.debug(raw_df)
 
 		for mask_type, mask in row_masks[asset_name][data_subset].items():
 			logging.info('mask name: {}'.format(mask_type))
 			mask_df = get_time_mask(raw_df, offset_col_name=gmt_col, offset_tz=mask['target_tz'], time_range=mask['time_range'])
 			desc = '_'.join([data_subset, mask['type']])
 			entry = make_rm_entry(mask['type'], desc, raw_rec)
-			logging.info('dumping {}...'.format(desc))
 			logging.debug(mask_df)
 			DataAPI.dump(mask_df, entry)
-
+			logging.info('dumped {}...'.format(desc))
 	DataAPI.update_record()
 
 def make_rm_entry(rawtype, desc, base_rec):
