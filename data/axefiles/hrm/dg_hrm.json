@@ -1,0 +1,22 @@
+{
+	"hrm": {
+		"all": {
+			"stage": "raw",
+			"type": "hrm"
+		},
+		"subsets": {
+			"pba": {
+				"desc": "pba"
+			},
+			"vol": {
+				"desc": "vol"
+			},
+			"trmi2": {
+				"desc": "trmi2"
+			},
+			"trmi3": {
+				"desc": "trmi3"
+			}
+		}
+	}
+}

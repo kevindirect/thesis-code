@@ -1,0 +1,19 @@
+{
+	"dxfbret": {
+		"all": null,
+		"subsets": {
+			"pba_hoc_hdxret_dxfbret": {
+				"exact": ["pba_oc"]
+			},
+			"pba_hlh_hdxret_dxfbret": {
+				"exact": ["pba_lh"]
+			},
+			"vol_hoc_hdxret_dxfbret": {
+				"exact": ["vol_oc"]
+			},
+			"vol_hlh_hdxret_dxfbret": {
+				"exact": ["vol_lh"]
+			}
+		}
+	}
+}

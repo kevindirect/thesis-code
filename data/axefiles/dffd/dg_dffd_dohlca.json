@@ -1,0 +1,22 @@
+{
+	"dffd": {
+		"all": {
+			"stage": "mutate",
+			"type": "dffd"
+		},
+		"subsets": {
+			"pba_dohlca_dffd": {
+				"desc": ["pba_dohlca_dffd(0.200000,0.010000)",
+					"pba_dohlca_dffd(0.400000,0.010000)",
+					"pba_dohlca_dffd(0.600000,0.010000)",
+					"pba_dohlca_dffd(0.800000,0.010000)"]
+			},
+			"vol_dohlca_dffd": {
+				"desc": ["vol_dohlca_dffd(0.200000,0.010000)",
+					"vol_dohlca_dffd(0.400000,0.010000)",
+					"vol_dohlca_dffd(0.600000,0.010000)",
+					"vol_dohlca_dffd(0.800000,0.010000)"]
+			}
+		}
+	}
+}

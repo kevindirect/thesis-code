@@ -1,0 +1,19 @@
+{
+	"ddir": {
+		"all": null
+		"subsets": {
+			"pba_hoc_hdxret_ddir": {
+				"exact": ["hoc"]
+			},
+			"pba_hlh_hdxret_ddir": {
+				"exact": ["pba_lh"]
+			},
+			"vol_hoc_hdxret_ddir": {
+				"exact": ["vol_oc"]
+			},
+			"vol_hlh_hdxret_ddir": {
+				"exact": ["vol_lh"]
+			}
+		}
+	}
+}

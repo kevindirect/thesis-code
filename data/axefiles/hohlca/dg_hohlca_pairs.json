@@ -1,0 +1,22 @@
+{
+	"hohlca_pairs": {
+		"all": {
+			"stage": "mutate",
+			"type": "hohlca"
+		},
+		"subsets": {
+			"pba_hoc": {
+				"desc": "pba_hohlca"
+			},
+			"pba_hlh": {
+				"desc": "pba_hohlca"
+			},
+			"vol_hoc": {
+				"desc": "vol_hohlca"
+			},
+			"vol_hlh": {
+				"desc": "vol_hohlca"
+			}
+		}
+	}
+}

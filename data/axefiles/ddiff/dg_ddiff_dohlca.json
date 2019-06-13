@@ -1,0 +1,16 @@
+{
+	"ddiff": {
+		"all": {
+			"stage": "mutate",
+			"type": "ddiff"
+		},
+		"subsets": {
+			"pba_dohlca_ddiff": {
+				"desc": "pba_dohlca_ddiff(1)"
+			},
+			"vol_dohlca_ddiff": {
+				"desc": "vol_dohlca_ddiff(1)"
+			}
+		}
+	}
+}

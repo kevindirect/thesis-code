@@ -1,0 +1,19 @@
+{
+	"dret": {
+		"all": null,
+		"subsets": {
+			"pba_hoc_hdxret_dret": {
+				"exact": ["pba_oc"]
+			},
+			"pba_hlh_hdxret_dret": {
+				"exact": ["pba_lh"]
+			},
+			"vol_hoc_hdxret_dret": {
+				"exact": ["vol_oc"]
+			},
+			"vol_hlh_hdxret_dret": {
+				"exact": ["vol_lh"]
+			}
+		}
+	}
+}

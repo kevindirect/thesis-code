@@ -98,5 +98,6 @@ def make_csv_group_request_url(group, assets, version, period, times, api_url, a
 
 	return '/'.join(reqlist)
 
+
 if __name__ == '__main__':
 	get_trmi(sys.argv[1:])

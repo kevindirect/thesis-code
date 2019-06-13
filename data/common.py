@@ -1,3 +1,9 @@
+#         __      __
+#    ____/ /___ _/ /_____ _
+#   / __  / __ `/ __/ __ `/
+#  / /_/ / /_/ / /_/ /_/ /
+#  \__,_/\__,_/\__/\__,_/
+# data stage common.
 """
 Kevin Patel
 """
@@ -8,8 +14,6 @@ from os.path import dirname, realpath
 sys.path.insert(0, dirname(dirname(dirname(realpath(sys.argv[0])))))
 
 # ********** SPECIFIC TO THIS CRUNCH PACKAGE **********
-# DATA
-
 from os import sep
 from common_util import DATA_DIR
 
@@ -27,8 +31,7 @@ DR_COLS = DR_IDS + DR_REQ + DR_META + DR_GEN
 DG_PFX = 'dg_'
 CS_PFX = 'cs_'
 
-ACCESS_UTIL_DIR = DATA_DIR +'access_util' +sep
-VIEW_DIR = ACCESS_UTIL_DIR +'view' +sep
+AXEFILES_DIR = DATA_DIR +'axefiles' +sep
 
 # PACKAGE DEFAULTS
 default_cleanfile = 'clean.json'

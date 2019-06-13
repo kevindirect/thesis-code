@@ -1,0 +1,16 @@
+{
+	"root_split": {
+		"all": {
+			"stage": "raw",
+			"type": "root",
+			"cat": "us_equity_index",
+			"desc": "join"
+		},
+		"subsets": {
+			"pba": {},
+			"vol": {},
+			"trmi2": {},
+			"trmi3": {}
+		}
+	}
+}

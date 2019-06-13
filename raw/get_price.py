@@ -100,6 +100,7 @@ def clean_cols(frame, clean_cols_instr):
 		frame.columns = frame.columns.map(lambda s: str(clean_cols_instr["col_prefix"] +s))
 	return frame
 
+
 def clean_rows(frame, clean_rows_instr):
 	if ("filter" in clean_rows_instr):
 		row_filter = clean_rows_instr["filter"]
@@ -120,6 +121,7 @@ def clean_rows(frame, clean_rows_instr):
 				assert(len(col_set)>1)
 				frame = frame[~frame[col_set].eq(frame[col_set[0]], axis=0).all(axis=1)]
 	return frame
+
 
 if __name__ == '__main__':
 	get_price(sys.argv[1:])

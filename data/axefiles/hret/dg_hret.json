@@ -1,0 +1,22 @@
+{
+	"hret": {
+		"all": {
+			"stage": "mutate",
+			"type": "hret"
+		},
+		"subsets": {
+			"pba_hoc_hret": {
+				"desc": "pba_hoc_hret"
+			},
+			"pba_hlh_hret": {
+				"desc": "pba_hlh_hret"
+			},
+			"vol_hoc_hret": {
+				"desc": "vol_hoc_hret"
+			},
+			"vol_hlh_hret": {
+				"desc": "vol_hlh_hret"
+			}
+		}
+	}
+}

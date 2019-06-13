@@ -1,0 +1,10 @@
+{
+	"ddir2": {
+		"all": null,
+		"subsets": {
+			"pba_hoc_hdxret2_ddir2": {
+				"exact": ["pba_oc"]
+			}
+		}
+	}
+}

@@ -1,0 +1,22 @@
+{
+	"dret": {
+		"all": {
+			"stage": "mutate",
+			"type": "dret"
+		},
+		"subsets": {
+			"pba_hoc_hdxret_dret": {
+				"desc": "pba_hoc_hdxret_dret"
+			},
+			"pba_hlh_hdxret_dret": {
+				"desc": "pba_hlh_hdxret_dret"
+			},
+			"vol_hoc_hdxret_dret": {
+				"desc": "vol_hoc_hdxret_dret"
+			},
+			"vol_hlh_hdxret_dret": {
+				"desc": "vol_hlh_hdxret_dret"
+			}
+		}
+	}
+}

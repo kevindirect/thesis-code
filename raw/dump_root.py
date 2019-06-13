@@ -10,9 +10,10 @@ import logging
 from common_util import RAW_DIR, DT_HOURLY_FREQ, DT_FMT_YMD_HM, load_json, load_df, get_cmd_args, isnt, series_to_dti_noreindex, right_join, outer_join
 from raw.common import default_joinsfile
 from data.data_api import DataAPI
+from data.data_util import make_entry
 
 
-def dump_raw(argv):
+def dump_root(argv):
 	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 	cmd_arg_list = ['joinsfile=']
 	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name=basename(__file__))
@@ -35,28 +36,16 @@ def dump_raw(argv):
 				joined = reduce(right_join, [joined] + sents)
 		logging.info('joined all data...')
 
-		# XXX - move index conversion to dti upstream to dump_price and dump_raw
+		# TODO - move index conversion to dti upstream to dump_price and dump_trmi
 		joined.index = series_to_dti_noreindex(joined.index, fmt=dt_fmt, utc=True, exact=True, freq=dti_freq)
 		joined = joined.asfreq(dti_freq)
 		logging.info('converted index to dti, freq={}...'.format(dti_freq))
 
 		logging.debug(joined.index, joined)
-		DataAPI.dump(joined, make_entry(equity, dti_freq, file_list))
+		DataAPI.dump(joined, make_entry('raw', 'root', 'join', dti_freq, name=equity, cat=cat_map(file_list['price']))
 		logging.info('dumped df')
 
 	DataAPI.update_record()
-
-
-def make_entry(name, freq, file_list):
-	return {
-		'freq': freq,
-		'root': name,
-		'basis': name,
-		'type': 'raw',
-		'stage': 'raw',
-		'desc': 'raw',
-		'cat': cat_map(file_list['price'])
-	}
 
 
 def cat_map(primary_target):
@@ -71,4 +60,4 @@ def cat_map(primary_target):
 
 
 if __name__ == '__main__':
-	dump_raw(sys.argv[1:])
+	dump_root(sys.argv[1:])

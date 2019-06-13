@@ -1,0 +1,19 @@
+{
+	"hrm": {
+		"all": null,
+		"subsets": {
+			"pba": {
+				"exact": ["times"]
+			},
+			"vol": {
+				"exact": ["times"]
+			},
+			"trmi2": {
+				"exact": ["times"]
+			},
+			"trmi3": {
+				"exact": ["times"]
+			}
+		}
+	}
+}

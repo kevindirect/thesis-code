@@ -1,0 +1,22 @@
+{
+	"dlogret": {
+		"all": {
+			"stage": "mutate",
+			"type": "dlogret"
+		},
+		"subsets": {
+			"pba_doc_dlogret": {
+				"desc": "pba_doc_dlogret"
+			},
+			"pba_dlh_dlogret": {
+				"desc": "pba_dlh_dlogret"
+			},
+			"vol_doc_dlogret": {
+				"desc": "vol_doc_dlogret"
+			},
+			"vol_dlh_dlogret": {
+				"desc": "vol_dlh_dlogret"
+			}
+		}
+	}
+}

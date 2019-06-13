@@ -1,0 +1,10 @@
+{
+	"dxfbval2": {
+		"all": null,
+		"subsets": {
+			"pba_hoc_hdxcret2_dxfbval2": {
+				"exact": ["pba_oc"]
+			}
+		}
+	}
+}

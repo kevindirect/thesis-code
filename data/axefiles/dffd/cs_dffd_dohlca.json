@@ -1,0 +1,13 @@
+{
+	"dffd": {
+		"all": null,
+		"subsets": {
+			"pba_dohlca_dffd": {
+				"exact": ["pba_open", "pba_high", "pba_low", "pba_close", "pba_avgPrice"]
+			},
+			"vol_dohlca_dffd": {
+				"exact": ["vol_open", "vol_high", "vol_low", "vol_close", "vol_avgPrice"]
+			}
+		}
+	}
+}

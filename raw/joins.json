@@ -50,31 +50,5 @@
 				"etf": ["MPTRXUSMID2000"]
 			}
 		}
-	},
-	"oil": {
-		"price": "USO",
-		"vol": "OVX",
-		"trmi": {
-			"v2": {
-				"enm": ["CRU"]
-			},
-			"v3": {
-				"coumkt": ["US"],
-				"enm": ["CRU"]
-			}
-		}
-	},
-	"gold": {
-		"price": "GLD",
-		"vol": "GVZ",
-		"trmi": {
-			"v2": {
-				"enm": ["GOL"]
-			},
-			"v3": {
-				"coumkt": ["US"],
-				"enm": ["GOL"]
-			}
-		}
 	}
 }

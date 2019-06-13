@@ -1,0 +1,25 @@
+{
+	"root_split": {
+		"all": null,
+		"subsets": {
+			"pba": {
+				"exact": ["pba_open", "pba_high", "pba_low", "pba_close", "pba_avgPrice"]
+			},
+			"vol": {
+				"exact": ["vol_open", "vol_high", "vol_low", "vol_close", "vol_avgPrice"]
+			},
+			"trmi2": {
+				"startswith": ["enm2", "etf2"],
+				"exclude": {
+					"endswith": ["ver"]
+				}
+			},
+			"trmi3": {
+				"startswith": ["enm3", "etf3", "mkt3"],
+				"exclude": {
+					"endswith": ["ver"]
+				}
+			}
+		}
+	}
+}

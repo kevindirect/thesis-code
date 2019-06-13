@@ -1,0 +1,19 @@
+{
+	"dlogret": {
+		"all": null,
+		"subsets": {
+			"pba_doc_dlogret": {
+				"exact": ["pba_oc"]
+			},
+			"pba_dlh_dlogret": {
+				"exact": ["pba_lh"]
+			},
+			"vol_doc_dlogret": {
+				"exact": ["vol_oc"]
+			},
+			"vol_dlh_dlogret": {
+				"exact": ["vol_lh"]
+			}
+		}
+	}
+}

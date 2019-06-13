@@ -1,0 +1,19 @@
+{
+	"hdxcret2": {
+		"all": null,
+		"subsets": {
+			"pba_hoc_hdxcret2": {
+				"exact": ["hoc"]
+			},
+			"pba_hlh_hdxcret2": {
+				"exact": ["hlh"]
+			},
+			"vol_hoc_hdxcret2": {
+				"exact": ["vol_oc"]
+			},
+			"vol_hlh_hdxcret2": {
+				"exact": ["vol_lh"]
+			}
+		}
+	}
+}

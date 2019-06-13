@@ -1,0 +1,22 @@
+{
+	"hdxret": {
+		"all": {
+			"stage": "mutate",
+			"type": "hdxret"
+		},
+		"subsets": {
+			"pba_hoc_hdxret": {
+				"desc": "pba_hoc_hdxret"
+			},
+			"pba_hlh_hdxret": {
+				"desc": "pba_hlh_hdxret"
+			},
+			"vol_hoc_hdxret": {
+				"desc": "vol_hoc_hdxret"
+			},
+			"vol_hlh_hdxret": {
+				"desc": "vol_hlh_hdxret"
+			}
+		}
+	}
+}

@@ -1,0 +1,22 @@
+{
+	"dohlca_pairs": {
+		"all": {
+			"stage": "mutate",
+			"type": "dohlca"
+		},
+		"subsets": {
+			"pba_doc": {
+				"desc": "pba_dohlca"
+			},
+			"pba_dlh": {
+				"desc": "pba_dohlca"
+			},
+			"vol_doc": {
+				"desc": "vol_dohlca"
+			},
+			"vol_dlh": {
+				"desc": "vol_dohlca"
+			}
+		}
+	}
+}

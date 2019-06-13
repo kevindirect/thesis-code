@@ -1,0 +1,13 @@
+{
+	"dwrod": {
+		"all": null,
+		"subsets": {
+			"pba_dohlca_dwrod": {
+				"exact": ["pba_open", "pba_high", "pba_low", "pba_close", "pba_avgPrice"]
+			},
+			"vol_dohlca_dwrod": {
+				"exact": ["vol_open", "vol_high", "vol_low", "vol_close", "vol_avgPrice"]
+			}
+		}
+	}
+}

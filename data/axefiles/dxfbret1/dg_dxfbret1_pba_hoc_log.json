@@ -1,0 +1,20 @@
+{
+	"dxfbret1": {
+		"all": {
+			"stage": "mutate",
+			"type": "dxfbret1"
+		},
+		"subsets": {
+			"pba_hoc_hdxret1_dxfbret1": {
+				"desc": ["pba_hoc_hdxret1(0.062500%)_dxfbret1",
+						"pba_hoc_hdxret1(0.125000%)_dxfbret1",
+						"pba_hoc_hdxret1(0.250000%)_dxfbret1",
+						"pba_hoc_hdxret1(0.500000%)_dxfbret1",
+						"pba_hoc_hdxret1(1.000000%)_dxfbret1",
+						"pba_hoc_hdxret1(2.000000%)_dxfbret1",
+						"pba_hoc_hdxret1(4.000000%)_dxfbret1",
+						"pba_hoc_hdxret1(8.000000%)_dxfbret1"]
+			}
+		}
+	}
+}
