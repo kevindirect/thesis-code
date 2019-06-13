@@ -1,10 +1,8 @@
 {
-	"dxfbcret2": {
-		"all": null,
-		"subsets": {
-			"pba_hoc_hdxcret2_dxfbcret2": {
-				"exact": ["pba_oc"]
-			}
+	"all": null,
+	"subsets": {
+		"pba_hoc_hdxcret2_dxfbcret2": {
+			"exact": ["pba_oc"]
 		}
 	}
 }

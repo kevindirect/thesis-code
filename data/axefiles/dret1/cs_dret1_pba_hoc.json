@@ -1,10 +1,8 @@
 {
-	"dret1": {
-		"all": null,
-		"subsets": {
-			"pba_hoc_hdxret1_dret1": {
-				"exact": ["pba_oc"]
-			}
+	"all": null,
+	"subsets": {
+		"pba_hoc_hdxret1_dret1": {
+			"exact": ["pba_oc"]
 		}
 	}
 }

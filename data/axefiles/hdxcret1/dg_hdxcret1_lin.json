@@ -1,57 +1,55 @@
 {
-	"hdxcret1": {
-		"all": {
-			"stage": "mutate",
-			"type": ["hdxcret1(1.000000%)",
-					"hdxcret1(2.000000%)",
-					"hdxcret1(3.000000%)",
-					"hdxcret1(4.000000%)",
-					"hdxcret1(5.000000%)",
-					"hdxcret1(6.000000%)",
-					"hdxcret1(7.000000%)",
-					"hdxcret1(8.000000%)"]
+	"all": {
+		"stage": "mutate",
+		"type": ["hdxcret1(1.000000%)",
+				"hdxcret1(2.000000%)",
+				"hdxcret1(3.000000%)",
+				"hdxcret1(4.000000%)",
+				"hdxcret1(5.000000%)",
+				"hdxcret1(6.000000%)",
+				"hdxcret1(7.000000%)",
+				"hdxcret1(8.000000%)"]
+	},
+	"subsets": {
+		"pba_hoc_hdxcret1": {
+			"desc": ["pba_hoc_hdxcret1(1.000000%)",
+					"pba_hoc_hdxcret1(2.000000%)",
+					"pba_hoc_hdxcret1(3.000000%)",
+					"pba_hoc_hdxcret1(4.000000%)",
+					"pba_hoc_hdxcret1(5.000000%)",
+					"pba_hoc_hdxcret1(6.000000%)",
+					"pba_hoc_hdxcret1(7.000000%)",
+					"pba_hoc_hdxcret1(8.000000%)"]
 		},
-		"subsets": {
-			"pba_hoc_hdxcret1": {
-				"desc": ["pba_hoc_hdxcret1(1.000000%)",
-						"pba_hoc_hdxcret1(2.000000%)",
-						"pba_hoc_hdxcret1(3.000000%)",
-						"pba_hoc_hdxcret1(4.000000%)",
-						"pba_hoc_hdxcret1(5.000000%)",
-						"pba_hoc_hdxcret1(6.000000%)",
-						"pba_hoc_hdxcret1(7.000000%)",
-						"pba_hoc_hdxcret1(8.000000%)"]
-			},
-			"pba_hlh_hdxcret1": {
-				"desc": ["pba_hlh_hdxcret1(1.000000%)",
-						"pba_hlh_hdxcret1(2.000000%)",
-						"pba_hlh_hdxcret1(3.000000%)",
-						"pba_hlh_hdxcret1(4.000000%)",
-						"pba_hlh_hdxcret1(5.000000%)",
-						"pba_hlh_hdxcret1(6.000000%)",
-						"pba_hlh_hdxcret1(7.000000%)",
-						"pba_hlh_hdxcret1(8.000000%)"]
-			},
-			"vol_hoc_hdxcret1": {
-				"desc": ["vol_hoc_hdxcret1(1.000000%)",
-						"vol_hoc_hdxcret1(2.000000%)",
-						"vol_hoc_hdxcret1(3.000000%)",
-						"vol_hoc_hdxcret1(4.000000%)",
-						"vol_hoc_hdxcret1(5.000000%)",
-						"vol_hoc_hdxcret1(6.000000%)",
-						"vol_hoc_hdxcret1(7.000000%)",
-						"vol_hoc_hdxcret1(8.000000%)"]
-			},
-			"vol_hlh_hdxcret1": {
-				"desc": ["vol_hlh_hdxcret1(1.000000%)",
-						"vol_hlh_hdxcret1(2.000000%)",
-						"vol_hlh_hdxcret1(3.000000%)",
-						"vol_hlh_hdxcret1(4.000000%)",
-						"vol_hlh_hdxcret1(5.000000%)",
-						"vol_hlh_hdxcret1(6.000000%)",
-						"vol_hlh_hdxcret1(7.000000%)",
-						"vol_hlh_hdxcret1(8.000000%)"]
-			}
+		"pba_hlh_hdxcret1": {
+			"desc": ["pba_hlh_hdxcret1(1.000000%)",
+					"pba_hlh_hdxcret1(2.000000%)",
+					"pba_hlh_hdxcret1(3.000000%)",
+					"pba_hlh_hdxcret1(4.000000%)",
+					"pba_hlh_hdxcret1(5.000000%)",
+					"pba_hlh_hdxcret1(6.000000%)",
+					"pba_hlh_hdxcret1(7.000000%)",
+					"pba_hlh_hdxcret1(8.000000%)"]
+		},
+		"vol_hoc_hdxcret1": {
+			"desc": ["vol_hoc_hdxcret1(1.000000%)",
+					"vol_hoc_hdxcret1(2.000000%)",
+					"vol_hoc_hdxcret1(3.000000%)",
+					"vol_hoc_hdxcret1(4.000000%)",
+					"vol_hoc_hdxcret1(5.000000%)",
+					"vol_hoc_hdxcret1(6.000000%)",
+					"vol_hoc_hdxcret1(7.000000%)",
+					"vol_hoc_hdxcret1(8.000000%)"]
+		},
+		"vol_hlh_hdxcret1": {
+			"desc": ["vol_hlh_hdxcret1(1.000000%)",
+					"vol_hlh_hdxcret1(2.000000%)",
+					"vol_hlh_hdxcret1(3.000000%)",
+					"vol_hlh_hdxcret1(4.000000%)",
+					"vol_hlh_hdxcret1(5.000000%)",
+					"vol_hlh_hdxcret1(6.000000%)",
+					"vol_hlh_hdxcret1(7.000000%)",
+					"vol_hlh_hdxcret1(8.000000%)"]
 		}
 	}
 }

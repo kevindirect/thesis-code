@@ -1,22 +1,20 @@
 {
-	"ddir": {
-		"all": {
-			"stage": "mutate",
-			"type": "ddir"
+	"all": {
+		"stage": "mutate",
+		"type": "ddir"
+	},
+	"subsets": {
+		"pba_hoc_hdxret_ddir": {
+			"desc": "pba_hoc_hdxret_ddir"
 		},
-		"subsets": {
-			"pba_hoc_hdxret_ddir": {
-				"desc": "pba_hoc_hdxret_ddir"
-			},
-			"pba_hlh_hdxret_ddir": {
-				"desc": "pba_hlh_hdxret_ddir"
-			},
-			"vol_hoc_hdxret_ddir": {
-				"desc": "vol_hoc_hdxret_ddir"
-			},
-			"vol_hlh_hdxret_ddir": {
-				"desc": "vol_hlh_hdxret_ddir"
-			}
+		"pba_hlh_hdxret_ddir": {
+			"desc": "pba_hlh_hdxret_ddir"
+		},
+		"vol_hoc_hdxret_ddir": {
+			"desc": "vol_hoc_hdxret_ddir"
+		},
+		"vol_hlh_hdxret_ddir": {
+			"desc": "vol_hlh_hdxret_ddir"
 		}
 	}
 }

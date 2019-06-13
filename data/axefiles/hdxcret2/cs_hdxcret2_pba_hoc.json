@@ -1,10 +1,8 @@
 {
-	"hdxcret2": {
-		"all": null,
-		"subsets": {
-			"pba_hoc_hdxcret2": {
-				"exact": ["hoc"]
-			}
+	"all": null,
+	"subsets": {
+		"pba_hoc_hdxcret2": {
+			"exact": ["hoc"]
 		}
 	}
 }

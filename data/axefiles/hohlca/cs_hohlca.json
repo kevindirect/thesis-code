@@ -1,13 +1,11 @@
 {
-	"hohlca": {
-		"all": null,
-		"subsets": {
-			"pba_hohlca": {
-				"exact": ["pba_open", "pba_high", "pba_low", "pba_close", "pba_avgPrice"]
-			},
-			"vol_hohlca": {
-				"exact": ["vol_open", "vol_high", "vol_low", "vol_close", "vol_avgPrice"]
-			}
+	"all": null,
+	"subsets": {
+		"pba_hohlca": {
+			"exact": ["pba_open", "pba_high", "pba_low", "pba_close", "pba_avgPrice"]
+		},
+		"vol_hohlca": {
+			"exact": ["vol_open", "vol_high", "vol_low", "vol_close", "vol_avgPrice"]
 		}
 	}
 }

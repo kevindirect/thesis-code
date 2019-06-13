@@ -1,14 +1,12 @@
 {
-	"root_split_ohlca": {
-		"all": {
-			"stage": "raw",
-			"type": "root",
-			"cat": "us_equity_index",
-			"desc": "join"
-		},
-		"subsets": {
-			"pba": {},
-			"vol": {}
-		}
+	"all": {
+		"stage": "raw",
+		"type": "root",
+		"cat": "us_equity_index",
+		"desc": "join"
+	},
+	"subsets": {
+		"pba": {},
+		"vol": {}
 	}
 }

@@ -1,49 +1,47 @@
 {
-	"hdmx": {
-		"all": null,
-		"subsets": {
-			"pba_hohlca_hdmx": {
-				"exact": ["pba_open", "pba_high", "pba_low", "pba_close", "pba_avgPrice"]
-			},
-			"pba_hoc_hspread_hdmx": {
-				"exact": ["pba_oc"]
-			},
-			"pba_hlh_hspread_hdmx": {
-				"exact": ["pba_lh"]
-			},
-			"pba_hoc_hret_hdmx": {
-				"exact": ["pba_oc"]
-			},
-			"pba_hlh_hret_hdmx": {
-				"exact": ["pba_lh"]
-			},
-			"pba_hoc_hlogret_hdmx": {
-				"exact": ["pba_oc"]
-			},
-			"pba_hlh_hlogret_hdmx": {
-				"exact": ["pba_lh"]
-			},
-			"vol_hohlca_hdmx": {
-				"exact": ["vol_open", "vol_high", "vol_low", "vol_close", "vol_avgPrice"]
-			},
-			"vol_hoc_hspread_hdmx": {
-				"exact": ["vol_oc"]
-			},
-			"vol_hlh_hspread_hdmx": {
-				"exact": ["vol_lh"]
-			},
-			"vol_hoc_hret_hdmx": {
-				"exact": ["vol_oc"]
-			},
-			"vol_hlh_hret_hdmx": {
-				"exact": ["vol_lh"]
-			},
-			"vol_hoc_hlogret_hdmx": {
-				"exact": ["vol_oc"]
-			},
-			"vol_hlh_hlogret_hdmx": {
-				"exact": ["vol_lh"]
-			}
+	"all": null,
+	"subsets": {
+		"pba_hohlca_hdmx": {
+			"exact": ["pba_open", "pba_high", "pba_low", "pba_close", "pba_avgPrice"]
+		},
+		"pba_hoc_hspread_hdmx": {
+			"exact": ["pba_oc"]
+		},
+		"pba_hlh_hspread_hdmx": {
+			"exact": ["pba_lh"]
+		},
+		"pba_hoc_hret_hdmx": {
+			"exact": ["pba_oc"]
+		},
+		"pba_hlh_hret_hdmx": {
+			"exact": ["pba_lh"]
+		},
+		"pba_hoc_hlogret_hdmx": {
+			"exact": ["pba_oc"]
+		},
+		"pba_hlh_hlogret_hdmx": {
+			"exact": ["pba_lh"]
+		},
+		"vol_hohlca_hdmx": {
+			"exact": ["vol_open", "vol_high", "vol_low", "vol_close", "vol_avgPrice"]
+		},
+		"vol_hoc_hspread_hdmx": {
+			"exact": ["vol_oc"]
+		},
+		"vol_hlh_hspread_hdmx": {
+			"exact": ["vol_lh"]
+		},
+		"vol_hoc_hret_hdmx": {
+			"exact": ["vol_oc"]
+		},
+		"vol_hlh_hret_hdmx": {
+			"exact": ["vol_lh"]
+		},
+		"vol_hoc_hlogret_hdmx": {
+			"exact": ["vol_oc"]
+		},
+		"vol_hlh_hlogret_hdmx": {
+			"exact": ["vol_lh"]
 		}
 	}
 }

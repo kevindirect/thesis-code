@@ -1,16 +1,14 @@
 {
-	"dohlca": {
-		"all": {
-			"stage": "mutate",
-			"type": "dohlca"
+	"all": {
+		"stage": "mutate",
+		"type": "dohlca"
+	},
+	"subsets": {
+		"pba_dohlca": {
+			"desc": "pba_dohlca"
 		},
-		"subsets": {
-			"pba_dohlca": {
-				"desc": "pba_dohlca"
-			},
-			"vol_dohlca": {
-				"desc": "vol_dohlca"
-			}
+		"vol_dohlca": {
+			"desc": "vol_dohlca"
 		}
 	}
 }

@@ -1,21 +1,19 @@
 {
-	"root_split_gmtoffset": {
-		"all": null,
-		"subsets": {
-			"pba": {
-				"exact": ["pba_gmtOffset"]
-			},
-			"vol": {
-				"exact": ["vol_gmtOffset"]
-			},
-			"trmi2": {
-				"exact": ["pba_gmtOffset"],
-				"endswith": ["2_ver"]
-			},
-			"trmi3": {
-				"exact": ["pba_gmtOffset"],
-				"endswith": ["3_ver"]
-			}
+	"all": null,
+	"subsets": {
+		"pba": {
+			"exact": ["pba_gmtOffset"]
+		},
+		"vol": {
+			"exact": ["vol_gmtOffset"]
+		},
+		"trmi2": {
+			"exact": ["pba_gmtOffset"],
+			"endswith": ["2_ver"]
+		},
+		"trmi3": {
+			"exact": ["pba_gmtOffset"],
+			"endswith": ["3_ver"]
 		}
 	}
 }

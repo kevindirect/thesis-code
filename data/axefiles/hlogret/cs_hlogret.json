@@ -1,19 +1,17 @@
 {
-	"hlogret": {
-		"all": null,
-		"subsets": {
-			"pba_hoc_hlogret": {
-				"exact": ["pba_oc"]
-			},
-			"pba_hlh_hlogret": {
-				"exact": ["pba_lh"]
-			},
-			"vol_hoc_hlogret": {
-				"exact": ["vol_oc"]
-			},
-			"vol_hlh_hlogret": {
-				"exact": ["vol_lh"]
-			}
+	"all": null,
+	"subsets": {
+		"pba_hoc_hlogret": {
+			"exact": ["pba_oc"]
+		},
+		"pba_hlh_hlogret": {
+			"exact": ["pba_lh"]
+		},
+		"vol_hoc_hlogret": {
+			"exact": ["vol_oc"]
+		},
+		"vol_hlh_hlogret": {
+			"exact": ["vol_lh"]
 		}
 	}
 }

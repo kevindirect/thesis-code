@@ -1,19 +1,17 @@
 {
-	"hohlca_pairs": {
-		"all": null,
-		"subsets": {
-			"pba_hoc": {
-				"exact": ["pba_open", "pba_close"]
-			},
-			"pba_hlh": {
-				"exact": ["pba_low", "pba_high"]
-			},
-			"vol_hoc": {
-				"exact": ["vol_open", "vol_close"]
-			},
-			"vol_hlh": {
-				"exact": ["vol_low", "vol_high"]
-			}
+	"all": null,
+	"subsets": {
+		"pba_hoc": {
+			"exact": ["pba_open", "pba_close"]
+		},
+		"pba_hlh": {
+			"exact": ["pba_low", "pba_high"]
+		},
+		"vol_hoc": {
+			"exact": ["vol_open", "vol_close"]
+		},
+		"vol_hlh": {
+			"exact": ["vol_low", "vol_high"]
 		}
 	}
 }

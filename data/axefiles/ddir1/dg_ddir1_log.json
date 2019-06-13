@@ -1,50 +1,48 @@
 {
-	"ddir1": {
-		"all": {
-			"stage": "mutate",
-			"mutate_type": "ddir1"
+	"all": {
+		"stage": "mutate",
+		"mutate_type": "ddir1"
+	},
+	"subsets": {
+		"pba_hoc_hdxret1_ddir1": {
+			"desc": ["pba_hoc_hdxret1(0.062500%)_ddir1",
+					"pba_hoc_hdxret1(0.125000%)_ddir1",
+					"pba_hoc_hdxret1(0.250000%)_ddir1",
+					"pba_hoc_hdxret1(0.500000%)_ddir1",
+					"pba_hoc_hdxret1(1.000000%)_ddir1",
+					"pba_hoc_hdxret1(2.000000%)_ddir1",
+					"pba_hoc_hdxret1(4.000000%)_ddir1",
+					"pba_hoc_hdxret1(8.000000%)_ddir1"]
 		},
-		"subsets": {
-			"pba_hoc_hdxret1_ddir1": {
-				"desc": ["pba_hoc_hdxret1(0.062500%)_ddir1",
-						"pba_hoc_hdxret1(0.125000%)_ddir1",
-						"pba_hoc_hdxret1(0.250000%)_ddir1",
-						"pba_hoc_hdxret1(0.500000%)_ddir1",
-						"pba_hoc_hdxret1(1.000000%)_ddir1",
-						"pba_hoc_hdxret1(2.000000%)_ddir1",
-						"pba_hoc_hdxret1(4.000000%)_ddir1",
-						"pba_hoc_hdxret1(8.000000%)_ddir1"]
-			},
-			"pba_hlh_hdxret1_ddir1": {
-				"desc": ["pba_hlh_hdxret1(0.062500%)_ddir1",
-						"pba_hlh_hdxret1(0.125000%)_ddir1",
-						"pba_hlh_hdxret1(0.250000%)_ddir1",
-						"pba_hlh_hdxret1(0.500000%)_ddir1",
-						"pba_hlh_hdxret1(1.000000%)_ddir1",
-						"pba_hlh_hdxret1(2.000000%)_ddir1",
-						"pba_hlh_hdxret1(4.000000%)_ddir1",
-						"pba_hlh_hdxret1(8.000000%)_ddir1"]
-			},
-			"vol_hoc_hdxret1_ddir1": {
-				"desc": ["vol_hoc_hdxret1(0.062500%)_ddir1",
-						"vol_hoc_hdxret1(0.125000%)_ddir1",
-						"vol_hoc_hdxret1(0.250000%)_ddir1",
-						"vol_hoc_hdxret1(0.500000%)_ddir1",
-						"vol_hoc_hdxret1(1.000000%)_ddir1",
-						"vol_hoc_hdxret1(2.000000%)_ddir1",
-						"vol_hoc_hdxret1(4.000000%)_ddir1",
-						"vol_hoc_hdxret1(8.000000%)_ddir1"]
-			},
-			"vol_hlh_hdxret1_ddir1": {
-				"desc": ["vol_hlh_hdxret1(0.062500%)_ddir1",
-						"vol_hlh_hdxret1(0.125000%)_ddir1",
-						"vol_hlh_hdxret1(0.250000%)_ddir1",
-						"vol_hlh_hdxret1(0.500000%)_ddir1",
-						"vol_hlh_hdxret1(1.000000%)_ddir1",
-						"vol_hlh_hdxret1(2.000000%)_ddir1",
-						"vol_hlh_hdxret1(4.000000%)_ddir1",
-						"vol_hlh_hdxret1(8.000000%)_ddir1"]
-			}
+		"pba_hlh_hdxret1_ddir1": {
+			"desc": ["pba_hlh_hdxret1(0.062500%)_ddir1",
+					"pba_hlh_hdxret1(0.125000%)_ddir1",
+					"pba_hlh_hdxret1(0.250000%)_ddir1",
+					"pba_hlh_hdxret1(0.500000%)_ddir1",
+					"pba_hlh_hdxret1(1.000000%)_ddir1",
+					"pba_hlh_hdxret1(2.000000%)_ddir1",
+					"pba_hlh_hdxret1(4.000000%)_ddir1",
+					"pba_hlh_hdxret1(8.000000%)_ddir1"]
+		},
+		"vol_hoc_hdxret1_ddir1": {
+			"desc": ["vol_hoc_hdxret1(0.062500%)_ddir1",
+					"vol_hoc_hdxret1(0.125000%)_ddir1",
+					"vol_hoc_hdxret1(0.250000%)_ddir1",
+					"vol_hoc_hdxret1(0.500000%)_ddir1",
+					"vol_hoc_hdxret1(1.000000%)_ddir1",
+					"vol_hoc_hdxret1(2.000000%)_ddir1",
+					"vol_hoc_hdxret1(4.000000%)_ddir1",
+					"vol_hoc_hdxret1(8.000000%)_ddir1"]
+		},
+		"vol_hlh_hdxret1_ddir1": {
+			"desc": ["vol_hlh_hdxret1(0.062500%)_ddir1",
+					"vol_hlh_hdxret1(0.125000%)_ddir1",
+					"vol_hlh_hdxret1(0.250000%)_ddir1",
+					"vol_hlh_hdxret1(0.500000%)_ddir1",
+					"vol_hlh_hdxret1(1.000000%)_ddir1",
+					"vol_hlh_hdxret1(2.000000%)_ddir1",
+					"vol_hlh_hdxret1(4.000000%)_ddir1",
+					"vol_hlh_hdxret1(8.000000%)_ddir1"]
 		}
 	}
 }

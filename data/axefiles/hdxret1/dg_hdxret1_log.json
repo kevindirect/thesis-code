@@ -1,57 +1,55 @@
 {
-	"hdxret1": {
-		"all": {
-			"stage": "mutate",
-			"type": ["hdxret1(0.062500%)",
-					"hdxret1(0.125000%)",
-					"hdxret1(0.250000%)",
-					"hdxret1(0.500000%)",
-					"hdxret1(1.000000%)",
-					"hdxret1(2.000000%)",
-					"hdxret1(4.000000%)",
-					"hdxret1(8.000000%)"]
+	"all": {
+		"stage": "mutate",
+		"type": ["hdxret1(0.062500%)",
+				"hdxret1(0.125000%)",
+				"hdxret1(0.250000%)",
+				"hdxret1(0.500000%)",
+				"hdxret1(1.000000%)",
+				"hdxret1(2.000000%)",
+				"hdxret1(4.000000%)",
+				"hdxret1(8.000000%)"]
+	},
+	"subsets": {
+		"pba_hoc_hdxret1": {
+			"desc": ["pba_hoc_hdxret1(0.062500%)",
+					"pba_hoc_hdxret1(0.125000%)",
+					"pba_hoc_hdxret1(0.250000%)",
+					"pba_hoc_hdxret1(0.500000%)",
+					"pba_hoc_hdxret1(1.000000%)",
+					"pba_hoc_hdxret1(2.000000%)",
+					"pba_hoc_hdxret1(4.000000%)",
+					"pba_hoc_hdxret1(8.000000%)"]
 		},
-		"subsets": {
-			"pba_hoc_hdxret1": {
-				"desc": ["pba_hoc_hdxret1(0.062500%)",
-						"pba_hoc_hdxret1(0.125000%)",
-						"pba_hoc_hdxret1(0.250000%)",
-						"pba_hoc_hdxret1(0.500000%)",
-						"pba_hoc_hdxret1(1.000000%)",
-						"pba_hoc_hdxret1(2.000000%)",
-						"pba_hoc_hdxret1(4.000000%)",
-						"pba_hoc_hdxret1(8.000000%)"]
-			},
-			"pba_hlh_hdxret1": {
-				"desc": ["pba_hlh_hdxret1(0.062500%)",
-						"pba_hlh_hdxret1(0.125000%)",
-						"pba_hlh_hdxret1(0.250000%)",
-						"pba_hlh_hdxret1(0.500000%)",
-						"pba_hlh_hdxret1(1.000000%)",
-						"pba_hlh_hdxret1(2.000000%)",
-						"pba_hlh_hdxret1(4.000000%)",
-						"pba_hlh_hdxret1(8.000000%)"]
-			},
-			"vol_hoc_hdxret1": {
-				"desc": ["vol_hoc_hdxret1(0.062500%)",
-						"vol_hoc_hdxret1(0.125000%)",
-						"vol_hoc_hdxret1(0.250000%)",
-						"vol_hoc_hdxret1(0.500000%)",
-						"vol_hoc_hdxret1(1.000000%)",
-						"vol_hoc_hdxret1(2.000000%)",
-						"vol_hoc_hdxret1(4.000000%)",
-						"vol_hoc_hdxret1(8.000000%)"]
-			},
-			"vol_hlh_hdxret1": {
-				"desc": ["vol_hlh_hdxret1(0.062500%)",
-						"vol_hlh_hdxret1(0.125000%)",
-						"vol_hlh_hdxret1(0.250000%)",
-						"vol_hlh_hdxret1(0.500000%)",
-						"vol_hlh_hdxret1(1.000000%)",
-						"vol_hlh_hdxret1(2.000000%)",
-						"vol_hlh_hdxret1(4.000000%)",
-						"vol_hlh_hdxret1(8.000000%)"]
-			}
+		"pba_hlh_hdxret1": {
+			"desc": ["pba_hlh_hdxret1(0.062500%)",
+					"pba_hlh_hdxret1(0.125000%)",
+					"pba_hlh_hdxret1(0.250000%)",
+					"pba_hlh_hdxret1(0.500000%)",
+					"pba_hlh_hdxret1(1.000000%)",
+					"pba_hlh_hdxret1(2.000000%)",
+					"pba_hlh_hdxret1(4.000000%)",
+					"pba_hlh_hdxret1(8.000000%)"]
+		},
+		"vol_hoc_hdxret1": {
+			"desc": ["vol_hoc_hdxret1(0.062500%)",
+					"vol_hoc_hdxret1(0.125000%)",
+					"vol_hoc_hdxret1(0.250000%)",
+					"vol_hoc_hdxret1(0.500000%)",
+					"vol_hoc_hdxret1(1.000000%)",
+					"vol_hoc_hdxret1(2.000000%)",
+					"vol_hoc_hdxret1(4.000000%)",
+					"vol_hoc_hdxret1(8.000000%)"]
+		},
+		"vol_hlh_hdxret1": {
+			"desc": ["vol_hlh_hdxret1(0.062500%)",
+					"vol_hlh_hdxret1(0.125000%)",
+					"vol_hlh_hdxret1(0.250000%)",
+					"vol_hlh_hdxret1(0.500000%)",
+					"vol_hlh_hdxret1(1.000000%)",
+					"vol_hlh_hdxret1(2.000000%)",
+					"vol_hlh_hdxret1(4.000000%)",
+					"vol_hlh_hdxret1(8.000000%)"]
 		}
 	}
 }

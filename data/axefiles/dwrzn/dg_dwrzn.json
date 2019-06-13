@@ -1,16 +1,14 @@
 {
-	"dwrzn": {
-		"all": {
-			"stage": "mutate",
-			"type": "dwrzn"
+	"all": {
+		"stage": "mutate",
+		"type": "dwrzn"
+	},
+	"subsets": {
+		"pba_dohlca_dwrzn": {
+			"desc": ["pba_dohlca_dwrzn(5)", "pba_dohlca_dwrzn(20)", "pba_dohlca_dwrzn(240)", "pba_dohlca_dwrzn(-1)"]
 		},
-		"subsets": {
-			"pba_dohlca_dwrzn": {
-				"desc": ["pba_dohlca_dwrzn(5)", "pba_dohlca_dwrzn(20)", "pba_dohlca_dwrzn(240)", "pba_dohlca_dwrzn(-1)"]
-			},
-			"vol_dohlca_dwrzn": {
-				"desc": ["vol_dohlca_dwrzn(5)", "vol_dohlca_dwrzn(20)", "vol_dohlca_dwrzn(240)", "vol_dohlca_dwrzn(-1)"]
-			}
+		"vol_dohlca_dwrzn": {
+			"desc": ["vol_dohlca_dwrzn(5)", "vol_dohlca_dwrzn(20)", "vol_dohlca_dwrzn(240)", "vol_dohlca_dwrzn(-1)"]
 		}
 	}
 }

@@ -1,37 +1,35 @@
 {
-	"hdxcret2": {
-		"all": {
-			"stage": "mutate",
-			"type": ["hdxcret2(0.5*avg,1)", "hdxcret2(1*avg,1)", "hdxcret2(2*avg,1)",
-							"hdxcret2(0.5*std,1)", "hdxcret2(1*std,1)", "hdxcret2(2*std,1)",
-							"hdxcret2(0.5*max,1)", "hdxcret2(1*max,1)", "hdxcret2(2*max,1)",
-							"hdxcret2(0.5*min,1)", "hdxcret2(1*min,1)", "hdxcret2(2*min,1)"]
+	"all": {
+		"stage": "mutate",
+		"type": ["hdxcret2(0.5*avg,1)", "hdxcret2(1*avg,1)", "hdxcret2(2*avg,1)",
+				"hdxcret2(0.5*std,1)", "hdxcret2(1*std,1)", "hdxcret2(2*std,1)",
+				"hdxcret2(0.5*max,1)", "hdxcret2(1*max,1)", "hdxcret2(2*max,1)",
+				"hdxcret2(0.5*min,1)", "hdxcret2(1*min,1)", "hdxcret2(2*min,1)"]
+	},
+	"subsets": {
+		"pba_hoc_hdxcret2": {
+			"desc": ["pba_hoc_hdxcret2(0.5*avg,1)", "pba_hoc_hdxcret2(1*avg,1)", "pba_hoc_hdxcret2(2*avg,1)",
+					"pba_hoc_hdxcret2(0.5*std,1)", "pba_hoc_hdxcret2(1*std,1)", "pba_hoc_hdxcret2(2*std,1)",
+					"pba_hoc_hdxcret2(0.5*max,1)", "pba_hoc_hdxcret2(1*max,1)", "pba_hoc_hdxcret2(2*max,1)",
+					"pba_hoc_hdxcret2(0.5*min,1)", "pba_hoc_hdxcret2(1*min,1)", "pba_hoc_hdxcret2(2*min,1)"]
 		},
-		"subsets": {
-			"pba_hoc_hdxcret2": {
-				"desc": ["pba_hoc_hdxcret2(0.5*avg,1)", "pba_hoc_hdxcret2(1*avg,1)", "pba_hoc_hdxcret2(2*avg,1)",
-						"pba_hoc_hdxcret2(0.5*std,1)", "pba_hoc_hdxcret2(1*std,1)", "pba_hoc_hdxcret2(2*std,1)",
-						"pba_hoc_hdxcret2(0.5*max,1)", "pba_hoc_hdxcret2(1*max,1)", "pba_hoc_hdxcret2(2*max,1)",
-						"pba_hoc_hdxcret2(0.5*min,1)", "pba_hoc_hdxcret2(1*min,1)", "pba_hoc_hdxcret2(2*min,1)"]
-			},
-			"pba_hlh_hdxcret2": {
-				"desc": ["pba_hlh_hdxcret2(0.5*avg,1)", "pba_hlh_hdxcret2(1*avg,1)", "pba_hlh_hdxcret2(2*avg,1)",
-						"pba_hlh_hdxcret2(0.5*std,1)", "pba_hlh_hdxcret2(1*std,1)", "pba_hlh_hdxcret2(2*std,1)",
-						"pba_hlh_hdxcret2(0.5*max,1)", "pba_hlh_hdxcret2(1*max,1)", "pba_hlh_hdxcret2(2*max,1)",
-						"pba_hlh_hdxcret2(0.5*min,1)", "pba_hlh_hdxcret2(1*min,1)", "pba_hlh_hdxcret2(2*min,1)"]
-			},
-			"vol_hoc_hdxcret2": {
-				"desc": ["vol_hoc_hdxcret2(0.5*avg,1)", "vol_hoc_hdxcret2(1*avg,1)", "vol_hoc_hdxcret2(2*avg,1)",
-						"vol_hoc_hdxcret2(0.5*std,1)", "vol_hoc_hdxcret2(1*std,1)", "vol_hoc_hdxcret2(2*std,1)",
-						"vol_hoc_hdxcret2(0.5*max,1)", "vol_hoc_hdxcret2(1*max,1)", "vol_hoc_hdxcret2(2*max,1)",
-						"vol_hoc_hdxcret2(0.5*min,1)", "vol_hoc_hdxcret2(1*min,1)", "vol_hoc_hdxcret2(2*min,1)"]
-			},
-			"vol_hlh_hdxcret2": {
-				"desc": ["vol_hlh_hdxcret2(0.5*avg,1)", "vol_hlh_hdxcret2(1*avg,1)", "vol_hlh_hdxcret2(2*avg,1)",
-						"vol_hlh_hdxcret2(0.5*std,1)", "vol_hlh_hdxcret2(1*std,1)", "vol_hlh_hdxcret2(2*std,1)",
-						"vol_hlh_hdxcret2(0.5*max,1)", "vol_hlh_hdxcret2(1*max,1)", "vol_hlh_hdxcret2(2*max,1)",
-						"vol_hlh_hdxcret2(0.5*min,1)", "vol_hlh_hdxcret2(1*min,1)", "vol_hlh_hdxcret2(2*min,1)"]
-			}
+		"pba_hlh_hdxcret2": {
+			"desc": ["pba_hlh_hdxcret2(0.5*avg,1)", "pba_hlh_hdxcret2(1*avg,1)", "pba_hlh_hdxcret2(2*avg,1)",
+					"pba_hlh_hdxcret2(0.5*std,1)", "pba_hlh_hdxcret2(1*std,1)", "pba_hlh_hdxcret2(2*std,1)",
+					"pba_hlh_hdxcret2(0.5*max,1)", "pba_hlh_hdxcret2(1*max,1)", "pba_hlh_hdxcret2(2*max,1)",
+					"pba_hlh_hdxcret2(0.5*min,1)", "pba_hlh_hdxcret2(1*min,1)", "pba_hlh_hdxcret2(2*min,1)"]
+		},
+		"vol_hoc_hdxcret2": {
+			"desc": ["vol_hoc_hdxcret2(0.5*avg,1)", "vol_hoc_hdxcret2(1*avg,1)", "vol_hoc_hdxcret2(2*avg,1)",
+					"vol_hoc_hdxcret2(0.5*std,1)", "vol_hoc_hdxcret2(1*std,1)", "vol_hoc_hdxcret2(2*std,1)",
+					"vol_hoc_hdxcret2(0.5*max,1)", "vol_hoc_hdxcret2(1*max,1)", "vol_hoc_hdxcret2(2*max,1)",
+					"vol_hoc_hdxcret2(0.5*min,1)", "vol_hoc_hdxcret2(1*min,1)", "vol_hoc_hdxcret2(2*min,1)"]
+		},
+		"vol_hlh_hdxcret2": {
+			"desc": ["vol_hlh_hdxcret2(0.5*avg,1)", "vol_hlh_hdxcret2(1*avg,1)", "vol_hlh_hdxcret2(2*avg,1)",
+					"vol_hlh_hdxcret2(0.5*std,1)", "vol_hlh_hdxcret2(1*std,1)", "vol_hlh_hdxcret2(2*std,1)",
+					"vol_hlh_hdxcret2(0.5*max,1)", "vol_hlh_hdxcret2(1*max,1)", "vol_hlh_hdxcret2(2*max,1)",
+					"vol_hlh_hdxcret2(0.5*min,1)", "vol_hlh_hdxcret2(1*min,1)", "vol_hlh_hdxcret2(2*min,1)"]
 		}
 	}
 }

@@ -1,22 +1,20 @@
 {
-	"hspread": {
-		"all": {
-			"stage": "mutate",
-			"type": "hspread"
+	"all": {
+		"stage": "mutate",
+		"type": "hspread"
+	},
+	"subsets": {
+		"pba_hoc_hspread": {
+			"desc": "pba_hoc_hspread"
 		},
-		"subsets": {
-			"pba_hoc_hspread": {
-				"desc": "pba_hoc_hspread"
-			},
-			"pba_hlh_hspread": {
-				"desc": "pba_hlh_hspread"
-			},
-			"vol_hoc_hspread": {
-				"desc": "vol_hoc_hspread"
-			},
-			"vol_hlh_hspread": {
-				"desc": "vol_hlh_hspread"
-			}
+		"pba_hlh_hspread": {
+			"desc": "pba_hlh_hspread"
+		},
+		"vol_hoc_hspread": {
+			"desc": "vol_hoc_hspread"
+		},
+		"vol_hlh_hspread": {
+			"desc": "vol_hlh_hspread"
 		}
 	}
 }

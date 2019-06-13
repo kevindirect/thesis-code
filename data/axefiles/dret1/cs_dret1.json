@@ -1,19 +1,17 @@
 {
-	"dret1": {
-		"all": null,
-		"subsets": {
-			"pba_hoc_hdxret1_dret1": {
-				"exact": ["pba_oc"]
-			},
-			"pba_hlh_hdxret1_dret1": {
-				"exact": ["pba_lh"]
-			},
-			"vol_hoc_hdxret1_dret1": {
-				"exact": ["vol_oc"]
-			},
-			"vol_hlh_hdxret1_dret1": {
-				"exact": ["vol_lh"]
-			}
+	"all": null,
+	"subsets": {
+		"pba_hoc_hdxret1_dret1": {
+			"exact": ["pba_oc"]
+		},
+		"pba_hlh_hdxret1_dret1": {
+			"exact": ["pba_lh"]
+		},
+		"vol_hoc_hdxret1_dret1": {
+			"exact": ["vol_oc"]
+		},
+		"vol_hlh_hdxret1_dret1": {
+			"exact": ["vol_lh"]
 		}
 	}
 }

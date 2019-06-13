@@ -1,16 +1,14 @@
 {
-	"dxfbret": {
-		"all": {
-			"stage": "mutate",
-			"type": "dxfbret"
-		},
-		"subsets": {
-			"pba_hoc_hdxret_dxfbret": {
-				"desc": ["pba_hoc_hdxret(0.5*avg,1)_dxfbret", "pba_hoc_hdxret(1*avg,1)_dxfbret", "pba_hoc_hdxret(2*avg,1)_dxfbret",
-						"pba_hoc_hdxret(0.5*std,1)_dxfbret", "pba_hoc_hdxret(1*std,1)_dxfbret", "pba_hoc_hdxret(2*std,1)_dxfbret",
-						"pba_hoc_hdxret(0.5*max,1)_dxfbret", "pba_hoc_hdxret(1*max,1)_dxfbret", "pba_hoc_hdxret(2*max,1)_dxfbret",
-						"pba_hoc_hdxret(0.5*min,1)_dxfbret", "pba_hoc_hdxret(1*min,1)_dxfbret", "pba_hoc_hdxret(2*min,1)_dxfbret"]
-			}
+	"all": {
+		"stage": "mutate",
+		"type": "dxfbret"
+	},
+	"subsets": {
+		"pba_hoc_hdxret_dxfbret": {
+			"desc": ["pba_hoc_hdxret(0.5*avg,1)_dxfbret", "pba_hoc_hdxret(1*avg,1)_dxfbret", "pba_hoc_hdxret(2*avg,1)_dxfbret",
+					"pba_hoc_hdxret(0.5*std,1)_dxfbret", "pba_hoc_hdxret(1*std,1)_dxfbret", "pba_hoc_hdxret(2*std,1)_dxfbret",
+					"pba_hoc_hdxret(0.5*max,1)_dxfbret", "pba_hoc_hdxret(1*max,1)_dxfbret", "pba_hoc_hdxret(2*max,1)_dxfbret",
+					"pba_hoc_hdxret(0.5*min,1)_dxfbret", "pba_hoc_hdxret(1*min,1)_dxfbret", "pba_hoc_hdxret(2*min,1)_dxfbret"]
 		}
 	}
 }
