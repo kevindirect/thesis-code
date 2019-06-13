@@ -6,7 +6,7 @@ from os import sep
 from os.path import basename
 import logging
 
-from common_util import RAW_DIR, load_json, get_cmd_args, isnt, makedir_if_not_exists, dump_df
+from common_util import RAW_DIR, load_json, get_cmd_args, exists, isnt, makedir_if_not_exists, dump_df
 from raw.common import default_pricefile, default_pathsfile, default_columnsfile, default_rowsfile, load_csv_no_idx
 
 
@@ -72,13 +72,13 @@ def get_price(argv):
 		elif (asset in vol_clean_rows):
 			clean_rows_instr = vol_clean_rows
 
-		if (clean_cols_instr is not None):
+		if (exists(clean_cols_instr)):
 			print('\tprocessing ' +asset +' columns', end='...', flush=True)
 			asset_df = clean_cols(asset_df, clean_cols_instr)
 			asset_df = clean_cols(asset_df, clean_cols_instr[asset])
 			print('done')
 
-		if (clean_rows_instr is not None):
+		if (exists(clean_rows_instr)):
 			print('\tprocessing ' +asset +' rows', end='...', flush=True)
 			asset_df = clean_rows(asset_df, clean_rows_instr)
 			asset_df = clean_rows(asset_df, clean_rows_instr[asset])
