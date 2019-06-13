@@ -97,6 +97,9 @@ DT_FMT_YMD_HMSF = '%Y-%m-%d %H:%M:%S:%f'
 def is_type(obj, *types):
 	return any([isinstance(obj, tp) for tp in types])
 
+def exists(obj):
+	return obj is not None
+
 def isnt(obj):
 	return is_type(obj, type(None))
 
@@ -241,7 +244,7 @@ def best_match(original_key, candidates, alt_maps=None):
 	"""
 	if (original_key in candidates):		# exact match
 		return original_key
-	elif(len(candidates) == 1):				# unchanging
+	elif(len(candidates) == 1):			# unchanging
 		return candidates[0]
 	elif (alt_maps is not None):			# mapped match
 		alt_keys = [original_key.replace(old, new) for old, new in alt_maps.items() if (old in original_key)]
@@ -1723,22 +1726,28 @@ def search_df(df, search_dict):
 	return query_df(df, build_query(search_dict))
 
 """ DF Column Filter  """
-def get_subset(str_list, qualifier_dict):
+def get_subset(str_list, q_dict):
 	"""
 	Select a subset of str_list as dictated by qualifier_dict and return the subset, as list, that satisfies:
 	IN(QUALIFIER_1 OR QUALIFIER_2 OR ... OR QUALIFIER_N-1) AND NOT IN(EXCLUDE_1 OR EXCLUDE_2 OR ... OR EXCLUDE_N-1)
+
+	Args:
+		str_list (list): list of strings to filter from
+		q_dict (dict): qualifier dictionary, all fields are optional but because this function filters "additively"
+				providing no fields will return an empty list
+
+	Returns:
+		list of strings
 	"""
-	selected = []
+	fields, sel = list(q_dict.keys()), []
 
-	selected.extend([string for string in qualifier_dict['exact'] if string in str_list])
-	selected.extend([string for string in str_list if string.startswith(tuple(qualifier_dict['startswith']))])
-	selected.extend([string for string in str_list if string.endswith(tuple(qualifier_dict['endswith']))])
-	selected.extend([string for string in str_list if any(re.match(rgx, string) for rgx in qualifier_dict['regex'])])
-	if (qualifier_dict['exclude'] is not None):
-		exclude_fn = lambda string: string not in get_subset(str_list, qualifier_dict['exclude'])
-		selected = filter(exclude_fn, selected)
+	if ('exact' in fields):		sel.extend([s for s in q_dict['exact'] if (s in str_list)])
+	if ('startswith' in fields):	sel.extend([s for s in str_list if (s.startswith(tuple(q_dict['startswith'])))])
+	if ('endswith' in fields):	sel.extend([s for s in str_list if (s.endswith(tuple(q_dict['endswith'])))])
+	if ('rgx' in fields):		sel.extend([s for s in str_list if (any(re.match(rgx, s) for rgx in q_dict['regex']))])
+	if ('exclude' in fields):	sel = filter(lambda s: s not in get_subset(str_list, q_dict['exclude']), sel)
 
-	return remove_dups_list(selected)
+	return remove_dups_list(sel)
 
 def chained_filter(str_list, qualifier_dict_list):
 	"""
@@ -1751,7 +1760,7 @@ def chained_filter(str_list, qualifier_dict_list):
 	Returns:
 		sublist of str_list
 	"""
-	if (isinstance(qualifier_dict_list, dict)):
+	if (is_type(qualifier_dict_list, dict)):
 		qualifier_dict_list = [qualifier_dict_list]
 
 	return reduce(get_subset, qualifier_dict_list, str_list)
