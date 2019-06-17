@@ -23,7 +23,7 @@ couldn't wrap their head around, but in order to keep that limit as large as pos
 * All axefiles are either root axefiles, views on root axefiles, or children of those children (basically a tree structure)
 
 ## content
-The fields of a dg/cs file are 'all' and 'subsets'. Both are required and nullable. The subsets of the cs (column subsetter) file must be the same as the 'dg' (df getter) if they exist.
+The fields of a dg/cs file are 'all' and 'subsets'. Both are required and nullable. The subsets of the cs (column subsetter) file must be the same as the 'dg' (df getter) if the are subsets.
 
 ## crunch/data/axefiles/ directory structure
 Every directory in here (crunch/data/axefiles/) is flat, no nested directories. Each directory is named after the root axefile in that
@@ -73,7 +73,7 @@ Here is an example from the dffd root axefile (note that the desc field doesn't 
 }
 ```
 
-The desc<->subset label convention is not enforced for view axefiles, but it is encouraged wherever possible. If the subset label does not match the desc field in a view axefile, it will be used in place of the desc string for any transforms that consume it. This is a useful feature for splitting a dataframe into multiple smaller dataframes.
+The desc<->subset label convention is not enforced for view axefiles, but it is encouraged wherever possible. If the subset label does not match the desc field (after variants - parentheses and any content in them - are removed) in a view axefile, it will be used in place of the desc string for any transforms that consume it. This is a useful feature for splitting a dataframe into multiple smaller dataframes.
 
 ## axefile naming convention and codes
 The names can look strange at first glance, but it was all thought through. Terseness is important because we may have long chains of sequential trasnforms on data. Other than the 'raw' root axefile, all axefiles are preprended by a letter indicating the frequency of the data. This is a time series centric project after all:
