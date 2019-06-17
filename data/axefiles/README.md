@@ -22,6 +22,9 @@ couldn't wrap their head around, but in order to keep that limit as large as pos
 * Every axefile directory contains one _root axefile_ and zero or more _view axefiles_
 * All axefiles are either root axefiles, views on root axefiles, or children of those children (basically a tree structure)
 
+## content
+The fields of a dg/cs file are 'all' and 'subsets'. Both are required and nullable. The subsets of the cs (column subsetter) file must be the same as the 'dg' (df getter) if they exist.
+
 ## crunch/data/axefiles/ directory structure
 Every directory in here (crunch/data/axefiles/) is flat, no nested directories. Each directory is named after the root axefile in that
 directory. For example the 'ddiff' directory has a 'ddiff' axefile (technically two 'cs_ddiff.json' and 'dg_ddiff.json', but the cs_* and dg_* files are associated - they are going to be combined in a future update. Just think of the two as one for now). All the axefiles within the directory preprend the root axefile name and they are all simply views/filtrations on the original root axefile - no transforms or anything like that. If you want a transform you create a new root axefile (obviously make sure that data exists first). For example ddiff_ohlca contains only the Open High Low Close Average data from the ddiff root axefile. If you take a look you'll see that that is what it is. The dg_ and cs_ files exist for dataframe selecting and column selecting within each dataframe, respectively.

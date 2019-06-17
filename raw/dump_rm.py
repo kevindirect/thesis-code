@@ -8,7 +8,6 @@ import logging
 from common_util import RAW_DIR, DT_HOURLY_FREQ, get_cmd_args, isnt, load_json, load_df, series_to_dti, right_join, outer_join, list_get_dict, get_time_mask
 from raw.common import GMT_OFFSET_COL_SFX, default_row_masksfile
 from data.data_api import DataAPI
-from data.access_util import df_getters as dg, col_subsetters as cs
 from data.data_util import make_entry
 
 
@@ -19,14 +18,9 @@ def dump_row_masks(argv):
 	row_masksfile = default_row_masksfile if (isnt(cmd_input['row_masksfile='])) else cmd_input['row_masksfile=']
 	row_masks = load_json(row_masksfile, dir_path=RAW_DIR)
 
-	raw_split_gmt = ['root', 'root_split_gmtoffset']
-	raw_dg, raw_cs = list_get_dict(dg, raw_split_gmt), list_get_dict(cs, raw_split_gmt)
-	raw_paths, raw_recs, raw_dfs = DataAPI.load_from_dg(raw_dg, raw_cs)
-
-	for key_chain in raw_paths:
-		logging.info(str(key_chain))
-		asset_name, data_subset = key_chain[0], key_chain[-1]
-		raw_rec, raw_df = list_get_dict(raw_recs, key_chain), list_get_dict(raw_dfs, key_chain)
+	for keychain, raw_rec, raw_df in DataAPI.axe_yield(['root', 'root_split_gmtoffset'], lazy=False):
+		logging.info(str(keychain))
+		asset_name, data_subset = keychain[0], keychain[-1]
 		gmt_col = raw_df.columns[0]
 		assert(gmt_col.endswith(GMT_OFFSET_COL_SFX))
 		if (raw_df.shape[1] > 1):

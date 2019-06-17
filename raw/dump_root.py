@@ -39,10 +39,10 @@ def dump_root(argv):
 		# TODO - move index conversion to dti upstream to dump_price and dump_trmi
 		joined.index = series_to_dti_noreindex(joined.index, fmt=dt_fmt, utc=True, exact=True, freq=dti_freq)
 		joined = joined.asfreq(dti_freq)
-		logging.info('converted index to dti, freq={}...'.format(dti_freq))
+		logging.info('converted index to dti with freq: {}...'.format(dti_freq))
 
 		logging.debug(joined.index, joined)
-		DataAPI.dump(joined, make_entry('raw', 'root', 'join', dti_freq, name=equity, cat=cat_map(file_list['price']))
+		DataAPI.dump(joined, make_entry('raw', 'root', 'join', dti_freq, name=equity, cat=cat_map(file_list['price'])))
 		logging.info('dumped df')
 
 	DataAPI.update_record()

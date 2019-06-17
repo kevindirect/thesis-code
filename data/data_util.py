@@ -3,17 +3,13 @@ Kevin Patel
 """
 import sys
 from os import sep
-from os.path import isfile, getsize
-from copy import deepcopy
-from collections import defaultdict
 import logging
 
 from dask import delayed
 import pandas as pd
-from pandas.util import hash_pandas_object
 
 from common_util import DATA_DIR, isnt, is_type
-from data.common import DR_NAME, DR_FMT, DR_COLS, DR_IDS, DR_REQ, DR_META, DR_GEN
+from data.common import DR_MAN, DR_COLS
 
 
 class DataRecordFormatError(Exception):
@@ -54,43 +50,23 @@ def make_entry(stage, stage_type, desc, freq, base_rec=None, name=None, cat=None
 		basis = base_rec.name
 		cat = base_rec.cat
 		prev_hist = '' if (is_type(base_rec.hist, float)) else str(base_rec.hist)
-		hist = '->'.join([prev_hist, hist]),
+		hist = '->'.join([prev_hist, hist])
 
-	return dict([
-		field_check('freq', freq),
+	entry = dict([
+		field_check('cat', cat),
 		field_check('root', root),
 		field_check('basis', basis),
 		field_check('stage', stage),
 		field_check('type', stage_type),
-		field_check('cat', cat),
-		field_check('hist', hist),
-		field_check('desc', desc)
+		field_check('freq', freq),
+		field_check('desc', desc),
+		field_check('hist', hist)
 	])
 
-
-def validate_axefile(axe, axe_cs, axe_dg, *records):
-	"""
-	Validate an axefiles formatting.
-	"""
-#	if (axe[1]!=axe_cs.keys()[0]):
-#		logging.error('cs file first key must match axefile name')
-
-#	if (axe[1]!=axe_dg.keys()[0]):
-#		logging.error('dg file first key must match axefile name')
-
-	if (axe[0]==axe[1]):
-		logging.debug('root axefile')
-
-	elif (axe[1].startswith(axe[0])):
-		logging.debug('view axefile on {}'.format(axe[0]))
-
-	else:
-		logging.error()
-		raise AxeFormatError('invalid axefile name \'{}\''.format(str(axe)))
+	if (set(entry.keys())!=set(DR_MAN)):
+		error_msg = 'Wrong or missing fields were manually set in this entry'
+		logging.error(error_msg)
+		raise DataRecordFormatError(error_msg)
+	return entry
 
 
-def get_effective_desc(axefile, ):
-	"""
-	Consistent rule for getting desc id based on axefile.
-	"""
-	pass

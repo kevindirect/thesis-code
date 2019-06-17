@@ -4,5 +4,6 @@
 		"type": "root",
 		"cat": "us_equity_index",
 		"desc": "join"
-	}
+	},
+	"subsets": null
 }
