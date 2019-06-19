@@ -1,0 +1,14 @@
+{
+	"daily-window-ranked": [
+		["dohlca"],
+		["dwrmx", "dwrod", "dwrzn"]
+	],
+	"daily-logreturns": [
+		["dohlca"],
+		["dlogret"]
+	],
+	"daily-differenced": [
+		["dohlca"],
+		["dffd", "ddiff"]
+	]
+}
