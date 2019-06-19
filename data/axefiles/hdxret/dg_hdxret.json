@@ -1,9 +1,9 @@
 {
-	"all": {
+	"*": {
 		"stage": "mutate",
 		"type": "hdxret"
 	},
-	"subsets": {
+	"/": {
 		"pba_hoc_hdxret": {
 			"desc": "pba_hoc_hdxret"
 		},

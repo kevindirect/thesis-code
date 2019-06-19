@@ -1,9 +1,9 @@
 {
-	"all": {
+	"*": {
 		"stage": "mutate",
 		"type": "hohlca"
 	},
-	"subsets": {
+	"/": {
 		"pba_hoc": {
 			"desc": "pba_hohlca"
 		},

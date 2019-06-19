@@ -1,9 +1,9 @@
 {
-	"all": {
+	"*": {
 		"stage": "mutate",
 		"type": "hspread"
 	},
-	"subsets": {
+	"/": {
 		"pba_hoc_hspread": {
 			"desc": "pba_hoc_hspread"
 		},

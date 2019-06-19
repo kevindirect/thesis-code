@@ -1,6 +1,6 @@
 {
-	"all": null,
-	"subsets": {
+	"*": null,
+	"/": {
 		"pba_hoc": {
 			"exact": ["pba_open", "pba_close"]
 		},

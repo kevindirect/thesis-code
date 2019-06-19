@@ -1,9 +1,9 @@
 {
-	"all": {
+	"*": {
 		"stage": "mutate",
 		"type": "ddiff"
 	},
-	"subsets": {
+	"/": {
 		"pba_dohlca_ddiff": {
 			"desc": "pba_dohlca_ddiff(1)"
 		},

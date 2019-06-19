@@ -1,6 +1,6 @@
 {
-	"all": null,
-	"subsets": {
+	"*": null,
+	"/": {
 		"pba": {
 			"exact": ["pba_gmtOffset"]
 		},

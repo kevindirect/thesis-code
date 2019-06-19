@@ -1,9 +1,9 @@
 {
-	"all": {
+	"*": {
 		"stage": "mutate",
 		"type": "hdzn"
 	},
-	"subsets": {
+	"/": {
 		"pba_hohlca_hdzn": {
 			"desc": "pba_hohlca_hdzn"
 		},

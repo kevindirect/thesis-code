@@ -1,6 +1,6 @@
 {
-	"all": null
-	"subsets": {
+	"*": null
+	"/": {
 		"pba_hoc_hdxret_ddir": {
 			"exact": ["hoc"]
 		},

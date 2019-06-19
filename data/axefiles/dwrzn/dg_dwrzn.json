@@ -1,9 +1,9 @@
 {
-	"all": {
+	"*": {
 		"stage": "mutate",
 		"type": "dwrzn"
 	},
-	"subsets": {
+	"/": {
 		"pba_dohlca_dwrzn": {
 			"desc": ["pba_dohlca_dwrzn(5)", "pba_dohlca_dwrzn(20)", "pba_dohlca_dwrzn(240)", "pba_dohlca_dwrzn(-1)"]
 		},

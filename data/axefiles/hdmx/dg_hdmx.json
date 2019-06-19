@@ -1,9 +1,9 @@
 {
-	"all": {
+	"*": {
 		"stage": "mutate",
 		"type": "hdmx"
 	},
-	"subsets": {
+	"/": {
 		"pba_hohlca_hdmx": {
 			"desc": "pba_hohlca_hdmx"
 		},

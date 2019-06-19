@@ -1,6 +1,6 @@
 {
-	"all": null,
-	"subsets": {
+	"*": null,
+	"/": {
 		"pba_hoc_hlogret": {
 			"exact": ["pba_oc"]
 		},

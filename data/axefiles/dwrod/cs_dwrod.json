@@ -1,6 +1,6 @@
 {
-	"all": null,
-	"subsets": {
+	"*": null,
+	"/": {
 		"pba_dohlca_dwrod": {
 			"exact": ["pba_open", "pba_high", "pba_low", "pba_close", "pba_avgPrice"]
 		},

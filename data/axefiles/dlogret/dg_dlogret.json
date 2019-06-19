@@ -1,9 +1,9 @@
 {
-	"all": {
+	"*": {
 		"stage": "mutate",
 		"type": "dlogret"
 	},
-	"subsets": {
+	"/": {
 		"pba_doc_dlogret": {
 			"desc": "pba_doc_dlogret"
 		},

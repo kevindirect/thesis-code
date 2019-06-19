@@ -1,9 +1,9 @@
 {
-	"all": {
+	"*": {
 		"stage": "mutate",
 		"type": "hret"
 	},
-	"subsets": {
+	"/": {
 		"pba_hoc_hret": {
 			"desc": "pba_hoc_hret"
 		},
