@@ -289,7 +289,7 @@ class DataAPI:
 			* dfs (NestedDefaultDict): a mapping of keychains to dfs or dask.delayed dfs
 		"""
 		recs, dfs = NestedDefaultDict(), NestedDefaultDict()
-		for kc, rec, df in axe_yield(cls, axe, lazy=lazy, pfx_keys=pfx_keys, sfx_keys=sfx_keys):
+		for kc, rec, df in cls.axe_yield(cls, axe, lazy=lazy, pfx_keys=pfx_keys, sfx_keys=sfx_keys):
 			recs[kc], dfs[kc] = rec, df
 		return recs, dfs
 
