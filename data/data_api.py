@@ -265,11 +265,11 @@ class DataAPI:
 			* record (NamedTuple): The record corresponding to the dataframe in the record
 			* df (pd.DataFrame|dask.delayed): df or dask.delayed df
 		"""
-		for name, (df_searcher, col_subsetter) in axe_join(*map(axe_process, axe_get(axe))).items():
+		for sub, (df_searcher, col_subsetter) in axe_join(*map(axe_process, axe_get(axe))).items():
 			for rec in cls.get_rec_matches(df_searcher):
-				pfx, sfx, sub = [getattr(rec, key) for key in pfx_keys], [getattr(rec, key) for key in sfx_keys], [name]
+				pfx, sfx = [getattr(rec, key) for key in pfx_keys], [getattr(rec, key) for key in sfx_keys]
 				res = delayed(cls.get_df_from_rec)(rec, col_subsetter) if (lazy) else cls.get_df_from_rec(rec, col_subsetter)
-				yield axe_get_keychain(pfx, axe, sub, sfx), rec, res
+				yield axe_get_keychain(pfx, axe, sfx, sub), rec, res
 
 	@classmethod
 	def axe_load(cls, axe, lazy=False, pfx_keys=['root'], sfx_keys=['desc']):
@@ -289,7 +289,7 @@ class DataAPI:
 			* dfs (NestedDefaultDict): a mapping of keychains to dfs or dask.delayed dfs
 		"""
 		recs, dfs = NestedDefaultDict(), NestedDefaultDict()
-		for kc, rec, df in cls.axe_yield(cls, axe, lazy=lazy, pfx_keys=pfx_keys, sfx_keys=sfx_keys):
+		for kc, rec, df in cls.axe_yield(axe=axe, lazy=lazy, pfx_keys=pfx_keys, sfx_keys=sfx_keys):
 			recs[kc], dfs[kc] = rec, df
 		return recs, dfs
 
