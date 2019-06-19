@@ -1,8 +1,1 @@
-{
-	"*": null,
-	"/": {
-		"pba_hoc_hdxcret1": {
-			"exact": ["pba_oc"]
-		}
-	}
-}
+cs_hdxcret1_pba_hoc.json

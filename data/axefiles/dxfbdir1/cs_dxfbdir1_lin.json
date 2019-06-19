@@ -1,17 +1,1 @@
-{
-	"*": null,
-	"/": {
-		"pba_hoc_hdxcret1_dxfbdir1": {
-			"exact": ["pba_oc"]
-		},
-		"pba_hlh_hdxcret1_dxfbdir1": {
-			"exact": ["pba_lh"]
-		},
-		"vol_hoc_hdxcret1_dxfbdir1": {
-			"exact": ["vol_oc"]
-		},
-		"vol_hlh_hdxcret1_dxfbdir1": {
-			"exact": ["vol_lh"]
-		}
-	}
-}
+cs_dxfbdir1.json

@@ -1,8 +1,1 @@
-{
-	"*": null,
-	"/": {
-		"pba_hoc_hdxret1_dxfbret1": {
-			"exact": ["pba_oc"]
-		}
-	}
-}
+cs_dxfbret1_pba_hoc.json
