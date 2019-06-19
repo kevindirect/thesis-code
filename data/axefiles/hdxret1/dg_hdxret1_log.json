@@ -1,5 +1,5 @@
 {
-	"all": {
+	"*": {
 		"stage": "mutate",
 		"type": ["hdxret1(0.062500%)",
 				"hdxret1(0.125000%)",
@@ -10,7 +10,7 @@
 				"hdxret1(4.000000%)",
 				"hdxret1(8.000000%)"]
 	},
-	"subsets": {
+	"/": {
 		"pba_hoc_hdxret1": {
 			"desc": ["pba_hoc_hdxret1(0.062500%)",
 					"pba_hoc_hdxret1(0.125000%)",

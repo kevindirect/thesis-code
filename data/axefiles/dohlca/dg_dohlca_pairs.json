@@ -1,9 +1,9 @@
 {
-	"all": {
+	"*": {
 		"stage": "mutate",
 		"type": "dohlca"
 	},
-	"subsets": {
+	"/": {
 		"pba_doc": {
 			"desc": "pba_dohlca"
 		},

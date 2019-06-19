@@ -1,6 +1,6 @@
 {
-	"all": null,
-	"subsets": {
+	"*": null,
+	"/": {
 		"pba_hoc_hdxcret1_dxfbval1": {
 			"exact": ["pba_oc"]
 		}

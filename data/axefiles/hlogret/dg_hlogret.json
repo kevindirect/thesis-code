@@ -1,9 +1,9 @@
 {
-	"all": {
+	"*": {
 		"stage": "mutate",
 		"type": "hlogret"
 	},
-	"subsets": {
+	"/": {
 		"pba_hoc_hlogret": {
 			"desc": "pba_hoc_hlogret"
 		},

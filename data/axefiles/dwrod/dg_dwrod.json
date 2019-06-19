@@ -1,9 +1,9 @@
 {
-	"all": {
+	"*": {
 		"stage": "mutate",
 		"type": "dwrod"
 	},
-	"subsets": {
+	"/": {
 		"pba_dohlca_dwrod": {
 			"desc": ["pba_dohlca_dwrod(5)", "pba_dohlca_dwrod(20)", "pba_dohlca_dwrod(240)", "pba_dohlca_dwrod(-1)"]
 		},

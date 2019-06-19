@@ -1,9 +1,9 @@
 {
-	"all": {
+	"*": {
 		"stage": "mutate",
 		"type": "dxfbval1"
 	},
-	"subsets": {
+	"/": {
 		"pba_hoc_hdxcret1_dxfbval1": {
 			"desc": ["pba_hoc_hdxcret1(0.062500%)_dxfbval1",
 					"pba_hoc_hdxcret1(0.125000%)_dxfbval1",

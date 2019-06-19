@@ -20,30 +20,10 @@ import pandas as pd
 from common_util import isnt, load_json
 from data.common import AXEFILES_DIR, DG_PFX, CS_PFX
 
-"""
-# ********** AXE DF GETTER **********
-df_getters = {}
-df_getters_file_qualifier = [{"startswith": [DG_PFX]}, {"endswith": [".json"]}]
 
-for g in os.walk(AXEFILES_DIR, topdown=True):
-	found = chained_filter(g[2], [df_getters_file_qualifier])
+# ********** AXE FIELDS **********
+AXE_ALL, AXE_SUB = "*", "/"
 
-	if (found):
-		df_getters[basename(g[0])] = {fname[len(DG_PFX):-JSON_SFX_LEN]: load_json(fname, dir_path=g[0] +sep) for fname in found}
-
-
-# ********** AXE COL SUBSETTER **********
-col_subsetters = {}
-col_subsetters_file_qualifier = [{"startswith": [CS_PFX]}, {"endswith": [".json"]}]
-
-for g in os.walk(AXEFILES_DIR, topdown=True):
-	found = chained_filter(g[2], [col_subsetters_file_qualifier])
-
-	if (found):
-		col_subsetters[basename(g[0])] = {fname[len(CS_PFX):-JSON_SFX_LEN]: load_json(fname, dir_path=g[0] +sep) for fname in found}
-
-col_subsetters2 = col_subsetters  # For backcompat
-"""
 
 # ********** AXE EXCEPTION CLASSES **********
 class AxeFormatError(Exception):
@@ -72,18 +52,18 @@ def axe_get(axe, axe_dir=AXEFILES_DIR):
 
 def axe_process(axe_dict):
 	"""
-	This function should add the 'all' field to each of the subsets.
+	This function should add the AXE_ALL field value to each of the AXE_SUB values.
 	"""
-	if ('all' not in axe_dict or 'subsets' not in axe_dict):
-		error_msg = 'the \'all\' and \'subset\' keys are required to exist'
+	if (AXE_ALL not in axe_dict or AXE_SUB not in axe_dict):
+		error_msg = 'the \'{}\' ({}) and \'{}\' ({}) keys are required to exist'.format(AXE_ALL, 'all', AXE_SUB, 'subsets')
 		logging.error(error_msg)
 		raise AxeFormatError(error_msg)
 
-	xall = axe_dict['all'] or {}
-	if (isnt(axe_dict['subsets'])):
-		return {'all': xall}
+	xall = axe_dict[AXE_ALL] or {}
+	if (isnt(axe_dict[AXE_SUB])):
+		return {None: xall}	# No subsets
 	else:
-		return {name: {**xall, **d} for name, d in axe_dict['subsets'].items()}
+		return {name: {**xall, **d} for name, d in axe_dict[AXE_SUB].items()}
 
 
 def axe_join(*axefile):
@@ -98,13 +78,13 @@ def axe_join(*axefile):
 		Joined axefile (dictionary)
 	"""
 	if (any([a.keys()!=axefile[0].keys() for a in axefile[1:]])):
-		error_msg = 'the files making up the axefile must have the same subset names'
+		error_msg = 'the files making up the axefile must either all have identical subset names or no subsets'
 		logging.error(error_msg)
 		raise AxeFormatError(error_msg)
 	return {key: tuple(axe[key] for axe in axefile) for key in axefile[0].keys()}
 
 
-def axe_get_keychain(prefix, axe, subset, suffix):
+def axe_get_keychain(prefix, axe, suffix, subset=None):
 	"""
 	Return the axe keychain for the given components.
 
@@ -118,30 +98,35 @@ def axe_get_keychain(prefix, axe, subset, suffix):
 	Args:
 		prefix (list): currently a singleton containing the 'root' field of the record
 		axe (list): a two item list containing the axefile identifier
-		subset (list): a singleton containing the subset (could be the generic 'all' subset)
 		suffix (list): currently a singleton containing the 'desc' field of the record
+		subset (str|None): subset name
 
 	Returns:
-		Usually returns a five item list:
+		If there are no subsets, returns a four item list:
+			* [prefix, axe[0], axe[1], suffix]
+		Exepected case returns a five item list:
 			* [prefix, axe[0], axe[1], subset, suffix]
 		If a special case is triggered it will swap the subset and suffix items:
 			* [prefix, axe[0], axe[1], suffix, subset]
 	"""
-	sfx = re.sub('[()]', '', suffix[0]) if ('(' in suffix[0] and ')' in suffix[0]) else suffix[0]
-
-	if (sfx == subset[0]):
-		keychain = prefix+axe+subset+suffix	# standard keychain
+	if (isnt(subset)):
+		keychain = prefix+axe+suffix				# no subset keychain
 	else:
-		if (axe[0]==axe[1]):
-			error_msg = 'subset and desc must be identitical for root axefiles (post variant removal from desc)'
-			logging.error(error_msg)
-			raise AxeFormatError(error_msg)
-		elif (axe[1].startswith(axe[0])):
-			keychain = prefix+axe+suffix+subset	# swap suffix and subset
+		sfx = re.sub('[()]', '', suffix[0]) if ('(' in suffix[0] and ')' in suffix[0]) else suffix[0]
+
+		if (sfx == subset):
+			keychain = prefix+axe+[subset]+suffix		# standard keychain
 		else:
-			error_msg = 'invalid axefile name \'{}\', second string must be substring of or identical to the first'.format(str(axe))
-			logging.error(error_msg)
-			raise AxeFormatError(error_msg)
+			if (axe[0]==axe[1]):
+				error_msg = 'subset and desc must be identitical for root axefiles (post variant removal from desc)'
+				logging.error(error_msg)
+				raise AxeFormatError(error_msg)
+			elif (axe[1].startswith(axe[0])):
+				keychain = prefix+axe+suffix+[subset]	# swap suffix and subset
+			else:
+				error_msg = 'invalid axefile name \'{}\', second string must be substring of or identical to the first'.format(str(axe))
+				logging.error(error_msg)
+				raise AxeFormatError(error_msg)
 	return keychain
 
 

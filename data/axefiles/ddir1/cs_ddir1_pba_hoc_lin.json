@@ -1,1 +1,8 @@
-cs_ddir1_pba_hoc.json
+{
+	"*": null,
+	"/": {
+		"pba_hoc_hdxret1_ddir1": {
+			"exact": ["pba_oc"]
+		}
+	}
+}

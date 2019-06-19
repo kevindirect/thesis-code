@@ -1,9 +1,9 @@
 {
-	"all": {
+	"*": {
 		"stage": "mutate",
 		"type": "ddir"
 	},
-	"subsets": {
+	"/": {
 		"pba_hoc_hdxret_ddir": {
 			"desc": "pba_hoc_hdxret_ddir"
 		}

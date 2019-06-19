@@ -1,6 +1,6 @@
 {
-	"all": null,
-	"subsets": {
+	"*": null,
+	"/": {
 		"pba_hohlca_hdmx": {
 			"exact": ["pba_open", "pba_high", "pba_low", "pba_close", "pba_avgPrice"]
 		},

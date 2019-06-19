@@ -23,7 +23,7 @@ couldn't wrap their head around, but in order to keep that limit as large as pos
 * All axefiles are either root axefiles, views on root axefiles, or children of those children (basically a tree structure)
 
 ## content
-The fields of a dg/cs file are 'all' and 'subsets'. Both are required and nullable. The subsets of the cs (column subsetter) file must be the same as the 'dg' (df getter) if the are subsets.
+The fields of a dg/cs file are '*' (all) and '/' (subsets). Both are required and nullable. The subsets of the cs (column subsetter) file must be the same as the 'dg' (df getter) if there are subsets.
 
 ## crunch/data/axefiles/ directory structure
 Every directory in here (crunch/data/axefiles/) is flat, no nested directories. Each directory is named after the root axefile in that
@@ -38,36 +38,34 @@ Here is an example from the dffd root axefile (note that the desc field doesn't 
 
 ```
 {
-	"dffd": {
-		"all": {
-			"stage": "mutate",
-			"type": "dffd"
+	"*": {
+		"stage": "mutate",
+		"type": "dffd"
+	},
+	"/": {
+		"pba_dohlca_dffd": {
+			"desc": ["pba_dohlca_dffd(0.200000,0.010000)",
+				"pba_dohlca_dffd(0.400000,0.010000)",
+				"pba_dohlca_dffd(0.600000,0.010000)",
+				"pba_dohlca_dffd(0.800000,0.010000)"]
 		},
-		"subsets": {
-			"pba_dohlca_dffd": {
-				"desc": ["pba_dohlca_dffd(0.200000,0.010000)",
-					"pba_dohlca_dffd(0.400000,0.010000)",
-					"pba_dohlca_dffd(0.600000,0.010000)",
-					"pba_dohlca_dffd(0.800000,0.010000)"]
-			},
-			"vol_dohlca_dffd": {
-				"desc": ["vol_dohlca_dffd(0.200000,0.010000)",
-					"vol_dohlca_dffd(0.400000,0.010000)",
-					"vol_dohlca_dffd(0.600000,0.010000)",
-					"vol_dohlca_dffd(0.800000,0.010000)"]
-			},
-			"trmi2_dffd": {
-				"desc": ["trmi2_dffd(0.200000,0.010000)",
-					"trmi2_dffd(0.400000,0.010000)",
-					"trmi2_dffd(0.600000,0.010000)",
-					"trmi2_dffd(0.800000,0.010000)"]
-			},
-			"trmi3_dffd": {
-				"desc": ["trmi3_dffd(0.200000,0.010000)",
-					"trmi3_dffd(0.400000,0.010000)",
-					"trmi3_dffd(0.600000,0.010000)",
-					"trmi3_dffd(0.800000,0.010000)"]
-			}
+		"vol_dohlca_dffd": {
+			"desc": ["vol_dohlca_dffd(0.200000,0.010000)",
+				"vol_dohlca_dffd(0.400000,0.010000)",
+				"vol_dohlca_dffd(0.600000,0.010000)",
+				"vol_dohlca_dffd(0.800000,0.010000)"]
+		},
+		"trmi2_dffd": {
+			"desc": ["trmi2_dffd(0.200000,0.010000)",
+				"trmi2_dffd(0.400000,0.010000)",
+				"trmi2_dffd(0.600000,0.010000)",
+				"trmi2_dffd(0.800000,0.010000)"]
+		},
+		"trmi3_dffd": {
+			"desc": ["trmi3_dffd(0.200000,0.010000)",
+				"trmi3_dffd(0.400000,0.010000)",
+				"trmi3_dffd(0.600000,0.010000)",
+				"trmi3_dffd(0.800000,0.010000)"]
 		}
 	}
 }

@@ -1,9 +1,9 @@
 {
-	"all": {
+	"*": {
 		"stage": "raw",
 		"type": "hrm"
 	},
-	"subsets": {
+	"/": {
 		"pba": {
 			"desc": "pba"
 		},
