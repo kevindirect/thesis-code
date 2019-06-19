@@ -1,1 +1,8 @@
-cs_dxfbdir1_pba_hoc.json
+{
+	"*": null,
+	"/": {
+		"pba_hoc_hdxcret1_dxfbdir1": {
+			"exact": ["pba_oc"]
+		}
+	}
+}

@@ -1,1 +1,17 @@
-cs_dxfbcret1.json
+{
+	"*": null,
+	"/": {
+		"pba_hoc_hdxcret1_dxfbcret1": {
+			"exact": ["pba_oc"]
+		},
+		"pba_hlh_hdxcret1_dxfbcret1": {
+			"exact": ["pba_lh"]
+		},
+		"vol_hoc_hdxcret1_dxfbcret1": {
+			"exact": ["vol_oc"]
+		},
+		"vol_hlh_hdxcret1_dxfbcret1": {
+			"exact": ["vol_lh"]
+		}
+	}
+}
