@@ -1,38 +1,33 @@
+#                       __
+#     _______  ______  / /_
+#    / ___/ / / / __ \/ __/
+#   / /  / /_/ / / / / /_
+#  /_/   \__,_/_/ /_/\__/
+# run transforms module.
 """
 Kevin Patel
 """
 import sys
 import os
 from os import sep
-from os.path import basename
-from itertools import product
+from os.path import basename, isfile
 import logging
 
-from dask import delayed
+#from dask.distributed import Client
 
-from common_util import MUTATE_DIR, DT_HOURLY_FREQ, DT_CAL_DAILY_FREQ, load_json, dump_json, get_cmd_args, get_variants, best_match, remove_dups_list, list_get_dict, is_empty_df, search_df, benchmark
+from common_util import MUTATE_DIR, DT_HOURLY_FREQ, DT_CAL_DAILY_FREQ, load_json, dump_json, get_cmd_args, is_valid, isnt, get_variants, best_match, remove_dups_list, list_get_dict, is_empty_df, search_df, str_now, benchmark
+from mutate.common import HISTORY_DIR, get_graphs, get_transforms
+from mutate.runt_util import RUNTFormatError, RUNTComputeError, RUNT_TYPE_TRANSLATOR, RUNT_FREQ_TRANSLATOR
 from data.data_api import DataAPI
-from data.access_util import df_getters as dg, col_subsetters2 as cs2
-from mutate.common import GRAPHS_DIR, TRANSFORMS_DIR
-from mutate.runt_util import RUNT_FN_TRANSLATOR, RUNT_TYPE_TRANSLATOR, RUNT_NMAP_TRANSLATOR, RUNT_FREQ_TRANSLATOR
+from data.data_util import make_entry
 
 """
-TODO:
-	* Default: Run soft sync based on changes to specified graph/runt-dir and datetime of last run
-		* Serialize a LAST_RUNTED datetime variable and reload it on each runt, and write to it at the end of each runt
-		* Use git or another serialized variable to check if GRAPHS_DIR had been changed later than LAST_RUNTED
-			* If true, run soft sync
-	* Parellilize the running of transforms (dask?)
+XXX:
+	* Parallelize the running of transforms (dask?)
 		* If using dask:
 			* Soft - (default) only compute dfs that are out of date or aren't in the data record
 			* Hard - compute all dfs for each each step run (overwrite existing)
 	* Log the results of this script to a file
-	* Add more commandline options:
-		- s (--sync=): syncs steps provided (if none are provided looks in visited node history)
-		- d (--deps): soft sync dependencies in addition to steps
-		- h (--hard): hard syncing of steps (and dependencies if -d is set)
-		- c (--clean): removes records from data_record that are no longer in the specified graph out of record and disk
-
 	* Autogenerate basic access utils for all dumped data
 		- Enumerate all metadata about the dumped data
 """
@@ -41,139 +36,131 @@ def run_transforms(argv):
 	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 	cmd_arg_list = ['force']
 	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name=basename(__file__))
-	runt_all = True if (cmd_input['force'] is not None) else False
+	runt_all = is_valid(cmd_input['force'])
 
 	logging.info('loading settings...')
-	graph = load_json('graph.json', dir_path=GRAPHS_DIR)
-	visited = load_json('visited.json', dir_path=GRAPHS_DIR)
-	trfs = {trf['meta']['name']]: load_json(fname, dir_path=TRANSFORMS_DIR) for fname in os.listdir(TRANSFORMS_DIR)}
+	graphs, transforms = get_graphs(), get_transforms()
+	client = Client()
 
-	logging.info('running task graph...')
-	for path_name, path in graph.items():
-		for step in path:
-			logging.info('step: {step}'.format(step=str(step)))
-			if (runt_all or step not in visited):
-				process_step(trfs[step])
+	for graph_name, graph in graphs.items():
+		logging.info('running graph {}...'.format(graph_name))
+		for path_name, path in graph.items():
+			for level in path:
+				process_level(level, transforms, force_level=runt_all)
 
-				if (step not in visited):
-					visited.append(step)
-					logging.info('updating visited...')
-					dump_json(visited, 'visited.json', dir_path=GRAPHS_DIR)
+def process_level(level, transforms, force_level=False):
+	for t in level:
+		hist = load_json(t, dir_path=HISTORY_DIR) if (isfile(HISTORY_DIR +t +'.json')) else []
+
+		if (force_level or len(hist)==0):
+			try:
+				process_transform(transforms[t])
+			except RUNTFormatError as erf:
+				error_msg = 'runt formatting error with {}.json'.format(t)
+				logging.error(error_msg)
+				raise
+			except RUNTComputeError as erc:
+				error_msg = 'runt runtime error with {}'.format(t)
+				logging.error(error_msg)
+				raise
+			except Exception as e:
+				error_msg = 'non-runt error'
+				logging.error(error_msg)
+				raise
 			else:
-				logging.info('already completed, skipping...')
+				hist.append(str_now())
+				logging.info('updating history...')
+				dump_json(hist, t, dir_path=HISTORY_DIR)
+		else:
+			logging.info('skipping {}...'.format(t))
 
-
-ROW_MASK_ALT_MAPS = {
-	'thresh': 'raw',
-	'raw_trmi_v2': 'raw_pba',
-	'raw_trmi_v3': 'raw_pba',
-	"raw_pba_oc": 'raw_pba',
-	"raw_pba_oa": 'raw_pba',
-	"raw_pba_lh": 'raw_pba',
-	"raw_vol_oc": 'raw_vol',
-	"raw_vol_oa": 'raw_vol',
-	"raw_vol_lh": 'raw_vol'
-}
-
-def get_row_mask_keychain(original_keychain, all_mask_keys):
+def process_transform(info, yield_data=False):
 	"""
-	Return mask keychain that best corresponds to original_keychain
-	"""
-	assert(len(original_keychain)==len(all_mask_keys))
-	mapped = [best_match(key, all_mask_keys[idx], alt_maps=ROW_MASK_ALT_MAPS) for idx, key in enumerate(original_keychain)]
-	return mapped
+	Process a transform.
 
-def process_step(step_info):
-	meta, fn, var, rm, src, dst = step_info['meta'], step_info['fn'], step_info['var'], step_info['rm'], step_info['src'], step_info['dst']
+	Args:
+		info (dict): dictionary specifing the transform
+
+	"""
+	meta, fn, var, rm_src, srcs, dst = info['meta'], info['fn'], info['var'], info['rm'], info['src'], info['dst']
+
+	if (meta['var_fmt']=='list' and any([s in meta['rec_fmt'] for s in ('{', '}')])):
+		error_msg = 'cannot mix var_fmt==\'list\' with a parameter-inputed rec_fmt'
+		logging.error(error_msg)
+		raise RUNTFormatError(error_msg)
 
 	# Loading transform, apply, and frequency settings
-	ser_fn = RUNT_FN_TRANSLATOR[fn['ser_fn']]
 	rtype_fn = RUNT_TYPE_TRANSLATOR[fn['df_fn']]
-	col_fn = RUNT_NMAP_TRANSLATOR[fn['col_fn']]
+	ser_fn_str, col_fn_str = fn['ser_fn'], fn['col_fn']
 	freq = RUNT_FREQ_TRANSLATOR[fn['freq']]
 	res_freq = RUNT_FREQ_TRANSLATOR[meta['res_freq']]
 
 	# Making all possible parameter combinations
 	variants = get_variants(var, meta['var_fmt'])
 
-	# Loading row mask, if any
-	if (rm is not None):
-		rm_dg, rm_cs = list_get_dict(dg, rm), list_get_dict(cs2, rm)
-		rm_paths, rm_recs, rm_dfs = DataAPI.load_from_dg(rm_dg, rm_cs)
-		rm_keys = [remove_dups_list([key_chain[i] for key_chain in rm_paths]) for i in range(len(rm_paths[0]))]
+	# Load row mask if it exists
+	if (is_valid(rm_src)):
+		rm_rcs, rm_dfs = DataAPI.axe_load(rm_src, lazy=False)
 
-	# Loading input data
-	src_dg, src_cs = list_get_dict(dg, src), list_get_dict(cs2, src)
-	src_paths, src_recs, src_dfs = DataAPI.load_from_dg(src_dg, src_cs)
-	logging.debug('src_paths[0] {}'.format(str(src_paths[0])))
-	logging.debug('src_paths[-1] {}'.format(str(src_paths[-1])))
+	for src in srcs:
+		src_rcs, src_dfs = DataAPI.axe_load(src, lazy=False)
 
-	# Run transforms on inputs
-	for key_chain in src_paths:
-		logging.info('data: {}'.format(str('_'.join(key_chain))))
-		src_rec = list_get_dict(src_recs, key_chain)
-		src_df = list_get_dict(src_dfs, key_chain).dropna(axis=0, how='all')
+		if (len(src_dfs)==0):
+			error_msg = 'no data matched the given axefiles \'{}\' in the data_record'.format(src)
+			logging.error(error_msg)
+			raise RUNTFormatError(error_msg)
 
-		# Masking rows in src from row mask
-		if (rm is not None):
-			rm_key_chain = get_row_mask_keychain(key_chain, rm_keys)
-			rm_df = list_get_dict(rm_dfs, rm_key_chain).dropna()
-			not_in_src = rm_df.index.difference(src_df.index)
-			logging.debug('row mask: {}'.format(str('_'.join(rm_key_chain))))
-			if (len(not_in_src)>0):
-				logging.debug('rm_idx - src_idx: {}'.format(str(not_in_src)))
-				src_df = src_df.loc[src_df.index & rm_df.index, :].dropna(axis=0, how='all')
-			else:
-				src_df = src_df.loc[rm_df.index, :].dropna(axis=0, how='all')
+		# Run transforms on inputs
+		for keychain in src_dfs:
+			logging.info('data: {}'.format(str(keychain)))
+			src_rc, src_df = src_rcs[keychain], srcs_dfs[keychain].dropna(axis=0, how='all')
 
-		logging.debug('pre_transform: {}'.format(str(src_df)))
+			# Masking rows in src from row_mask
+			if (is_valid(rm_src)):
+				rm_keychain = get_rm_keychain(keychain, rm_dfs.keys())
+				rm_df = rm_dfs[rm_keychain].dropna()
+				rm_src_diff = rm_df.index.difference(src_df.index)
+				if (len(rm_src_diff)>0):
+					logging.debug('rm_df.index - src_df.index: {}'.format(str(rm_src_diff)))
+					src_df = src_df.loc[src_df.index & rm_df.index, :].dropna(axis=0, how='all')
+				else:
+					src_df = src_df.loc[rm_df.index, :].dropna(axis=0, how='all')
 
-		# Running variants of the transform
-		for variant in variants:
-			runted_df = rtype_fn(src_df, ser_fn(**variant), freq, col_fn(**variant))
-			desc_sfx = meta['rec_fmt'].format(**variant)
-			desc_pfx = get_desc_pfx(key_chain, src_rec)
-			desc = '_'.join([desc_pfx, desc_sfx])
+			logging.debug('pre_runt: {}'.format(str(src_df)))
 
-			if (meta['mtype_from']=='name'):       mutate_type = meta['name']
-			elif (meta['mtype_from']=='rec_fmt'):  mutate_type = desc_sfx
+			# Running variants of the transform (different sets of parameters)
+			for variant in variants:
+				runted_df = rtype_fn(src_df, variant, freq, ser_fn_str, col_fn_str)
+				mutate_type = meta['rec_fmt'].format(**variant)
+				mutate_desc = '_'.join([keychain[-1], mutate_type])
+				logging.debug('mutate_type: {}'.format(mutate_type))
 
-			logging.info('dumping {desc}...'.format(desc=desc))
-			logging.debug('post_transform: {}'.format(str(runted_df)))
-			entry = make_runt_entry(desc, res_freq, mutate_type, src_rec)
-			if (is_empty_df(runted_df)):
-				logging.error(runted_df)
-				raise Exception('Result of transform is an empty DatafFrame')
-			DataAPI.dump(runted_df, entry)
+				if (is_empty_df(runted_df)):
+					logging.error(runted_df)
+					raise RUNTComputeError('Result of transform is an empty DataFrame')
 
-	DataAPI.update_record() # Sync
+				logging.debug('post_runt: {}'.format(str(runted_df)))
+				entry = make_entry('mutate', mutate_type, mutate_desc, res_freq, base_rec=src_rec)
+				if (yield_data):
+					yield entry, runted_df
+				else:
+					DataAPI.dump(entry, runted_df)
 
-def get_desc_pfx(kc, base_rec):
+
+def get_rm_keychain(kc, rm_kcs):
 	"""
-	Crude workaround...
+	Find and return the keychain the keychain in rm_kcs that matches kc.
 	"""
-	if (base_rec.stage=='raw' and base_rec.desc=='raw'):
-		return kc[-1]
-	elif (base_rec.stage=='mutate' and base_rec.desc=='fth thresh' and base_rec.type=='thresh'):
-		return kc[-1]
-	else:
-		return base_rec.desc
-
-def make_runt_entry(desc, mutate_freq, mutate_type, base_rec):
-	prev_hist = '' if isinstance(base_rec.hist, float) else str(base_rec.hist)
-
-	return {
-		'freq': mutate_freq,
-		'root': base_rec.root,
-		'basis': base_rec.name,
-		'stage': 'mutate',
-		'type': mutate_type,
-		'cat': base_rec.cat,
-		'hist': '->'.join([prev_hist, str('mutate_' +mutate_type)]),
-		'desc': desc
-	}
+	rm_match = list(filter(lambda rm_kc: kc[-1].startswith(rm_kc[-1]), rm_kcs))
+	logging.debug('rm_match: {}'.format(str(rm_match)))
+	if (len(rm_match)!=1):
+		error_msg = 'matched {} row_mask df(s), should be 1'.format(len(rm_match))
+		logging.error(error_msg)
+		raise RUNTComputeError(error_msg)
+	return rm_match[0]
 
 
 if __name__ == '__main__':
-	with benchmark('time to finish') as b:
-		run_transforms(sys.argv[1:])
+	with benchmark('ttf') as b:
+		with DataAPI(async_writes=True):
+			run_transforms(sys.argv[1:])
