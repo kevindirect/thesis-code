@@ -7,7 +7,7 @@ from os.path import basename
 from functools import reduce
 import logging
 
-from common_util import RAW_DIR, DT_HOURLY_FREQ, DT_FMT_YMD_HM, load_json, load_df, get_cmd_args, isnt, series_to_dti_noreindex, right_join, outer_join
+from common_util import RAW_DIR, DT_HOURLY_FREQ, DT_FMT_YMD_HM, load_json, load_df, benchmark, get_cmd_args, isnt, series_to_dti_noreindex, right_join, outer_join
 from raw.common import default_joinsfile
 from data.data_api import DataAPI
 from data.data_util import make_entry
@@ -42,10 +42,8 @@ def dump_root(argv):
 		logging.info('converted index to dti with freq: {}...'.format(dti_freq))
 
 		logging.debug(joined.index, joined)
-		DataAPI.dump(joined, make_entry('raw', 'root', 'join', dti_freq, name=equity, cat=cat_map(file_list['price'])))
+		DataAPI.dump(make_entry('raw', 'root', 'join', dti_freq, name=equity, cat=cat_map(file_list['price'])), joined)
 		logging.info('dumped df')
-
-	DataAPI.update_record()
 
 
 def cat_map(primary_target):
@@ -60,4 +58,6 @@ def cat_map(primary_target):
 
 
 if __name__ == '__main__':
-	dump_root(sys.argv[1:])
+	with benchmark('ttf') as b:
+		with DataAPI(async_writes=True):
+			dump_root(sys.argv[1:])

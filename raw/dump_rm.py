@@ -5,7 +5,7 @@ import sys
 from os.path import basename
 import logging
 
-from common_util import RAW_DIR, DT_HOURLY_FREQ, get_cmd_args, isnt, load_json, load_df, series_to_dti, right_join, outer_join, list_get_dict, get_time_mask
+from common_util import RAW_DIR, DT_HOURLY_FREQ, benchmark, get_cmd_args, isnt, load_json, load_df, series_to_dti, right_join, outer_join, list_get_dict, get_time_mask
 from raw.common import GMT_OFFSET_COL_SFX, default_row_masksfile
 from data.data_api import DataAPI
 from data.data_util import make_entry
@@ -34,10 +34,11 @@ def dump_row_masks(argv):
 			mask_freq = DT_HOURLY_FREQ if (mask['type'].startswith('h')) else None
 			mask_df = get_time_mask(raw_df, offset_col_name=gmt_col, offset_tz=mask['target_tz'], time_range=mask['time_range'])
 			logging.debug(mask_df)
-			DataAPI.dump(mask_df, make_entry('raw', mask['type'], data_subset, mask_freq, base_rec=raw_rec))
+			DataAPI.dump(make_entry('raw', mask['type'], data_subset, mask_freq, base_rec=raw_rec), mask_df)
 			logging.info('dumped {} {}...'.format(mask['type'], data_subset))
-	DataAPI.update_record()
 
 
 if __name__ == '__main__':
-	dump_row_masks(sys.argv[1:])
+	with benchmark('ttf') as b:
+		with DataAPI(async_writes=True):
+			dump_row_masks(sys.argv[1:])
