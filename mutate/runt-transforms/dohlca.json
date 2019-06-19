@@ -1,0 +1,24 @@
+{
+	"meta": {
+		"rec_fmt": "dohlca",
+		"var_fmt": "list",
+		"res_freq": "cal_daily",
+		"info": "daily open, high, low, close average aggregation"
+	},
+	"fn": {
+		"ser_fn": ["srf", "srf", "srf", "srf", "stat"],
+		"df_fn": "gua",
+		"col_fn": null,
+		"freq": "cal_daily"
+	},
+	"var": [
+		{"specifier": [0]},
+		{"specifier": ["h"]},
+		{"specifier": ["l"]},
+		{"specifier": [-1]},
+		{"stat_type": ["avg"]}
+	],
+	"rm": ["hrm", "hrm"],
+	"src": [["root", "root_split_ohlca"]],
+	"dst": ["dohlca", "dohlca"]
+}

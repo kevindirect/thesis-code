@@ -1,0 +1,20 @@
+{
+	"meta": {
+		"rec_fmt": "d{ret_type}",
+		"var_fmt": "grid",
+		"res_freq": "daily",
+		"info": "daily natural log return"
+	},
+	"fn": {
+		"ser_fn": "ret",
+		"df_fn": "rbt",
+		"col_fn": "sami",
+		"freq": null
+	},
+	"var": {
+		"ret_type": ["logret"]
+	},
+	"rm": null,
+	"src": [["dohlca", "dohlca_pairs"]],
+	"dst": ["dlogret", "dlogret"]
+}
