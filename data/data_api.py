@@ -4,6 +4,8 @@ Kevin Patel
 import sys
 from os import sep
 from os.path import isfile, getsize
+from queue import Queue, Empty
+from threading import Thread
 import logging
 
 import pandas as pd
@@ -17,23 +19,35 @@ from data.axe import axe_get, axe_process, axe_join, axe_get_keychain
 
 class DataAPI:
 	"""
-	The Global API used to load or dump dataframes. All real implementation is done in the inner class, the outer
-	class is just a generic interface. This is to make swapping out the backend easier
-	XXX:
+	The Global API used to load or dump dataframes. The writing is done in the inner class, the outer
+	class is mostly a generic interface with convenience methods and whatnot. This is partly done to make
+	swapping out the backend easier
+
+	Potential Improvements:
 		- move DataRecordAPI to it's own class file, have DataAPI inherit from it
 		- implement a SQL backend for DataRecordAPI
 	"""
 	class DataRecordAPI:
 		"""
-		Global storage structure for the storage of dataframe records dumped by other stages.
-		Currently only supports single threaded access.
+		Synchronized connection to global storage structure for the storage of dataframe records dumped by other stages.
 
 		Entry:
 			id (int): integer id
-			name (str): filename of df on disk
-			root (str): the root dependency of this df; for raw stage data this is a join group but for others it's a df name
-			basis (str): the direct dependency (parent) of this dataframe; for raw stage data root always equals basis
+			name (str): filename of df on disk, derived by joining fields of DR_NAME
+			cat (str): data category
+			root (str): the root dependency of this df
+			basis (str): the direct dependency (parent) of this dataframe
 			stage (str): the stage the data originated from
+			type (str): type of data within the stage
+			freq (str): data frequency string
+			desc (str): description string
+			hist (str): history string
+			dir (str): directory of the serialized dataframe, derived by joining fields of DR_DIR
+			size (int): size of the serialized dataframe on last write
+			dumptime (str): time to dump the dataframe on last write
+			hash (str): hash of the dataframe on last write
+			created (str): First write (dump) time
+			modified (str): Last write time, empty if it was only written once
 		"""
 		@classmethod
 		def reload_record(cls):
@@ -43,6 +57,42 @@ class DataAPI:
 		@classmethod
 		def reset_record(cls):
 			cls.DATA_RECORD = pd.DataFrame(columns=DR_COLS)
+
+		@classmethod
+		def start_async_handler(cls):
+			"""
+			Starts the asynchronous write handler.
+			This is the preferred method when doing a lot of writes.
+			"""
+			cls.q = Queue()
+			cls.alive = True
+			Thread(name='DataRecordAsyncHandler', target=cls.async_handle).start()
+
+		@classmethod
+		def async_handle(cls):
+			while (cls.alive):
+				try:
+					entry, df = cls.q.get(True, 1)
+				except Empty:
+					continue
+				cls.dump(entry, df, dump_record=False)
+				cls.q.task_done()
+
+		@classmethod
+		def async_dump(cls, entry, df):
+			"""
+			Enqueues a dataframe dump. This only works if start_async_handler(...) was called.
+			"""
+			cls.q.put((entry, df))
+
+		@classmethod
+		def kill_async_handler(cls):
+			"""
+			Cleans up handler and synchronizes record to disk.
+			"""
+			cls.q.join()
+			cls.alive = False
+			cls.dump_record()
 
 		@classmethod
 		def dump_record(cls):
@@ -88,7 +138,9 @@ class DataAPI:
 
 		@classmethod
 		def loader(cls, **kwargs):
-			"""Return a loader function that takes a record entry and returns something"""
+			"""
+			Return a loader function that takes a record entry and returns something
+			"""
 
 			def load_rec_df(rec):
 				return rec, load_df(rec.name, dir_path=DATA_DIR+rec.dir, dti_freq=rec.freq, **kwargs)
@@ -96,9 +148,9 @@ class DataAPI:
 			return load_rec_df
 
 		@classmethod
-		def dump(cls, df, entry, path_pfx=DATA_DIR, update_record=False):
+		def dump(cls, entry, df, path_pfx=DATA_DIR, dump_record=False):
 			"""
-			XXX - break this down and make it more elegant
+			Simple dataframe dump to disk for single threaded applications.
 			"""
 			entry['id'], is_new = cls.get_id(entry)
 			entry['name'] = cls.get_name(entry)
@@ -123,16 +175,52 @@ class DataAPI:
 				addition.loc[entry['id']] = entry
 				cls.DATA_RECORD.update(addition)
 
-			if (update_record):
+			if (dump_record):
 				cls.dump_record()
 
 	@classmethod
-	def initialize(cls):
+	def initialize(cls, async_writes=False):
+		"""
+		Initializes the static class.
+		Must be called from the main thread before any work is started.
+		"""
 		try:
 			cls.DataRecordAPI.reload_record()
 		except FileNotFoundError as e:
 			cls.DataRecordAPI.reset_record()
-			logging.warning('DataAPI initialize: Data record not found, loading empty record')
+			logging.warning('Data record not found, loading empty record')
+		cls.async_writes = async_writes
+		if (cls.async_writes):
+			cls.DataRecordAPI.start_async_handler()
+
+	@classmethod
+	def teardown(cls):
+		"""
+		Must call this teardown when done with all IO.
+		"""
+		if (cls.async_writes):
+			cls.DataRecordAPI.kill_async_handler()
+
+	@classmethod
+	def __init__(cls, **kwargs):
+		"""
+		ContextManager init
+		"""
+		cls.initialize(**kwargs)
+
+	@classmethod
+	def __enter__(cls):
+		"""
+		ContextManager enter (doesn't do anything)
+		"""
+		pass
+
+	@classmethod
+	def __exit__(cls, *args):
+		"""
+		ContextManager exit
+		"""
+		cls.teardown()
 
 	@classmethod
 	def print_record(cls):
@@ -140,16 +228,23 @@ class DataAPI:
 
 	@classmethod
 	def generate(cls, search_dict, direct_query=False, **kwargs):
-		"""Provide generator interface to get data"""
+		"""
+		Provide generator interface to get data.
+		"""
 		yield from map(cls.DataRecordAPI.loader(**kwargs), cls.DataRecordAPI.matched(search_dict, direct_query=direct_query))
 
 	@classmethod
 	def get_rec_matches(cls, search_dict, direct_query=False, **kwargs):
-		"""Provide generator to get matched records"""
+		"""
+		Provide generator to get matched records.
+		"""
 		yield from cls.DataRecordAPI.matched(search_dict, direct_query=direct_query)
 
 	@classmethod
 	def get_df_from_rec(cls, rec, col_subsetter=None, path_pfx=DATA_DIR, **kwargs):
+		"""
+		Get dataframe from a record.
+		"""
 		sel = load_df(rec.name, dir_path=path_pfx+rec.dir, dti_freq=rec.freq, **kwargs)
 		return sel if (isnt(col_subsetter)) else sel.loc[:, chained_filter(sel.columns, col_subsetter)]
 
@@ -203,12 +298,16 @@ class DataAPI:
 		return cls.DataRecordAPI.get_record_view()
 
 	@classmethod
-	def dump(cls, df, entry, **kwargs):
-		cls.DataRecordAPI.dump(df, entry, **kwargs)
+	def dump(cls, entry, df, **kwargs):
+		if (cls.async_writes):
+			cls.DataRecordAPI.async_dump(entry, df)
+		else:
+			cls.DataRecordAPI.dump(entry, df, **kwargs)
 
 	@classmethod
 	def update_record(cls):
-		cls.DataRecordAPI.dump_record()
+		if (cls.async_writes):
+			pass
+		else:
+			cls.DataRecordAPI.dump_record()
 
-
-DataAPI.initialize()
