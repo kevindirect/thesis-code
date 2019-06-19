@@ -68,8 +68,8 @@ FMT_EXTS = {
 DF_DATA_FMT = 'parquet'
 
 """Dask Global Settings"""
-dask.config.set(scheduler='threads')
-dask.config.set(pool=ThreadPool(32))
+#dask.config.set(scheduler='threads')
+#dask.config.set(pool=ThreadPool(32))
 
 
 """ ********** SYSTEM UTILS ********** """
@@ -531,9 +531,9 @@ def get_variants(mappings, fmt='grid'):
 		List of variants
 	"""
 	return {
-		'grid': get_grid_variants(mappings),
-		'list': get_list_variants(mappings)
-	}.get(fmt)
+		'grid': partial(get_grid_variants),
+		'list': partial(get_list_variants)
+	}.get(fmt)(mappings)
 
 """Function"""
 def compose(*fns):
