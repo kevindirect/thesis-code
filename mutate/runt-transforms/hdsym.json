@@ -2,7 +2,8 @@
 	"meta": {
 		"rec_fmt": "{sym_type}({num_sym})",
 		"var_fmt": "grid",
-		"res_freq": "hourly"
+		"res_freq": "hourly",
+		"info": "hourly daily aggregated symbols"
 	},
 	"fn": {
 		"ser_fn": "sym",
