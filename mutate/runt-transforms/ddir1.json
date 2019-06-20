@@ -1,21 +1,23 @@
 {
 	"meta": {
-		"rec_fmt": "ddir",
+		"rec_fmt": "ddir1",
 		"var_fmt": "grid",
 		"res_freq": "cal_daily",
 		"info": "daily return direction with threshold"
 	},
 	"fn": {
 		"ser_fn": "srf",
-		"df_fn": "gagg",
+		"df_fn": "gua",
 		"col_fn": null,
 		"freq": "cal_daily"
+	},
+	"axe": {
+		"rm": null,
+		"src": ["hdxret1", "hdxret1"],
+		"dst": ["ddir1", "ddir1"]
 	},
 	"var": {
 		"specifier": ["l"],
 		"map_fn": ["sgn"]
-	},
-	"rm": null,
-	"src": ["hdxret1", "hdxret1"],
-	"dst": ["ddir1", "ddir1"]
+	}
 }

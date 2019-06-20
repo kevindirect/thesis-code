@@ -1,21 +1,23 @@
 {
 	"meta": {
-		"rec_fmt": "{ret_type}xeod",
+		"rec_fmt": "hdx{ret_type}",
 		"var_fmt": "grid",
 		"res_freq": "hourly",
 		"info": "hourly, expanding daily return, logreturn, or spread"
 	},
 	"fn": {
 		"ser_fn": "retx",
-		"df_fn": "btw",
+		"df_fn": "rbt",
 		"col_fn": "sami",
 		"freq": "hourly"
+	},
+	"axe": {
+		"rm": ["hrm", "hrm"],
+		"src": ["hohlca", "hohlca_pairs"],
+		"dst": ["hdxret", "hdxret"]
 	},
 	"var": {
 		"ret_type": ["ret"],
 		"thresh": [null]
-	},
-	"rm": ["hrm", "hrm"],
-	"src": ["root", "root_ohlca_pairs"],
-	"dst": ["hdxret", "hdxret"]
+	}
 }

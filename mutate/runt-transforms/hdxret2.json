@@ -1,23 +1,25 @@
 {
 	"meta": {
-		"rec_fmt": "{ret_type}xeod({thresh_scalar}*{stat_type},1)",
+		"rec_fmt": "hdx{ret_type}2({thresh_scalar}*{stat_type},1)",
 		"var_fmt": "grid",
 		"res_freq": "hourly",
 		"info": "hourly, expanding daily return with variable threshold"
 	},
 	"fn": {
 		"ser_fn": "vretx",
-		"df_fn": "btw",
+		"df_fn": "rbt",
 		"col_fn": "sami",
 		"freq": "hourly"
+	},
+	"axe": {
+		"rm": ["hrm", "hrm"],
+		"src": ["hohlca", "hohlca_pairs"],
+		"dst": ["hdxret2", "hdxret2"]
 	},
 	"var": {
 		"ret_type": ["ret"],
 		"stat_type": ["avg", "std", "max", "min"],
 		"thresh_scalar": [0.5, 1, 2],
 		"agg_freq": ["cal_daily"]
-	},
-	"rm": ["hrm", "hrm"],
-	"src": ["root", "root_ohlca_pairs"],
-	"dst": ["hdxret2", "hdxret2"]
+	}
 }

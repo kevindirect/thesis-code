@@ -7,14 +7,16 @@
 	},
 	"fn": {
 		"ser_fn": "ma",
-		"df_fn": "rt",
+		"df_fn": "rut",
 		"col_fn": null,
 		"freq": null
 	},
+	"axe": {
+		"rm": null,
+		"src": ["", ""],
+		"dst": ["dsma", "dsma"]
+	},
 	"var": {
 		"num_periods": [3, 5, 10, 20]
-	},
-	"rm": null,
-	"src": ["dr", "dr"],
-	"dst": ["dsma", "dsma"]
+	}
 }

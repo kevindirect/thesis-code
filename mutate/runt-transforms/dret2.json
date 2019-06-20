@@ -1,20 +1,22 @@
 {
 	"meta": {
-		"rec_fmt": "dret",
+		"rec_fmt": "dret2",
 		"var_fmt": "grid",
 		"res_freq": "cal_daily",
 		"info": "daily return with variable threshold"
 	},
 	"fn": {
 		"ser_fn": "srf",
-		"df_fn": "gagg",
+		"df_fn": "gua",
 		"col_fn": null,
 		"freq": "cal_daily"
 	},
+	"axe": {
+		"rm": null,
+		"src": ["hdxret2", "hdxret2"],
+		"dst": ["dret2", "dret2"]
+	},
 	"var": {
 		"specifier": ["l"]
-	},
-	"rm": null,
-	"src": ["hdxret2", "hdxret2"],
-	"dst": ["dret2", "dret2"]
+	}
 }

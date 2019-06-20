@@ -11,11 +11,13 @@
 		"col_fn": null,
 		"freq": null
 	},
+	"axe": {
+		"rm": null,
+		"src": ["dohlca", "dohlca"],
+		"dst": ["dwrod", "dwrod"]
+	},
 	"var": {
 		"rank_type": ["od"],
 		"num_periods": [5, 20, 240, -1]
-	},
-	"rm": null,
-	"src": [["dohlca", "dohlca"]],
-	"dst": ["dwrod", "dwrod"]
+	}
 }

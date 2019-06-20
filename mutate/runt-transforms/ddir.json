@@ -7,15 +7,17 @@
 	},
 	"fn": {
 		"ser_fn": "srf",
-		"df_fn": "gagg",
+		"df_fn": "gua",
 		"col_fn": null,
 		"freq": "cal_daily"
+	},
+	"axe": {
+		"rm": null,
+		"src": ["hdxret", "hdxret"],
+		"dst": ["ddir", "ddir"]
 	},
 	"var": {
 		"specifier": ["l"],
 		"map_fn": ["sgn"]
-	},
-	"rm": null,
-	"src": ["hdxret", "hdxret"],
-	"dst": ["ddir", "ddir"]
+	}
 }

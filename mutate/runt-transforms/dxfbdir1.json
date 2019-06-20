@@ -1,21 +1,23 @@
 {
 	"meta": {
-		"rec_fmt": "dxfbdir",
+		"rec_fmt": "dxfbdir1",
 		"var_fmt": "grid",
 		"res_freq": "cal_daily",
 		"info": "daily expanding first break return direction with threshold"
 	},
 	"fn": {
 		"ser_fn": "srf",
-		"df_fn": "gagg",
+		"df_fn": "gua",
 		"col_fn": null,
 		"freq": "cal_daily"
+	},
+	"axe": {
+		"rm": null,
+		"src": ["hdxcret1", "hdxcret1"],
+		"dst": ["dxfbdir1", "dxfbdir1"]
 	},
 	"var": {
 		"specifier": ["fnz"],
 		"map_fn": ["sgn"]
-	},
-	"rm": null,
-	"src": ["hdxcret1", "hdxcret1"],
-	"dst": ["dxfbdir1", "dxfbdir1"]
+	}
 }

@@ -7,14 +7,16 @@
 	},
 	"fn": {
 		"ser_fn": "diff",
-		"df_fn": "rt",
+		"df_fn": "rut",
 		"col_fn": null,
 		"freq": "cal_daily"
 	},
-	"var": {
-		"num_periods": [1, 2]
+	"axe": {
+		"rm": null,
+		"src": ["", ""],
+		"dst": ["ddiff", "ddiff"]
 	},
-	"rm": null,
-	"src": ["dr", "dr"],
-	"dst": ["ddiff", "ddiff"]
+	"var": {
+		"num_periods": [1]
+	}
 }

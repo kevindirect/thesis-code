@@ -7,14 +7,21 @@
 	},
 	"fn": {
 		"ser_fn": "norm",
-		"df_fn": "gbt",
+		"df_fn": "gut",
 		"col_fn": null,
 		"freq": "cal_daily"
 	},
+	"axe": {
+		"rm": null,
+		"src": [
+			["hohlca", "hohlca"],
+			["hspread", "hspread"],
+			["hret", "hret"],
+			["hlogret", "hlogret"]
+		],
+		"dst": ["hdmx", "hdmx"]
+	},
 	"var": {
 		"norm_type": ["mx"]
-	},
-	"rm": null,
-	"src": [["", ""]],
-	"dst": ["hdmx", "hdmx"]
+	}
 }

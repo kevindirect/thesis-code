@@ -11,12 +11,14 @@
 		"col_fn": null,
 		"freq": "cal_daily"
 	},
+	"axe": {
+		"rm": null,
+		"src": ["", ""],
+		"dst": ["dffd", "dffd"]
+	},
 	"var": {
 		"d": [0.2, 0.4, 0.6, 0.8],
 		"size": [null],
 		"thresh": [1e-2]
-	},
-	"rm": null,
-	"src": ["dr", "dr_raw_ohlca"],
-	"dst": ["dffd", "dffd"]
+	}
 }

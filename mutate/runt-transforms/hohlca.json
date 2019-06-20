@@ -11,14 +11,16 @@
 		"col_fn": null,
 		"freq": "hourly"
 	},
+	"axe": {
+		"rm": ["hrm", "hrm"],
+		"src": ["root", "root_split_ohlca"],
+		"dst": ["hohlca", "hohlca"]
+	},
 	"var": [
 		{"specifier": [0]},
 		{"specifier": ["h"]},
 		{"specifier": ["l"]},
 		{"specifier": [-1]},
 		{"stat_type": ["avg"]}
-	],
-	"rm": ["hrm", "hrm"],
-	"src": [["root", "root_split_ohlca"]],
-	"dst": ["hohlca", "hohlca"]
+	]
 }

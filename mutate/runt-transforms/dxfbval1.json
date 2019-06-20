@@ -1,21 +1,23 @@
 {
 	"meta": {
-		"rec_fmt": "dxfbval",
+		"rec_fmt": "dxfbval1",
 		"var_fmt": "grid",
 		"res_freq": "cal_daily",
 		"info": "daily expanding first break score with threshold"
 	},
 	"fn": {
 		"ser_fn": "srf",
-		"df_fn": "gagg",
+		"df_fn": "gua",
 		"col_fn": null,
 		"freq": "cal_daily"
+	},
+	"axe": {
+		"rm": null,
+		"src": ["hdxcret1", "hdxcret1"],
+		"dst": ["dxfbval1", "dxfbval1"]
 	},
 	"var": {
 		"specifier": ["fnzi_normed"],
 		"map_fn": ["nz_inv"]
-	},
-	"rm": null,
-	"src": ["hdxcret1", "hdxcret1"],
-	"dst": ["dxfbval1", "dxfbval1"]
+	}
 }

@@ -11,10 +11,12 @@
 		"col_fn": "sami",
 		"freq": null
 	},
+	"axe": {
+		"rm": null,
+		"src": ["dohlca", "dohlca_pairs"],
+		"dst": ["dlogret", "dlogret"]
+	},
 	"var": {
 		"ret_type": ["logret"]
-	},
-	"rm": null,
-	"src": [["dohlca", "dohlca_pairs"]],
-	"dst": ["dlogret", "dlogret"]
+	}
 }

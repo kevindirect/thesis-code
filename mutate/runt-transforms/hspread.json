@@ -7,14 +7,16 @@
 	},
 	"fn": {
 		"ser_fn": "ret",
-		"df_fn": "btw",
+		"df_fn": "rbt",
 		"col_fn": "sami",
 		"freq": "hourly"
 	},
+	"axe": {
+		"rm": ["hrm", "hrm"],
+		"src": ["hohlca", "hohlca_pairs"],
+		"dst": ["hspread", "hspread"]
+	},
 	"var": {
 		"ret_type": ["spread"]
-	},
-	"rm": ["hrm", "hrm"],
-	"src": ["hohlca", "hohlca_pairs"],
-	"dst": ["hspread", "hspread"]
+	}
 }
