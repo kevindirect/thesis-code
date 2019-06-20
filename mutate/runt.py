@@ -82,7 +82,7 @@ def process_transform(info, yield_data=False):
 		info (dict): dictionary specifying the transform
 
 	"""
-	meta, fn, var, rm_src, srcs, dst = info['meta'], info['fn'], info['var'], info['rm'], info['src'], info['dst']
+	meta, fn, axe, var = info['meta'], info['fn'], info['axe'], info['var']
 
 	if (meta['var_fmt']=='list' and any([s in meta['rec_fmt'] for s in ('{', '}')])):
 		error_msg = 'cannot mix var_fmt==\'list\' with a parameter-inputed rec_fmt'
@@ -99,8 +99,10 @@ def process_transform(info, yield_data=False):
 	variants = get_variants(var, meta['var_fmt'])
 
 	# Load row mask if it exists
-	if (is_valid(rm_src)):
+	if (is_valid(axe['rm'])):
 		rm_rcs, rm_dfs = DataAPI.axe_load(rm_src, lazy=False)
+
+	srcs = axe['src'] if (is_type(axe['src'][0], list)) else [axe['src']]
 
 	for src in srcs:
 		src_rcs, src_dfs = DataAPI.axe_load(src, lazy=False)
@@ -116,7 +118,7 @@ def process_transform(info, yield_data=False):
 			src_rc, src_df = src_rcs[keychain], srcs_dfs[keychain].dropna(axis=0, how='all')
 
 			# Masking rows in src from row_mask
-			if (is_valid(rm_src)):
+			if (is_valid(axe['rm'])):
 				rm_keychain = get_rm_keychain(keychain, rm_dfs.keys())
 				rm_df = rm_dfs[rm_keychain].dropna()
 				rm_src_diff = rm_df.index.difference(src_df.index)
