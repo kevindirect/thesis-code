@@ -1,7 +1,5 @@
 {
 	"meta": {
-		"name": "hdsym",
-		"mtype_from": "name",
 		"rec_fmt": "{sym_type}({num_sym})",
 		"var_fmt": "grid",
 		"res_freq": "hourly"

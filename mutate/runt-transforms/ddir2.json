@@ -1,7 +1,5 @@
 {
 	"meta": {
-		"name": "ddir2",
-		"mtype_from": "rec_fmt",
 		"rec_fmt": "ddir",
 		"var_fmt": "grid",
 		"res_freq": "cal_daily",

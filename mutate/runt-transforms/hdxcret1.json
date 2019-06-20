@@ -1,7 +1,5 @@
 {
 	"meta": {
-		"name": "hdxcret1",
-		"mtype_from": "rec_fmt",
 		"rec_fmt": "c{ret_type}xeod({thresh:%})",
 		"var_fmt": "grid",
 		"res_freq": "hourly",
@@ -19,6 +17,6 @@
 		"clip": [true]
 	},
 	"rm": ["hrm", "hrm"],
-	"src": ["raw", "raw_ohlca_pairs"],
+	"src": ["root", "root_ohlca_pairs"],
 	"dst": ["hdxcret1", "hdxcret1"]
 }

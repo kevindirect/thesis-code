@@ -1,8 +1,6 @@
 {
 	"meta": {
-		"name": "hdmx",
-		"mtype_from": "rec_fmt",
-		"rec_fmt": "{norm_type}",
+		"rec_fmt": "hd{norm_type}",
 		"var_fmt": "grid",
 		"res_freq": "hourly",
 		"info": "hourly, daily min max normalized"
@@ -14,9 +12,9 @@
 		"freq": "cal_daily"
 	},
 	"var": {
-		"norm_type": ["dmx"]
+		"norm_type": ["mx"]
 	},
 	"rm": null,
-	"src": ["hdmx", "pre_hdmx"],
+	"src": [["", ""]],
 	"dst": ["hdmx", "hdmx"]
 }

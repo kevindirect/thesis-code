@@ -79,7 +79,7 @@ def process_transform(info, yield_data=False):
 	Process a transform.
 
 	Args:
-		info (dict): dictionary specifing the transform
+		info (dict): dictionary specifying the transform
 
 	"""
 	meta, fn, var, rm_src, srcs, dst = info['meta'], info['fn'], info['var'], info['rm'], info['src'], info['dst']

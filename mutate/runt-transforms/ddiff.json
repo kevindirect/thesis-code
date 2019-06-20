@@ -1,7 +1,5 @@
 {
 	"meta": {
-		"name": "ddiff",
-		"mtype_from": "name",
 		"rec_fmt": "ddiff({num_periods})",
 		"var_fmt": "grid",
 		"res_freq": "cal_daily",

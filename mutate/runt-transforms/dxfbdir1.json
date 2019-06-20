@@ -1,7 +1,5 @@
 {
 	"meta": {
-		"name": "dxfbdir1",
-		"mtype_from": "rec_fmt",
 		"rec_fmt": "dxfbdir",
 		"var_fmt": "grid",
 		"res_freq": "cal_daily",

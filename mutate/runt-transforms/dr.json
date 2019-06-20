@@ -1,7 +1,5 @@
 {
 	"meta": {
-		"name": "dr",
-		"mtype_from": "rec_fmt",
 		"rec_fmt": "dr{specifier}",
 		"var_fmt": "grid",
 		"res_freq": "cal_daily"
@@ -16,6 +14,6 @@
 		"specifier": ["f", "l"]
 	},
 	"rm": ["hrm", "hrm"],
-	"src": ["raw", "raw"],
+	"src": ["root", "root"],
 	"dst": ["dr", "dr"]
 }

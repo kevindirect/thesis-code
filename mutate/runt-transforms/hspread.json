@@ -1,7 +1,5 @@
 {
 	"meta": {
-		"name": "hspread",
-		"mtype_from": "rec_fmt",
 		"rec_fmt": "h{ret_type}",
 		"var_fmt": "grid",
 		"res_freq": "hourly",

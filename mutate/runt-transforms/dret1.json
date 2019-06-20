@@ -1,7 +1,5 @@
 {
 	"meta": {
-		"name": "dret1",
-		"mtype_from": "rec_fmt",
 		"rec_fmt": "dret",
 		"var_fmt": "grid",
 		"res_freq": "cal_daily",

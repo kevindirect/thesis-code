@@ -1,7 +1,5 @@
 {
 	"meta": {
-		"name": "dxfbval2",
-		"mtype_from": "rec_fmt",
 		"rec_fmt": "dxfbval",
 		"var_fmt": "grid",
 		"res_freq": "cal_daily",

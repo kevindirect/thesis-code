@@ -1,7 +1,5 @@
 {
 	"meta": {
-		"name": "dsma",
-		"mtype_from": "name",
 		"rec_fmt": "dsma({num_periods})",
 		"var_fmt": "grid",
 		"res_freq": "cal_daily",

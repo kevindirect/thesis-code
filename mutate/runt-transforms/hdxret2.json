@@ -1,7 +1,5 @@
 {
 	"meta": {
-		"name": "hdxret2",
-		"mtype_from": "rec_fmt",
 		"rec_fmt": "{ret_type}xeod({thresh_scalar}*{stat_type},1)",
 		"var_fmt": "grid",
 		"res_freq": "hourly",
@@ -20,6 +18,6 @@
 		"agg_freq": ["cal_daily"]
 	},
 	"rm": ["hrm", "hrm"],
-	"src": ["raw", "raw_ohlca_pairs"],
+	"src": ["root", "root_ohlca_pairs"],
 	"dst": ["hdxret2", "hdxret2"]
 }

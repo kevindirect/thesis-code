@@ -1,7 +1,5 @@
 {
 	"meta": {
-		"name": "dxfbcret2",
-		"mtype_from": "rec_fmt",
 		"rec_fmt": "dxfbcret",
 		"var_fmt": "grid",
 		"res_freq": "cal_daily",

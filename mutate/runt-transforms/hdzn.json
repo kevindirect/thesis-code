@@ -1,8 +1,6 @@
 {
 	"meta": {
-		"name": "hdzn",
-		"mtype_from": "rec_fmt",
-		"rec_fmt": "{norm_type}",
+		"rec_fmt": "hd{norm_type}",
 		"var_fmt": "grid",
 		"res_freq": "hourly",
 		"info": "hourly, daily z-score normalized"
@@ -14,7 +12,7 @@
 		"freq": "cal_daily"
 	},
 	"var": {
-		"norm_type": ["dzn"]
+		"norm_type": ["zn"]
 	},
 	"rm": null,
 	"src": ["hdzn", "pre_hdzn"],
