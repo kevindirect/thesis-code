@@ -6,7 +6,7 @@
 		"info": "daily expanding first break score with threshold"
 	},
 	"fn": {
-		"ser_fn": "srf",
+		"ser_fn": "srm",
 		"df_fn": "gua",
 		"col_fn": null,
 		"freq": "cal_daily"
@@ -17,7 +17,8 @@
 		"dst": ["dxfbval1", "dxfbval1"]
 	},
 	"var": {
-		"specifier": ["fnzi_normed"],
+		"val": [false],
+		"flt": ["fnz_idxscore"],
 		"map_fn": ["nz_inv"]
 	}
 }

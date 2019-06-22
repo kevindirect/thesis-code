@@ -6,7 +6,7 @@
 		"info": "hourly, expanding daily return with variable threshold"
 	},
 	"fn": {
-		"ser_fn": "vretx",
+		"ser_fn": "vxret",
 		"df_fn": "rbt",
 		"col_fn": "sami",
 		"freq": "hourly"

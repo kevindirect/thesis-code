@@ -6,7 +6,7 @@
 		"info": "hourly, expanding daily return, logreturn, or spread"
 	},
 	"fn": {
-		"ser_fn": "retx",
+		"ser_fn": "xret",
 		"df_fn": "rbt",
 		"col_fn": "sami",
 		"freq": "hourly"

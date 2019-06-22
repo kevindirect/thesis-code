@@ -6,7 +6,7 @@
 		"info": "daily expanding first break return with variable threshold"
 	},
 	"fn": {
-		"ser_fn": "srf",
+		"ser_fn": "sr",
 		"df_fn": "gua",
 		"col_fn": null,
 		"freq": "cal_daily"
@@ -17,6 +17,7 @@
 		"dst": ["dxfbret2", "dxfbret2"]
 	},
 	"var": {
-		"specifier": ["fnz"]
+		"val": [true],
+		"flt": ["fnz"]
 	}
 }

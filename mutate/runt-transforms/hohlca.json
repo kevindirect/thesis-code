@@ -6,7 +6,7 @@
 		"info": "hourly open, high, low, close average aggregation"
 	},
 	"fn": {
-		"ser_fn": ["srf", "srf", "srf", "srf", "stat"],
+		"ser_fn": ["sr", "sr", "sr", "sr", "stat"],
 		"df_fn": "gua",
 		"col_fn": null,
 		"freq": "hourly"
@@ -17,10 +17,10 @@
 		"dst": ["hohlca", "hohlca"]
 	},
 	"var": [
-		{"specifier": [0]},
-		{"specifier": ["h"]},
-		{"specifier": ["l"]},
-		{"specifier": [-1]},
+		{"val":[true], "flt": [0]},
+		{"val":[true], "flt": ["h"]},
+		{"val":[true], "flt": ["l"]},
+		{"val":[true], "flt": [-1]},
 		{"stat_type": ["avg"]}
 	]
 }

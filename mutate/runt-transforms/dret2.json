@@ -6,7 +6,7 @@
 		"info": "daily return with variable threshold"
 	},
 	"fn": {
-		"ser_fn": "srf",
+		"ser_fn": "sr",
 		"df_fn": "gua",
 		"col_fn": null,
 		"freq": "cal_daily"
@@ -17,6 +17,7 @@
 		"dst": ["dret2", "dret2"]
 	},
 	"var": {
-		"specifier": ["l"]
+		"val": [true],
+		"flt": ["l"]
 	}
 }

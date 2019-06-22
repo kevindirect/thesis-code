@@ -6,7 +6,7 @@
 		"info": "daily return direction with variable threshold"
 	},
 	"fn": {
-		"ser_fn": "srf",
+		"ser_fn": "srm",
 		"df_fn": "gua",
 		"col_fn": null,
 		"freq": "cal_daily"
@@ -17,7 +17,8 @@
 		"dst": ["ddir2", "ddir2"]
 	},
 	"var": {
-		"specifier": ["l"],
+		"val": [true],
+		"flt": ["l"],
 		"map_fn": ["sgn"]
 	}
 }

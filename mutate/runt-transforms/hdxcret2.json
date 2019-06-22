@@ -6,7 +6,7 @@
 		"info": "hourly, daily expanding clipped return with variable threshold, same as hdxret2 but with clip->true"
 	},
 	"fn": {
-		"ser_fn": "vretx",
+		"ser_fn": "vxret",
 		"df_fn": "rbt",
 		"col_fn": "sami",
 		"freq": "hourly"

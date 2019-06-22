@@ -6,7 +6,7 @@
 		"info": "daily expanding first break return direction with threshold"
 	},
 	"fn": {
-		"ser_fn": "srf",
+		"ser_fn": "srm",
 		"df_fn": "gua",
 		"col_fn": null,
 		"freq": "cal_daily"
@@ -17,7 +17,8 @@
 		"dst": ["dxfbdir1", "dxfbdir1"]
 	},
 	"var": {
-		"specifier": ["fnz"],
+		"val": [true],
+		"flt": ["fnz"],
 		"map_fn": ["sgn"]
 	}
 }
