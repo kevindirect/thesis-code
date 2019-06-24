@@ -30,7 +30,7 @@ DEFAULT_FNZ_IDX_SHF = 1		# Default to return index shifted by +1
 
 def first_nonzero(ser, ret_idx=DEFAULT_RET_IDX, idx_norm=DEFAULT_IDX_NORM):
 	idx = arr_nonzero(ser.values, ret_idx=ret_idx, idx_norm=idx_norm, idx_shf=DEFAULT_FNZ_IDX_SHF)
-	return idx if (not isinstance(idx, np.ndarray) and (isnt(idx) or idx==0)) return idx.item(0)
+	return idx if (not isinstance(idx, np.ndarray) and (isnt(idx) or idx==0)) else idx.item(0)
 
 ROW_IDX_SELECTOR_MAP = {
 	0: (lambda ser: ser.first_valid_index()),

@@ -80,12 +80,12 @@ class RUNTComputeError(RuntimeError):
 
 
 """ ********** HELPER FNS ********** """
-def get_ser_fn(var, ser_fn_str, SER_FNS=RUNT_FN_TRANSLATOR):
-	ser_fn = list(map(lambda fn: SER_FNS.get(fn), ser_fn_str)) if (is_type(ser_fn_str, list)) [SER_FNS.get(ser_fn_str)]
+def get_ser_fn(var, ser_fn_str, ser_fns=RUNT_FN_TRANSLATOR):
+	ser_fn = list(map(lambda fn: ser_fns.get(fn), ser_fn_str)) if (is_type(ser_fn_str, list)) else [ser_fns.get(ser_fn_str)]
 	var = var if (is_type(var, list)) else [var]
 
 	if (len(ser_fn)!=len(var)):
-		error_msg 'number of series functions and variant sets must be equal'
+		error_msg = 'number of series functions and variant sets must be equal'
 		logging.error(error_msg)
 		raise RUNTFormatError(error_msg)
 	return [partial(ser_fn[i], var[i]) for i in len(var)]
@@ -98,7 +98,7 @@ def apply_rut_df(df, var, freq, ser_fn_str, col_fn_str, dna=True):
 	"""
 	ser_fn = get_ser_fn(var, ser_fn_str)
 	d = {col: df[col].transform(ser_fn[i%len(ser_fn)]) for i, col in enumerate(df.columns)}
-	res = pd.DataFrame(d, index=df.index, )
+	res = pd.DataFrame(d, index=df.index)
 	# TODO
 	#res = df.transform(ser_transform_fn)
 	return res.dropna(axis=0, how='all') if (dna) else res
@@ -119,6 +119,7 @@ def apply_gut_df(df, var, freq, ser_fn_str, col_fn_str, dna=True):
 	Apply groupby unary transform
 	"""
 	# TODO
+	ser_fn = get_ser_fn(var, ser_fn_str)
 	res = df.groupby(pd.Grouper(freq=agg_freq)).transform(ser_transform_fn)
 	return res.dropna(axis=0, how='all') if (dna) else res
 
@@ -126,8 +127,11 @@ def apply_gua_df(df, var, freq, ser_fn_str, col_fn_str, dna=True):
 	"""
 	Apply groupby unary aggregation
 	"""
-	# TODO
-	res = df.groupby(pd.Grouper(freq=agg_freq)).agg(ser_agg_fn)
+	# TODO - TEST
+	ser_fn = get_ser_fn(var, ser_fn_str)
+	d = {col: df[col].groupby(pd.Grouper(freq=freq)).aggregate(ser_fn[i%len(ser_fn)]) for i, col in enumerate(df.columns)}
+	res = DataFrame.from_dict(d)
+	#res = df.groupby(pd.Grouper(freq=agg_freq)).agg(ser_agg_fn)
 	return res.dropna(axis=0, how='all') if (dna) else res
 
 
