@@ -38,7 +38,7 @@ gaussian_breakpoints = {
 MIN_VAL_OUT, MAX_VAL_OUT = -1, 1	# Inclusive limits of range for min-max scaling
 uniform_breakpoints = {n: [MIN_VAL_OUT+(k*((MAX_VAL_OUT-MIN_VAL_OUT)/n)) for k in range(1, n)] for n in range(2, 21)}
 
-BREAKPOINT_MAP = {
+BREAKPOINT_MAPPING = {
 	"gaussian": gaussian_breakpoints,
 	"uniform": uniform_breakpoints
 }
@@ -62,7 +62,7 @@ def most_freq_subseq_len(df, capture=.95):
 zscore_transform = lambda ser: (ser-ser.mean()) / ser.std()
 bipolar_mm_transform = lambda ser: 2 * ((ser-ser.min()) / (ser.max()-ser.min())) - 1
 
-NORM_FUN_MAP = {
+NORM_FUN_MAPPING = {
 	'dzn': lambda ser: (ser-ser.mean()) / ser.std(),
 	'dmx': lambda ser: 2 * ((ser-ser.min()) / (ser.max()-ser.min())) - 1
 }

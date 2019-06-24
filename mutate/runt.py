@@ -16,8 +16,8 @@ import logging
 #from dask.distributed import Client
 
 from common_util import MUTATE_DIR, DT_HOURLY_FREQ, DT_CAL_DAILY_FREQ, load_json, dump_json, get_cmd_args, is_valid, isnt, get_variants, best_match, remove_dups_list, list_get_dict, is_empty_df, search_df, str_now, benchmark
-from mutate.common import HISTORY_DIR, get_graphs, get_transforms
-from mutate.runt_util import RUNTFormatError, RUNTComputeError, RUNT_TYPE_TRANSLATOR, RUNT_FREQ_TRANSLATOR
+from mutate.common import RUNT_FREQ_MAPPING, HISTORY_DIR, get_graphs, get_transforms
+from mutate.runt_util import RUNTFormatError, RUNTComputeError, RUNT_TYPE_MAPPING
 from data.data_api import DataAPI
 from data.data_util import make_entry
 
@@ -40,7 +40,7 @@ def run_transforms(argv):
 
 	logging.info('loading settings...')
 	graphs, transforms = get_graphs(), get_transforms()
-	client = Client()
+	#client = Client()
 
 	for graph_name, graph in graphs.items():
 		logging.info('running graph {}...'.format(graph_name))
@@ -90,10 +90,10 @@ def process_transform(info, yield_data=False):
 		raise RUNTFormatError(error_msg)
 
 	# Loading transform, apply, and frequency settings
-	rtype_fn = RUNT_TYPE_TRANSLATOR[fn['df_fn']]
+	rtype_fn = RUNT_TYPE_MAPPING.get(fn['df_fn'])
 	ser_fn_str, col_fn_str = fn['ser_fn'], fn['col_fn']
-	freq = RUNT_FREQ_TRANSLATOR[fn['freq']]
-	res_freq = RUNT_FREQ_TRANSLATOR[meta['res_freq']]
+	freq = RUNT_FREQ_MAPPING.get(fn['freq'], fn['freq'])
+	res_freq = RUNT_FREQ_MAPPING.get(meta['res_freq'], meta['res_freq'])
 
 	# Making all possible parameter combinations
 	variants = get_variants(var, meta['var_fmt'])

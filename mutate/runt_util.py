@@ -17,50 +17,8 @@ import pandas as pd
 
 from common_util import DT_HOURLY_FREQ, DT_BIZ_DAILY_FREQ, DT_CAL_DAILY_FREQ, compose, null_fn, identity_fn, get_custom_biz_freq, window_iter, col_iter, all_equal, is_real_num
 from common_util import ser_range_center_clip, pd_slot_shift, concat_map, substr_ad_map, all_equal, first_element, first_letter_concat, arr_nonzero, apply_nz_nn, one_minus
-from mutate.common import STANDARD_DAY_LEN
-from mutate.tfactory_util import single_row, single_row_map
-from mutate.tfactory_util import statistic, difference, fracdiff
-from mutate.tfactory_util import window_rank, normalize, symbolize
-from mutate.tfactory_util import returnify, expanding_returnify, variable_expanding_returnify
-
-
-""" ********** JSON-STR-TO-CODE TRANSLATORS ********** """
-RUNT_FN_TRANSLATOR = {
-	"sr": single_row,
-	"srm": single_row_map,
-	"stat": statistic,
-	"diff": difference,
-	"ffd": fracdiff,
-	"wr": window_rank,
-	"norm": normalize,
-	"sym": symbolize,
-	"ret": returnify,
-	"xret": expanding_returnify,
-	"vxret": variable_expanding_returnify
-}
-
-RUNT_TYPE_TRANSLATOR = {
-	"rut": apply_rut_df,
-	"rbt": apply_rbt_df,
-	"gbt": apply_gbt_df,
-	"gua": apply_gua_df
-}
-
-RUNT_NMAP_TRANSLATOR = {
-	"cm": concat_map,
-	"sami": substr_ad_initial_map,
-	None: null_fn
-}
-
-RUNT_FREQ_TRANSLATOR = {
-	"hourly": DT_HOURLY_FREQ,
-	"cal_daily": DT_CAL_DAILY_FREQ,
-	"biz_daily": DT_BIZ_DAILY_FREQ,
-	DT_HOURLY_FREQ: DT_HOURLY_FREQ,
-	DT_CAL_DAILY_FREQ: DT_CAL_DAILY_FREQ,
-	DT_BIZ_DAILY_FREQ: DT_BIZ_DAILY_FREQ,
-	None: None
-}
+from mutate.common import RUNT_FREQ_MAPPING, STANDARD_DAY_LEN
+from mutate.tfactory_util import RUNT_FN_MAPPING
 
 
 """ ********** RUNT EXCEPTION CLASSES ********** """
@@ -80,8 +38,8 @@ class RUNTComputeError(RuntimeError):
 
 
 """ ********** HELPER FNS ********** """
-def get_ser_fn(var, ser_fn_str, ser_fns=RUNT_FN_TRANSLATOR):
-	ser_fn = list(map(lambda fn: ser_fns.get(fn), ser_fn_str)) if (is_type(ser_fn_str, list)) else [ser_fns.get(ser_fn_str)]
+def get_ser_fn(var, ser_fn_str, fn_mapping=RUNT_FN_MAPPING):
+	ser_fn = list(map(lambda fn: fn_mapping.get(fn), ser_fn_str)) if (is_type(ser_fn_str, list)) else [fn_mapping.get(ser_fn_str)]
 	var = var if (is_type(var, list)) else [var]
 
 	if (len(ser_fn)!=len(var)):
@@ -139,3 +97,18 @@ def apply_gua_df(df, var, freq, ser_fn_str, col_fn_str, dna=True):
 substr_ad_initial_map = partial(substr_ad_map, check_fn=all_equal, accord_fn=first_element, discord_fn=first_letter_concat)
 
 
+""" ********** RUNT DF MAPPING ********** """
+RUNT_TYPE_MAPPING = {
+	"rut": apply_rut_df,
+	"rbt": apply_rbt_df,
+	"gbt": apply_gbt_df,
+	"gua": apply_gua_df
+}
+
+
+""" ********** RUNT COL MAPPING ********** """
+RUNT_NMAP_MAPPING = {
+	"cm": concat_map,
+	"sami": substr_ad_initial_map,
+	None: null_fn
+}
