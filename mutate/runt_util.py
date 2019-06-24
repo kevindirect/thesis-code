@@ -101,7 +101,7 @@ substr_ad_initial_map = partial(substr_ad_map, check_fn=all_equal, accord_fn=fir
 RUNT_TYPE_MAPPING = {
 	"rut": apply_rut_df,
 	"rbt": apply_rbt_df,
-	"gbt": apply_gbt_df,
+	"gut": apply_gbt_df,
 	"gua": apply_gua_df
 }
 
