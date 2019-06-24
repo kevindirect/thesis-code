@@ -15,7 +15,7 @@ import logging
 
 #from dask.distributed import Client
 
-from common_util import MUTATE_DIR, DT_HOURLY_FREQ, DT_CAL_DAILY_FREQ, load_json, dump_json, get_cmd_args, is_valid, isnt, get_variants, best_match, remove_dups_list, list_get_dict, is_empty_df, search_df, str_now, benchmark
+from common_util import MUTATE_DIR, DT_HOURLY_FREQ, DT_CAL_DAILY_FREQ, load_json, dump_json, get_cmd_args, is_valid, isnt, is_type, get_variants, best_match, remove_dups_list, list_get_dict, is_empty_df, search_df, str_now, benchmark
 from mutate.common import RUNT_FREQ_MAPPING, HISTORY_DIR, get_graphs, get_transforms
 from mutate.runt_util import RUNTFormatError, RUNTComputeError, RUNT_TYPE_MAPPING
 from data.data_api import DataAPI
