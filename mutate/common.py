@@ -18,7 +18,7 @@ sys.path.insert(0, dirname(dirname(dirname(realpath(sys.argv[0])))))
 import os
 from os import sep
 from functools import partial
-from common_util import MUTATE_DIR, DT_HOURLY_FREQ, DT_CAL_DAILY_FREQ, DT_BIZ_DAILY_FREQ, load_json
+from common_util import MUTATE_DIR, JSON_SFX_LEN, DT_HOURLY_FREQ, DT_CAL_DAILY_FREQ, DT_BIZ_DAILY_FREQ, load_json
 
 # OTHER STAGE DEPENDENCIES
 

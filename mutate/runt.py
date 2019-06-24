@@ -95,14 +95,15 @@ def process_transform(info, yield_data=False):
 	freq = RUNT_FREQ_MAPPING.get(fn['freq'], fn['freq'])
 	res_freq = RUNT_FREQ_MAPPING.get(meta['res_freq'], meta['res_freq'])
 
-	# Making all possible parameter combinations
-	variants = get_variants(var, meta['var_fmt'])
-
-	# Load row mask if it exists
-	if (is_valid(axe['rm'])):
+	# Prep input data and row masks
+	srcs = axe['src'] if (is_type(axe['src'][0], list)) else [axe['src']]
+	rm_src = axe['rm']
+	if (is_valid(rm_src)):
 		rm_rcs, rm_dfs = DataAPI.axe_load(rm_src, lazy=False)
 
-	srcs = axe['src'] if (is_type(axe['src'][0], list)) else [axe['src']]
+	# Variants and type format string
+	variants = get_variants(var, meta['var_fmt'])
+	type_str = meta['rec_fmt']
 
 	for src in srcs:
 		src_rcs, src_dfs = DataAPI.axe_load(src, lazy=False)
@@ -118,7 +119,7 @@ def process_transform(info, yield_data=False):
 			src_rc, src_df = src_rcs[keychain], srcs_dfs[keychain].dropna(axis=0, how='all')
 
 			# Masking rows in src from row_mask
-			if (is_valid(axe['rm'])):
+			if (is_valid(rm_src)):
 				rm_keychain = get_rm_keychain(keychain, rm_dfs.keys())
 				rm_df = rm_dfs[rm_keychain].dropna()
 				rm_src_diff = rm_df.index.difference(src_df.index)
@@ -133,7 +134,7 @@ def process_transform(info, yield_data=False):
 			# Running variants of the transform (different sets of parameters)
 			for variant in variants:
 				runted_df = rtype_fn(src_df, variant, freq, ser_fn_str, col_fn_str)
-				mutate_type = meta['rec_fmt'].format(**variant)
+				mutate_type = type_str.format(**variant)
 				mutate_desc = '_'.join([keychain[-1], mutate_type])
 				logging.debug('mutate_type: {}'.format(mutate_type))
 
