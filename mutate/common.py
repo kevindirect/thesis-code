@@ -28,7 +28,7 @@ STANDARD_DAY_LEN = 8 # standard eight hour trading day
 # PACKAGE DEFAULTS
 dum = 0
 GRAPHS_DIR = MUTATE_DIR +'runt-graphs' +sep
-HISORY_DIR = MUTATE_DIR + 'runt-history' +sep
+HISTORY_DIR = MUTATE_DIR + 'runt-history' +sep
 TRANSFORMS_DIR = MUTATE_DIR +'runt-transforms' +sep
 default_num_sym = 4
 default_max_seg = STANDARD_DAY_LEN
