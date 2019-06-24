@@ -152,9 +152,22 @@ def process_transform(info, yield_data=False):
 
 def get_rm_keychain(kc, rm_kcs):
 	"""
-	Find and return the keychain the keychain in rm_kcs that matches kc.
+	Find and return the keychain the keychain in rm_kcs that matches kc according to some rules.
+
+	For a match to occur, the following must be the case:
+		- The first items in both lists must be identical
+			* This means the root field in the data record (ie the asset) of both src and row mask are identical
+		- The last item in the src keychain starts with the last item in row mask keychain
+			* This means the desc or subset of the src keychain matches the desc of the row mask keychain
+
+	Args:
+		kc (list): src keychain
+		rm_kc(list): row mask keychain
+
+	Returns:
+		matched keychain
 	"""
-	rm_match = list(filter(lambda rm_kc: kc[-1].startswith(rm_kc[-1]), rm_kcs))
+	rm_match = list(filter(lambda rm_kc: kc[0]==rm_kc[0] and kc[-1].startswith(rm_kc[-1]), rm_kcs))
 	logging.debug('rm_match: {}'.format(str(rm_match)))
 	if (len(rm_match)!=1):
 		error_msg = 'matched {} row_mask df(s), should be 1'.format(len(rm_match))
