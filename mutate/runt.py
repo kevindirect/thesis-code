@@ -116,7 +116,7 @@ def process_transform(info, yield_data=False):
 		# Run transforms on inputs
 		for keychain in src_dfs:
 			logging.info('data: {}'.format(str(keychain)))
-			src_rc, src_df = src_rcs[keychain], srcs_dfs[keychain].dropna(axis=0, how='all')
+			src_rc, src_df = src_rcs[keychain], src_dfs[keychain].dropna(axis=0, how='all')
 
 			# Masking rows in src from row_mask
 			if (is_valid(rm_src)):

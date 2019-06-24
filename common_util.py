@@ -315,8 +315,6 @@ class NestedDefaultDict(MutableMapping):
 		yield from filter(lambda k: k[:len(key)]==key, self.keys())
 
 	def __setitem__(self, key, value):
-		# TODO - Fix bug, NDD should be able to take a list keychain directly
-		# list_get_dict and list_set_dict shouldn't be necessary
 		"""
 		Set an item in the object.
 		If the value to set is a NestedDefaultDict, then it will be grafted on at the specified location,
@@ -347,8 +345,6 @@ class NestedDefaultDict(MutableMapping):
 				self.keychains.append(key)
 
 	def __getitem__(self, key):
-		# TODO - Fix bug, NDD should be able to take a list keychain directly
-		# list_get_dict and list_set_dict shouldn't be necessary
 		"""
 		Get an item.
 
@@ -389,9 +385,9 @@ class NestedDefaultDict(MutableMapping):
 
 	def __iter__(self):
 		"""
-		Return iterator.
+		Return iterator over the keys (similar to standard dictionary).
 		"""
-		return self.items()
+		return self.keys()
 
 	def __len__(self):
 		"""
