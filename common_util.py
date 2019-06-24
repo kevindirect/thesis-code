@@ -97,7 +97,7 @@ DT_FMT_YMD_HMSF = '%Y-%m-%d %H:%M:%S:%f'
 def is_type(obj, *types):
 	return any([isinstance(obj, tp) for tp in types])
 
-def exists(obj):
+def is_valid(obj):
 	return obj is not None
 
 def isnt(obj):
@@ -636,7 +636,7 @@ null_fn = lambda *args, **kwargs: None
 """ ********** FS AND GENERAL IO UTILS ********** """
 get_script_dir = lambda: dirname(realpath(sys.argv[0])) +sep
 get_parent_dir = lambda: dirname(dirname(realpath(sys.argv[0]))) +sep
-makedir_if_not_exists = lambda dir_path: makedirs(dir_path) if not exists(dir_path) else None
+makedir_if_not_exists = lambda dir_path: makedirs(dir_path) if (not exists(dir_path)) else None
 
 def load_json(fname, dir_path=None):
 	fpath = str(add_sep_if_none(dir_path) + fname) if dir_path else fname
