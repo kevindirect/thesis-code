@@ -39,14 +39,14 @@ class RUNTComputeError(RuntimeError):
 
 """ ********** HELPER FNS ********** """
 def get_ser_fn(var, ser_fn_str, fn_mapping=RUNT_FN_MAPPING):
-	ser_fn = list(map(lambda fn: fn_mapping.get(fn), ser_fn_str)) if (is_type(ser_fn_str, list)) else [fn_mapping.get(ser_fn_str)]
-	var = var if (is_type(var, list)) else [var]
+	ser_fn = tuple(map(lambda fn: fn_mapping.get(fn), ser_fn_str)) if (is_type(ser_fn_str, list)) else tuple(fn_mapping.get(ser_fn_str))
+	var = var if (is_type(var, tuple)) else tuple(var)
 
 	if (len(ser_fn)!=len(var)):
-		error_msg = 'number of series functions and variant sets must be equal'
+		error_msg = 'number of ser functions and variant sets must be equal'
 		logging.error(error_msg)
 		raise RUNTFormatError(error_msg)
-	return [partial(ser_fn[i], var[i]) for i in len(var)]
+	return [partial(ser_fn[i], var[i]) for i in range(len(var))]
 
 
 """ ********** ROW BASED TRANSFORMS ********** """
