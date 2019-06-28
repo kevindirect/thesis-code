@@ -195,7 +195,7 @@ def expanding_returnify(ret_type, thresh=None, clip=False, agg_freq=DT_CAL_DAILY
 	ret_fn = returnify(ret_type, thresh=thresh, clip=clip)
 
 	def fn(slow_ser, fast_ser):
-		first_slow = slow_ser.dropna().groupby(pd.Grouper(freq=agg_freq)).transform(single_row_filter('f'))
+		first_slow = slow_ser.dropna().groupby(pd.Grouper(freq=agg_freq)).transform(single_row(True, 0))
 		return ret_fn(first_slow, fast_ser.dropna())
 
 	return fn
