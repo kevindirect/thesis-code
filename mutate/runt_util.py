@@ -38,7 +38,10 @@ class RUNTComputeError(RuntimeError):
 
 
 """ ********** HELPER FNS ********** """
-def get_ser_fn(var, ser_fn_str, fn_mapping=RUNT_FN_MAPPING):
+def get_ser_fn(ser_fn_str, var, fn_mapping=RUNT_FN_MAPPING):
+	"""
+	Convert the string or list of strings to their python function mappings and fix them to a particular set of variables.
+	"""
 	ser_fn = tuple(map(lambda fn: fn_mapping.get(fn), ser_fn_str)) if (is_type(ser_fn_str, list)) else tuple(fn_mapping.get(ser_fn_str))
 	var = var if (is_type(var, tuple)) else tuple(var)
 
@@ -54,7 +57,7 @@ def apply_rut_df(df, var, freq, ser_fn_str, col_fn_str, dna=True):
 	"""
 	Apply row unary transform
 	"""
-	ser_fn = get_ser_fn(var, ser_fn_str)
+	ser_fn = get_ser_fn(ser_fn_str, var)
 	d = {col: df[col].transform(ser_fn[i%len(ser_fn)]) for i, col in enumerate(df.columns)}
 	res = pd.DataFrame(d, index=df.index)
 	# TODO
@@ -77,7 +80,7 @@ def apply_gut_df(df, var, freq, ser_fn_str, col_fn_str, dna=True):
 	Apply groupby unary transform
 	"""
 	# TODO
-	ser_fn = get_ser_fn(var, ser_fn_str)
+	ser_fn = get_ser_fn(ser_fn_str, var)
 	res = df.groupby(pd.Grouper(freq=agg_freq)).transform(ser_transform_fn)
 	return res.dropna(axis=0, how='all') if (dna) else res
 
@@ -86,7 +89,7 @@ def apply_gua_df(df, var, freq, ser_fn_str, col_fn_str, dna=True):
 	Apply groupby unary aggregation
 	"""
 	# TODO - TEST
-	ser_fn = get_ser_fn(var, ser_fn_str)
+	ser_fn = get_ser_fn(ser_fn_str, var)
 	d = {col: df[col].groupby(pd.Grouper(freq=freq)).aggregate(ser_fn[i%len(ser_fn)]) for i, col in enumerate(df.columns)}
 	res = DataFrame.from_dict(d)
 	#res = df.groupby(pd.Grouper(freq=agg_freq)).agg(ser_agg_fn)
