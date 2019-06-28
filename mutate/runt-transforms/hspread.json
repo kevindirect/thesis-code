@@ -2,14 +2,14 @@
 	"meta": {
 		"rec_fmt": "h{ret_type}",
 		"var_fmt": "grid",
-		"res_freq": "hourly",
+		"res_freq": "H",
 		"info": "hourly spread"
 	},
 	"fn": {
 		"ser_fn": "ret",
 		"df_fn": "rbt",
 		"col_fn": "sami",
-		"freq": "hourly"
+		"freq": "H"
 	},
 	"axe": {
 		"rm": ["hrm", "hrm"],

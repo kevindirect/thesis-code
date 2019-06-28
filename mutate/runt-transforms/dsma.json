@@ -2,7 +2,7 @@
 	"meta": {
 		"rec_fmt": "dsma({num_periods})",
 		"var_fmt": "grid",
-		"res_freq": "cal_daily",
+		"res_freq": "D",
 		"info": "daily frequency simple moving average"
 	},
 	"fn": {

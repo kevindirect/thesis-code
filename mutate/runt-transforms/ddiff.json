@@ -2,14 +2,14 @@
 	"meta": {
 		"rec_fmt": "ddiff({num_periods})",
 		"var_fmt": "grid",
-		"res_freq": "cal_daily",
+		"res_freq": "D",
 		"info": "daily differenced data"
 	},
 	"fn": {
 		"ser_fn": "diff",
 		"df_fn": "rut",
 		"col_fn": null,
-		"freq": "cal_daily"
+		"freq": "D"
 	},
 	"axe": {
 		"rm": null,

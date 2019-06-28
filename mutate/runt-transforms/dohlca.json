@@ -2,14 +2,14 @@
 	"meta": {
 		"rec_fmt": "dohlca",
 		"var_fmt": "list",
-		"res_freq": "cal_daily",
+		"res_freq": "D",
 		"info": "daily open, high, low, close average aggregation"
 	},
 	"fn": {
 		"ser_fn": ["sr", "sr", "sr", "sr", "stat"],
 		"df_fn": "gua",
 		"col_fn": null,
-		"freq": "cal_daily"
+		"freq": "D"
 	},
 	"axe": {
 		"rm": ["hrm", "hrm"],

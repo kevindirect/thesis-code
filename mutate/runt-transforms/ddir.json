@@ -2,14 +2,14 @@
 	"meta": {
 		"rec_fmt": "ddir",
 		"var_fmt": "grid",
-		"res_freq": "cal_daily",
+		"res_freq": "D",
 		"info": "daily return direction"
 	},
 	"fn": {
 		"ser_fn": "srm",
 		"df_fn": "gua",
 		"col_fn": null,
-		"freq": "cal_daily"
+		"freq": "D"
 	},
 	"axe": {
 		"rm": null,

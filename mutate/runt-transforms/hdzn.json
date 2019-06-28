@@ -2,14 +2,14 @@
 	"meta": {
 		"rec_fmt": "hd{norm_type}",
 		"var_fmt": "grid",
-		"res_freq": "hourly",
+		"res_freq": "H",
 		"info": "hourly, daily z-score normalized"
 	},
 	"fn": {
 		"ser_fn": "norm",
 		"df_fn": "gut",
 		"col_fn": null,
-		"freq": "cal_daily"
+		"freq": "D"
 	},
 	"axe": {
 		"rm": null,

@@ -2,14 +2,14 @@
 	"meta": {
 		"rec_fmt": "hdx{ret_type}",
 		"var_fmt": "grid",
-		"res_freq": "hourly",
+		"res_freq": "H",
 		"info": "hourly, expanding daily return, logreturn, or spread"
 	},
 	"fn": {
 		"ser_fn": "xret",
 		"df_fn": "rbt",
 		"col_fn": "sami",
-		"freq": "hourly"
+		"freq": "H"
 	},
 	"axe": {
 		"rm": ["hrm", "hrm"],

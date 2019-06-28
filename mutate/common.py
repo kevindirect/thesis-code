@@ -18,16 +18,11 @@ sys.path.insert(0, dirname(dirname(dirname(realpath(sys.argv[0])))))
 import os
 from os import sep
 from functools import partial
-from common_util import MUTATE_DIR, JSON_SFX_LEN, DT_HOURLY_FREQ, DT_CAL_DAILY_FREQ, DT_BIZ_DAILY_FREQ, load_json
+from common_util import MUTATE_DIR, JSON_SFX_LEN, load_json
 
 # OTHER STAGE DEPENDENCIES
 
 # PACKAGE CONSTANTS
-RUNT_FREQ_MAPPING = {
-	"hourly": DT_HOURLY_FREQ,
-	"cal_daily": DT_CAL_DAILY_FREQ,
-	"biz_daily": DT_BIZ_DAILY_FREQ
-}
 STANDARD_DAY_LEN = 8 # standard eight hour trading day
 
 # PACKAGE DEFAULTS

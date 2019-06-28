@@ -17,7 +17,7 @@ import logging
 import numpy as np
 import pandas as pd
 
-from common_util import DT_HOURLY_FREQ, DT_BIZ_DAILY_FREQ, DT_CAL_DAILY_FREQ, compose, null_fn, identity_fn, get_custom_biz_freq, window_iter, col_iter, all_equal, is_real_num
+from common_util import DT_HOURLY_FREQ, DT_CAL_DAILY_FREQ, DT_BIZ_DAILY_FREQ, compose, null_fn, identity_fn, get_custom_biz_freq, window_iter, col_iter, all_equal, is_real_num
 from common_util import ser_range_center_clip, pd_slot_shift, concat_map, substr_ad_map, all_equal, first_element, first_letter_concat, arr_nonzero, apply_nz_nn, one_minus, is_valid, isnt
 from mutate.common import RUNT_FREQ_MAPPING, STANDARD_DAY_LEN
 from mutate.pattern_util import gaussian_breakpoints, uniform_breakpoints, get_sym_list, symbolize_value
@@ -70,9 +70,13 @@ STAT_FN_MAPPING = {
 	'max': pd.Series.max,
 	'min': pd.Series.min
 }
-def statistic(stat_type, abs_val=True, agg_freq='cal_daily'):
-	agg_freq = RUNT_FREQ_MAPPING.get(agg_freq, agg_freq)
-	stat_fn = STAT_FN_MAPPING.get(stat_type)
+def statistic(stat_type):
+	return STAT_FN_MAPPING.get(stat_type)
+
+
+""" ********** aggstat **********"""
+def aggregated_statistic(stat_type, abs_val=True, agg_freq=DT_CAL_DAILY_FREQ):
+	stat_fn = statistic(stat_type)
 
 	def fn(ser):
 		if (abs_val):
@@ -184,12 +188,11 @@ def returnify(ret_type, thresh=None, clip=False):
 
 
 """ ********** xret **********"""
-def expanding_returnify(ret_type, thresh=None, clip=False, agg_freq='cal_daily'):
+def expanding_returnify(ret_type, thresh=None, clip=False, agg_freq=DT_CAL_DAILY_FREQ):
 	"""
 	Expanding spread, regular return, or log return.
 	"""
 	ret_fn = returnify(ret_type, thresh=thresh, clip=clip)
-	agg_freq = RUNT_FREQ_MAPPING.get(agg_freq, agg_freq)
 
 	def fn(slow_ser, fast_ser):
 		first_slow = slow_ser.dropna().groupby(pd.Grouper(freq=agg_freq)).transform(single_row_filter('f'))
@@ -199,13 +202,12 @@ def expanding_returnify(ret_type, thresh=None, clip=False, agg_freq='cal_daily')
 
 
 """ ********** vxret **********"""
-def variable_expanding_returnify(ret_type, stat_type, clip=False, thresh_scalar=1, agg_freq='cal_daily'):
+def variable_expanding_returnify(ret_type, stat_type, clip=False, thresh_scalar=1, agg_freq=DT_CAL_DAILY_FREQ):
 	"""
 	Expanding return thresholded on past period statistic.
 	"""
 	ret_fn = expanding_returnify(ret_type, thresh=None, clip=False, agg_freq=agg_freq)
-	stat_fn = statistic(stat_type, abs_val=True, agg_freq=agg_freq)
-	agg_freq = RUNT_FREQ_MAPPING.get(agg_freq, agg_freq)
+	stat_fn = aggregated_statistic(stat_type, abs_val=True, agg_freq=agg_freq)
 
 	def fn(slow_ser, fast_ser):
 		ret = ret_fn(slow_ser, fast_ser)

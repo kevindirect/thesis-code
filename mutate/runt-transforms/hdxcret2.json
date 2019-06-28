@@ -2,14 +2,14 @@
 	"meta": {
 		"rec_fmt": "hdxc{ret_type}2({thresh_scalar}*{stat_type},1)",
 		"var_fmt": "grid",
-		"res_freq": "hourly",
+		"res_freq": "H",
 		"info": "hourly, daily expanding clipped return with variable threshold, same as hdxret2 but with clip->true"
 	},
 	"fn": {
 		"ser_fn": "vxret",
 		"df_fn": "rbt",
 		"col_fn": "sami",
-		"freq": "hourly"
+		"freq": "H"
 	},
 	"axe": {
 		"rm": ["hrm", "hrm"],
@@ -21,6 +21,6 @@
 		"stat_type": ["avg", "std", "max", "min"],
 		"clip": [true],
 		"thresh_scalar": [0.5, 1, 2],
-		"agg_freq": ["cal_daily"]
+		"agg_freq": ["D"]
 	}
 }

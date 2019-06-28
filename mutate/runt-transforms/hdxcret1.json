@@ -2,14 +2,14 @@
 	"meta": {
 		"rec_fmt": "hdxc{ret_type}1({thresh:%})",
 		"var_fmt": "grid",
-		"res_freq": "hourly",
+		"res_freq": "H",
 		"info": "hourly, daily expanding clipped return with nonzero threshold, same as hdxret1 but with clip->true"
 	},
 	"fn": {
 		"ser_fn": "xret",
 		"df_fn": "rbt",
 		"col_fn": "sami",
-		"freq": "hourly"
+		"freq": "H"
 	},
 	"axe": {
 		"rm": ["hrm", "hrm"],

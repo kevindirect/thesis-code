@@ -2,14 +2,14 @@
 	"meta": {
 		"rec_fmt": "dxfbcret1",
 		"var_fmt": "grid",
-		"res_freq": "cal_daily",
+		"res_freq": "D",
 		"info": "daily expanding first break clipped return with threshold"
 	},
 	"fn": {
 		"ser_fn": "sr",
 		"df_fn": "gua",
 		"col_fn": null,
-		"freq": "cal_daily"
+		"freq": "D"
 	},
 	"axe": {
 		"rm": null,

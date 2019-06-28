@@ -2,14 +2,14 @@
 	"meta": {
 		"rec_fmt": "hohlca",
 		"var_fmt": "list",
-		"res_freq": "hourly",
+		"res_freq": "H",
 		"info": "hourly open, high, low, close average aggregation"
 	},
 	"fn": {
 		"ser_fn": ["sr", "sr", "sr", "sr", "stat"],
 		"df_fn": "gua",
 		"col_fn": null,
-		"freq": "hourly"
+		"freq": "H"
 	},
 	"axe": {
 		"rm": ["hrm", "hrm"],

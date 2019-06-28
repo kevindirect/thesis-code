@@ -2,7 +2,7 @@
 	"meta": {
 		"rec_fmt": "d{ret_type}",
 		"var_fmt": "grid",
-		"res_freq": "daily",
+		"res_freq": "D",
 		"info": "daily natural log return"
 	},
 	"fn": {

@@ -2,7 +2,7 @@
 	"meta": {
 		"rec_fmt": "dwr{rank_type}({num_periods:d})",
 		"var_fmt": "grid",
-		"res_freq": "cal_daily",
+		"res_freq": "D",
 		"info": "daily window rank z score normalized"
 	},
 	"fn": {
