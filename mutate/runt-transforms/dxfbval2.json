@@ -18,7 +18,7 @@
 	},
 	"var": {
 		"val": [false],
-		"flt": ["fnz_idxscore"],
+		"flt": ["fnzi_score"],
 		"map_fn": ["nz_inv"]
 	}
 }

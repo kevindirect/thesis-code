@@ -46,10 +46,21 @@ def get_ser_fn(ser_fn_str, var, fn_mapping=RUNT_FN_MAPPING):
 	var = var if (is_type(var, tuple)) else tuple(var)
 
 	if (len(ser_fn)!=len(var)):
-		error_msg = 'number of ser functions and variant sets must be equal'
-		logging.error(error_msg)
-		raise RUNTFormatError(error_msg)
-	return [partial(ser_fn[i], var[i]) for i in range(len(var))]
+		msg = 'number of ser functions and variant sets must be equal'
+		logging.error(msg)
+		raise RUNTFormatError(msg)
+
+	fixed = []
+	for fn, subvar in zip(ser_fn, var):
+		try:
+			fixed.append(fn(subvar))
+		except Exception as e:
+			msg = 'error when fixing subvariant to runt transform function'
+			logging.error(msg)
+			logging.error('trace: {}'.format(e))
+			raise RUNTFormatError(msg)
+
+	return fixed
 
 
 """ ********** ROW BASED TRANSFORMS ********** """
@@ -81,7 +92,7 @@ def apply_gut_df(df, var, freq, ser_fn_str, col_fn_str, dna=True):
 	"""
 	# TODO
 	ser_fn = get_ser_fn(ser_fn_str, var)
-	res = df.groupby(pd.Grouper(freq=agg_freq)).transform(ser_transform_fn)
+	res = df.groupby(pd.Grouper(freq=freq)).transform(ser_transform_fn)
 	return res.dropna(axis=0, how='all') if (dna) else res
 
 def apply_gua_df(df, var, freq, ser_fn_str, col_fn_str, dna=True):
@@ -90,7 +101,7 @@ def apply_gua_df(df, var, freq, ser_fn_str, col_fn_str, dna=True):
 	"""
 	# TODO - TEST
 	ser_fn = get_ser_fn(ser_fn_str, var)
-	d = {col: df[col].groupby(pd.Grouper(freq=freq)).aggregate(ser_fn[i%len(ser_fn)]) for i, col in enumerate(df.columns)}
+	d = {col: df.loc[:, col].groupby(pd.Grouper(freq=freq)).agg(ser_fn[i%len(ser_fn)]) for i, col in enumerate(df.columns)}
 	res = DataFrame.from_dict(d)
 	#res = df.groupby(pd.Grouper(freq=agg_freq)).agg(ser_agg_fn)
 	return res.dropna(axis=0, how='all') if (dna) else res

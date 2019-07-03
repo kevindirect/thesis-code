@@ -779,13 +779,13 @@ def arr_nonzero(arr, ret_idx=False, idx_norm=False, idx_shf=1):
 		[ℕ]	 -> The first n non-zero values or their indices shifted by idx_shf
 	"""
 	non_null = filter_null(arr)
-	non_zero_ids = np.flatnonzero(non_null)
-
 	if (non_null.size == 0):
 		return None
 	elif (non_zero_ids.size == 0):
 		return 0
-	elif (ret_idx):
+
+	non_zero_ids = np.flatnonzero(non_null)
+	if (ret_idx):
 		indices = non_zero_ids + idx_shf
 		return indices / (non_null.size + idx_shf) if (idx_norm) else indices
 	else:

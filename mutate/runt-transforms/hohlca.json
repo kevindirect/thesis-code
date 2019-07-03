@@ -3,7 +3,7 @@
 		"rec_fmt": "hohlca",
 		"var_fmt": "list",
 		"res_freq": "H",
-		"info": "hourly open, high, low, close average aggregation"
+		"info": "hourly open, high, low, close, and average aggregation"
 	},
 	"fn": {
 		"ser_fn": ["sr", "sr", "sr", "sr", "stat"],

@@ -24,7 +24,7 @@ from mutate.pattern_util import gaussian_breakpoints, uniform_breakpoints, get_s
 from mutate.fracdiff_util import get_weights
 
 
-""" ********** sr **********"""
+""" ********** sr ********** """
 def first_nonzero(ser, ret_idx=False, idx_norm=False):
 	idx = arr_nonzero(ser.values, ret_idx=ret_idx, idx_norm=idx_norm, idx_shf=1)
 	return idx if (not isinstance(idx, np.ndarray) and (isnt(idx) or idx==0)) else idx.item(0)
@@ -34,27 +34,24 @@ ROW_IDX_SELECTOR_MAPPING = {
 	-1: (lambda ser: ser.last_valid_index()),
 	'h': (lambda ser: ser.idxmax(skipna=True)),
 	'l': (lambda ser: ser.idxmin(skipna=True)),
-	'fnz': partial(first_nonzero, ret_idx=True, idx_norm=False),
-	'fnz_idxscore': partial(first_nonzero, ret_idx=True, idx_norm=True)	# Returns index as normalized score
+	'fnzi': partial(first_nonzero, ret_idx=True, idx_norm=False),
+	'fnzi_score': partial(first_nonzero, ret_idx=True, idx_norm=True)	# Returns index as normalized score
 }
-ROW_VAL_SELECTOR_MAPPING = {
-	0: (lambda ser: ser.loc[ROW_IDX_SELECTOR_MAPPING.get(0)(ser)]),
-	-1: (lambda ser: ser.loc[ROW_IDX_SELECTOR_MAPPING.get(-1)(ser)]),
-	'h': (lambda ser: ser.loc[ROW_IDX_SELECTOR_MAPPING.get('h')(ser)]),
-	'l': (lambda ser: ser.loc[ROW_IDX_SELECTOR_MAPPING.get('l')(ser)]),
-	'fnz': partial(first_nonzero, ret_idx=False, idx_norm=False)
-}
-def single_row(val, flt):
+def single_row(val=True, flt=0):
 	"""
 	Constructs function that returns index or value for selected row.
 	"""
-	return {
-		bool(not val): ROW_IDX_SELECTOR_MAPPING.get(flt, None),
-		val: ROW_VAL_SELECTOR_MAPPING.get(flt, None)
-	}.get(True)
+	if (val):
+		def fn(ser):
+			idx = ROW_IDX_SELECTOR_MAPPING.get(flt)(ser)
+			return ser.loc[idx] if (is_valid(idx)) else None
+	else:
+		def fn(ser):
+			return ROW_IDX_SELECTOR_MAPPING.get(flt)(ser)
+	return fn
 
 
-""" ********** srm **********"""
+""" ********** srm ********** """
 MAP_FN_MAPPING = {
 	'nz_inv': apply_nz_nn(one_minus),
 	'sgn': np.sign
@@ -63,18 +60,24 @@ def single_row_map(val, flt, map_fn):
 	return compose(single_row(val, flt), MAP_FN_MAPPING.get(map_fn))
 
 
-""" ********** stat **********"""
+""" ********** stat ********** """
+#STAT_FN_MAPPING = {
+#	'avg': pd.Series.mean,
+#	'std': pd.Series.std,
+#	'max': pd.Series.max,
+#	'min': pd.Series.min
+#}
 STAT_FN_MAPPING = {
-	'avg': pd.Series.mean,
-	'std': pd.Series.std,
-	'max': pd.Series.max,
-	'min': pd.Series.min
+	'avg': 'mean', #pd.Series.mean,
+	'std': 'std', #pd.Series.std,
+	'max': 'max', #pd.Series.max,
+	'min': 'min' #pd.Series.min
 }
 def statistic(stat_type):
 	return STAT_FN_MAPPING.get(stat_type)
 
 
-""" ********** aggstat **********"""
+""" ********** aggstat ********** """
 def aggregated_statistic(stat_type, abs_val=True, agg_freq=DT_CAL_DAILY_FREQ):
 	stat_fn = statistic(stat_type)
 
@@ -88,14 +91,14 @@ def aggregated_statistic(stat_type, abs_val=True, agg_freq=DT_CAL_DAILY_FREQ):
 	return fn
 
 
-""" ********** diff **********"""
+""" ********** diff ********** """
 def difference(num_periods):
 	def fn(ser):
 		return ser.diff(periods=num_periods)
 	return fn
 
 
-""" ********** ffd **********"""
+""" ********** ffd ********** """
 def fracdiff(d, thresh=None, size=None):
 	"""
 	Fractional Differencing
@@ -109,7 +112,7 @@ def fracdiff(d, thresh=None, size=None):
 	return fn
 
 
-""" ********** wr **********"""
+""" ********** wr ********** """
 RANK_FN_MAPPING = {
 	'zn': (lambda ser: (ser.iloc[-1]-ser.mean()) / ser.std()),
 	'mx': (lambda ser: 2 * ((ser.iloc[-1]-ser.min()) / (ser.max()-ser.min())) - 1),
@@ -126,7 +129,7 @@ def window_rank(rank_type, num_periods):
 	return fn
 
 
-""" ********** norm **********"""
+""" ********** norm ********** """
 def normalize(norm_type):
 	norm_fn = RANK_FN_MAPPING.get(norm_type)
 
@@ -136,7 +139,7 @@ def normalize(norm_type):
 	return fn
 
 
-""" ********** sym **********"""
+""" ********** sym ********** """
 SYM_MAPPING = {
 	"gau": gaussian_breakpoints,
 	"uni": uniform_breakpoints
@@ -167,7 +170,7 @@ def symbolize(sym_type, num_sym, numeric_symbols=True):
 	return fn
 
 
-""" ********** ret **********"""
+""" ********** ret ********** """
 RETURN_FN_MAPPING = {
 	"spread": (lambda slow_ser, fast_ser: fast_ser - slow_ser),
 	"ret": (lambda slow_ser, fast_ser: (fast_ser / slow_ser) - 1),
@@ -187,7 +190,7 @@ def returnify(ret_type, thresh=None, clip=False):
 	return fn
 
 
-""" ********** xret **********"""
+""" ********** xret ********** """
 def expanding_returnify(ret_type, thresh=None, clip=False, agg_freq=DT_CAL_DAILY_FREQ):
 	"""
 	Expanding spread, regular return, or log return.
@@ -201,7 +204,7 @@ def expanding_returnify(ret_type, thresh=None, clip=False, agg_freq=DT_CAL_DAILY
 	return fn
 
 
-""" ********** vxret **********"""
+""" ********** vxret ********** """
 def variable_expanding_returnify(ret_type, stat_type, clip=False, thresh_scalar=1, agg_freq=DT_CAL_DAILY_FREQ):
 	"""
 	Expanding return thresholded on past period statistic.
