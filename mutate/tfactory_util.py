@@ -30,14 +30,14 @@ def first_nonzero(ser, ret_idx=False, idx_norm=False):
 	return idx if (not isinstance(idx, np.ndarray) and (isnt(idx) or idx==0)) else idx.item(0)
 
 ROW_IDX_SELECTOR_MAPPING = {
-	0: (lambda ser: ser.first_valid_index()),
-	-1: (lambda ser: ser.last_valid_index()),
-	'h': (lambda ser: ser.idxmax(skipna=True)),
-	'l': (lambda ser: ser.idxmin(skipna=True)),
+	0: (lambda ser: ser.first_valid_index() if (not ser.empty) else None),
+	-1: (lambda ser: ser.last_valid_index() if (not ser.empty) else None),
+	'h': (lambda ser: ser.idxmax(skipna=True) if (not ser.empty) else None),
+	'l': (lambda ser: ser.idxmin(skipna=True) if (not ser.empty) else None),
 	'fnzi': partial(first_nonzero, ret_idx=True, idx_norm=False),
 	'fnzi_score': partial(first_nonzero, ret_idx=True, idx_norm=True)	# Returns index as normalized score
 }
-def single_row(val=True, flt=0):
+def single_row(val, flt):
 	"""
 	Constructs function that returns index or value for selected row.
 	"""
@@ -61,20 +61,14 @@ def single_row_map(val, flt, map_fn):
 
 
 """ ********** stat ********** """
-#STAT_FN_MAPPING = {
-#	'avg': pd.Series.mean,
-#	'std': pd.Series.std,
-#	'max': pd.Series.max,
-#	'min': pd.Series.min
-#}
 STAT_FN_MAPPING = {
-	'avg': 'mean', #pd.Series.mean,
-	'std': 'std', #pd.Series.std,
-	'max': 'max', #pd.Series.max,
-	'min': 'min' #pd.Series.min
+	'avg': pd.Series.mean,
+	'std': pd.Series.std,
+	'max': pd.Series.max,
+	'min': pd.Series.min
 }
 def statistic(stat_type):
-	return STAT_FN_MAPPING.get(stat_type)
+	return STAT_FN_MAPPING.get(stat_type, stat_type)
 
 
 """ ********** aggstat ********** """

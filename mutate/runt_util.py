@@ -53,7 +53,8 @@ def get_ser_fn(ser_fn_str, var, fn_mapping=RUNT_FN_MAPPING):
 	fixed = []
 	for fn, subvar in zip(ser_fn, var):
 		try:
-			fixed.append(fn(subvar))
+			logging.debug('subvar: {}'.format(subvar))
+			fixed.append(fn(**subvar))
 		except Exception as e:
 			msg = 'error when fixing subvariant to runt transform function'
 			logging.error(msg)
@@ -69,19 +70,19 @@ def apply_rut_df(df, var, freq, ser_fn_str, col_fn_str, dna=True):
 	Apply row unary transform
 	"""
 	ser_fn = get_ser_fn(ser_fn_str, var)
-	d = {col: df[col].transform(ser_fn[i%len(ser_fn)]) for i, col in enumerate(df.columns)}
-	res = pd.DataFrame(d, index=df.index)
-	# TODO
-	#res = df.transform(ser_transform_fn)
+	d = {col: df.loc[:, col].transform(ser_fn[i%len(ser_fn)]) for i, col in enumerate(df.columns)}
+	res = pd.DataFrame.from_dict(d)
 	return res.dropna(axis=0, how='all') if (dna) else res
 
 def apply_rbt_df(df, var, freq, ser_fn_str, col_fn_str, dna=True):
 	"""
 	Apply row binary transform
 	"""
+	ser_fn = get_ser_fn(ser_fn_str, var)
+	col_fn = RUNT_NMAP_MAPPING.get(col_fn_str)
 	res = pd.DataFrame(index=df.index)
-	for col_a, col_b in window_iter(df.columns):
-		res.loc[:, name_map_fn(col_a, col_b)] = binary_apply_fn(df[col_a], df[col_b])
+	for i, col_a, col_b in enumerate(window_iter(df.columns)):
+		res.loc[:, col_fn(col_a, col_b)] = ser_fn[i%len(ser_fn)](df.loc[:, col_a], df.loc[:, col_b])
 	return res.dropna(axis=0, how='all') if (dna) else res
 
 
@@ -90,20 +91,18 @@ def apply_gut_df(df, var, freq, ser_fn_str, col_fn_str, dna=True):
 	"""
 	Apply groupby unary transform
 	"""
-	# TODO
 	ser_fn = get_ser_fn(ser_fn_str, var)
-	res = df.groupby(pd.Grouper(freq=freq)).transform(ser_transform_fn)
+	d = {col: df.loc[:, col].groupby(pd.Grouper(freq=freq)).transform(ser_fn[i%len(ser_fn)]) for i, col in enumerate(df.columns)}
+	res = pd.DataFrame.from_dict(d)
 	return res.dropna(axis=0, how='all') if (dna) else res
 
 def apply_gua_df(df, var, freq, ser_fn_str, col_fn_str, dna=True):
 	"""
 	Apply groupby unary aggregation
 	"""
-	# TODO - TEST
 	ser_fn = get_ser_fn(ser_fn_str, var)
 	d = {col: df.loc[:, col].groupby(pd.Grouper(freq=freq)).agg(ser_fn[i%len(ser_fn)]) for i, col in enumerate(df.columns)}
-	res = DataFrame.from_dict(d)
-	#res = df.groupby(pd.Grouper(freq=agg_freq)).agg(ser_agg_fn)
+	res = pd.DataFrame.from_dict(d)
 	return res.dropna(axis=0, how='all') if (dna) else res
 
 

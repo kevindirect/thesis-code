@@ -128,12 +128,13 @@ def process_transform(info, yield_data=False):
 				else:
 					src_df = src_df.loc[rm_df.index, :].dropna(axis=0, how='all')
 
-			logging.debug('pre_runt: {}'.format(str(src_df)))
+			logging.debug('pre-runt: {}'.format(str(src_df)))
 
 			# Running variants of the transform (different sets of parameters)
 			for variant in variants:
+				logging.debug('variant: {}'.format(variant))
 				runted_df = rtype_fn(src_df, variant, freq, ser_fn_str, col_fn_str)
-				mutate_type = type_str.format(**variant)
+				mutate_type = type_str.format(**variant) if (not meta['var_fmt']=='list') else type_str
 				mutate_desc = '_'.join([keychain[-1], mutate_type])
 				logging.debug('mutate_type: {}'.format(mutate_type))
 
@@ -141,8 +142,8 @@ def process_transform(info, yield_data=False):
 					logging.error(runted_df)
 					raise RUNTComputeError('Result of transform is an empty DataFrame')
 
-				logging.debug('post_runt: {}'.format(str(runted_df)))
-				entry = make_entry('mutate', mutate_type, mutate_desc, res_freq, base_rec=src_rec)
+				logging.debug('post-runt: {}'.format(str(runted_df)))
+				entry = make_entry('mutate', mutate_type, mutate_desc, res_freq, base_rec=src_rc)
 				if (yield_data):
 					yield entry, runted_df
 				else:
