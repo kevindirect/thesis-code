@@ -1,0 +1,11 @@
+{
+	"*": null,
+	"/": {
+		"etf3": {
+			"exact": ["etf3_buzz"]
+		},
+		"mkt3": {
+			"exact": ["mkt3_stockIndexBuzz", "mkt3_bondBuzz", "mkt3_ratesBuzz"]
+		}
+	}
+}

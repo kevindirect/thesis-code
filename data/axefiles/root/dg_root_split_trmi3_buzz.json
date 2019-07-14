@@ -1,0 +1,12 @@
+{
+	"*": {
+		"stage": "raw",
+		"type": "root",
+		"cat": "us_equity_index",
+		"desc": "join"
+	},
+	"/": {
+		"etf3": {},
+		"mkt3": {}
+	}
+}
