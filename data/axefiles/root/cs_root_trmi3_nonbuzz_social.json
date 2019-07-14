@@ -1,22 +1,22 @@
 {
 	"*": null,
 	"/": {
-		"etf3_sentiment": {
+		"trmi3_etf3_sentiment": {
 			"exact": ["etf3_sentiment_S", "etf3_optimism_S", "etf3_joy_S", "etf3_loveHate_S", "etf3_trust_S", "etf3_anger_S", "etf3_conflict_S", "etf3_fear_S", "etf3_gloom_S", "etf3_stress_S", "etf3_surprise_S"]
 		},
-		"etf3_forecast": {
+		"trmi3_etf3_forecast": {
 			"exact": ["etf3_timeUrgency_S", "etf3_uncertainty_S", "etf3_violence_S", "etf3_emotionVsFact_S", "etf3_marketRisk_S", "etf3_longShort_S", "etf3_longShortForecast_S", "etf3_priceDirection_S", "etf3_priceForecast_S", "etf3_volatility_S", "etf3_analystRating_S"]
 		},
-		"etf3_fundamental": {
+		"trmi3_etf3_fundamental": {
 			"exact": ["etf3_debtDefault_S", "etf3_dividends_S", "etf3_innovation_S", "etf3_earningsForecast_S", "etf3_fundamentalStrength_S", "etf3_laborDispute_S", "etf3_layoffs_S", "etf3_litigation_S", "etf3_managementChange_S", "etf3_managementTrust_S", "etf3_mergers_S", "etf3_cyberCrime_S"]
 		},
-		"mkt3_stock": {
+		"trmi3_mkt3_stock": {
 			"exact": ["mkt3_stockIndexSentiment_S", "mkt3_stockIndexOptimism_S", "mkt3_stockIndexTrust_S", "mkt3_stockIndexFear_S", "mkt3_stockIndexStress_S", "mkt3_stockIndexSurprise_S", "mkt3_stockIndexUncertainty_S", "mkt3_stockIndexMarketRisk_S", "mkt3_stockIndexPriceDirection_S", "mkt3_stockIndexPriceForecast_S", "mkt3_stockIndexVolatility_S"]
 		},
-		"mkt3_bond": {
+		"trmi3_mkt3_bond": {
 			"exact": ["mkt3_bondSentiment_S", "mkt3_bondOptimism_S", "mkt3_bondTrust_S", "mkt3_bondFear_S", "mkt3_bondStress_S", "mkt3_bondSurprise_S", "mkt3_bondUncertainty_S", "mkt3_bondDefault_S", "mkt3_bondPriceDirection_S", "mkt3_bondPriceForecast_S", "mkt3_bondVolatility_S"]
 		},
-		"mkt3_bank": {
+		"trmi3_mkt3_bank": {
 			"exact": ["mkt3_centralBank_S", "mkt3_debtDefault_S", "mkt3_interestRates_S", "mkt3_interestRatesForecast_S", "mkt3_monetaryPolicyLooseVsTight_S"]
 		}
 	}

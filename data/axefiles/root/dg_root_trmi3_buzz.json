@@ -6,7 +6,7 @@
 		"desc": "join"
 	},
 	"/": {
-		"etf3": {},
-		"mkt3": {}
+		"trmi3_etf3": {},
+		"trmi3_mkt3": {}
 	}
 }

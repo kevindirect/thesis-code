@@ -1,10 +1,10 @@
 {
 	"*": null,
 	"/": {
-		"etf3": {
+		"trmi3_etf3": {
 			"exact": ["etf3_buzz_S"]
 		},
-		"mkt3": {
+		"trmi3_mkt3": {
 			"exact": ["mkt3_stockIndexBuzz_S", "mkt3_bondBuzz_S", "mkt3_ratesBuzz_S"]
 		}
 	}
