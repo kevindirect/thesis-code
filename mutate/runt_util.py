@@ -15,8 +15,8 @@ import logging
 import numpy as np
 import pandas as pd
 
-from common_util import compose, null_fn, identity_fn, get_custom_biz_freq, window_iter, col_iter, all_equal, is_real_num, is_type
-from common_util import ser_range_center_clip, pd_slot_shift, concat_map, substr_ad_map, all_equal, first_element, first_letter_concat, arr_nonzero, apply_nz_nn, one_minus
+from common_util import compose, null_fn, identity_fn, get_custom_biz_freq, window_iter, col_iter, all_equal, isnt, is_type
+from common_util import concat_map, substr_ad_map, all_equal, first_element, first_letter_concat
 from mutate.common import STANDARD_DAY_LEN
 from mutate.tfactory_util import RUNT_FN_MAPPING
 
@@ -42,16 +42,21 @@ def get_ser_fn(ser_fn_str, var, fn_mapping=RUNT_FN_MAPPING):
 	"""
 	Convert the string or list of strings to their python function mappings and fix them to a particular set of variables.
 	"""
-	ser_fn = tuple(map(lambda fn: fn_mapping.get(fn), ser_fn_str)) if (is_type(ser_fn_str, list)) else tuple(fn_mapping.get(ser_fn_str))
-	var = var if (is_type(var, tuple)) else tuple(var)
+	ser_fn_str = ser_fn_str if (is_type(ser_fn_str, list, tuple)) else (ser_fn_str,)
+	var = var if (is_type(var, tuple)) else (var,)
 
-	if (len(ser_fn)!=len(var)):
-		msg = 'number of ser functions and variant sets must be equal'
+	if (len(ser_fn_str)!=len(var)):
+		msg = 'number of ser function strings and variant sets must be equal'
 		logging.error(msg)
 		raise RUNTFormatError(msg)
 
 	fixed = []
-	for fn, subvar in zip(ser_fn, var):
+	for fn_str, subvar in zip(ser_fn_str, var):
+		fn = fn_mapping.get(fn_str, None)
+		if (isnt(fn)):
+			msg = 'ser function string \'{}\' does not refer to a function in the fn_mapping'.format(fn_str)
+			logging.error(msg)
+			raise RUNTFormatError(msg)
 		try:
 			logging.debug('subvar: {}'.format(subvar))
 			fixed.append(fn(**subvar))
