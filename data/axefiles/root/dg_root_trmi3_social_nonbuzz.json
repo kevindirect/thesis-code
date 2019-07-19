@@ -1,0 +1,16 @@
+{
+	"*": {
+		"stage": "raw",
+		"type": "root",
+		"cat": "us_equity_index",
+		"desc": "join"
+	},
+	"/": {
+		"trmi3_etf3_social_sentiment": {},
+		"trmi3_etf3_social_forecast": {},
+		"trmi3_etf3_social_fundamental": {},
+		"trmi3_mkt3_social_stock": {},
+		"trmi3_mkt3_social_bond": {},
+		"trmi3_mkt3_social_bank": {}
+	}
+}
