@@ -149,6 +149,22 @@ def find_numbers(string, ints=True):
 	else:
 		return numbers
 
+def common_prefix(*strings):
+	"""
+	Return the largest common prefix among the sequence passed strings.
+	"""
+	pfx = []
+	if (len(strings)==1):
+		return strings[0]
+	while (all(len(pfx)<len(s) for s in strings)):
+		idx = len(pfx)
+		char = strings[0][idx]
+		if (all(s[idx]==char for s in strings[1:])):
+			pfx.append(char)
+		else:
+			break
+	return ''.join(pfx)
+
 """Datetime"""
 dt_now = lambda: datetime.now()
 str_now = lambda fmt=DT_FMT_YMD_HMS: dt_now().strftime(fmt)
@@ -592,22 +608,72 @@ def concat_map(delimiter='_', **kwargs):
 
 first_letter_concat = lambda lst: "".join((string[0] for string in lst))
 
-def substr_ad_map(check_fn=all_equal, accord_fn=first_element, discord_fn=first_letter_concat, delimiter='_', **kwargs):
+def substr_ad_map(check_fn=all_equal, accord_fn=first_element, discord_fn=first_letter_concat, delim='_', **kwargs):
 	"""
 	Map a sequence of strings to one string by handling accordances or discordances in substrings.
 	Assumes all strings in the sequence have an equal number of delimited substrings.
 	"""
 	def mapper(*strings):
 		output = []
-		str_row_vectors = [string.split(delimiter) for string in strings]
+		str_row_vectors = [string.split(delim) for string in strings]
 
 		for col in col_iter(str_row_vectors):
 			substr = accord_fn(col) if (check_fn(col)) else discord_fn(col)
 			output.append(substr)
 
-		return delimiter.join(output)
+		return delim.join(output)
 
 	return mapper
+
+def fl_map(strs, delim='_'):
+	"""
+	Maps a list of strings to a single string based on common prefix of strings suffixed by first letters of each unique substring.
+
+	Args:
+		strs (list): list of strings to append suffixes to
+		delim (str): delimiter between original string and suffix
+
+	Returns:
+		common_prefix(strings) + delimiter + ''.join([first letter of each string])
+	"""
+	pfx = common_prefix(*strs)
+	pfx = pfx if (pfx[-1]==delim) else pfx+delim
+	fls = [str(s[len(pfx):][0] if (len(s)>len(pfx)) else '') for s in strs]
+	return pfx+''.join(fls)
+
+def window_map(strs, mapper_fn=fl_map, n=2, delim='_'):
+	"""
+	Maps a list of strings to another list of strings by through a slided window function.
+
+	Args:
+		strs (list): list of strings to append suffixes to
+		mapper_fn (function): function slided across list that maps window of strings to a single string
+		n (int): sliding window size
+		delim (str): delimiter between original string and suffix
+
+	Returns:
+		list of strings
+	"""
+	return [mapper_fn(win, delim=delim) for win in window_iter(strs, n=n)]
+
+def suffix_map(strs, suffixes, modify_unique=False, delim='_'):
+	"""
+	Append list of suffixes to list of strings and return result.
+
+	Args:
+		strs (list): list of strings to append suffixes to
+		suffixes (list): list of strings, if it is smaller than strs it will wrap around
+		modify_unique (bool): if True, append suffixes even if strs is already a list of unambiguous strings
+		delim (str): delimiter between original string and suffix
+
+	Returns:
+		list of strings
+	"""
+	if (modify_unique or len(set(strs))<len(strs)):
+		res = [delim.join([s, suffixes[i%len(suffixes)]]) for i, s in enumerate(strs)]
+	else:
+		res = strs
+	return res
 
 """Math"""
 def zdiv(top, bottom, zdiv_ret=0):
@@ -1720,6 +1786,14 @@ def search_df(df, search_dict):
 	"""Return index of rows which match search_dict"""
 	assert((key in df.columns) for key in search_dict.keys())
 	return query_df(df, build_query(search_dict))
+
+def df_rows_gte_year(df, year=2009):
+	"""
+	Get rows of dti indexed df with indices at or after the given year.
+	"""
+	gte_flt = {'id': ('gte', year)}
+	rows = search_df(df.loc[:, :], gte_flt)
+	return df.loc[rows, :]
 
 """ DF Column Filter  """
 def get_subset(str_list, q_dict):

@@ -15,8 +15,8 @@ import logging
 import numpy as np
 import pandas as pd
 
-from common_util import compose, null_fn, identity_fn, get_custom_biz_freq, window_iter, col_iter, all_equal, isnt, is_type
-from common_util import concat_map, substr_ad_map, all_equal, first_element, first_letter_concat
+from common_util import compose, null_fn, identity_fn, get_custom_biz_freq, window_iter, col_iter, all_equal, is_valid, isnt, is_type
+from common_util import concat_map, fl_map, window_map, suffix_map
 from mutate.common import STANDARD_DAY_LEN
 from mutate.tfactory_util import RUNT_FN_MAPPING
 
@@ -77,6 +77,9 @@ def apply_rut_df(df, var, freq, ser_fn_str, col_fn_str, dna=True):
 	ser_fn = get_ser_fn(ser_fn_str, var)
 	d = {col: df.loc[:, col].transform(ser_fn[i%len(ser_fn)]) for i, col in enumerate(df.columns)}
 	res = pd.DataFrame.from_dict(d)
+	if (is_valid(col_fn_str)):
+		col_fn = RUNT_NMAP_MAPPING.get(col_fn_str)
+		res.columns = col_fn(list(df.columns))
 	return res.dropna(axis=0, how='all') if (dna) else res
 
 def apply_rbt_df(df, var, freq, ser_fn_str, col_fn_str, dna=True):
@@ -84,10 +87,12 @@ def apply_rbt_df(df, var, freq, ser_fn_str, col_fn_str, dna=True):
 	Apply row binary transform
 	"""
 	ser_fn = get_ser_fn(ser_fn_str, var)
-	col_fn = RUNT_NMAP_MAPPING.get(col_fn_str)
 	res = pd.DataFrame(index=df.index)
 	for i, col_a, col_b in enumerate(window_iter(df.columns)):
-		res.loc[:, col_fn(col_a, col_b)] = ser_fn[i%len(ser_fn)](df.loc[:, col_a], df.loc[:, col_b])
+		res.loc[:, fl_map([col_a, col_b])] = ser_fn[i%len(ser_fn)](df.loc[:, col_a], df.loc[:, col_b])
+	if (is_valid(col_fn_str)):
+		col_fn = RUNT_NMAP_MAPPING.get(col_fn_str)
+		res.columns = col_fn(list(df.columns))
 	return res.dropna(axis=0, how='all') if (dna) else res
 
 
@@ -99,6 +104,9 @@ def apply_gut_df(df, var, freq, ser_fn_str, col_fn_str, dna=True):
 	ser_fn = get_ser_fn(ser_fn_str, var)
 	d = {col: df.loc[:, col].groupby(pd.Grouper(freq=freq)).transform(ser_fn[i%len(ser_fn)]) for i, col in enumerate(df.columns)}
 	res = pd.DataFrame.from_dict(d)
+	if (is_valid(col_fn_str)):
+		col_fn = RUNT_NMAP_MAPPING.get(col_fn_str)
+		res.columns = col_fn(list(df.columns))
 	return res.dropna(axis=0, how='all') if (dna) else res
 
 def apply_gua_df(df, var, freq, ser_fn_str, col_fn_str, dna=True):
@@ -108,11 +116,16 @@ def apply_gua_df(df, var, freq, ser_fn_str, col_fn_str, dna=True):
 	ser_fn = get_ser_fn(ser_fn_str, var)
 	d = {col: df.loc[:, col].groupby(pd.Grouper(freq=freq)).agg(ser_fn[i%len(ser_fn)]) for i, col in enumerate(df.columns)}
 	res = pd.DataFrame.from_dict(d)
+	if (is_valid(col_fn_str)):
+		col_fn = RUNT_NMAP_MAPPING.get(col_fn_str)
+		res.columns = col_fn(list(df.columns))
 	return res.dropna(axis=0, how='all') if (dna) else res
 
 
 """ ********** COL (NAME MAPPER) FUNCTIONS ********** """
-substr_ad_initial_map = partial(substr_ad_map, check_fn=all_equal, accord_fn=first_element, discord_fn=first_letter_concat)
+substr_ad_initial_map = partial(substr_ad_map, check_fn=all_equal, accord_fn=first_element, discord_fn=first_letter_concat) # DEPRECATED
+binary_window_map = partial(window_map, mapper_fn=fl_map, n=2)
+ohlca_map = partial(suffix_map, suffixes=['open', 'high', 'low', 'close', 'avgPrice'], modify_unique=False)
 
 
 """ ********** RUNT DF MAPPING ********** """
@@ -127,6 +140,6 @@ RUNT_TYPE_MAPPING = {
 """ ********** RUNT COL MAPPING ********** """
 RUNT_NMAP_MAPPING = {
 	"cm": concat_map,
-	"sami": substr_ad_initial_map,
-	None: null_fn
+	"bwm": binary_window_map,
+	"ohlca": ohlca_map
 }
