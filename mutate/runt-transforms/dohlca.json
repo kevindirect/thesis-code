@@ -8,7 +8,7 @@
 	"fn": {
 		"ser_fn": ["sr", "sr", "sr", "sr", "stat"],
 		"df_fn": "gua",
-		"col_fn": null,
+		"col_fn": "ohlca",
 		"freq": "D"
 	},
 	"axe": {

@@ -8,7 +8,7 @@
 	"fn": {
 		"ser_fn": "vxret",
 		"df_fn": "rbt",
-		"col_fn": "sami",
+		"col_fn": null,
 		"freq": "H"
 	},
 	"axe": {

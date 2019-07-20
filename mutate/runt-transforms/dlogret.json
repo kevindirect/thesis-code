@@ -8,7 +8,7 @@
 	"fn": {
 		"ser_fn": "ret",
 		"df_fn": "rbt",
-		"col_fn": "sami",
+		"col_fn": null,
 		"freq": null
 	},
 	"axe": {
