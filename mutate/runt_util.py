@@ -126,6 +126,7 @@ def apply_gua_df(df, var, freq, ser_fn_str, col_fn_str, dna=True):
 substr_ad_initial_map = partial(substr_ad_map, check_fn=all_equal, accord_fn=first_element, discord_fn=first_letter_concat) # DEPRECATED
 binary_window_map = partial(window_map, mapper_fn=fl_map, n=2)
 ohlca_map = partial(suffix_map, suffixes=['open', 'high', 'low', 'close', 'avgPrice'], modify_unique=False)
+close_map = partial(suffix_map, suffixes=['close'], modify_unique=True)
 
 
 """ ********** RUNT DF MAPPING ********** """
@@ -141,5 +142,6 @@ RUNT_TYPE_MAPPING = {
 RUNT_NMAP_MAPPING = {
 	"cm": concat_map,
 	"bwm": binary_window_map,
-	"ohlca": ohlca_map
+	"ohlca": ohlca_map,
+	"c": close_map
 }
