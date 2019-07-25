@@ -1787,11 +1787,19 @@ def search_df(df, search_dict):
 	assert((key in df.columns) for key in search_dict.keys())
 	return query_df(df, build_query(search_dict))
 
-def df_rows_gte_year(df, year=2009):
+def df_rows_gt_year(df, year=2008):
 	"""
-	Get rows of dti indexed df with indices at or after the given year.
+	Get rows of dti indexed df with indices after the given year.
 	"""
-	gte_flt = {'id': ('gte', year)}
+	gte_flt = {'id': ('gt', year)}
+	rows = search_df(df.loc[:, :], gte_flt)
+	return df.loc[rows, :]
+
+def df_rows_in_year(df, years=(2009,2018)):
+	"""
+	Get rows of dti indexed df with indices within the given year range.
+	"""
+	gte_flt = {'id': ('in', *years)}
 	rows = search_df(df.loc[:, :], gte_flt)
 	return df.loc[rows, :]
 

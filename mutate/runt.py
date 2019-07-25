@@ -40,7 +40,6 @@ def run_transforms(argv):
 
 	logging.info('loading settings...')
 	graphs, transforms = get_graphs(), get_transforms()
-	#client = Client()
 
 	for graph_name, graph in graphs.items():
 		logging.info('running graph {}...'.format(graph_name))
@@ -120,13 +119,7 @@ def process_transform(info, yield_data=False):
 			# Masking rows in src from row_mask
 			if (is_valid(rm_src)):
 				rm_keychain = get_rm_keychain(keychain, rm_dfs.keys())
-				rm_df = rm_dfs[rm_keychain].dropna()
-				rm_src_diff = rm_df.index.difference(src_df.index)
-				if (len(rm_src_diff)>0):
-					logging.debug('rm_df.index - src_df.index: {}'.format(str(rm_src_diff)))
-					src_df = src_df.loc[src_df.index & rm_df.index, :].dropna(axis=0, how='all')
-				else:
-					src_df = src_df.loc[rm_df.index, :].dropna(axis=0, how='all')
+				src_df = apply_rm(src_df, rm_dfs[rm_keychain].dropna())
 
 			logging.debug('pre-runt: {}'.format(str(src_df)))
 
@@ -148,7 +141,6 @@ def process_transform(info, yield_data=False):
 					yield entry, runted_df
 				else:
 					DataAPI.dump(entry, runted_df)
-
 
 def get_rm_keychain(kc, rm_kcs):
 	"""
@@ -175,6 +167,24 @@ def get_rm_keychain(kc, rm_kcs):
 		raise RUNTComputeError(error_msg)
 	return rm_match[0]
 
+def apply_rm(data_df, rm_df):
+	"""
+	Apply row mask to data df.
+
+	Args:
+		data_df (pd.DataFrame): data
+		rm_df (pd.DataFrame): row mask
+
+	Returns:
+		row masked df
+	"""
+	rm_src_diff = rm_df.index.difference(data_df.index)
+	if (len(rm_src_diff)>0):
+		logging.debug('rm_df.index - data_df.index: {}'.format(str(rm_src_diff)))
+		res_df = data_df.loc[data_df.index & rm_df.index, :].dropna(axis=0, how='all')
+	else:
+		res_df = data_df.loc[rm_df.index, :].dropna(axis=0, how='all')
+	return res_df
 
 if __name__ == '__main__':
 	with benchmark('ttf') as b:
