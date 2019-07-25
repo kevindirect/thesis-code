@@ -1928,6 +1928,8 @@ def dict2dag(d, remap=None, list_max=None, **kwargs):
 	while (stk):
 		pid, cs = stk.pop()
 
+		if (isnt(cs)):
+			continue
 		if (is_type(cs, prim)):
 			gid, _ = add_node(cs, gid, pid)
 		elif (is_type(cs, Mapping)):
