@@ -30,6 +30,7 @@ dum = 0
 GRAPHS_DIR = MUTATE_DIR +'runt-graphs' +sep
 HISTORY_DIR = MUTATE_DIR + 'runt-history' +sep
 TRANSFORMS_DIR = MUTATE_DIR +'runt-transforms' +sep
+RVIZ_DIR = MUTATE_DIR +'runt-viz' +sep
 default_num_sym = 4
 default_max_seg = STANDARD_DAY_LEN
 

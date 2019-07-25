@@ -1,0 +1,33 @@
+{
+	"root": {
+		"hohlca": {
+			"dmx": null,
+			"dzn": null,
+			"*raw_pairs": {
+				"hret": {
+					"dmx": null,
+					"dzn": null
+				},
+				"hspread": {
+					"dmx": null,
+					"dzn": null
+				},
+				"hlogret": {
+					"dmx": null,
+					"dzn": null
+				}
+			}
+		},
+		"dohlca": {
+			"ddiff": null,
+			"dffd": null,
+			"dlogret": null,
+			"dwrmx": null,
+			"dwrod": null,
+			"dwrzn": null
+		},
+		"dc": {
+		}
+	}
+
+}
