@@ -1,5 +1,15 @@
 {
-	"root": {
+		"dc": {
+			"dpca": null
+		},
+		"dohlca": {
+			"ddiff": null,
+			"dffd": null,
+			"dlogret": null,
+			"dwrmx": null,
+			"dwrod": null,
+			"dwrzn": null
+		},
 		"hohlca": {
 			"dmx": null,
 			"dzn": null,
@@ -17,17 +27,6 @@
 					"dzn": null
 				}
 			}
-		},
-		"dohlca": {
-			"ddiff": null,
-			"dffd": null,
-			"dlogret": null,
-			"dwrmx": null,
-			"dwrod": null,
-			"dwrzn": null
-		},
-		"dc": {
 		}
-	}
 
 }

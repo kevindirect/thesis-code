@@ -34,12 +34,13 @@ XXX:
 
 def run_transforms(argv):
 	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-	cmd_arg_list = ['force']
+	cmd_arg_list = ['graphs=', 'force']
 	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name=basename(__file__))
+	graphs = cmd_input['graphs='].split(',') if (is_valid(cmd_input['graphs='])) else None
 	runt_all = is_valid(cmd_input['force'])
 
 	logging.info('loading settings...')
-	graphs, transforms = get_graphs(), get_transforms()
+	graphs, transforms = get_graphs(whitelist=graphs), get_transforms()
 
 	for graph_name, graph in graphs.items():
 		logging.info('running graph {}...'.format(graph_name))

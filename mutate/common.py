@@ -35,7 +35,14 @@ default_num_sym = 4
 default_max_seg = STANDARD_DAY_LEN
 
 # PACKAGE UTIL FUNCTIONS
-load_jsons = lambda dir_path: {fname[:-JSON_SFX_LEN]: load_json(fname, dir_path=dir_path) for fname in os.listdir(dir_path)}
-get_graphs = partial(load_jsons, GRAPHS_DIR)
-get_transforms = partial(load_jsons, TRANSFORMS_DIR)
+def load_jsons(dir_path, whitelist=None):
+	if (isnt(whitelist)):
+		d = {fname[:-JSON_SFX_LEN]: load_json(fname, dir_path=dir_path) for fname in os.listdir(dir_path)}
+	else:
+		in_wl = lambda f: any(w[:-JSON_SFX_LEN].startswith(f) for w in whitelist)
+		d = {fname[:-JSON_SFX_LEN]: load_json(fname, dir_path=dir_path) for fname in os.listdir(dir_path) if (in_wl(fname))}
+	return d
+
+get_graphs = partial(load_jsons, dir_path=GRAPHS_DIR)
+get_transforms = partial(load_jsons, dir_path=TRANSFORMS_DIR)
 

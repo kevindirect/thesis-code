@@ -4,7 +4,7 @@
 		["hspread", "hret", "hlogret"],
 		["hdmx", "hdzn"]
 	],
-	"daily-return": [
+	"daily-return-dir": [
 		["hohlca"],
 		["hdxret", "hdxret1", "hdxret2"],
 		["dret", "dret1", "dret2", "ddir", "ddir1", "ddir2"]

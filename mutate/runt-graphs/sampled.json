@@ -1,0 +1,11 @@
+{
+	"daily-close": [
+		["dc"]
+	],
+	"daily-ohlca": [
+		["dohlca"]
+	],
+	"hourly-ohlca": [
+		["hohlca"]
+	]
+}
