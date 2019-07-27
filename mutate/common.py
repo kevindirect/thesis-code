@@ -18,7 +18,7 @@ sys.path.insert(0, dirname(dirname(dirname(realpath(sys.argv[0])))))
 import os
 from os import sep
 from functools import partial
-from common_util import MUTATE_DIR, JSON_SFX_LEN, load_json
+from common_util import MUTATE_DIR, JSON_SFX_LEN, is_valid, load_json
 
 # OTHER STAGE DEPENDENCIES
 
@@ -36,11 +36,11 @@ default_max_seg = STANDARD_DAY_LEN
 
 # PACKAGE UTIL FUNCTIONS
 def load_jsons(dir_path, whitelist=None):
-	if (isnt(whitelist)):
-		d = {fname[:-JSON_SFX_LEN]: load_json(fname, dir_path=dir_path) for fname in os.listdir(dir_path)}
-	else:
-		in_wl = lambda f: any(w[:-JSON_SFX_LEN].startswith(f) for w in whitelist)
+	if (is_valid(whitelist)):
+		in_wl = lambda f: any(f.startswith(w) for w in whitelist)
 		d = {fname[:-JSON_SFX_LEN]: load_json(fname, dir_path=dir_path) for fname in os.listdir(dir_path) if (in_wl(fname))}
+	else:
+		d = {fname[:-JSON_SFX_LEN]: load_json(fname, dir_path=dir_path) for fname in os.listdir(dir_path)}
 	return d
 
 get_graphs = partial(load_jsons, dir_path=GRAPHS_DIR)

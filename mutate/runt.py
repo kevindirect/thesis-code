@@ -36,25 +36,32 @@ def run_transforms(argv):
 	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 	cmd_arg_list = ['graphs=', 'force']
 	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name=basename(__file__))
-	graphs = cmd_input['graphs='].split(',') if (is_valid(cmd_input['graphs='])) else None
+	whitelist = cmd_input['graphs='].split(',') if (is_valid(cmd_input['graphs='])) else None
 	runt_all = is_valid(cmd_input['force'])
 
 	logging.info('loading settings...')
-	graphs, transforms = get_graphs(whitelist=graphs), get_transforms()
+	graphs, transforms = get_graphs(whitelist=whitelist), get_transforms()
+	force_levels = is_valid(whitelist) or runt_all
 
 	for graph_name, graph in graphs.items():
 		logging.info('running graph {}...'.format(graph_name))
 		for path_name, path in graph.items():
 			for level in path:
-				process_level(level, transforms, force_level=runt_all)
+				process_level(level, transforms, force_level=force_levels)
 
 def process_level(level, transforms, force_level=False):
+	"""
+	Process a "level" - a list of independent transforms.
+	"""
 	for t in level:
 		hist = load_json(t, dir_path=HISTORY_DIR) if (isfile(HISTORY_DIR +t +'.json')) else []
 
 		if (force_level or len(hist)==0):
 			try:
 				process_transform(transforms[t])
+				hist.append(str_now())
+				logging.info('updating history...')
+				dump_json(hist, t, dir_path=HISTORY_DIR)
 			except RUNTFormatError as erf:
 				error_msg = 'runt formatting error with {}.json'.format(t)
 				logging.error(error_msg)
@@ -67,10 +74,6 @@ def process_level(level, transforms, force_level=False):
 				error_msg = 'non-runt error'
 				logging.error(error_msg)
 				raise
-			else:
-				hist.append(str_now())
-				logging.info('updating history...')
-				dump_json(hist, t, dir_path=HISTORY_DIR)
 		else:
 			logging.info('skipping {}...'.format(t))
 

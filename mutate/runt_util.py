@@ -15,7 +15,7 @@ import logging
 import numpy as np
 import pandas as pd
 
-from common_util import compose, null_fn, identity_fn, get_custom_biz_freq, window_iter, col_iter, all_equal, is_valid, isnt, is_type
+from common_util import compose, null_fn, identity_fn, df_rows_in_year, get_custom_biz_freq, window_iter, col_iter, all_equal, is_valid, isnt, is_type
 from common_util import concat_map, fl_map, window_map, suffix_map
 from mutate.common import STANDARD_DAY_LEN
 from mutate.tfactory_util import RUNT_FN_MAPPING
@@ -70,7 +70,7 @@ def get_ser_fn(ser_fn_str, var, fn_mapping=RUNT_FN_MAPPING):
 
 
 """ ********** ROW BASED TRANSFORMS ********** """
-def apply_rut_df(df, var, freq, ser_fn_str, col_fn_str, dna=True):
+def apply_rut_df(df, var, freq, ser_fn_str, col_fn_str, doy=True, dna=True):
 	"""
 	Apply row unary transform
 	"""
@@ -82,7 +82,7 @@ def apply_rut_df(df, var, freq, ser_fn_str, col_fn_str, dna=True):
 		res.columns = col_fn(list(df.columns))
 	return res.dropna(axis=0, how='all') if (dna) else res
 
-def apply_rbt_df(df, var, freq, ser_fn_str, col_fn_str, dna=True):
+def apply_rbt_df(df, var, freq, ser_fn_str, col_fn_str, doy=True, dna=True):
 	"""
 	Apply row binary transform
 	"""
@@ -97,7 +97,7 @@ def apply_rbt_df(df, var, freq, ser_fn_str, col_fn_str, dna=True):
 
 
 """ ********** GROUP BASED TRANSFORMS ********** """
-def apply_gut_df(df, var, freq, ser_fn_str, col_fn_str, dna=True):
+def apply_gut_df(df, var, freq, ser_fn_str, col_fn_str, doy=True, dna=True):
 	"""
 	Apply groupby unary transform
 	"""
@@ -109,11 +109,12 @@ def apply_gut_df(df, var, freq, ser_fn_str, col_fn_str, dna=True):
 		res.columns = col_fn(list(df.columns))
 	return res.dropna(axis=0, how='all') if (dna) else res
 
-def apply_gua_df(df, var, freq, ser_fn_str, col_fn_str, dna=True):
+def apply_gua_df(df, var, freq, ser_fn_str, col_fn_str, doy=True, dna=True):
 	"""
 	Apply groupby unary aggregation
 	"""
 	ser_fn = get_ser_fn(ser_fn_str, var)
+	df = df_rows_in_year(df) if (doy) else df
 	d = {col: df.loc[:, col].groupby(pd.Grouper(freq=freq)).agg(ser_fn[i%len(ser_fn)]) for i, col in enumerate(df.columns)}
 	res = pd.DataFrame.from_dict(d)
 	if (is_valid(col_fn_str)):
