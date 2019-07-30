@@ -732,7 +732,7 @@ def dump_json(json_dict, fname, dir_path=None, ind="\t", seps=None, **kwargs):
 			logging.error('error in file', str(fname +':'), str(e))
 			raise e
 
-def get_cmd_args(argv, arg_list, script_name='', set_logging=True):
+def get_cmd_args(argv, arg_list, script_name='', script_pkg='', set_logging=True):
 	"""
 	Parse commandline arguments from argv and return them as a dict.
 
@@ -754,9 +754,9 @@ def get_cmd_args(argv, arg_list, script_name='', set_logging=True):
 	arg_list_short_no_sym = [arg_short[0] for arg_short in arg_list_short]
 	assert(len({}.fromkeys(arg_list_short_no_sym)) == len(arg_list_short_no_sym))	# assert first letters of arg names are unique
 
-	help_arg_strs = ['-{} <{}>'.format(arg_list_short_no_sym[i], arg_list[i][:-1] if arg_list[i][-1]=='=' else arg_list[i]) \
-		for i in range(len(arg_list))]
-	help_fn = lambda: print('{}.py {}'.format(script_name, str('[' +' '.join(help_arg_strs) +']')))
+	help_arg_strs = ['-{s} {p}, --{l}{p}'.format(s=arg_list_short_no_sym[i], l=arg_list[i], \
+		p='<{}> '.format(arg_list[i][:-1].upper()) if (arg_list[i][-1]=='=') else '') for i in range(len(arg_list))]
+	help_fn = lambda: print('Usage: python3 -m {}{} [OPTION]...\nOptions:\n\t{}'.format(script_pkg+'.', script_name.rstrip('.py'), '\n\t'.join(help_arg_strs)))
 
 	try:
 		opts, args = getopt.getopt(argv, str('h' +arg_str), list(['help']+arg_list))
