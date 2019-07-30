@@ -14,8 +14,9 @@ from os.path import basename, isfile
 import logging
 
 #from dask.distributed import Client
+#from multiprocessing import Pool
 
-from common_util import MUTATE_DIR, DT_HOURLY_FREQ, DT_CAL_DAILY_FREQ, load_json, dump_json, get_cmd_args, is_valid, isnt, is_type, get_variants, best_match, remove_dups_list, list_get_dict, is_empty_df, search_df, str_now, benchmark
+from common_util import MUTATE_DIR, DT_HOURLY_FREQ, DT_CAL_DAILY_FREQ, NestedDefaultDict, load_json, dump_json, get_cmd_args, is_valid, isnt, is_type, get_variants, best_match, remove_dups_list, list_get_dict, is_empty_df, search_df, str_now, benchmark
 from mutate.common import HISTORY_DIR, get_graphs, get_transforms
 from mutate.runt_util import RUNTFormatError, RUNTComputeError, RUNT_TYPE_MAPPING
 from data.data_api import DataAPI
@@ -47,46 +48,58 @@ def run_transforms(argv):
 		logging.info('running graph {}...'.format(graph_name))
 		for path_name, path in graph.items():
 			for level in path:
-				process_level(level, transforms, force_level=force_levels)
+				process_level(level, transforms, run_level=force_levels)
 
-def process_level(level, transforms, force_level=False):
+def process_level(level, transforms, run_level=False):
 	"""
 	Process a "level" - a list of independent transforms.
 	"""
-	for t in level:
-		hist = load_json(t, dir_path=HISTORY_DIR) if (isfile(HISTORY_DIR +t +'.json')) else []
+	if (run_level):
+		#with Pool(processes=4) as pool:
+		#	pool.map(safe_process_transform, [(t, transforms[t]) for t in level])
+		for t in level:
+			safe_process_transform((t, transforms[t]))
+	else:
+		logging.info('skipping {}...'.format(t))
 
-		if (force_level or len(hist)==0):
-			try:
-				process_transform(transforms[t])
-				hist.append(str_now())
-				logging.info('updating history...')
-				dump_json(hist, t, dir_path=HISTORY_DIR)
-			except RUNTFormatError as erf:
-				error_msg = 'runt formatting error with {}.json'.format(t)
-				logging.error(error_msg)
-				raise
-			except RUNTComputeError as erc:
-				error_msg = 'runt runtime error with {}'.format(t)
-				logging.error(error_msg)
-				raise
-			except Exception as e:
-				error_msg = 'non-runt error'
-				logging.error(error_msg)
-				raise
-		else:
-			logging.info('skipping {}...'.format(t))
+def safe_process_transform(trf):
+	"""
+	Wrapper around process_transform that handles errors and history updates.
+	"""
+	try:
+		name = trf[0]
+		hist = load_json(name, dir_path=HISTORY_DIR) if (isfile(HISTORY_DIR +name +'.json')) else []
+		process_transform(trf[1], dump=True)
+		hist.append(str_now())
+		logging.info('updating history {}...'.format(name))
+		dump_json(hist, name, dir_path=HISTORY_DIR)
+	except RUNTFormatError as erf:
+		error_msg = 'runt formatting error with {}.json'.format(name, erf)
+		logging.error(error_msg)
+		raise erf
+	except RUNTComputeError as erc:
+		error_msg = 'runt runtime error with {}'.format(name, erc)
+		logging.error(error_msg)
+		raise erc
+	except Exception as e:
+		error_msg = 'non-runt error with {}: {}'.format(name, e)
+		logging.error(error_msg)
+		raise e
 
-def process_transform(info, yield_data=False):
+
+def process_transform(info, dump=True):
 	"""
 	Process a transform.
-
 	Args:
 		info (dict): dictionary specifying the transform
+		dump (bool): whether to return data, or dump data
 
+	Returns:
+		(NDD, NDD) of data or None
 	"""
+	if (not dump):
+		out_rcs, out_dfs = NestedDefaultDict(), NestedDefaultDict()
 	meta, fn, axe, var = info['meta'], info['fn'], info['axe'], info['var']
-
 	if (meta['var_fmt']=='list' and any([s in meta['rec_fmt'] for s in ('{', '}')])):
 		error_msg = 'cannot mix var_fmt==\'list\' with a parameter-inputed rec_fmt'
 		logging.error(error_msg)
@@ -141,10 +154,16 @@ def process_transform(info, yield_data=False):
 
 				logging.debug('post-runt: {}'.format(str(runted_df)))
 				entry = make_entry('mutate', mutate_type, mutate_desc, res_freq, base_rec=src_rc)
-				if (yield_data):
-					yield entry, runted_df
-				else:
+				if (dump):
 					DataAPI.dump(entry, runted_df)
+				else:
+					out_rcs[keychain + [str(variant)]] = entry
+					out_dfs[keychain + [str(variant)]] = runted_df
+	if (dump):
+		out = None
+	else:
+		out = (out_rcs, out_dfs)
+	return out
 
 def get_rm_keychain(kc, rm_kcs):
 	"""

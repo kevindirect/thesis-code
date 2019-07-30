@@ -1,11 +1,5 @@
 {
-	"daily-close": [
-		["dc"]
-	],
-	"daily-ohlca": [
-		["dohlca"]
-	],
-	"hourly-ohlca": [
-		["hohlca"]
+	"sampled": [
+		["dc", "dohlca", "hohlca"]
 	]
 }
