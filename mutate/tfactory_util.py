@@ -19,7 +19,7 @@ import pandas as pd
 
 from common_util import DT_HOURLY_FREQ, DT_CAL_DAILY_FREQ, DT_BIZ_DAILY_FREQ, compose, null_fn, identity_fn, get_custom_biz_freq, window_iter, col_iter, all_equal, is_real_num
 from common_util import ser_range_center_clip, pd_slot_shift, concat_map, substr_ad_map, all_equal, first_element, first_letter_concat, arr_nonzero, apply_nz_nn, one_minus, is_valid, isnt
-from mutate.common import STANDARD_DAY_LEN
+from mutate.common import STANDARD_DAY_LEN, SIDEWAYS
 from mutate.pattern_util import gaussian_breakpoints, uniform_breakpoints, get_sym_list, symbolize_value
 from mutate.fracdiff_util import get_weights
 
@@ -32,10 +32,10 @@ def first_nonzero(ser, ret_idx=False, idx_norm=False):
 ROW_IDX_SELECTOR_MAPPING = {
 	0: (lambda ser: ser.first_valid_index() if (not ser.empty) else None),
 	-1: (lambda ser: ser.last_valid_index() if (not ser.empty) else None),
-	'h': (lambda ser: ser.idxmax(skipna=True) if (not ser.empty) else None),
-	'l': (lambda ser: ser.idxmin(skipna=True) if (not ser.empty) else None),
-	'fnzi': partial(first_nonzero, ret_idx=True, idx_norm=False),
-	'fnzi_score': partial(first_nonzero, ret_idx=True, idx_norm=True)	# Returns index as normalized score
+	"h": (lambda ser: ser.idxmax(skipna=True) if (not ser.empty) else None),
+	"l": (lambda ser: ser.idxmin(skipna=True) if (not ser.empty) else None),
+	"fnzi": partial(first_nonzero, ret_idx=True, idx_norm=False),
+	"fnzi_score": partial(first_nonzero, ret_idx=True, idx_norm=True)	# Returns index as normalized score
 }
 def single_row(val, flt):
 	"""
@@ -53,8 +53,8 @@ def single_row(val, flt):
 
 """ ********** srm ********** """
 MAP_FN_MAPPING = {
-	'nz_inv': apply_nz_nn(one_minus),
-	'sgn': np.sign
+	"nz_inv": apply_nz_nn(one_minus),
+	"sgn": np.sign
 }
 def single_row_map(val, flt, map_fn):
 	return compose(single_row(val, flt), MAP_FN_MAPPING.get(map_fn))
@@ -108,17 +108,17 @@ def fracdiff(d, thresh=None, size=None):
 
 """ ********** wr ********** """
 RANK_FN_MAPPING = {
-	'zn': (lambda ser: (ser.iloc[-1]-ser.mean()) / ser.std()),
-	'mx': (lambda ser: 2 * ((ser.iloc[-1]-ser.min()) / (ser.max()-ser.min())) - 1),
-	'od': (lambda ser, normalize=True: ser.rank(numeric_only=True, ascending=True, pct=normalize).iloc[-1]),
-	'pt': (lambda ser: (ser.iloc[-1]-ser.min()) / (ser.max()-ser.min()))
+	"zn": (lambda ser: (ser-ser.mean()) / ser.std()),
+	"mx": (lambda ser: 2 * ((ser-ser.min()) / (ser.max()-ser.min())) - 1),
+	"od": (lambda ser, normalize=True: ser.rank(numeric_only=True, ascending=True, pct=normalize)),
+	"pt": (lambda ser: (ser-ser.min()) / (ser.max()-ser.min()))
 }
 def window_rank(rank_type, num_periods):
 	rank_fn = RANK_FN_MAPPING.get(rank_type)
 
 	def fn(ser):
 		win = ser.expanding(min_periods=1) if (num_periods==-1) else ser.rolling(window=num_periods, min_periods=1)
-		return win.apply(rank_fn)
+		return win.transform(rank_fn).iloc[-1]
 
 	return fn
 

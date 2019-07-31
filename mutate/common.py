@@ -24,6 +24,7 @@ from common_util import MUTATE_DIR, JSON_SFX_LEN, is_valid, load_json
 
 # PACKAGE CONSTANTS
 STANDARD_DAY_LEN = 8 # standard eight hour trading day
+SIDEWAYS = 0
 
 # PACKAGE DEFAULTS
 dum = 0
