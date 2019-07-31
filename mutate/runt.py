@@ -69,6 +69,8 @@ def safe_process_transform(trf, force=False):
 			hist.append(str_now())
 			logging.info('updating history {}...'.format(name))
 			dump_json(hist, name, dir_path=HISTORY_DIR)
+		else:
+			logging.info('skipping {}...'.format(name))
 	except RUNTFormatError as erf:
 		error_msg = 'runt formatting error with {}.json'.format(name, erf)
 		logging.error(error_msg)
