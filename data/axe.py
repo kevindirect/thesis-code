@@ -12,6 +12,7 @@ import os
 from os import sep
 from os.path import dirname, basename
 from functools import partial
+import re
 import logging
 
 import numpy as np
