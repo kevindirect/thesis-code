@@ -10,7 +10,7 @@ Kevin Patel
 import sys
 import os
 from os import sep
-from os.path import basename, isfile
+from os.path import abspath, basename, dirname, isfile
 import logging
 
 #from dask.distributed import Client
@@ -36,43 +36,39 @@ XXX:
 def run_transforms(argv):
 	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 	cmd_arg_list = ['graphs=', 'force']
-	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name=basename(__file__))
+	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name=basename(__file__), script_pkg=basename(abspath(dirname(__file__))))
 	whitelist = cmd_input['graphs='].split(',') if (is_valid(cmd_input['graphs='])) else None
 	runt_all = is_valid(cmd_input['force'])
 
 	logging.info('loading settings...')
 	graphs, transforms = get_graphs(whitelist=whitelist), get_transforms()
-	force_levels = is_valid(whitelist) or runt_all
 
 	for graph_name, graph in graphs.items():
 		logging.info('running graph {}...'.format(graph_name))
 		for path_name, path in graph.items():
 			for level in path:
-				process_level(level, transforms, run_level=force_levels)
+				for t in level:
+					safe_process_transform((t, transforms[t]), force=runt_all)
 
-def process_level(level, transforms, run_level=False):
-	"""
-	Process a "level" - a list of independent transforms.
-	"""
-	if (run_level):
-		#with Pool(processes=4) as pool:
-		#	pool.map(safe_process_transform, [(t, transforms[t]) for t in level])
-		for t in level:
-			safe_process_transform((t, transforms[t]))
-	else:
-		logging.info('skipping {}...'.format(t))
-
-def safe_process_transform(trf):
+def safe_process_transform(trf, force=False):
 	"""
 	Wrapper around process_transform that handles errors and history updates.
+
+	Args:
+		trf (tuple): tuple of (name, info) for transform
+		force (bool): force a transform even if history exists
+
+	Returns:
+		None
 	"""
 	try:
 		name = trf[0]
 		hist = load_json(name, dir_path=HISTORY_DIR) if (isfile(HISTORY_DIR +name +'.json')) else []
-		process_transform(trf[1], dump=True)
-		hist.append(str_now())
-		logging.info('updating history {}...'.format(name))
-		dump_json(hist, name, dir_path=HISTORY_DIR)
+		if (len(hist)==0 or force):
+			process_transform(trf[1], dump=True)
+			hist.append(str_now())
+			logging.info('updating history {}...'.format(name))
+			dump_json(hist, name, dir_path=HISTORY_DIR)
 	except RUNTFormatError as erf:
 		error_msg = 'runt formatting error with {}.json'.format(name, erf)
 		logging.error(error_msg)
@@ -86,10 +82,10 @@ def safe_process_transform(trf):
 		logging.error(error_msg)
 		raise e
 
-
 def process_transform(info, dump=True):
 	"""
 	Process a transform.
+
 	Args:
 		info (dict): dictionary specifying the transform
 		dump (bool): whether to return data, or dump data
