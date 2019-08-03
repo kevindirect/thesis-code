@@ -95,7 +95,7 @@ def transform_out_of_date(fname, hist):
 	Returns:
 		True if transform is out-of-date (based on last git commit), false otherwise
 	"""
-	if (len(hist)==0);
+	if (len(hist)==0):
 		return True
 	else:
 		lc = last_commit_dtz(TRANSFORMS_DIR +fname)
