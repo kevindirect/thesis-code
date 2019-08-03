@@ -88,7 +88,7 @@ def apply_rbt_df(df, var, freq, ser_fn_str, col_fn_str, doy=True, dna=True):
 	"""
 	ser_fn = get_ser_fn(ser_fn_str, var)
 	res = pd.DataFrame(index=df.index)
-	for i, col_a, col_b in enumerate(window_iter(df.columns)):
+	for i, (col_a, col_b) in enumerate(window_iter(df.columns)):
 		res.loc[:, fl_map([col_a, col_b])] = ser_fn[i%len(ser_fn)](df.loc[:, col_a], df.loc[:, col_b])
 	if (is_valid(col_fn_str)):
 		col_fn = RUNT_NMAP_MAPPING.get(col_fn_str)

@@ -12,13 +12,12 @@ import os
 from os import sep
 from os.path import dirname, basename
 from functools import partial
-import re
 import logging
 
 import numpy as np
 import pandas as pd
 
-from common_util import isnt, load_json
+from common_util import isnt, load_json, strip_parens_content
 from data.common import AXEFILES_DIR, DG_PFX, CS_PFX
 
 
@@ -113,7 +112,7 @@ def axe_get_keychain(prefix, axe, suffix, subset=None):
 	if (isnt(subset)):
 		keychain = prefix+axe+suffix				# no subset keychain
 	else:
-		sfx = re.sub('[()]', '', suffix[0]) if ('(' in suffix[0] and ')' in suffix[0]) else suffix[0]
+		sfx = strip_parens_content(suffix[0])
 
 		if (sfx == subset):
 			keychain = prefix+axe+[subset]+suffix		# standard keychain

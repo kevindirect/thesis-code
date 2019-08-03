@@ -130,6 +130,7 @@ enclosing quotes to recognize strings (like numexpr and sql).
 quote_it = lambda string: '\'' +string +'\'' # XXX - Deprecated in favor of 'wrap_quotes'
 wrap_quotes = lambda string: '\'' +string +'\''
 wrap_parens = lambda string: '(' +string +')'
+strip_parens_content = lambda string: re.sub(r'\([^)]*\)', '', string) if (all([c in string for c in ('(', ')')])) else string
 
 def str_to_list(string, delimiter=',', cast_to=str):
 	return list(map(cast_to, map(str.strip, string.split(delimiter))))
