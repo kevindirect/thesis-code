@@ -24,6 +24,15 @@ from mutate.pattern_util import gaussian_breakpoints, uniform_breakpoints, get_s
 from mutate.fracdiff_util import get_weights
 
 
+""" ********** RUNT TFACTORY EXCEPTION CLASSES ********** """
+class RUNTValueError(ValueError):
+	"""
+	Illegal Value used in a RUNT Transform.
+	"""
+	def __init__(self, message):
+		super().__init__(message)
+
+
 """ ********** sr ********** """
 def first_nonzero(ser, ret_idx=False, idx_norm=False):
 	idx = arr_nonzero(ser.values, ret_idx=ret_idx, idx_norm=idx_norm, idx_shf=1)
@@ -37,14 +46,26 @@ ROW_IDX_SELECTOR_MAPPING = {
 	"fnz": partial(first_nonzero, ret_idx=True, idx_norm=False),
 	"fnz_score": partial(first_nonzero, ret_idx=True, idx_norm=True)	# Returns index as normalized score
 }
+
+ROW_VAL_SELECTOR_MAPPING = {
+	"fnz": partial(first_nonzero, ret_idx=False, idx_norm=False)		# First non-zero value, use this instead of fnz+val=True
+}
+
 def single_row(val, flt):
 	"""
 	Constructs function that returns index or value for selected row.
 	"""
 	if (val):
 		def fn(ser):
-			idx = ROW_IDX_SELECTOR_MAPPING.get(flt)(ser)
-			return ser.loc[idx] if (is_valid(idx)) else None
+			if (flt in ("fnz_score",)):
+				error_msg = "cannot set val=True with the given filter {}".format(flt)
+				logging.error(error_msg)
+				raise RUNTValueError(error_msg)
+			val = ROW_VAL_SELECTOR_MAPPING.get(flt, None)
+			if (isnt(val)):
+				idx = ROW_IDX_SELECTOR_MAPPING.get(flt)(ser)
+				val = lambda ser: ser.loc[idx] if (is_valid(idx)) else None
+			return val(ser)
 	else:
 		def fn(ser):
 			return ROW_IDX_SELECTOR_MAPPING.get(flt)(ser)
