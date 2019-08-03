@@ -65,7 +65,7 @@ def safe_process_transform(trf, force=False):
 		fname, info = str(trf[0] if (trf[0].endswith('.json')) else trf[0] +'.json'), trf[1]
 		hist = load_json(fname, dir_path=HISTORY_DIR) if (isfile(HISTORY_DIR +fname)) else []
 		if (force or transform_out_of_date(fname, hist)):
-			logging.info('starting transform {}...'.format(fname))
+			logging.info('starting {}...'.format(fname))
 			process_transform(info, dump=True)
 			hist.append(str_now_dtz())
 			logging.info('updating history {}...'.format(fname))
