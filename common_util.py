@@ -852,11 +852,11 @@ def arr_nonzero(arr, ret_idx=False, idx_norm=False, idx_shf=1):
 	non_null = filter_null(arr)
 	if (non_null.size == 0):
 		return None
-	elif (non_zero_ids.size == 0):
-		return 0
 
 	non_zero_ids = np.flatnonzero(non_null)
-	if (ret_idx):
+	if (non_zero_ids.size == 0):
+		return 0
+	elif (ret_idx):
 		indices = non_zero_ids + idx_shf
 		return indices / (non_null.size + idx_shf) if (idx_norm) else indices
 	else:
