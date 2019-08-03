@@ -17,7 +17,7 @@ import logging
 #from multiprocessing import Pool
 
 from common_util import MUTATE_DIR, DT_HOURLY_FREQ, DT_CAL_DAILY_FREQ, NestedDefaultDict, load_json, dump_json, get_cmd_args, is_valid, isnt, is_type, get_variants, best_match, remove_dups_list, list_get_dict, is_empty_df, search_df, str_now_dtz, last_commit_dtz, benchmark
-from mutate.common import HISTORY_DIR, get_graphs, get_transforms
+from mutate.common import HISTORY_DIR, TRANSFORMS_DIR, get_graphs, get_transforms
 from mutate.runt_util import RUNTFormatError, RUNTComputeError, RUNT_TYPE_MAPPING
 from data.data_api import DataAPI
 from data.data_util import make_entry
@@ -62,27 +62,45 @@ def safe_process_transform(trf, force=False):
 		None
 	"""
 	try:
-		name = trf[0]
-		hist = load_json(name, dir_path=HISTORY_DIR) if (isfile(HISTORY_DIR +name +'.json')) else []
-		if (len(hist)==0 or last_commit_dtz(name) > hist[-1] or force):
-			process_transform(trf[1], dump=True)
+		fname, info = str(trf[0] if (trf[0].endswith('.json')) else trf[0] +'.json'), trf[1]
+		hist = load_json(fname, dir_path=HISTORY_DIR) if (isfile(HISTORY_DIR +fname)) else []
+		if (force or transform_out_of_date(fname, hist)):
+			process_transform(info, dump=True)
 			hist.append(str_now_dtz())
-			logging.info('updating history {}...'.format(name))
-			dump_json(hist, name, dir_path=HISTORY_DIR)
+			logging.info('updating history {}...'.format(fname))
+			dump_json(hist, fname, dir_path=HISTORY_DIR)
 		else:
-			logging.info('skipping {}...'.format(name))
+			logging.info('skipping {}...'.format(fname))
 	except RUNTFormatError as erf:
-		error_msg = 'runt formatting error with {}.json'.format(name, erf)
+		error_msg = 'runt formatting error with {}: {}'.format(fname, erf)
 		logging.error(error_msg)
 		raise erf
 	except RUNTComputeError as erc:
-		error_msg = 'runt runtime error with {}'.format(name, erc)
+		error_msg = 'runt runtime error with {}: {}'.format(fname, erc)
 		logging.error(error_msg)
 		raise erc
 	except Exception as e:
-		error_msg = 'non-runt error with {}: {}'.format(name, e)
+		error_msg = 'non-runt error with {}: {}'.format(fname, e)
 		logging.error(error_msg)
 		raise e
+
+def transform_out_of_date(fname, hist):
+	"""
+	Returns True if the transform is out-of-date.
+
+	Args:
+		fname (str): filename of transform info file
+		hist (list): list of string date times in format '%Y-%m-%d %H:%M:%S %Z'
+
+	Returns:
+		True if transform is out-of-date (based on last git commit), false otherwise
+	"""
+	if (len(hist)==0);
+		return True
+	else:
+		lc = last_commit_dtz(TRANSFORMS_DIR +fname)
+		same_tz = lc.split(' ')[-1] == hist[-1].split(' ')[-1]
+		return same_tz and lc > hist[-1]
 
 def process_transform(info, dump=True):
 	"""
