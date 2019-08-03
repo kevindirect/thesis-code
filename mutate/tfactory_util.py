@@ -34,8 +34,8 @@ ROW_IDX_SELECTOR_MAPPING = {
 	-1: (lambda ser: ser.last_valid_index() if (not ser.empty) else None),
 	"h": (lambda ser: ser.idxmax(skipna=True) if (not ser.empty) else None),
 	"l": (lambda ser: ser.idxmin(skipna=True) if (not ser.empty) else None),
-	"fnzi": partial(first_nonzero, ret_idx=True, idx_norm=False),
-	"fnzi_score": partial(first_nonzero, ret_idx=True, idx_norm=True)	# Returns index as normalized score
+	"fnz": partial(first_nonzero, ret_idx=True, idx_norm=False),
+	"fnz_score": partial(first_nonzero, ret_idx=True, idx_norm=True)	# Returns index as normalized score
 }
 def single_row(val, flt):
 	"""
