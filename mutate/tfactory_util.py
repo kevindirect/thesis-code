@@ -54,7 +54,7 @@ def single_row(val, flt):
 """ ********** srm ********** """
 MAP_FN_MAPPING = {
 	"nz_inv": apply_nz_nn(one_minus),
-	"sgn": np.sign
+	"sgn": (lambda ser: None if (isnt(ser)) else np.sign(ser))
 }
 def single_row_map(val, flt, map_fn):
 	return compose(single_row(val, flt), MAP_FN_MAPPING.get(map_fn))

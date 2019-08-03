@@ -155,8 +155,8 @@ def process_transform(info, dump=True):
 				if (dump):
 					DataAPI.dump(entry, runted_df)
 				else:
-					out_rcs[keychain + [str(variant)]] = entry
-					out_dfs[keychain + [str(variant)]] = runted_df
+					kcv = keychain + [str(variant)]
+					out_rcs[kcv], out_dfs[kcv] = entry, runted_df
 	if (dump):
 		out = None
 	else:
