@@ -16,7 +16,7 @@ import logging
 #from dask.distributed import Client
 #from multiprocessing import Pool
 
-from common_util import MUTATE_DIR, DT_HOURLY_FREQ, DT_CAL_DAILY_FREQ, NestedDefaultDict, load_json, dump_json, get_cmd_args, is_valid, isnt, is_type, get_variants, best_match, remove_dups_list, list_get_dict, is_empty_df, search_df, str_now, benchmark
+from common_util import MUTATE_DIR, DT_HOURLY_FREQ, DT_CAL_DAILY_FREQ, NestedDefaultDict, load_json, dump_json, get_cmd_args, is_valid, isnt, is_type, get_variants, best_match, remove_dups_list, list_get_dict, is_empty_df, search_df, str_now_dtz, last_commit_dtz, benchmark
 from mutate.common import HISTORY_DIR, get_graphs, get_transforms
 from mutate.runt_util import RUNTFormatError, RUNTComputeError, RUNT_TYPE_MAPPING
 from data.data_api import DataAPI
@@ -56,7 +56,7 @@ def safe_process_transform(trf, force=False):
 
 	Args:
 		trf (tuple): tuple of (name, info) for transform
-		force (bool): force a transform even if history exists
+		force (bool): force a transform even if history exists and last update isn't out of date
 
 	Returns:
 		None
@@ -64,9 +64,9 @@ def safe_process_transform(trf, force=False):
 	try:
 		name = trf[0]
 		hist = load_json(name, dir_path=HISTORY_DIR) if (isfile(HISTORY_DIR +name +'.json')) else []
-		if (len(hist)==0 or force):
+		if (len(hist)==0 or last_commit_dtz(name) > hist[-1] or force):
 			process_transform(trf[1], dump=True)
-			hist.append(str_now())
+			hist.append(str_now_dtz())
 			logging.info('updating history {}...'.format(name))
 			dump_json(hist, name, dir_path=HISTORY_DIR)
 		else:

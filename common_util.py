@@ -20,12 +20,14 @@ import operator
 import getopt
 import collections.abc
 from collections import Mapping
+import subprocess
 from multiprocessing.pool import ThreadPool
 from contextlib import suppress
 from difflib import SequenceMatcher
 from collections import defaultdict, MutableMapping, OrderedDict, ChainMap
 from itertools import product, chain, tee, islice, zip_longest
 from functools import reduce, partial, wraps
+import time
 from datetime import datetime, date, timedelta
 from timeit import default_timer
 import logging
@@ -170,6 +172,8 @@ def common_prefix(*strings):
 dt_now = lambda: datetime.now()
 str_now = lambda fmt=DT_FMT_YMD_HMS: dt_now().strftime(fmt)
 dt_delta = lambda start, end: datetime.combine(date.min, end) - datetime.combine(date.min, start)
+now_tz = lambda fmt='%z': dt_now().astimezone().strftime(fmt)
+str_now_dtz = lambda fmt=DT_FMT_YMD_HMS: str_now(fmt=fmt) +' ' +now_tz()
 
 """List"""
 def remove_dups_list(lst):
@@ -1947,6 +1951,26 @@ def dict2dag(d, remap=None, list_max=None, **kwargs):
 			raise ValueError('Dict contains an illegal type: type({})=\'{}\''.format(str(cs), type(cs)))
 
 	return graph
+
+
+""" ********** GIT UTILS ********** """
+def last_commit_dtz(fname, fmt="%ci"):
+	"""
+	Return datetime of last commit.
+
+	Arguments:
+		fname (str): file to get last commit date of
+
+	Returns:
+		last commit date time
+	"""
+	args = ['git', 'log', '-1', '--format={}'.format(fmt), fname]
+	try:
+		b = subprocess.check_output(args)
+		out = b.decode()[:-1]
+	except (subprocess.CalledProcessError, ValueError):
+		out = None
+	return out
 
 
 """ ********** DEBUGGING UTILS ********** """
