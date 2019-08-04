@@ -2,7 +2,7 @@
 	"*": null
 	"/": {
 		"pba_hoc_hdxret_ddir": {
-			"exact": ["hoc"]
+			"exact": ["pba_oc"]
 		},
 		"pba_hlh_hdxret_ddir": {
 			"exact": ["pba_lh"]
