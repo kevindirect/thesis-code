@@ -141,7 +141,7 @@ def process_transform(info, dump=True):
 		src_rcs, src_dfs = DataAPI.axe_load(src, lazy=False)
 
 		if (len(src_dfs)==0):
-			error_msg = 'no data matched the given axefiles \'{}\' in the data_record'.format(src)
+			error_msg = 'no data matched the given axefiles \'{}\' in the data_record'.format(str(src))
 			logging.error(error_msg)
 			raise RUNTFormatError(error_msg)
 
@@ -156,6 +156,10 @@ def process_transform(info, dump=True):
 				src_df = apply_rm(src_df, rm_dfs[rm_keychain].dropna())
 
 			logging.debug('pre-runt: {}'.format(str(src_df)))
+			if (is_empty_df(src_df)):
+				error_msg = "Source DataFrame is empty (error in axefile '{}'?)".format(src)
+				logging.error(error_msg)
+				raise RUNTFormatError(error_msg)
 
 			# Running variants of the transform (different sets of parameters)
 			for variant in variants:
@@ -165,11 +169,12 @@ def process_transform(info, dump=True):
 				mutate_desc = '_'.join([keychain[-1], mutate_type])
 				logging.debug('mutate_type: {}'.format(mutate_type))
 
-				if (is_empty_df(runted_df)):
-					logging.error(runted_df)
-					raise RUNTComputeError('Result of transform is an empty DataFrame')
-
 				logging.debug('post-runt: {}'.format(str(runted_df)))
+				if (is_empty_df(runted_df)):
+					error_msg = "Result of transform is an empty DataFrame (variant: '{}')".format(str(variant))
+					logging.error(error_msg)
+					raise RUNTComputeError(error_msg)
+
 				entry = make_entry('mutate', mutate_type, mutate_desc, res_freq, base_rec=src_rc)
 				if (dump):
 					DataAPI.dump(entry, runted_df)
