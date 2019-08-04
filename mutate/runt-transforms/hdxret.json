@@ -18,6 +18,7 @@
 	},
 	"var": {
 		"ret_type": ["ret"],
-		"thresh": [null]
+		"thresh": [null],
+		"clip": [false]
 	}
 }
