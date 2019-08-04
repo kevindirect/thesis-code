@@ -2,7 +2,7 @@
 	"*": null,
 	"/": {
 		"pba_hoc_hdxcret2": {
-			"exact": ["hoc"]
+			"exact": ["pba_hoc"]
 		}
 	}
 }

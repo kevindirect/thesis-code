@@ -2,10 +2,10 @@
 	"*": null,
 	"/": {
 		"pba_hoc_hdxcret2": {
-			"exact": ["hoc"]
+			"exact": ["pba_hoc"]
 		},
 		"pba_hlh_hdxcret2": {
-			"exact": ["hlh"]
+			"exact": ["pba_hlh"]
 		},
 		"vol_hoc_hdxcret2": {
 			"exact": ["vol_oc"]
