@@ -19,6 +19,7 @@
 	"var": {
 		"ret_type": ["ret"],
 		"stat_type": ["avg", "std", "max", "min"],
+		"clip": [false],
 		"thresh_scalar": [0.5, 1, 2],
 		"agg_freq": ["D"]
 	}
