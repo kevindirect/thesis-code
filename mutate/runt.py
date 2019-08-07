@@ -46,32 +46,38 @@ def run_transforms(argv):
 	for graph_name, graph in graphs.items():
 		logging.info('running graph {}...'.format(graph_name))
 		for path_name, path in graph.items():
+			dep_out_of_date=False
 			for level in path:
 				for t in level:
-					safe_process_transform((t, transforms[t]), force=runt_all)
+					ran = [r for r in safe_process_transform((t, transforms[t]), dep_ood=dep_out_of_date, force=runt_all)]
+				dep_out_of_date = any(ran)
 
-def safe_process_transform(trf, force=False):
+
+def safe_process_transform(trf, dep_ood=False, force=False):
 	"""
 	Wrapper around process_transform that handles errors and history updates.
 
 	Args:
 		trf (tuple): tuple of (name, info) for transform
+		dep_ood (bool): whether dependency of this transform is out of date
 		force (bool): force a transform even if history exists and last update isn't out of date
 
 	Returns:
-		None
+		True if the transform ran, False otherwise
 	"""
 	try:
 		fname, info = str(trf[0] if (trf[0].endswith('.json')) else trf[0] +'.json'), trf[1]
 		hist = load_json(fname, dir_path=HISTORY_DIR) if (isfile(HISTORY_DIR +fname)) else []
-		if (force or transform_out_of_date(fname, hist)):
+		if (force or dep_ood or transform_out_of_date(fname, hist)):
 			logging.info('starting {}...'.format(fname))
 			process_transform(info, dump=True)
 			hist.append(str_now_dtz())
 			logging.info('updating history {}...'.format(fname))
 			dump_json(hist, fname, dir_path=HISTORY_DIR)
+			return True
 		else:
 			logging.info('skipping {}...'.format(fname))
+			return False
 	except RUNTFormatError as erf:
 		error_msg = 'runt formatting error with {}: {}'.format(fname, erf)
 		logging.error(error_msg)
@@ -88,6 +94,7 @@ def safe_process_transform(trf, force=False):
 def transform_out_of_date(fname, hist):
 	"""
 	Returns True if the transform is out-of-date.
+	Does not check if any dependencies are out-of-date.
 
 	Args:
 		fname (str): filename of transform info file
