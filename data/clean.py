@@ -24,7 +24,7 @@ def clean(argv):
 	if (dry_run):
 		logging.info('dry run mode (no files will be removed)...')
 	else:
-		logging.info('io mode (files will be removed...')
+		logging.info('io mode (files will be removed)...')
 
 	clean = load_json(cleanfile, dir_path=DATA_DIR)
 	whitelist_df = DataAPI.get_record_view().loc[:, ['name', 'dir']]
