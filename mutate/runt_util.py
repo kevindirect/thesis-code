@@ -114,6 +114,7 @@ def apply_gua_df(df, var, freq, ser_fn_str, col_fn_str, doy=True, dna=True):
 	Apply groupby unary aggregation
 	"""
 	ser_fn = get_ser_fn(ser_fn_str, var)
+	df = df_rows_in_year(df) if (doy) else df
 	d = {col: df.loc[:, col].groupby(pd.Grouper(freq=freq)).agg(ser_fn[i%len(ser_fn)]) for i, col in enumerate(df.columns)}
 	res = pd.DataFrame.from_dict(d)
 	if (is_valid(col_fn_str)):
