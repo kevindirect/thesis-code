@@ -56,19 +56,17 @@ def single_row(val, flt):
 	Constructs function that returns index or value for selected row.
 	"""
 	if (val):
-		def fn(ser):
-			if (flt in ("fnz_score",)):
-				error_msg = "cannot set val=True with the given filter {}".format(flt)
-				logging.error(error_msg)
-				raise RUNTValueError(error_msg)
-			val = ROW_VAL_SELECTOR_MAPPING.get(flt, None)
-			if (isnt(val)):
-				idx = ROW_IDX_SELECTOR_MAPPING.get(flt)(ser)
-				val = lambda ser: ser.loc[idx] if (is_valid(idx)) else None
-			return val(ser)
+		if (flt in ("fnz_score",)):
+			error_msg = "cannot set val=True with the given filter {}".format(flt)
+			logging.error(error_msg)
+			raise RUNTValueError(error_msg)
+		val_fn = ROW_VAL_SELECTOR_MAPPING.get(flt, None)
+		if (isnt(val_fn)):
+			idx_fn = ROW_IDX_SELECTOR_MAPPING.get(flt)
+			val_fn = (lambda ser: ser.loc[idx_fn(ser)] if (is_valid(idx_fn(ser))) else None)
+		fn = val_fn
 	else:
-		def fn(ser):
-			return ROW_IDX_SELECTOR_MAPPING.get(flt)(ser)
+		fn = ROW_IDX_SELECTOR_MAPPING.get(flt)
 	return fn
 
 
