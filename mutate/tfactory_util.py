@@ -129,24 +129,33 @@ def fracdiff(d, thresh=None, size=None):
 
 """ ********** wr ********** """
 RANK_FN_MAPPING = {
-	"zn": (lambda ser: (ser-ser.mean()) / ser.std()),
-	"mx": (lambda ser: 2 * ((ser-ser.min()) / (ser.max()-ser.min())) - 1),
-	"od": (lambda ser, normalize=True: ser.rank(numeric_only=True, ascending=True, pct=normalize)),
-	"pt": (lambda ser: (ser-ser.min()) / (ser.max()-ser.min()))
+	"zn": (lambda ser: (ser.iloc[-1]-ser.mean()) / ser.std()),
+	"mx": (lambda ser: 2 * ((ser.iloc[-1]-ser.min()) / (ser.max()-ser.min())) - 1),
+	"od": (lambda ser, normalize=True: ser.rank(numeric_only=True, ascending=True, pct=normalize).iloc[-1]),
+	"pt": (lambda ser: (ser.iloc[-1]-ser.min()) / (ser.max()-ser.min()))
 }
 def window_rank(rank_type, num_periods):
 	rank_fn = RANK_FN_MAPPING.get(rank_type)
 
 	def fn(ser):
-		win = ser.expanding(min_periods=1) if (num_periods==-1) else ser.rolling(window=num_periods, min_periods=1)
-		return win.transform(rank_fn).iloc[-1]
+		if (num_periods==-1):
+			win = ser.dropna().expanding(min_periods=1)
+		else:
+			win = ser.dropna().rolling(window=num_periods, min_periods=1)
+		return win.apply(rank_fn, raw=False)
 
 	return fn
 
 
 """ ********** norm ********** """
+NORM_FN_MAPPING = {
+	"zn": (lambda ser: (ser-ser.mean()) / ser.std()),
+	"mx": (lambda ser: 2 * ((ser-ser.min()) / (ser.max()-ser.min())) - 1),
+	"od": (lambda ser, normalize=True: ser.rank(numeric_only=True, ascending=True, pct=normalize)),
+	"pt": (lambda ser: (ser-ser.min()) / (ser.max()-ser.min()))
+}
 def normalize(norm_type):
-	norm_fn = RANK_FN_MAPPING.get(norm_type)
+	norm_fn = NORM_FN_MAPPING.get(norm_type)
 
 	def fn(ser):
 		return ser.transform(norm_fn)
