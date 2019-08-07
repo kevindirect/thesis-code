@@ -10,29 +10,29 @@
 		"vol_dohlca": {
 			"desc": "vol_dohlca"
 		},
-		"trmi3_etf3_news_buzz": {
-			"desc": "trmi3_etf3_news_buzz"
+		"trmi3_etf3_news_buzz_dohlca": {
+			"desc": "trmi3_etf3_news_buzz_dohlca"
 		},
-		"trmi3_mkt3_news_stockIndexBuzz": {
-			"desc": "trmi3_mkt3_news_stockIndexBuzz"
+		"trmi3_mkt3_news_stockIndexBuzz_dohlca": {
+			"desc": "trmi3_mkt3_news_stockIndexBuzz_dohlca"
 		},
-		"trmi3_mkt3_news_bondBuzz": {
-			"desc": "trmi3_mkt3_news_bondBuzz"
+		"trmi3_mkt3_news_bondBuzz_dohlca": {
+			"desc": "trmi3_mkt3_news_bondBuzz_dohlca"
 		},
-		"trmi3_mkt3_news_ratesBuzz": {
-			"desc": "trmi3_mkt3_news_ratesBuzz"
+		"trmi3_mkt3_news_ratesBuzz_dohlca": {
+			"desc": "trmi3_mkt3_news_ratesBuzz_dohlca"
 		},
-		"trmi3_etf3_social_buzz": {
-			"desc": "trmi3_etf3_social_buzz"
+		"trmi3_etf3_social_buzz_dohlca": {
+			"desc": "trmi3_etf3_social_buzz_dohlca"
 		},
-		"trmi3_mkt3_social_stockIndexBuzz": {
-			"desc": "trmi3_mkt3_social_stockIndexBuzz"
+		"trmi3_mkt3_social_stockIndexBuzz_dohlca": {
+			"desc": "trmi3_mkt3_social_stockIndexBuzz_dohlca"
 		},
-		"trmi3_mkt3_social_bondBuzz": {
-			"desc": "trmi3_mkt3_social_bondBuzz"
+		"trmi3_mkt3_social_bondBuzz_dohlca": {
+			"desc": "trmi3_mkt3_social_bondBuzz_dohlca"
 		},
-		"trmi3_mkt3_social_ratesBuzz": {
-			"desc": "trmi3_mkt3_social_ratesBuzz"
+		"trmi3_mkt3_social_ratesBuzz_dohlca": {
+			"desc": "trmi3_mkt3_social_ratesBuzz_dohlca"
 		}
 	}
 }
