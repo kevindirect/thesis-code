@@ -1,0 +1,14 @@
+{
+	"*": {
+		"stage": "mutate",
+		"type": "dohlca"
+	},
+	"/": {
+		"pba_dohlca": {
+			"desc": "pba_dohlca"
+		},
+		"vol_dohlca": {
+			"desc": "vol_dohlca"
+		}
+	}
+}
