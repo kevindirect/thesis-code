@@ -48,8 +48,7 @@ def run_transforms(argv):
 		for path_name, path in graph.items():
 			dep_out_of_date=False
 			for level in path:
-				for t in level:
-					ran = [r for r in safe_process_transform((t, transforms[t]), dep_ood=dep_out_of_date, force=runt_all)]
+				ran = [safe_process_transform((t, transforms[t]), dep_ood=dep_out_of_date, force=runt_all) for t in level]
 				dep_out_of_date = any(ran)
 
 
