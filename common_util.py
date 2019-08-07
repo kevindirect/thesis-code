@@ -54,8 +54,8 @@ RECON_DIR = CRUNCH_DIR +'recon' +sep
 MODEL_DIR = CRUNCH_DIR +'model' +sep
 REPORT_DIR = CRUNCH_DIR +'report' +sep
 
-logging.warning('script location: {}'.format(str(realpath(sys.argv[0]))))
-logging.warning('using project dir: {}'.format(CRUNCH_DIR))
+logging.critical('script location: {}'.format(str(realpath(sys.argv[0]))))
+logging.critical('using project dir: {}'.format(CRUNCH_DIR))
 
 """Supported Pandas DF IO Formats"""
 FMT_EXTS = {
@@ -2031,4 +2031,4 @@ class benchmark(object):
 
 		if (not self.suppress):
 			delta_str = humanize.naturaltime(self.delta) if (self.humanized) else str(self.delta)
-			logging.warning('{msg}: {t}'.format(msg=self.msg, t=delta_str).rstrip(" ago"))
+			logging.critical('{msg}: {t}'.format(msg=self.msg, t=delta_str).rstrip(" ago"))
