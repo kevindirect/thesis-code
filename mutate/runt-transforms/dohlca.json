@@ -7,7 +7,7 @@
 	},
 	"fn": {
 		"ser_fn": ["sr", "sr", "sr", "sr", "stat"],
-		"df_fn": "gua",
+		"df_fn": "guax",
 		"col_fn": "ohlca",
 		"freq": "D"
 	},

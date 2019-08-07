@@ -114,12 +114,26 @@ def apply_gua_df(df, var, freq, ser_fn_str, col_fn_str, doy=True, dna=True):
 	Apply groupby unary aggregation
 	"""
 	ser_fn = get_ser_fn(ser_fn_str, var)
-	df = df_rows_in_year(df) if (doy) else df
 	d = {col: df.loc[:, col].groupby(pd.Grouper(freq=freq)).agg(ser_fn[i%len(ser_fn)]) for i, col in enumerate(df.columns)}
 	res = pd.DataFrame.from_dict(d)
 	if (is_valid(col_fn_str)):
 		col_fn = RUNT_NMAP_MAPPING.get(col_fn_str)
 		res.columns = col_fn(list(df.columns))
+	return res.dropna(axis=0, how='all') if (dna) else res
+
+def apply_guax_df(df, var, freq, ser_fn_str, col_fn_str, doy=True, dna=True):
+	"""
+	Apply groupby unary aggregation, column expanding
+	Unlike gua, guax has the potential to add columns to the df
+	It also filters rows based on df_rows_in_year function
+	"""
+	ser_fn = get_ser_fn(ser_fn_str, var)
+	df = df_rows_in_year(df) if (doy) else df
+	d = {df.columns[i%len(df.columns)]: df.loc[:, df.columns[i%len(df.columns)]].groupby(pd.Grouper(freq=freq)).agg(fn) for i, fn in enumerate(ser_fn)}
+	res = pd.DataFrame.from_dict(d)
+	if (is_valid(col_fn_str)):
+		col_fn = RUNT_NMAP_MAPPING.get(col_fn_str)
+		res.columns = col_fn(list(res.columns))
 	return res.dropna(axis=0, how='all') if (dna) else res
 
 
@@ -135,7 +149,8 @@ RUNT_TYPE_MAPPING = {
 	"rut": apply_rut_df,
 	"rbt": apply_rbt_df,
 	"gut": apply_gut_df,
-	"gua": apply_gua_df
+	"gua": apply_gua_df,
+	"guax": apply_guax_df
 }
 
 
