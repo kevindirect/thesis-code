@@ -129,8 +129,8 @@ def apply_guax_df(df, var, freq, ser_fn_str, col_fn_str, doy=True, dna=True):
 	"""
 	ser_fn = get_ser_fn(ser_fn_str, var)
 	df = df_rows_in_year(df) if (doy) else df
-	d = {df.columns[i%len(df.columns)]: df.loc[:, df.columns[i%len(df.columns)]].groupby(pd.Grouper(freq=freq)).agg(fn) for i, fn in enumerate(ser_fn)}
-	res = pd.DataFrame.from_dict(d)
+	d = [(df.columns[i%len(df.columns)], df.loc[:, df.columns[i%len(df.columns)]].groupby(pd.Grouper(freq=freq)).agg(fn)) for i, fn in enumerate(ser_fn)]
+	res = pd.concat([data[1] for data in d], axis=1, keys=[data[0] for data in d])
 	if (is_valid(col_fn_str)):
 		col_fn = RUNT_NMAP_MAPPING.get(col_fn_str)
 		res.columns = col_fn(list(res.columns))
