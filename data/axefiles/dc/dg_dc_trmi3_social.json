@@ -2,15 +2,26 @@
 	"*": {
 		"stage": "mutate",
 		"type": "dc",
-		"cat": "us_equity_index",
-		"desc": "join"
+		"cat": "us_equity_index"
 	},
 	"/": {
-		"trmi3_etf3_social_sentiment": {},
-		"trmi3_etf3_social_forecast": {},
-		"trmi3_etf3_social_fundamental": {},
-		"trmi3_mkt3_social_stock": {},
-		"trmi3_mkt3_social_bond": {},
-		"trmi3_mkt3_social_bank": {}
+		"trmi3_etf3_social_sentiment_dc": {
+			"desc": "trmi3_etf3_social_sentiment_dc"
+		},
+		"trmi3_etf3_social_forecast_dc": {
+			"desc": "trmi3_etf3_social_forecast_dc"
+		},
+		"trmi3_etf3_social_fundamental_dc": {
+			"desc": "trmi3_etf3_social_fundamental_dc"
+		},
+		"trmi3_mkt3_social_stock_dc": {
+			"desc": "trmi3_mkt3_social_stock_dc"
+		},
+		"trmi3_mkt3_social_bond_dc": {
+			"desc": "trmi3_mkt3_social_bond_dc"
+		},
+		"trmi3_mkt3_social_bank_dc": {
+			"desc": "trmi3_mkt3_social_bank_dc"
+		}
 	}
 }
