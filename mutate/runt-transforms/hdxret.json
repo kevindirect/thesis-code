@@ -13,7 +13,7 @@
 	},
 	"axe": {
 		"rm": ["hrm", "hrm"],
-		"src": ["hohlca", "hohlca_pairs"],
+		"src": ["hohlca", "hohlca_pba_vol_pairs"],
 		"dst": ["hdxret", "hdxret"]
 	},
 	"var": {
