@@ -1,7 +1,6 @@
 {
 	"features": [
-		["dffd", "dffd"],
-		["ddiff", "ddiff"]
+		["dc", "dc_trmi3"]
 	],
 	"labels": "labels.json",
 	"targets": "targets.json"
