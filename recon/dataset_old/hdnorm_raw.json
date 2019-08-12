@@ -1,0 +1,8 @@
+{
+	"features": [
+		["hdnorm", "hdnorm_raw_ohlca"]
+	],
+	"labels": "labels.json",
+	"targets": "targets.json",
+	"row_masks": "row_masks.json"
+}

@@ -1,0 +1,7 @@
+{
+	"features": [
+		["dr", "drl"]
+	],
+	"labels": "labels.json",
+	"targets": "targets.json"
+}

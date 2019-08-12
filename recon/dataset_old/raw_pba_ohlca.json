@@ -1,0 +1,8 @@
+{
+	"features": [
+		["raw", "raw_pba_ohlca"]
+	],
+	"labels": "labels.json",
+	"targets": "targets.json",
+	"row_masks": "row_masks.json"
+}

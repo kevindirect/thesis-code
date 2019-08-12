@@ -1,0 +1,8 @@
+{
+	"features": [
+		["hdnorm", "hdnorm_dmx_raw_pba_avgprice"]
+	],
+	"labels": "mvp_labels.json",
+	"targets": "mvp_targets.json",
+	"row_masks": "row_masks.json"
+}

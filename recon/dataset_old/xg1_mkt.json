@@ -1,0 +1,20 @@
+{
+	"features": [
+		["hdnorm", "hdnorm_dmx_raw_ohlca"],
+		["hdnorm", "hdnorm_dzn_raw_ohlca"],
+		["hdsym", "hdsym_dmx_uni_raw_ohlca"],
+		["hdsym", "hdsym_dzn_gau_raw_ohlca"],
+		["hdiff", "hdiff_raw_ohlca"],
+		["ddiff", "ddiff_raw_ohlca"],
+		["dffd", "dffd_raw_ohlca"],
+		["dma", "dma_raw_ohlca"],
+		["dret", "dret"],
+		["dxfbval1", "dxfbval1"],
+		["dxfbcret1", "dxfbcret1"],
+		["dxfbdir1", "dxfbdir1"],
+		["dxfbret1", "dxfbret1"]
+	],
+	"labels": "mvp_labels.json",
+	"targets": "mvp_targets.json",
+	"row_masks": "row_masks.json"
+}

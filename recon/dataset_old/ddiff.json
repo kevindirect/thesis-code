@@ -1,0 +1,8 @@
+{
+	"features": [
+		["dffd", "dffd"],
+		["ddiff", "ddiff"]
+	],
+	"labels": "labels.json",
+	"targets": "targets.json"
+}
