@@ -1090,7 +1090,7 @@ def midx_intersect(*idxs):
 
 def index_split(pd_idx, *ratio):
 	"""
-	XXX - Deprecated, use idx_split
+	XXX - Deprecated, use midx_split
 	Split an index into multiple sub indexes based on ratios passed in.
 	"""
 	cuts = get_range_cuts(0, pd_idx.size, list(ratio))
@@ -1847,6 +1847,36 @@ def chained_filter(str_list, qualifier_dict_list):
 		qualifier_dict_list = [qualifier_dict_list]
 
 	return reduce(get_subset, qualifier_dict_list, str_list)
+
+
+"""  ********** SKLEARN UTILS  ********** """
+def sk_mw_transform(df, trf, num_cols, win_size):
+	"""
+	Applies a sklearn transform on the provided dataframe by sliding a moving window across it.
+
+	Args:
+		df (pd.DataFrame):
+		trf (sklearn Transformer):
+		num_cols (int):
+		win_size (int):
+
+	Returns:
+		Output dataframe with transformed data of shape (df.shape[0]-win_size+1, num_cols)
+	"""
+	out_df = pd.DataFrame(np.zeros((df.shape[0] - win_size + 1, 3)))
+	df_idx = pd.DataFrame(np.arange(df.shape[0]))
+
+	def rolling_trf(win_idx):
+		"""
+		Applies transform using provided list of indices to index into df.
+		"""
+		out = trf.fit_transform(df.iloc[win_idx])
+		out_df.iloc[int(win_idx[0])] = out[0, :]
+		return True
+
+	_ = df_idx.rolling(win_size).apply(rolling_trf, raw=True)
+
+	return out_df
 
 
 """ ********** PYTORCH GENERAL UTILS ********** """
