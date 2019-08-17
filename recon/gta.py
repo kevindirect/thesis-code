@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 from dask import delayed, compute, visualize
 
-from common_util import RECON_DIR, get_cmd_args, makedir_if_not_exists, flatten2D, get_variants, dump_df, load_json, outer_join, list_get_dict, benchmark
+from common_util import RECON_DIR, isnt, is_valid, get_cmd_args, makedir_if_not_exists, flatten2D, get_variants, dump_df, load_json, outer_join, list_get_dict, benchmark
 from recon.common import DATASET_DIR, TEST_DIR, default_gta_test, default_gta_dataset
 from recon.dataset_util import prep_dataset, prep_labels
 from recon.gta_util import GTA_TYPE_TRANSLATOR, GTA_TEST_TRANSLATOR, report_path_dir
@@ -21,18 +21,18 @@ from recon.gta_util import GTA_TYPE_TRANSLATOR, GTA_TEST_TRANSLATOR, report_path
 def generic_test_applicator(argv):
 	cmd_arg_list = ['dataset=', 'test=', 'assets=', 'visualize']
 	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name='gta')
-	test_name = cmd_input['test='] if (cmd_input['test='] is not None) else default_gta_test
-	dataset_name = cmd_input['dataset='] if (cmd_input['dataset='] is not None) else default_gta_dataset
-	assets = list(map(str.strip, cmd_input['assets='].split(','))) if (cmd_input['assets='] is not None) else None
-	run_compute = True if (cmd_input['visualize'] is None) else False
+	test_name = cmd_input['test='] if (is_valid(cmd_input['test='])) else default_gta_test
+	dataset_name = cmd_input['dataset='] if (is_valid(cmd_input['dataset='])) else default_gta_dataset
+	assets = list(map(str.strip, cmd_input['assets='].split(','))) if (is_valid(cmd_input['assets='])) else None
+	run_compute = isnt(cmd_input['visualize'])
 
 	test_spec = load_json(test_name, dir_path=TEST_DIR)
 	dataset_dict = load_json(dataset_name, dir_path=DATASET_DIR)
 	dataset = prep_dataset(dataset_dict, assets=assets)
 
-	logging.info('assets: ' +str('all' if (assets==None) else ', '.join(assets)))
-	logging.info('dataset name: ' +dataset_name)
-	logging.info('test name: ' +test_name)
+	logging.info('assets: {}'.format(str('all' if (assets==None) else ', '.join(assets))))
+	logging.info('dataset name: {}'.format(dataset_name))
+	logging.info('test name: {}'.format(test_name))
 
 	if (isinstance(test_spec, dict)):
 		tests = specify_test(test_spec, dataset, dataset_name=dataset_name)
