@@ -1,7 +1,7 @@
 {
 	"*": {
 		"stage": "mutate",
-		"mutate_type": "ddir1"
+		"type": "ddir1"
 	},
 	"/": {
 		"pba_hoc_hdxret1_ddir1": {
