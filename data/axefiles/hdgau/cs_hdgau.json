@@ -1,0 +1,47 @@
+{
+	"*": null,
+	"/": {
+		"pba_hohlca_hdgau": {
+			"exact": ["pba_open", "pba_high", "pba_low", "pba_close", "pba_avgPrice"]
+		},
+		"pba_hoc_hspread_hdgau": {
+			"exact": ["pba_oc"]
+		},
+		"pba_hlh_hspread_hdgau": {
+			"exact": ["pba_lh"]
+		},
+		"pba_hoc_hret_hdgau": {
+			"exact": ["pba_oc"]
+		},
+		"pba_hlh_hret_hdgau": {
+			"exact": ["pba_lh"]
+		},
+		"pba_hoc_hlogret_hdgau": {
+			"exact": ["pba_oc"]
+		},
+		"pba_hlh_hlogret_hdgau": {
+			"exact": ["pba_lh"]
+		},
+		"vol_hohlca_hdgau": {
+			"exact": ["vol_open", "vol_high", "vol_low", "vol_close", "vol_avgPrice"]
+		},
+		"vol_hoc_hspread_hdgau": {
+			"exact": ["vol_oc"]
+		},
+		"vol_hlh_hspread_hdgau": {
+			"exact": ["vol_lh"]
+		},
+		"vol_hoc_hret_hdgau": {
+			"exact": ["vol_oc"]
+		},
+		"vol_hlh_hret_hdgau": {
+			"exact": ["vol_lh"]
+		},
+		"vol_hoc_hlogret_hdgau": {
+			"exact": ["vol_oc"]
+		},
+		"vol_hlh_hlogret_hdgau": {
+			"exact": ["vol_lh"]
+		}
+	}
+}

@@ -1,0 +1,50 @@
+{
+	"*": {
+		"stage": "mutate",
+		"type": ["hdgau(2)", "hdgau(3)", "hdgau(4)", "hdgau(8)"]
+	},
+	"/": {
+		"pba_hohlca_hdgau": {
+			"desc": ["pba_hohlca_hdgau(2)", "pba_hohlca_hdgau(3)", "pba_hohlca_hdgau(4)", "pba_hohlca_hdgau(8)"]
+		},
+		"pba_hoc_hspread_hdgau": {
+			"desc": ["pba_hoc_hspread_hdgau(2)", "pba_hoc_hspread_hdgau(3)", "pba_hoc_hspread_hdgau(4)", "pba_hoc_hspread_hdgau(8)"]
+		},
+		"pba_hlh_hspread_hdgau": {
+			"desc": ["pba_hlh_hspread_hdgau(2)", "pba_hlh_hspread_hdgau(3)", "pba_hlh_hspread_hdgau(4)", "pba_hlh_hspread_hdgau(8)"]
+		},
+		"pba_hoc_hret_hdgau": {
+			"desc": ["pba_hoc_hret_hdgau(2)", "pba_hoc_hret_hdgau(3)", "pba_hoc_hret_hdgau(4)", "pba_hoc_hret_hdgau(8)"]
+		},
+		"pba_hlh_hret_hdgau": {
+			"desc": ["pba_hlh_hret_hdgau(2)", "pba_hlh_hret_hdgau(3)", "pba_hlh_hret_hdgau(4)", "pba_hlh_hret_hdgau(8)"]
+		},
+		"pba_hoc_hlogret_hdgau": {
+			"desc": ["pba_hoc_hlogret_hdgau(2)", "pba_hoc_hlogret_hdgau(3)", "pba_hoc_hlogret_hdgau(4)", "pba_hoc_hlogret_hdgau(8)"]
+		},
+		"pba_hlh_hlogret_hdgau": {
+			"desc": ["pba_hlh_hlogret_hdgau(2)", "pba_hlh_hlogret_hdgau(3)", "pba_hlh_hlogret_hdgau(4)", "pba_hlh_hlogret_hdgau(8)"]
+		},
+		"vol_hohlca_hdgau": {
+			"desc": ["vol_hohlca_hdgau(2)", "vol_hohlca_hdgau(3)", "vol_hohlca_hdgau(4)", "vol_hohlca_hdgau(8)"]
+		},
+		"vol_hoc_hspread_hdgau": {
+			"desc": ["vol_hoc_hspread_hdgau(2)", "vol_hoc_hspread_hdgau(3)", "vol_hoc_hspread_hdgau(4)", "vol_hoc_hspread_hdgau(8)"]
+		},
+		"vol_hlh_hspread_hdgau": {
+			"desc": ["vol_hlh_hspread_hdgau(2)", "vol_hlh_hspread_hdgau(3)", "vol_hlh_hspread_hdgau(4)", "vol_hlh_hspread_hdgau(8)"]
+		},
+		"vol_hoc_hret_hdgau": {
+			"desc": ["vol_hoc_hret_hdgau(2)", "vol_hoc_hret_hdgau(3)", "vol_hoc_hret_hdgau(4)", "vol_hoc_hret_hdgau(8)"]
+		},
+		"vol_hlh_hret_hdgau": {
+			"desc": ["vol_hlh_hret_hdgau(2)", "vol_hlh_hret_hdgau(3)", "vol_hlh_hret_hdgau(4)", "vol_hlh_hret_hdgau(8)"]
+		},
+		"vol_hoc_hlogret_hdgau": {
+			"desc": ["vol_hoc_hlogret_hdgau(2)", "vol_hoc_hlogret_hdgau(3)", "vol_hoc_hlogret_hdgau(4)", "vol_hoc_hlogret_hdgau(8)"]
+		},
+		"vol_hlh_hlogret_hdgau": {
+			"desc": ["vol_hlh_hlogret_hdgau(2)", "vol_hlh_hlogret_hdgau(3)", "vol_hlh_hlogret_hdgau(4)", "vol_hlh_hlogret_hdgau(8)"]
+		}
+	}
+}

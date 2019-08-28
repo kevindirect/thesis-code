@@ -1853,7 +1853,7 @@ def chained_filter(str_list, qualifier_dict_list):
 def df_sk_mw_transform(df, trf, num_cols, win_size):
 	"""
 	Applies a sklearn transform on the provided dataframe by sliding a moving window across it.
-
+	Inspired by WhoIsJack code: https://stackoverflow.com/questions/45928761/rolling-pca-on-pandas-dataframe
 	Args:
 		df (pd.DataFrame):
 		trf (sklearn Transformer):
@@ -1863,7 +1863,7 @@ def df_sk_mw_transform(df, trf, num_cols, win_size):
 	Returns:
 		Output dataframe with transformed data of shape (df.shape[0], num_cols)
 	"""
-	out_df = pd.DataFrame(np.full((df.shape[0], num_cols), np.nan))
+	out_df = pd.DataFrame(np.full((df.shape[0], num_cols), np.nan), index=df.index)
 	df_idx = pd.DataFrame(np.arange(df.shape[0]))
 
 	def rolling_trf(win_idx):

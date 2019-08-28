@@ -1,0 +1,23 @@
+{
+	"meta": {
+		"rec_fmt": "hd{sym_type}({num_sym})",
+		"var_fmt": "grid",
+		"res_freq": "H",
+		"info": "hourly, daily uniform aggregated symbols"
+	},
+	"fn": {
+		"ser_fn": "sym",
+		"df_fn": "rut",
+		"col_fn": null,
+		"freq": null
+	},
+	"axe": {
+		"rm": null,
+		"src": ["hdmx", "hdmx"],
+		"dst": ["hduni", "hduni"]
+	},
+	"var": {
+		"sym_type": ["uni"],
+		"num_sym": [2, 3, 4, 8]
+	}
+}

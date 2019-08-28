@@ -1,0 +1,20 @@
+{
+	"hohlca": {
+		"hdmx": "hduni",
+		"hdzn": "hdgau"
+	},
+	"hohlca_pba_vol": {
+			"hret": {
+				"hdmx": "hduni",
+				"hdzn": "hdgau"
+			},
+			"hspread": {
+				"hdmx": "hduni",
+				"hdzn": "hdgau"
+			},
+			"hlogret": {
+				"hdmx": "hduni",
+				"hdzn": "hdgau"
+			}
+	}
+}

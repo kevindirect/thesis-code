@@ -1,9 +1,4 @@
 {
-	"hourly-daily-normalized": [
-		["hohlca"],
-		["hspread", "hret", "hlogret"],
-		["hdmx", "hdzn"]
-	],
 	"daily-return-dir": [
 		["hohlca"],
 		["hdxret", "hdxret1", "hdxret2"],

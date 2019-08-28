@@ -1,9 +1,9 @@
 {
 	"meta": {
-		"rec_fmt": "{sym_type}({num_sym})",
+		"rec_fmt": "hd{sym_type}({num_sym})",
 		"var_fmt": "grid",
 		"res_freq": "H",
-		"info": "hourly daily aggregated symbols"
+		"info": "hourly, daily gaussian aggregated symbols"
 	},
 	"fn": {
 		"ser_fn": "sym",
@@ -13,11 +13,11 @@
 	},
 	"axe": {
 		"rm": null,
-		"src": ["hdnorm", "hdnorm"],
-		"dst": ["hdsym", "hdsym"]
+		"src": ["hdzn", "hdzn"],
+		"dst": ["hdgau", "hdgau"]
 	},
 	"var": {
-		"sym_type": ["gau", "uni"],
+		"sym_type": ["gau"],
 		"num_sym": [2, 3, 4, 8]
 	}
 }

@@ -1,0 +1,8 @@
+{
+	"hourly-daily-normalized": [
+		["hohlca"],
+		["hspread", "hret", "hlogret"],
+		["hdmx", "hdzn"],
+		["hduni", "hdgau"]
+	]
+}
