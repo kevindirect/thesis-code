@@ -1,15 +1,15 @@
 {
-	"labels-daily-return-dir": [
+	"label-daily-return-dir": [
 		["hohlca"],
 		["hdxret", "hdxret1", "hdxret2"],
 		["dret", "dret1", "dret2", "ddir", "ddir1", "ddir2"]
 	],
-	"labels-daily-expanding-firstbreak-return": [
+	"label-daily-expanding-firstbreak-return": [
 		["hohlca"],
 		["hdxret1", "hdxret2"],
 		["dxfbret1", "dxfbret2"]
 	],
-	"labels-daily-expanding-firstbreak-clipped-return-dir-score": [
+	"label-daily-expanding-firstbreak-clipped-return-dir-score": [
 		["hohlca"],
 		["hdxcret1", "hdxcret2"],
 		["dxfbcret1", "dxfbcret2", "dxfbdir1", "dxfbdir2", "dxfbval1", "dxfbval2"]
