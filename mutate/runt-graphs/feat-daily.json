@@ -1,13 +1,13 @@
 {
-	"daily-logreturns": [
+	"feat-daily-logreturns": [
 		["dohlca"],
 		["dlogret"]
 	],
-	"daily-differenced": [
+	"feat-daily-differenced": [
 		["dohlca"],
 		["dffd", "ddiff"]
 	],
-	"daily-window-ranked": [
+	"feat-daily-window-ranked": [
 		["dohlca"],
 		["dwrmx", "dwrod", "dwrzn"]
 	]
