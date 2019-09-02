@@ -1,7 +1,7 @@
 {
 	"*": null,
 	"/": {
-		"pba_hoc_hdxret_dxfbret": {
+		"pba_hoc_hdxret2_dxfbret2": {
 			"exact": ["pba_oc"]
 		}
 	}

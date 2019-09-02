@@ -1,16 +1,16 @@
 {
 	"*": null,
 	"/": {
-		"pba_hoc_hdxret_dxfbret": {
+		"pba_hoc_hdxret2_dxfbret2": {
 			"exact": ["pba_oc"]
 		},
-		"pba_hlh_hdxret_dxfbret": {
+		"pba_hlh_hdxret2_dxfbret2": {
 			"exact": ["pba_lh"]
 		},
-		"vol_hoc_hdxret_dxfbret": {
+		"vol_hoc_hdxret2_dxfbret2": {
 			"exact": ["vol_oc"]
 		},
-		"vol_hlh_hdxret_dxfbret": {
+		"vol_hlh_hdxret2_dxfbret2": {
 			"exact": ["vol_lh"]
 		}
 	}
