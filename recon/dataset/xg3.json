@@ -1,0 +1,23 @@
+{
+	"features": [
+		["dohlca", "dohlca"],
+		["dlogret", "dlogret"],
+		["dffd", "dffd"],
+		["ddiff", "ddiff"],
+		["dwrmx", "dwrmx"],
+		["dwrod", "dwrod"],
+		["dwrzn", "dwrzn"],
+		["dc", "dc"],
+		["hohlca", "hohlca"],
+		["hspread", "hspread"],
+		["hret", "hret"],
+		["hlogret", "hlogret"],
+		["hdmx", "hdmx"],
+		["hduni", "hduni"],
+		["hdzn", "hdzn"],
+		["hdgau", "hdgau"]
+	],
+	"labels": "labels.json",
+	"targets": "targets.json",
+	"row_masks": "row_masks.json"
+}

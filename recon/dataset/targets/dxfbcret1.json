@@ -1,0 +1,6 @@
+{
+	"targets": [
+		["dxfbcret1", "dxfbcret1_lin"],
+		["dxfbcret1", "dxfbcret1_log"]
+	]
+}

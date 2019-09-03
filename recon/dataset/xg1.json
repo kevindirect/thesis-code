@@ -1,0 +1,10 @@
+{
+	"features": [
+		["dohlca", "dohlca"],
+		["dc", "dc"],
+		["hohlca", "hohlca"]
+	],
+	"labels": "labels.json",
+	"targets": "targets.json",
+	"row_masks": "row_masks.json"
+}
