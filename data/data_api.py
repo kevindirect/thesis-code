@@ -255,12 +255,13 @@ class DataAPI:
 		return sel if (isnt(col_subsetter)) else sel.loc[:, chained_filter(sel.columns, col_subsetter)]
 
 	@classmethod
-	def axe_yield(cls, axe, lazy=False, pfx_keys=['root'], sfx_keys=['desc']):
+	def axe_yield(cls, axe, flt=None, lazy=False, pfx_keys=['root'], sfx_keys=['desc']):
 		"""
 		Yield the data returned by querying the data record with the axefile.
 
 		Args:
 			axe (list): two item list identifying the axefile
+			flt (function): filter function with signature flt(path), if None no filter used
 			lazy (bool): whether or not to delay the dataframe loading
 			pfx_keys (list): record entry fields to prepend to each keychain
 			sfx_keys (list): record entry fields to append to each keychain
@@ -275,16 +276,19 @@ class DataAPI:
 			for rec in cls.get_rec_matches(df_searcher):
 				pfx, sfx = [getattr(rec, key) for key in pfx_keys], [getattr(rec, key) for key in sfx_keys]
 				res = delayed(cls.get_df_from_rec)(rec, col_subsetter) if (lazy) else cls.get_df_from_rec(rec, col_subsetter)
-				yield axe_get_keychain(pfx, axe, sfx, sub), rec, res
+				path = axe_get_keychain(pfx, axe, sfx, sub)
+				if (isnt(flt) or flt(path)):
+					yield path, rec, res
 
 	@classmethod
-	def axe_load(cls, axe, lazy=False, pfx_keys=['root'], sfx_keys=['desc']):
+	def axe_load(cls, axe, flt=None, lazy=False, pfx_keys=['root'], sfx_keys=['desc']):
 		"""
 		Return the data returned by querying the data record with the axefile as two NDDs.
 		Most of the actual functionality is in axe_yield.
 
 		Args:
 			axe (list): two item list identifying the axefile
+			flt (function): filter function with signature flt(path), if None no filter used
 			lazy (bool): whether or not to delay the dataframe loading
 			pfx_keys (list): record entry fields to prepend to each keychain
 			sfx_keys (list): record entry fields to append to each keychain
@@ -295,7 +299,7 @@ class DataAPI:
 			* dfs (NestedDefaultDict): a mapping of keychains to dfs or dask.delayed dfs
 		"""
 		recs, dfs = NestedDefaultDict(), NestedDefaultDict()
-		for kc, rec, df in cls.axe_yield(axe=axe, lazy=lazy, pfx_keys=pfx_keys, sfx_keys=sfx_keys):
+		for kc, rec, df in cls.axe_yield(axe=axe, flt=flt, lazy=lazy, pfx_keys=pfx_keys, sfx_keys=sfx_keys):
 			recs[kc], dfs[kc] = rec, df
 		return recs, dfs
 
