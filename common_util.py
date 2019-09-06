@@ -19,6 +19,7 @@ import numbers
 import operator
 import getopt
 import collections.abc
+from copy import deepcopy
 from collections import Mapping
 import subprocess
 from multiprocessing.pool import ThreadPool
@@ -352,7 +353,7 @@ class NestedDefaultDict(MutableMapping):
 			ValueError if the proposed key contains a reserved string
 		"""
 		if (NestedDefaultDict.KEY_END in key):
-			raise ValueError("Cannot use \'{}\' in a valid keychain, this string is reserved".format(NestedDefaultDict.KEY_END))
+			raise KeyError("Cannot use \'{}\' in a valid keychain, this string is reserved".format(NestedDefaultDict.KEY_END))
 
 		if (isinstance(value, NestedDefaultDict) or isinstance(value, defaultdict)):
 			for childkey in self.childkeys(key):										# Remove old branch
@@ -378,10 +379,9 @@ class NestedDefaultDict(MutableMapping):
 		Raises:
 			ValueError if the key doesn't exist
 		"""
-		if (key in self.keychains):
-			return reduce(operator.getitem, key, self.tree)[NestedDefaultDict.KEY_END]
-		else:
-			raise ValueError("Attempted key doesn\'t exist")
+		if (key not in self.keychains):
+			raise KeyError("Attempted key doesn\'t exist")
+		return reduce(operator.getitem, key, self.tree)[NestedDefaultDict.KEY_END]
 
 	def __delitem__(self, key):
 		"""
@@ -398,11 +398,36 @@ class NestedDefaultDict(MutableMapping):
 		Raises:
 			ValueError if the key doesn't exist
 		"""
-		if (key in self.keychains):
-			del reduce(operator.getitem, key, self.tree)[NestedDefaultDict.KEY_END]
-			self.keychains.remove(key)
-		else:
-			raise ValueError("Attempted key doesn\'t exist")
+		if (key not in self.keychains):
+			raise KeyError("Attempted key doesn\'t exist")
+		del reduce(operator.getitem, key, self.tree)[NestedDefaultDict.KEY_END]
+		self.keychains.remove(key)
+
+	def __add__(self, other):
+		"""
+		TODO - finish
+		Add two disjoint NDDs together and return the result as a new NDD.
+
+		Args:
+			other (NestedDefaultDict): other NDD to add to self
+
+		Returns:
+			new NDD with elements combined
+
+		Raises:
+			ValueError if the other item is not a NDD
+			ValueError if the two NDDs have any common keychains
+		"""
+		if (not isinstance(other, NestedDefaultDict)):
+			raise ValueError("Both objects must be NestedDefaultDicts to add them")
+		elif (any(kc in self.keychains for kc in other.keychains)):
+			raise KeyError("Cannot add NestedDefaultDicts with common keychains")
+		pass
+#		out = deepcopy(self)
+#		for k, v in other.items():
+#			other[k] = v
+#		return out
+#		return NestedDefaultDict(keychains=self.keychains+other.keychains, tree=self.tree.update(other.tree))
 
 	def __iter__(self):
 		"""
