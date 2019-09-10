@@ -1,9 +1,9 @@
 {
-	"hohlca": {
-		"hdmx": "hduni",
-		"hdzn": "hdgau"
-	},
 	"hohlca_pba_vol": {
+			"hdmx": "hduni",
+			"hdzn": "hdgau"
+	},
+	"hohlca_pba_vol_pairs": {
 			"hret": {
 				"hdmx": "hduni",
 				"hdzn": "hdgau"

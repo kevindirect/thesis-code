@@ -1,11 +1,15 @@
 {
 	"dc": null,
 	"dohlca": {
-		"ddiff": null,
+		"ddiff": null
+	},
+	"dohlca_pba_vol": {
 		"dffd": null,
-		"dlogret": null,
 		"dwrmx": null,
 		"dwrod": null,
 		"dwrzn": null
+	},
+	"dohlca_pba_vol_pairs": {
+		"dlogret": null
 	}
 }

@@ -1,5 +1,5 @@
 {
-	"hohlca": {
+	"hohlca_pba_vol_pairs": {
 		"hdxret": {
 			"dret": null,
 			"ddir": null
@@ -7,20 +7,22 @@
 		"hdxret1": {
 			"dret1": null,
 			"ddir1": null,
-			"hdxret1": "dxfbret1",
-			"hdxcret1": {
-				"dxfbdir1": null,
-				"dxfbval1": null
-			}
+			"dxfbret1": null
 		},
 		"hdxret2": {
 			"dret2": null,
 			"ddir2": null,
-			"hdxret2": "dxfbret2",
-			"hdxcret2": {
-				"dxfbdir2": null,
-				"dxfbval2": null
-			}
+			"dxfbret2": null
+		},
+		"hdxcret1": {
+			"dxfbcret1": null,
+			"dxfbdir1": null,
+			"dxfbval1": null
+		},
+		"hdxcret2": {
+			"dxfbcret2": null,
+			"dxfbdir2": null,
+			"dxfbval2": null
 		}
 	}
 }
