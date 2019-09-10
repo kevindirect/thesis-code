@@ -1,0 +1,20 @@
+{
+	"*": {
+		"stage": "mutate",
+		"type": "ddiff"
+	},
+	"/": {
+		"trmi3_etf3_social_buzz_dohlca_ddiff": {
+			"desc": "trmi3_etf3_social_buzz_dohlca_ddiff(1)"
+		},
+		"trmi3_mkt3_social_stockIndexBuzz_dohlca_ddiff": {
+			"desc": "trmi3_mkt3_social_stockIndexBuzz_dohlca_ddiff(1)"
+		},
+		"trmi3_mkt3_social_bondBuzz_dohlca_ddiff": {
+			"desc": "trmi3_mkt3_social_bondBuzz_dohlca_ddiff(1)"
+		},
+		"trmi3_mkt3_social_ratesBuzz_dohlca_ddiff": {
+			"desc": "trmi3_mkt3_social_ratesBuzz_dohlca_ddiff(1)"
+		}
+	}
+}
