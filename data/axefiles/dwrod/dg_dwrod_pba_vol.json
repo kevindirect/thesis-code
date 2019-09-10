@@ -1,1 +1,14 @@
-dg_dwrod.json
+{
+	"*": {
+		"stage": "mutate",
+		"type": "dwrod"
+	},
+	"/": {
+		"pba_dohlca_dwrod": {
+			"desc": ["pba_dohlca_dwrod(5)", "pba_dohlca_dwrod(20)", "pba_dohlca_dwrod(240)", "pba_dohlca_dwrod(-1)"]
+		},
+		"vol_dohlca_dwrod": {
+			"desc": ["vol_dohlca_dwrod(5)", "vol_dohlca_dwrod(20)", "vol_dohlca_dwrod(240)", "vol_dohlca_dwrod(-1)"]
+		}
+	}
+}

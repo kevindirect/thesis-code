@@ -1,0 +1,20 @@
+{
+	"*": {
+		"stage": "mutate",
+		"type": "dwrod"
+	},
+	"/": {
+		"trmi3_etf3_social_buzz_dohlca_dwrod": {
+			"desc": ["trmi3_etf3_social_buzz_dohlca_dwrod(5)", "trmi3_etf3_social_buzz_dohlca_dwrod(20)", "trmi3_etf3_social_buzz_dohlca_dwrod(240)", "trmi3_etf3_social_buzz_dohlca_dwrod(-1)"]
+		},
+		"trmi3_mkt3_social_stockIndexBuzz_dohlca_dwrod": {
+			"desc": ["trmi3_mkt3_social_stockIndexBuzz_dohlca_dwrod(5)", "trmi3_mkt3_social_stockIndexBuzz_dohlca_dwrod(20)", "trmi3_mkt3_social_stockIndexBuzz_dohlca_dwrod(240)", "trmi3_mkt3_social_stockIndexBuzz_dohlca_dwrod(-1)"]
+		},
+		"trmi3_mkt3_social_bondBuzz_dohlca_dwrod": {
+			"desc": ["trmi3_mkt3_social_bondBuzz_dohlca_dwrod(5)", "trmi3_mkt3_social_bondBuzz_dohlca_dwrod(20)", "trmi3_mkt3_social_bondBuzz_dohlca_dwrod(240)", "trmi3_mkt3_social_bondBuzz_dohlca_dwrod(-1)"]
+		},
+		"trmi3_mkt3_social_ratesBuzz_dohlca_dwrod": {
+			"desc": ["trmi3_mkt3_social_ratesBuzz_dohlca_dwrod(5)", "trmi3_mkt3_social_ratesBuzz_dohlca_dwrod(20)", "trmi3_mkt3_social_ratesBuzz_dohlca_dwrod(240)", "trmi3_mkt3_social_ratesBuzz_dohlca_dwrod(-1)"]
+		}
+	}
+}

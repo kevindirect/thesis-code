@@ -1,0 +1,20 @@
+{
+	"*": {
+		"stage": "mutate",
+		"type": "dwrzn"
+	},
+	"/": {
+		"trmi3_etf3_news_buzz_dohlca_dwrzn": {
+			"desc": ["trmi3_etf3_news_buzz_dohlca_dwrzn(5)", "trmi3_etf3_news_buzz_dohlca_dwrzn(20)", "trmi3_etf3_news_buzz_dohlca_dwrzn(240)", "trmi3_etf3_news_buzz_dohlca_dwrzn(-1)"]
+		},
+		"trmi3_mkt3_news_stockIndexBuzz_dohlca_dwrzn": {
+			"desc": ["trmi3_mkt3_news_stockIndexBuzz_dohlca_dwrzn(5)", "trmi3_mkt3_news_stockIndexBuzz_dohlca_dwrzn(20)", "trmi3_mkt3_news_stockIndexBuzz_dohlca_dwrzn(240)", "trmi3_mkt3_news_stockIndexBuzz_dohlca_dwrzn(-1)"]
+		},
+		"trmi3_mkt3_news_bondBuzz_dohlca_dwrzn": {
+			"desc": ["trmi3_mkt3_news_bondBuzz_dohlca_dwrzn(5)", "trmi3_mkt3_news_bondBuzz_dohlca_dwrzn(20)", "trmi3_mkt3_news_bondBuzz_dohlca_dwrzn(240)", "trmi3_mkt3_news_bondBuzz_dohlca_dwrzn(-1)"]
+		},
+		"trmi3_mkt3_news_ratesBuzz_dohlca_dwrzn": {
+			"desc": ["trmi3_mkt3_news_ratesBuzz_dohlca_dwrzn(5)", "trmi3_mkt3_news_ratesBuzz_dohlca_dwrzn(20)", "trmi3_mkt3_news_ratesBuzz_dohlca_dwrzn(240)", "trmi3_mkt3_news_ratesBuzz_dohlca_dwrzn(-1)"]
+		}
+	}
+}
