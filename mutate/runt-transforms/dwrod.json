@@ -13,7 +13,7 @@
 	},
 	"axe": {
 		"rm": null,
-		"src": ["dohlca", "dohlca_pba_vol"],
+		"src": ["dohlca", "dohlca"],
 		"dst": ["dwrod", "dwrod"]
 	},
 	"var": {
