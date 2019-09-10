@@ -1,0 +1,7 @@
+{
+	"features": [
+		["dffd", "dffd_pba_vol"]
+	],
+	"labels": "labels.json",
+	"targets": "targets.json"
+}

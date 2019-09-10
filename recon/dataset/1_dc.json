@@ -1,0 +1,8 @@
+{
+	"features": [
+		["dc", "dc_trmi3_news"],
+		["dc", "dc_trmi3_social"]
+	],
+	"labels": "labels.json",
+	"targets": "targets.json"
+}

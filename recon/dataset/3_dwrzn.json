@@ -1,0 +1,9 @@
+{
+	"features": [
+		["dwrzn", "dwrzn_pba_vol"],
+		["dwrzn", "dwrzn_trmi3_news"],
+		["dwrzn", "dwrzn_trmi3_social"]
+	],
+	"labels": "labels.json",
+	"targets": "targets.json"
+}

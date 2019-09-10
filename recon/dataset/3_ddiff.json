@@ -1,0 +1,9 @@
+{
+	"features": [
+		["ddiff", "ddiff_pba_vol"],
+		["ddiff", "ddiff_trmi3_news"],
+		["ddiff", "ddiff_trmi3_social"]
+	],
+	"labels": "labels.json",
+	"targets": "targets.json"
+}

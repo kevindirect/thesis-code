@@ -1,0 +1,10 @@
+{
+	"features": [
+		["hohlca", "hohlca_pba_vol"],
+		["hohlca", "hohlca_trmi3_news"],
+		["hohlca", "hohlca_trmi3_social"]
+	],
+	"labels": "labels.json",
+	"targets": "targets.json",
+	"row_masks": "row_masks.json"
+}

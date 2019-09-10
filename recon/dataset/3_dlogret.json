@@ -1,0 +1,7 @@
+{
+	"features": [
+		["dlogret", "dlogret_pba_vol"]
+	],
+	"labels": "labels.json",
+	"targets": "targets.json"
+}

@@ -1,0 +1,9 @@
+{
+	"features": [
+		["dohlca", "dohlca_pba_vol"],
+		["dohlca", "dohlca_trmi3_news"],
+		["dohlca", "dohlca_trmi3_social"]
+	],
+	"labels": "labels.json",
+	"targets": "targets.json"
+}
