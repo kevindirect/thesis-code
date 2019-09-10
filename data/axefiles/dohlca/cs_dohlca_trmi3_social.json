@@ -1,0 +1,17 @@
+{
+	"*": null,
+	"/": {
+		"trmi3_etf3_social_buzz_dohlca": {
+			"exact": ["etf3_buzz_S_open", "etf3_buzz_S_high", "etf3_buzz_S_low", "etf3_buzz_S_close", "etf3_buzz_S_avgPrice"]
+		},
+		"trmi3_mkt3_social_stockIndexBuzz_dohlca": {
+			"exact": ["mkt3_stockIndexBuzz_S_open", "mkt3_stockIndexBuzz_S_high", "mkt3_stockIndexBuzz_S_low", "mkt3_stockIndexBuzz_S_close", "mkt3_stockIndexBuzz_S_avgPrice"]
+		},
+		"trmi3_mkt3_social_bondBuzz_dohlca": {
+			"exact": ["mkt3_bondBuzz_S_open", "mkt3_bondBuzz_S_high", "mkt3_bondBuzz_S_low", "mkt3_bondBuzz_S_close", "mkt3_bondBuzz_S_avgPrice"]
+		},
+		"trmi3_mkt3_social_ratesBuzz_dohlca": {
+			"exact": ["mkt3_ratesBuzz_S_open", "mkt3_ratesBuzz_S_high", "mkt3_ratesBuzz_S_low", "mkt3_ratesBuzz_S_close", "mkt3_ratesBuzz_S_avgPrice"]
+		}
+	}
+}
