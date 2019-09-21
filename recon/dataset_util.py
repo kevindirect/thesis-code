@@ -33,10 +33,12 @@ GEN_GROUP_CONSTRAINTS = {
 	'lt_constraint': lt_constraint,
 	'flr_constraint': flr_constraint,
 	'flt_constraint': flt_constraint,
-	'fltr_constraint': fltr_constraint
+	'fltr_constraint': fltr_constraint,
+	'asset_match': asset_match,
+	None: no_constraint
 }
 
-def gen_group(dataset, group=['features', 'labels', 'targets', 'row_masks'], out=['dfs'], constraint=fltr_constraint):
+def gen_group(dataset, group=['features', 'labels', 'targets', 'row_masks'], out=['dfs'], constraint='fltr_constraint'):
 	"""
 	Convenience function to yield specified partitions from dataset.
 
@@ -44,21 +46,20 @@ def gen_group(dataset, group=['features', 'labels', 'targets', 'row_masks'], out
 		dataset (dict): dictionary returned by prep_dataset
 		group (list): data partitions to include in generator
 		out (list): what the generator will output, 'dfs' and/or 'recs'
-		constraint (lambda, optional): constraint of data partition paths, must have as many arguments as items in group
+		constraint (str, optional): string referring to data partition constraint function in GEN_GROUP_CONSTRAINTS
+			must have as many arguments as items in group
 			(if None is passed, no constraint is used and full cartesian product of groups are yielded)
 
 	Yields:
 		Pair of paths and outputs ordered by the specifed group list
 
 		Example:
-			gen_group(dataset, group=['features', 'labels'], constraint=asset_match) -> yields feature label pairs where the first items of their paths match
+			gen_group(dataset, group=['features', 'labels'], constraint='asset_match') -> yields feature label pairs where the first items of their paths match
 	"""
-	if (isnt(constraint)):
-		constraint = no_constraint
-
+	constraint_fn = GEN_GROUP_CONSTRAINTS.get(constraint, no_constraint)
 	parts = [list(dataset[part][out[0]].keys()) for part in group] # Can use out[0] becuase keys are guaranteed to be identical aross all outputs
 
-	for paths in filter(lambda combo: constraint(*combo), product(*parts)):
+	for paths in filter(lambda combo: constraint_fn(*combo), product(*parts)):
 		outputs = tuple(tuple(dataset[part][output][paths[i]] for i, part in enumerate(group)) for output in out)
 		yield (paths, *outputs)
 
