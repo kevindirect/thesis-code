@@ -16,24 +16,21 @@ from recon.common import DATASET_DIR
 
 
 no_constraint = lambda *a: True
-asset_match = lambda a, b: a[0]==b[0]
-src_match = lambda a, b: a[2]==b[2]
+asset_match = lambda a, b: a[0]==b[0]			# sp_500, russell_2000, dow_jones, etc.
+src_match = lambda a, b: a[2].startswith(b[2])		# pba, vol, trmi2, trmi3, etc.
 parent_match = lambda a, b: a[-1].split('_')[:-1]==b[-1].split('_')[:-1] # Common parent if all the items in desc except last are identical
 
-flr_asset_match = lambda fp, lp, rp: asset_match(fp, lp) and asset_match(fp, rp)
-flr_src_match = lambda fp, lp, rp: src_match(fp, rp)
-flr_constraint = lambda fp, lp, rp: flr_asset_match(fp, lp, rp) and flr_src_match(fp, lp, rp)
+fr_constraint = lambda f, r: asset_match(f, r) and src_match(f, r)
+lt_constraint = lambda l, t: asset_match(l, t) and parent_match(l, t)
 
-flt_parent_match = lambda fp, lp, tp: parent_match(lp, tp)
-flt_asset_match = lambda fp, lp, tp: asset_match(fp, lp) and asset_match(fp, tp)
-flt_constraint = lambda fp, lp, tp: flt_parent_match(fp, lp, tp) and flt_asset_match(fp, lp, tp)
+flr_constraint = lambda f, l, r: asset_match(f, l) and fr_constraint(f, r)
+flt_constraint = lambda f, l, t: asset_match(f, l) and lt_constraint(l, t)
 
-fltr_parent_match = lambda fp, lp, tp, rp: parent_match(lp, tp)
-fltr_asset_match = lambda fp, lp, tp, rp: asset_match(fp, lp) and asset_match(fp, tp) and asset_match(fp, rp)
-fltr_src_match = lambda fp, lp, tp, rp: src_match(fp, rp)
-fltr_constraint = lambda fp, lp, tp, rp: fltr_parent_match(fp, lp, tp, rp) and fltr_asset_match(fp, lp, tp, rp) and fltr_src_match(fp, lp, tp, rp)
+fltr_constraint = lambda f, l, t, r: asset_match(f, l) and fr_constraint(f, r) and lt_constraint(l, t)
 
 GEN_GROUP_CONSTRAINTS = {
+	'fr_constraint': fr_constraint,
+	'lt_constraint': lt_constraint,
 	'flr_constraint': flr_constraint,
 	'flt_constraint': flt_constraint,
 	'fltr_constraint': fltr_constraint
