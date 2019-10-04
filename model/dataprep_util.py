@@ -93,7 +93,7 @@ def single_prep_fn(fn):
 
 
 """ ********** DATA PREPARATION COMPOSITIONS ********** """
-def prepare_transpose_data(feature_df, row_masks_df, delayed=False):
+def prep_transpose_data(feature_df, row_masks_df, delayed=False):
 	"""
 	Converts a single indexed intraday DataFrame into a MultiIndexed daily DataFrame.
 
@@ -116,7 +116,7 @@ def prepare_transpose_data(feature_df, row_masks_df, delayed=False):
 	prep_fn = dcompose(*preproc) if (delayed) else compose(*preproc)
 	return prep_fn(feature_df, row_masks_df)
 
-def prepare_trmi_buzzless(feature_df, delayed=False):
+def prep_trmi_buzzless(feature_df, delayed=False):
 	"""
 	TODO
 	Converts a
@@ -137,7 +137,7 @@ def prepare_trmi_buzzless(feature_df, delayed=False):
 	return prep_fn(feature_df)
 
 
-def prepare_label_data(label_ser, delayed=False):
+def prep_label_data(label_ser, delayed=False):
 	"""
 	Converts a single indexed intraday DataFrame into a MultiIndexed daily DataFrame.
 
@@ -157,7 +157,7 @@ def prepare_label_data(label_ser, delayed=False):
 	prep_fn = dcompose(*preproc) if (delayed) else compose(*preproc)
 	return prep_fn(label_ser)
 
-def prepare_target_data(target_ser, delayed=False):
+def prep_target_data(target_ser, delayed=False):
 	"""
 	Converts a single indexed intraday DataFrame into a MultiIndexed daily DataFrame.
 
@@ -184,8 +184,8 @@ COMMON_PREP_MAPPING = {
 }
 
 DATA_PREP_MAPPING = {
-	'prep_transpose_data': prepare_transpose_data,
-	'prep_label_data': prepare_label_data,
-	'prep_target_data': prepare_target_data,
+	'prep_transpose_data': prep_transpose_data,
+	'prep_label_data': prep_label_data,
+	'prep_target_data': prep_target_data,
 	'pd_idx_date_only': single_prep_fn(pd_dti_idx_date_only)
 }

@@ -64,7 +64,8 @@ FMT_EXTS = {
 	'feather': ('.feather',),
 	'hdf_fixed': ('.h5', '.hdf', '.he5', '.hdf5'),
 	'hdf_table': ('.h5', '.hdf', '.he5', '.hdf5'),
-	'parquet': ('.parquet',)
+	'parquet': ('.parquet',),
+	'pickle': ('.pickle',)
 }
 
 """Default Pandas DF IO format"""
@@ -906,7 +907,8 @@ def load_df(fname, dir_path=None, data_format=DF_DATA_FMT, subset=None, dti_freq
 				'feather': partial(pd.read_feather),
 				'hdf_fixed': partial(pd.read_hdf, key=None, mode='r', columns=subset, format='fixed'),
 				'hdf_table': partial(pd.read_hdf, key=None, mode='r', columns=subset, format='table'),
-				'parquet': partial(pd.read_parquet, columns=subset)
+				'parquet': partial(pd.read_parquet, columns=subset),
+				'pickle': partial(pd.read_pickle)
 			}.get(data_format)(fpath)
 
 			if (data_format == 'feather'):
@@ -926,7 +928,7 @@ def load_df(fname, dir_path=None, data_format=DF_DATA_FMT, subset=None, dti_freq
 			logging.error('error during load:', e)
 			raise e
 	else:
-		raise FileNotFoundError(str(basename(fpath) +' must be in:' +dirname(fpath)))
+		raise FileNotFoundError('{} must be in: {}'.format(basename(fpath), dirname(fpath)))
 
 def dump_df(df, fname, dir_path=None, data_format=DF_DATA_FMT):
 	ext_tuple = FMT_EXTS[data_format]
@@ -940,7 +942,8 @@ def dump_df(df, fname, dir_path=None, data_format=DF_DATA_FMT):
 			'feather': (lambda f: df.reset_index().to_feather(f)),
 			'hdf_fixed': partial(df.to_hdf, fname, mode='w', format='fixed'),
 			'hdf_table': partial(df.to_hdf, fname, mode='w', format='table'),
-			'parquet': df.to_parquet
+			'parquet': df.to_parquet,
+			'pickle': df.to_pickle
 		}.get(data_format)(fpath)
 		return getsize(fpath) // BYTES_PER_MEGABYTE
 

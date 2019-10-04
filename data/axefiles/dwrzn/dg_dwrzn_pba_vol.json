@@ -1,7 +1,7 @@
 {
 	"*": {
 		"stage": "mutate",
-		"type": "dwrzn"
+		"type": ["dwrzn(5)", "dwrzn(20)", "dwrzn(240)", "dwrzn(-1)"]
 	},
 	"/": {
 		"pba_dohlca_dwrzn": {

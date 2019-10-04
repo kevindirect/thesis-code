@@ -1,7 +1,7 @@
 {
 	"*": {
 		"stage": "mutate",
-		"type": "dwrod"
+		"type": ["dwrod(5)", "dwrod(20)", "dwrod(240)", "dwrod(-1)"]
 	},
 	"/": {
 		"pba_dohlca_dwrod": {

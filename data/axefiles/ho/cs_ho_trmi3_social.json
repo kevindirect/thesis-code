@@ -1,0 +1,17 @@
+{
+	"*": null,
+	"/": {
+		"trmi3_etf3_social_buzz_ho": {
+			"exact": ["etf3_buzz_S_open"]
+		},
+		"trmi3_mkt3_social_stockIndexBuzz_ho": {
+			"exact": ["mkt3_stockIndexBuzz_S_open"]
+		},
+		"trmi3_mkt3_social_bondBuzz_ho": {
+			"exact": ["mkt3_bondBuzz_S_open"]
+		},
+		"trmi3_mkt3_social_ratesBuzz_ho": {
+			"exact": ["mkt3_ratesBuzz_S_open"]
+		}
+	}
+}

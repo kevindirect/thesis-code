@@ -1,7 +1,7 @@
 {
 	"*": {
 		"stage": "mutate",
-		"type": "ddiff"
+		"type": "ddiff(1)"
 	},
 	"/": {
 		"pba_dohlca_ddiff": {

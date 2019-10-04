@@ -1,7 +1,7 @@
 {
 	"*": {
 		"stage": "mutate",
-		"type": "dwrmx"
+		"type": ["dwrmx(5)", "dwrmx(20)", "dwrmx(240)", "dwrmx(-1)"]
 	},
 	"/": {
 		"pba_dohlca_dwrmx": {

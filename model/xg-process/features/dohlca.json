@@ -1,0 +1,11 @@
+{
+	"dataset": {
+		"features": "features/dohlca.json"
+	},
+	"constraint": "no_constraint",
+	"parts": ["features"],
+	"how": [["features"]],
+	"prep_fn": {
+		"features": "pd_idx_date_only"
+	}
+}

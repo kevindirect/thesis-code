@@ -1,0 +1,11 @@
+{
+	"dataset": {
+		"labels": "labels/dxfbdir1.json"
+	},
+	"constraint": "no_constraint",
+	"parts": ["labels"],
+	"how": [["labels"]],
+	"prep_fn": {
+		"labels": "prep_label_data"
+	}
+}

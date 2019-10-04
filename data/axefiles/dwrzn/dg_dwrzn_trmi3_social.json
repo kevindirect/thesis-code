@@ -1,7 +1,7 @@
 {
 	"*": {
 		"stage": "mutate",
-		"type": "dwrzn"
+		"type": ["dwrzn(5)", "dwrzn(20)", "dwrzn(240)", "dwrzn(-1)"]
 	},
 	"/": {
 		"trmi3_etf3_social_buzz_dohlca_dwrzn": {

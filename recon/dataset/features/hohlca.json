@@ -1,0 +1,7 @@
+{
+	"features": [
+		["hohlca", "hohlca_pba_vol"],
+		["ho", "ho_trmi3_news"],
+		["ho", "ho_trmi3_social"]
+	]
+}

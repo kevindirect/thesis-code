@@ -1,0 +1,11 @@
+{
+	"dataset": {
+		"targets": "targets/dret1.json"
+	},
+	"constraint": "no_constraint",
+	"parts": ["targets"],
+	"how": [["targets"]],
+	"prep_fn": {
+		"targets": "prep_target_data"
+	}
+}

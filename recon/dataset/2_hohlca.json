@@ -1,8 +1,8 @@
 {
 	"features": [
 		["hohlca", "hohlca_pba_vol"],
-		["hohlca", "hohlca_trmi3_news"],
-		["hohlca", "hohlca_trmi3_social"]
+		["ho", "ho_trmi3_news"],
+		["ho", "ho_trmi3_social"]
 	],
 	"labels": "labels.json",
 	"targets": "targets.json",

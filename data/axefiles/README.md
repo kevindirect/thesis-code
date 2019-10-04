@@ -80,7 +80,9 @@ The names can look strange at first glance, but it was all thought through. Ters
 * 'h': hourly
 * Others may be added in the future, including non-time based bars (like tick bars or whatever)
 
-The root axefile does not adhere to the above because we want for it to be able to have different frequencies of data. But even so, when we actually use this data, we get it from another axefile. For example we use 'hohlca' for hourly ohlca from raw instead of using 'raw' itself - this makes things cleaner. Notice that I punked you because everything in ./hohlca/ is just a symlink to a file in ./raw/. The use of symlinks is encouraged whenever possible instead of making hard copies. And remember we can make root axefiles that are filtrations of other root axefiles but we cannot make sub-axefiles that are not filtrations. For new transforms, you must create a new root axefile.
+The root axefile does not adhere to the above because we want for it to be able to have different frequencies of data. But even so, when we actually use this data, we will get it from another axefile that aggregates to a particular fixed frequency based on a transform. For example we use 'dc' for daily close.
+
+The use of symlinks is encouraged whenever possible instead of making hard copies. And remember we can make root axefiles that are filtrations or transforms of other root axefiles but we cannot make view axefiles that are not solely filtrations. For new transforms, you must create a new root axefile.
 
 A secondary frequency may be located after the first, oftentimes to indicate the aggregation frequency if relevant to that transform or data subset (so the 'hd' prefix is read 'hourly, daily'. Care was made to make names/codes terse but also be remember-able with mneumonics.
 

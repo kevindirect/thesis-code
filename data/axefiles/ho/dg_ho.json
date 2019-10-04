@@ -1,0 +1,32 @@
+{
+	"*": {
+		"stage": "mutate",
+		"type": "hohlca"
+	},
+	"/": {
+		"trmi3_etf3_news_buzz_ho": {
+			"desc": "trmi3_etf3_news_buzz_hohlca"
+		},
+		"trmi3_mkt3_news_stockIndexBuzz_ho": {
+			"desc": "trmi3_mkt3_news_stockIndexBuzz_hohlca"
+		},
+		"trmi3_mkt3_news_bondBuzz_ho": {
+			"desc": "trmi3_mkt3_news_bondBuzz_hohlca"
+		},
+		"trmi3_mkt3_news_ratesBuzz_ho": {
+			"desc": "trmi3_mkt3_news_ratesBuzz_hohlca"
+		},
+		"trmi3_etf3_social_buzz_ho": {
+			"desc": "trmi3_etf3_social_buzz_hohlca"
+		},
+		"trmi3_mkt3_social_stockIndexBuzz_ho": {
+			"desc": "trmi3_mkt3_social_stockIndexBuzz_hohlca"
+		},
+		"trmi3_mkt3_social_bondBuzz_ho": {
+			"desc": "trmi3_mkt3_social_bondBuzz_hohlca"
+		},
+		"trmi3_mkt3_social_ratesBuzz_ho": {
+			"desc": "trmi3_mkt3_social_ratesBuzz_hohlca"
+		}
+	}
+}
