@@ -24,9 +24,13 @@ def dump_row_masks(argv):
 		gmt_col = raw_df.columns[0]
 		assert(gmt_col.endswith(GMT_OFFSET_COL_SFX))
 		if (raw_df.shape[1] > 1):
-			# XXX - Forward filling nulls may lead to error if the time_range includes the times when Daylight savings is switched on/off
-			raw_df = raw_df.fillna(method='ffill', axis=0)
-			logging.info('Found more than one column, ffilled null values')
+			# XXX - Filling nulls may lead to error if the time_range includes the times when Daylight savings is switched on/off
+			#raw_df = raw_df.fillna(method='bfill', axis=0)
+			#logging.info('Found more than one column, backfilled null gmt offsets')
+			# XXX - this is commented out for now. Front or backfilling null gmt offsets causes problems in some data because the wrong
+			# gmt offset is set to some rows, either duplicsting an hour (ffill) or removing one (bfill).
+			# In the future use a library to do all dtz conversion, so we dont need to deal with this mess.
+			pass
 		logging.debug(raw_df)
 
 		for mask_type, mask in row_masks[asset_name][data_subset].items():

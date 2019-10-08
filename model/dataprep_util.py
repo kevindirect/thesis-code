@@ -119,7 +119,6 @@ def prep_transpose_data(feature_df, row_masks_df, delayed=False):
 def prep_trmi_buzzless(feature_df, delayed=False):
 	"""
 	TODO
-	Converts a
 
 	Args:
 		feature_df (pd.DataFrame): DataFrame
@@ -139,7 +138,7 @@ def prep_trmi_buzzless(feature_df, delayed=False):
 
 def prep_label_data(label_ser, delayed=False):
 	"""
-	Converts a single indexed intraday DataFrame into a MultiIndexed daily DataFrame.
+	Prepares a label series (includes time shift).
 
 	Args:
 		label_ser (pd.Series or pd.DataFrame): Label Series or single column DataFrame
@@ -159,7 +158,7 @@ def prep_label_data(label_ser, delayed=False):
 
 def prep_target_data(target_ser, delayed=False):
 	"""
-	Converts a single indexed intraday DataFrame into a MultiIndexed daily DataFrame.
+	Prepares a target series (includes time shift).
 
 	Args:
 		target_ser (pd.Series or pd.DataFrame): Target Series or single column DataFrame

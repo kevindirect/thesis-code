@@ -1479,7 +1479,7 @@ def get_time_mask(df, offset_col_name=None, offset_unit=DT_HOURLY_FREQ, offset_t
 	mask_df = pd.DataFrame(data={'times': df.index}, index=df.index)
 
 	if (offset_col_name is not None):
-	    # Convert a base timezone to a target via an offset (for example UTC to US/Eastern)
+		# Convert a base timezone to a target via an offset (for example UTC to US/Eastern)
 		lt_offset = pd.TimedeltaIndex(data=df.loc[:, offset_col_name], unit=offset_unit)
 		mask_df['times'] = mask_df['times'] + lt_offset
 		if (offset_tz is not None):
@@ -2028,7 +2028,8 @@ def last_commit_dtz(fname, fmt="%ci"):
 		out = b.decode()[:-1]
 	except (subprocess.CalledProcessError, ValueError):
 		out = None
-	return out
+	finally:
+		return out
 
 
 """ ********** DEBUGGING UTILS ********** """

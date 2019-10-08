@@ -51,7 +51,7 @@ def xgp(argv):
 							logging.info('dumping {}...'.format(str(i)))
 							dump_df(proc_df.to_frame() if (is_ser(proc_df)) else proc_df, str(i), dir_path=xg_outdir, data_format='pickle')
 					except Exception as e:
-						logging.error('exception during {} ({}): {}'.format(str(proc_path), str(i), e))
+						logging.error('exception during {}: {}'.format(str(i+1), e))
 					finally:
 						dump_json(proc_paths, 'index.json', dir_path=xg_outdir)
 
