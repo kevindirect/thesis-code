@@ -6,7 +6,7 @@
 	],
 	"label-daily-return-dir-1": [
 		["hohlca"],
-		["hdxret1"]
+		["hdxret1"],
 		["dret1", "ddir1"]
 	],
 	"label-daily-return-dir-2": [
