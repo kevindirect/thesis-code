@@ -1,17 +1,36 @@
 {
-	"label-daily-return-dir": [
+	"label-daily-return-dir-0": [
 		["hohlca"],
-		["hdxret", "hdxret1", "hdxret2"],
-		["dret", "dret1", "dret2", "ddir", "ddir1", "ddir2"]
+		["hdxret"],
+		["dret", "ddir"]
 	],
-	"label-daily-expanding-firstbreak-return": [
+	"label-daily-return-dir-1": [
 		["hohlca"],
-		["hdxret1", "hdxret2"],
-		["dxfbret1", "dxfbret2"]
+		["hdxret1"]
+		["dret1", "ddir1"]
 	],
-	"label-daily-expanding-firstbreak-clipped-return-dir-score": [
+	"label-daily-return-dir-2": [
 		["hohlca"],
-		["hdxcret1", "hdxcret2"],
-		["dxfbcret1", "dxfbcret2", "dxfbdir1", "dxfbdir2", "dxfbval1", "dxfbval2"]
-	]
+		["hdxret2"],
+		["dret2", "ddir2"]
+	],
+	"label-daily-expanding-firstbreak-return-1": [
+		["hohlca"],
+		["hdxret1"],
+		["dxfbret1"]
+	],
+	"label-daily-expanding-firstbreak-return-2": [
+		["hohlca"],
+		["hdxret2"],
+		["dxfbret2"]
+	],
+	"label-daily-expanding-firstbreak-clipped-return-dir-score-1": [
+		["hohlca"],
+		["hdxcret1"],
+		["dxfbcret1", "dxfbdir1", "dxfbval1"]
+	],
+	"label-daily-expanding-firstbreak-clipped-return-dir-score-2": [
+		["hohlca"],
+		["hdxcret2"],
+		["dxfbcret2", "dxfbdir2", "dxfbval2"]
 }

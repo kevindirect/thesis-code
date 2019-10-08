@@ -83,6 +83,7 @@ def single_row_map(val, flt, map_fn):
 STAT_FN_MAPPING = {
 	'avg': pd.Series.mean,
 	'std': pd.Series.std,
+	'mad': pd.Series.mad,
 	'max': pd.Series.max,
 	'min': pd.Series.min
 }
