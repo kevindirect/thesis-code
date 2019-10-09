@@ -17,7 +17,7 @@ from recon.common import DATASET_DIR
 
 no_constraint = lambda *a: True
 asset_match = lambda a, b: a[0]==b[0]			# sp_500, russell_2000, dow_jones, etc.
-src_match = lambda a, b: a[2].startswith(b[2])		# pba, vol, trmi2, trmi3, etc.
+src_match = lambda a, b: a[-1].startswith(b[-1])		# pba, vol, trmi2, trmi3, etc. Mostly used in conjunction with row mask dataframes
 parent_match = lambda a, b: a[-1].split('_')[:-1]==b[-1].split('_')[:-1] # Common parent if all the items in desc except last are identical
 
 fr_constraint = lambda f, r: asset_match(f, r) and src_match(f, r)
