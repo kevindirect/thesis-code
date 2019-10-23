@@ -330,12 +330,12 @@ class NestedDefaultDict(MutableMapping):
 		for key in self.keys():
 			yield key, self.__getitem__(key)
 
-	def childkeys(self, key):
+	def childkeys(self, parent):
 		"""
-		Yield all child keychains of a keychain.
-		This will also return the original key if it exists in the set of keychains (non-proper superset).
+		Yield all child keychains of a list of parent keys.
+		This will yield the original key if it exists in the set of keychains.
 		"""
-		yield from filter(lambda k: k[:len(key)]==key, self.keys())
+		yield from filter(lambda k: k[:len(parent)]==parent, self.keys())
 
 	def __setitem__(self, key, value):
 		"""
@@ -908,7 +908,7 @@ def load_df(fname, dir_path=None, data_format=DF_DATA_FMT, subset=None, dti_freq
 				'hdf_fixed': partial(pd.read_hdf, key=None, mode='r', columns=subset, format='fixed'),
 				'hdf_table': partial(pd.read_hdf, key=None, mode='r', columns=subset, format='table'),
 				'parquet': partial(pd.read_parquet, columns=subset),
-				'pickle': partial(pd.read_pickle)
+				'pickle': pd.read_pickle
 			}.get(data_format)(fpath)
 
 			if (data_format == 'feather'):
@@ -1947,7 +1947,8 @@ def pyt_unsqueeze_to(pyt, dim, append_right=True):
 """ ********** GRAPHVIZ UTILS ********** """
 def dict2dag(d, remap=None, list_max=None, **kwargs):
 	"""
-	Interpret a simple JSON style dictionary as a graphviz directed acyclic graph.
+	Interpret a JSON style dictionary as a graphviz directed acyclic graph and return it.
+	By JSON style we mean that the only values in the dict are nested dicts, lists, or python primitives.
 
 	Args:
 		d (dictionary): dictionary to translate into a graphviz Digraph
@@ -1974,7 +1975,7 @@ def dict2dag(d, remap=None, list_max=None, **kwargs):
 		"""
 		nid = str(gid); gid+=1
 		graph.node(nid, label=lbl if (isnt(remap)) else remap.get(lbl, lbl), shape=shape)
-		if (pid is not None):
+		if (is_valid(pid)):
 			graph.edge(head_name=nid, tail_name=pid)
 		return gid, nid
 

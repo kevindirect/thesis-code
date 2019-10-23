@@ -6,6 +6,30 @@
 		},
 		"vol_dohlca_dffd": {
 			"exact": ["vol_open", "vol_high", "vol_low", "vol_close", "vol_avgPrice"]
+		},
+		"trmi3_etf3_news_buzz_dohlca_dffd": {
+			"exact": ["etf3_buzz_N_open", "etf3_buzz_N_high", "etf3_buzz_N_low", "etf3_buzz_N_close", "etf3_buzz_N_avgPrice"]
+		},
+		"trmi3_mkt3_news_stockIndexBuzz_dohlca_dffd": {
+			"exact": ["mkt3_stockIndexBuzz_N_open", "mkt3_stockIndexBuzz_N_high", "mkt3_stockIndexBuzz_N_low", "mkt3_stockIndexBuzz_N_close", "mkt3_stockIndexBuzz_N_avgPrice"]
+		},
+		"trmi3_mkt3_news_bondBuzz_dohlca_dffd": {
+			"exact": ["mkt3_bondBuzz_N_open", "mkt3_bondBuzz_N_high", "mkt3_bondBuzz_N_low", "mkt3_bondBuzz_N_close", "mkt3_bondBuzz_N_avgPrice"]
+		},
+		"trmi3_mkt3_news_ratesBuzz_dohlca_dffd": {
+			"exact": ["mkt3_ratesBuzz_N_open", "mkt3_ratesBuzz_N_high", "mkt3_ratesBuzz_N_low", "mkt3_ratesBuzz_N_close", "mkt3_ratesBuzz_N_avgPrice"]
+		},
+		"trmi3_etf3_social_buzz_dohlca_dffd": {
+			"exact": ["etf3_buzz_S_open", "etf3_buzz_S_high", "etf3_buzz_S_low", "etf3_buzz_S_close", "etf3_buzz_S_avgPrice"]
+		},
+		"trmi3_mkt3_social_stockIndexBuzz_dohlca_dffd": {
+			"exact": ["mkt3_stockIndexBuzz_S_open", "mkt3_stockIndexBuzz_S_high", "mkt3_stockIndexBuzz_S_low", "mkt3_stockIndexBuzz_S_close", "mkt3_stockIndexBuzz_S_avgPrice"]
+		},
+		"trmi3_mkt3_social_bondBuzz_dohlca_dffd": {
+			"exact": ["mkt3_bondBuzz_S_open", "mkt3_bondBuzz_S_high", "mkt3_bondBuzz_S_low", "mkt3_bondBuzz_S_close", "mkt3_bondBuzz_S_avgPrice"]
+		},
+		"trmi3_mkt3_social_ratesBuzz_dohlca_dffd": {
+			"exact": ["mkt3_ratesBuzz_S_open", "mkt3_ratesBuzz_S_high", "mkt3_ratesBuzz_S_low", "mkt3_ratesBuzz_S_close", "mkt3_ratesBuzz_S_avgPrice"]
 		}
 	}
 }

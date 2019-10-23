@@ -14,10 +14,12 @@ from os import sep
 from common_util import RECON_DIR, MODEL_DIR
 
 # OTHER STAGE DEPENDENCIES
-#from keras.optimizers import SGD, RMSprop, Adam, Nadam
 import torch
-#from tensorflow.train import RMSPropOptimizer, AdamOptimizer
-#from tensorflow.nn import sparse_softmax_cross_entropy_with_logits, softmax_cross_entropy_with_logits_v2
+"""
+from keras.optimizers import SGD, RMSprop, Adam, Nadam
+from tensorflow.train import RMSPropOptimizer, AdamOptimizer
+from tensorflow.nn import sparse_softmax_cross_entropy_with_logits, softmax_cross_entropy_with_logits_v2
+"""
 
 # PACKAGE CONSTANTS
 XG_DIR = MODEL_DIR +'xg' +sep
@@ -31,15 +33,6 @@ EXPECTED_NUM_HOURS = 8
 INTRADAY_LEN = EXPECTED_NUM_HOURS
 VAL_RATIO = .2
 TEST_RATIO = .2
-
-# Keras
-#KERAS_MODELS_DIR = MODEL_DIR +'model_k' +sep
-#KERAS_OPT_TRANSLATOR = {
-#	'SGD': SGD,
-#	'RMSprop': RMSprop,
-#	'Adam': Adam,
-#	'Nadam': Nadam
-#}
 
 # PyTorch
 PYTORCH_MODELS_DIR = MODEL_DIR +'model_p' +sep
@@ -59,17 +52,29 @@ PYTORCH_LOSS_TRANSLATOR = {
 	'sl1': torch.nn.SmoothL1Loss					# Regression: Smooth L1 Loss
 }
 
-# TensorFlow
-#TENSORFLOW_MODELS_DIR = MODEL_DIR +'model_t' +sep
-#TENSORFLOW_OPT_TRANSLATOR = {
-#	'RMSprop': RMSPropOptimizer,
-#	'Adam': AdamOptimizer
-#}
-#TENSORFLOW_LOSS_TRANSLATOR = {
-#	'sparse_ce': sparse_softmax_cross_entropy_with_logits, 	# This version takes in a 1D series of integer labels
-#	'onehot_ce': softmax_cross_entropy_with_logits_v2	    # One hot encoded version of sparse_cross_entropy
-#}
+"""
+# Keras
+KERAS_MODELS_DIR = MODEL_DIR +'model_k' +sep
+KERAS_OPT_TRANSLATOR = {
+	'SGD': SGD,
+	'RMSprop': RMSprop,
+	'Adam': Adam,
+	'Nadam': Nadam
+}
+"""
 
+"""
+# TensorFlow
+TENSORFLOW_MODELS_DIR = MODEL_DIR +'model_t' +sep
+TENSORFLOW_OPT_TRANSLATOR = {
+	'RMSprop': RMSPropOptimizer,
+	'Adam': AdamOptimizer
+}
+TENSORFLOW_LOSS_TRANSLATOR = {
+	'sparse_ce': sparse_softmax_cross_entropy_with_logits, 	# This version takes in a 1D series of integer labels
+	'onehot_ce': softmax_cross_entropy_with_logits_v2	    # One hot encoded version of sparse_cross_entropy
+}
+"""
 
 # PACKAGE DEFAULTS
 dum = 0
