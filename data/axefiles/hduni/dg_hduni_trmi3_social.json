@@ -1,0 +1,20 @@
+{
+	"*": {
+		"stage": "mutate",
+		"type": ["hduni(2)", "hduni(3)", "hduni(4)", "hduni(8)"]
+	},
+	"/": {
+		"trmi3_etf3_social_buzz_hohlca_hdmx_hduni": {
+			"desc": ["trmi3_etf3_social_buzz_hohlca_hdmx_hduni(2)", "trmi3_etf3_social_buzz_hohlca_hdmx_hduni(3)", "trmi3_etf3_social_buzz_hohlca_hdmx_hduni(4)", "trmi3_etf3_social_buzz_hohlca_hdmx_hduni(8)"]
+		},
+		"trmi3_mkt3_social_stockIndexBuzz_hohlca_hdmx_hduni": {
+			"desc": ["trmi3_mkt3_social_stockIndexBuzz_hohlca_hdmx_hduni(2)", "trmi3_mkt3_social_stockIndexBuzz_hohlca_hdmx_hduni(3)", "trmi3_mkt3_social_stockIndexBuzz_hohlca_hdmx_hduni(4)", "trmi3_mkt3_social_stockIndexBuzz_hohlca_hdmx_hduni(8)"]
+		},
+		"trmi3_mkt3_social_bondBuzz_hohlca_hdmx_hduni": {
+			"desc": ["trmi3_mkt3_social_bondBuzz_hohlca_hdmx_hduni(2)", "trmi3_mkt3_social_bondBuzz_hohlca_hdmx_hduni(3)", "trmi3_mkt3_social_bondBuzz_hohlca_hdmx_hduni(4)", "trmi3_mkt3_social_bondBuzz_hohlca_hdmx_hduni(8)"]
+		},
+		"trmi3_mkt3_social_ratesBuzz_hohlca_hdmx_hduni": {
+			"desc": ["trmi3_mkt3_social_ratesBuzz_hohlca_hdmx_hduni(2)", "trmi3_mkt3_social_ratesBuzz_hohlca_hdmx_hduni(3)", "trmi3_mkt3_social_ratesBuzz_hohlca_hdmx_hduni(4)", "trmi3_mkt3_social_ratesBuzz_hohlca_hdmx_hduni(8)"]
+		}
+	}
+}

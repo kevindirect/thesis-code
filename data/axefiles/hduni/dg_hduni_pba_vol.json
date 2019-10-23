@@ -1,1 +1,50 @@
-dg_hduni.json
+{
+	"*": {
+		"stage": "mutate",
+		"type": ["hduni(2)", "hduni(3)", "hduni(4)", "hduni(8)"]
+	},
+	"/": {
+		"pba_hohlca_hdmx_hduni": {
+			"desc": ["pba_hohlca_hdmx_hduni(2)", "pba_hohlca_hdmx_hduni(3)", "pba_hohlca_hdmx_hduni(4)", "pba_hohlca_hdmx_hduni(8)"]
+		},
+		"pba_hoc_hspread_hdmx_hduni": {
+			"desc": ["pba_hoc_hspread_hdmx_hduni(2)", "pba_hoc_hspread_hdmx_hduni(3)", "pba_hoc_hspread_hdmx_hduni(4)", "pba_hoc_hspread_hdmx_hduni(8)"]
+		},
+		"pba_hlh_hspread_hdmx_hduni": {
+			"desc": ["pba_hlh_hspread_hdmx_hduni(2)", "pba_hlh_hspread_hdmx_hduni(3)", "pba_hlh_hspread_hdmx_hduni(4)", "pba_hlh_hspread_hdmx_hduni(8)"]
+		},
+		"pba_hoc_hret_hdmx_hduni": {
+			"desc": ["pba_hoc_hret_hdmx_hduni(2)", "pba_hoc_hret_hdmx_hduni(3)", "pba_hoc_hret_hdmx_hduni(4)", "pba_hoc_hret_hdmx_hduni(8)"]
+		},
+		"pba_hlh_hret_hdmx_hduni": {
+			"desc": ["pba_hlh_hret_hdmx_hduni(2)", "pba_hlh_hret_hdmx_hduni(3)", "pba_hlh_hret_hdmx_hduni(4)", "pba_hlh_hret_hdmx_hduni(8)"]
+		},
+		"pba_hoc_hlogret_hdmx_hduni": {
+			"desc": ["pba_hoc_hlogret_hdmx_hduni(2)", "pba_hoc_hlogret_hdmx_hduni(3)", "pba_hoc_hlogret_hdmx_hduni(4)", "pba_hoc_hlogret_hdmx_hduni(8)"]
+		},
+		"pba_hlh_hlogret_hdmx_hduni": {
+			"desc": ["pba_hlh_hlogret_hdmx_hduni(2)", "pba_hlh_hlogret_hdmx_hduni(3)", "pba_hlh_hlogret_hdmx_hduni(4)", "pba_hlh_hlogret_hdmx_hduni(8)"]
+		},
+		"vol_hohlca_hdmx_hduni": {
+			"desc": ["vol_hohlca_hdmx_hduni(2)", "vol_hohlca_hdmx_hduni(3)", "vol_hohlca_hdmx_hduni(4)", "vol_hohlca_hdmx_hduni(8)"]
+		},
+		"vol_hoc_hspread_hdmx_hduni": {
+			"desc": ["vol_hoc_hspread_hdmx_hduni(2)", "vol_hoc_hspread_hdmx_hduni(3)", "vol_hoc_hspread_hdmx_hduni(4)", "vol_hoc_hspread_hdmx_hduni(8)"]
+		},
+		"vol_hlh_hspread_hdmx_hduni": {
+			"desc": ["vol_hlh_hspread_hdmx_hduni(2)", "vol_hlh_hspread_hdmx_hduni(3)", "vol_hlh_hspread_hdmx_hduni(4)", "vol_hlh_hspread_hdmx_hduni(8)"]
+		},
+		"vol_hoc_hret_hdmx_hduni": {
+			"desc": ["vol_hoc_hret_hdmx_hduni(2)", "vol_hoc_hret_hdmx_hduni(3)", "vol_hoc_hret_hdmx_hduni(4)", "vol_hoc_hret_hdmx_hduni(8)"]
+		},
+		"vol_hlh_hret_hdmx_hduni": {
+			"desc": ["vol_hlh_hret_hdmx_hduni(2)", "vol_hlh_hret_hdmx_hduni(3)", "vol_hlh_hret_hdmx_hduni(4)", "vol_hlh_hret_hdmx_hduni(8)"]
+		},
+		"vol_hoc_hlogret_hdmx_hduni": {
+			"desc": ["vol_hoc_hlogret_hdmx_hduni(2)", "vol_hoc_hlogret_hdmx_hduni(3)", "vol_hoc_hlogret_hdmx_hduni(4)", "vol_hoc_hlogret_hdmx_hduni(8)"]
+		},
+		"vol_hlh_hlogret_hdmx_hduni": {
+			"desc": ["vol_hlh_hlogret_hdmx_hduni(2)", "vol_hlh_hlogret_hdmx_hduni(3)", "vol_hlh_hlogret_hdmx_hduni(4)", "vol_hlh_hlogret_hdmx_hduni(8)"]
+		}
+	}
+}

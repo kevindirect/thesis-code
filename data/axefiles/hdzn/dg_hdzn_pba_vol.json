@@ -1,1 +1,50 @@
-dg_hdzn.json
+{
+	"*": {
+		"stage": "mutate",
+		"type": "hdzn"
+	},
+	"/": {
+		"pba_hohlca_hdzn": {
+			"desc": "pba_hohlca_hdzn"
+		},
+		"pba_hoc_hspread_hdzn": {
+			"desc": "pba_hoc_hspread_hdzn"
+		},
+		"pba_hlh_hspread_hdzn": {
+			"desc": "pba_hlh_hspread_hdzn"
+		},
+		"pba_hoc_hret_hdzn": {
+			"desc": "pba_hoc_hret_hdzn"
+		},
+		"pba_hlh_hret_hdzn": {
+			"desc": "pba_hlh_hret_hdzn"
+		},
+		"pba_hoc_hlogret_hdzn": {
+			"desc": "pba_hoc_hlogret_hdzn"
+		},
+		"pba_hlh_hlogret_hdzn": {
+			"desc": "pba_hlh_hlogret_hdzn"
+		},
+		"vol_hohlca_hdzn": {
+			"desc": "vol_hohlca_hdzn"
+		},
+		"vol_hoc_hspread_hdzn": {
+			"desc": "vol_hoc_hspread_hdzn"
+		},
+		"vol_hlh_hspread_hdzn": {
+			"desc": "vol_hlh_hspread_hdzn"
+		},
+		"vol_hoc_hret_hdzn": {
+			"desc": "vol_hoc_hret_hdzn"
+		},
+		"vol_hlh_hret_hdzn": {
+			"desc": "vol_hlh_hret_hdzn"
+		},
+		"vol_hoc_hlogret_hdzn": {
+			"desc": "vol_hoc_hlogret_hdzn"
+		},
+		"vol_hlh_hlogret_hdzn": {
+			"desc": "vol_hlh_hlogret_hdzn"
+		}
+	}
+}
