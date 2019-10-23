@@ -1,5 +1,7 @@
 {
 	"features": [
-		["hdgau", "hdgau_pba_vol"]
+		["hdgau", "hdgau_pba_vol"],
+		["hdgau", "hdgau_trmi3_news"],
+		["hdgau", "hdgau_trmi3_social"]
 	]
 }

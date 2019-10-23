@@ -1,5 +1,7 @@
 {
 	"features": [
-		["hdzn", "hdzn_pba_vol"]
+		["hdzn", "hdzn_pba_vol"],
+		["hdzn", "hdzn_trmi3_news"],
+		["hdzn", "hdzn_trmi3_social"]
 	]
 }

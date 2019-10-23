@@ -1,8 +1,0 @@
-{
-	"features": [
-		["hdgau", "hdgau_pba_vol"]
-	],
-	"labels": "labels.json",
-	"targets": "targets.json",
-	"row_masks": "row_masks.json"
-}

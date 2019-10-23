@@ -1,5 +1,7 @@
 {
 	"features": [
-		["hdmx", "hdmx_pba_vol"]
+		["hdmx", "hdmx_pba_vol"],
+		["hdmx", "hdmx_trmi3_news"],
+		["hdmx", "hdmx_trmi3_social"]
 	]
 }

@@ -1,9 +1,0 @@
-{
-	"features": [
-		["dwrod", "dwrod_pba_vol"],
-		["dwrod", "dwrod_trmi3_news"],
-		["dwrod", "dwrod_trmi3_social"]
-	],
-	"labels": "labels.json",
-	"targets": "targets.json"
-}
