@@ -1,0 +1,50 @@
+{
+	"*": {
+		"stage": "mutate",
+		"type": "hdod"
+	},
+	"/": {
+		"pba_hohlca_hdod": {
+			"desc": "pba_hohlca_hdod"
+		},
+		"pba_hoc_hspread_hdod": {
+			"desc": "pba_hoc_hspread_hdod"
+		},
+		"pba_hlh_hspread_hdod": {
+			"desc": "pba_hlh_hspread_hdod"
+		},
+		"pba_hoc_hret_hdod": {
+			"desc": "pba_hoc_hret_hdod"
+		},
+		"pba_hlh_hret_hdod": {
+			"desc": "pba_hlh_hret_hdod"
+		},
+		"pba_hoc_hlogret_hdod": {
+			"desc": "pba_hoc_hlogret_hdod"
+		},
+		"pba_hlh_hlogret_hdod": {
+			"desc": "pba_hlh_hlogret_hdod"
+		},
+		"vol_hohlca_hdod": {
+			"desc": "vol_hohlca_hdod"
+		},
+		"vol_hoc_hspread_hdod": {
+			"desc": "vol_hoc_hspread_hdod"
+		},
+		"vol_hlh_hspread_hdod": {
+			"desc": "vol_hlh_hspread_hdod"
+		},
+		"vol_hoc_hret_hdod": {
+			"desc": "vol_hoc_hret_hdod"
+		},
+		"vol_hlh_hret_hdod": {
+			"desc": "vol_hlh_hret_hdod"
+		},
+		"vol_hoc_hlogret_hdod": {
+			"desc": "vol_hoc_hlogret_hdod"
+		},
+		"vol_hlh_hlogret_hdod": {
+			"desc": "vol_hlh_hlogret_hdod"
+		}
+	}
+}

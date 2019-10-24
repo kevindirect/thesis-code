@@ -1,0 +1,27 @@
+{
+	"meta": {
+		"rec_fmt": "hd{norm_type}",
+		"var_fmt": "grid",
+		"res_freq": "H",
+		"info": "hourly, daily ordinal ranked"
+	},
+	"fn": {
+		"ser_fn": "norm",
+		"df_fn": "gut",
+		"col_fn": null,
+		"freq": "D"
+	},
+	"axe": {
+		"rm": null,
+		"src": [
+			["hohlca", "hohlca"],
+			["hspread", "hspread"],
+			["hret", "hret"],
+			["hlogret", "hlogret"]
+		],
+		"dst": ["hdod", "hdod"]
+	},
+	"var": {
+		"norm_type": ["od"]
+	}
+}
