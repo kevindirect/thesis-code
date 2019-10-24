@@ -1,0 +1,20 @@
+{
+	"*": {
+		"stage": "mutate",
+		"type": "hdpt"
+	},
+	"/": {
+		"trmi3_etf3_social_buzz_hohlca_hdpt": {
+			"desc": "trmi3_etf3_social_buzz_hohlca_hdpt"
+		},
+		"trmi3_mkt3_social_stockIndexBuzz_hohlca_hdpt": {
+			"desc": "trmi3_mkt3_social_stockIndexBuzz_hohlca_hdpt"
+		},
+		"trmi3_mkt3_social_bondBuzz_hohlca_hdpt": {
+			"desc": "trmi3_mkt3_social_bondBuzz_hohlca_hdpt"
+		},
+		"trmi3_mkt3_social_ratesBuzz_hohlca_hdpt": {
+			"desc": "trmi3_mkt3_social_ratesBuzz_hohlca_hdpt"
+		}
+	}
+}

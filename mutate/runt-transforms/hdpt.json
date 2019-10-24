@@ -1,0 +1,27 @@
+{
+	"meta": {
+		"rec_fmt": "hd{norm_type}",
+		"var_fmt": "grid",
+		"res_freq": "H",
+		"info": "hourly, daily percentile normalized"
+	},
+	"fn": {
+		"ser_fn": "norm",
+		"df_fn": "gut",
+		"col_fn": null,
+		"freq": "D"
+	},
+	"axe": {
+		"rm": null,
+		"src": [
+			["hohlca", "hohlca"],
+			["hspread", "hspread"],
+			["hret", "hret"],
+			["hlogret", "hlogret"]
+		],
+		"dst": ["hdpt", "hdpt"]
+	},
+	"var": {
+		"norm_type": ["pt"]
+	}
+}
