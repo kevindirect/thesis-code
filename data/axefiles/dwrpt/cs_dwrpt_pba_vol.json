@@ -1,0 +1,11 @@
+{
+	"*": null,
+	"/": {
+		"pba_dohlca_dwrpt": {
+			"exact": ["pba_open", "pba_high", "pba_low", "pba_close", "pba_avgPrice"]
+		},
+		"vol_dohlca_dwrpt": {
+			"exact": ["vol_open", "vol_high", "vol_low", "vol_close", "vol_avgPrice"]
+		}
+	}
+}
