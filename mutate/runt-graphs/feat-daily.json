@@ -9,6 +9,6 @@
 	],
 	"feat-daily-window-ranked": [
 		["dohlca"],
-		["dwrmx", "dwrod", "dwrzn"]
+		["dwrmx", "dwrod", "dwrpt", "dwrzn"]
 	]
 }
