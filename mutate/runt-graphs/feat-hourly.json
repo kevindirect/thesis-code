@@ -2,7 +2,7 @@
 	"feat-hourly-daily-normalized": [
 		["hohlca"],
 		["hspread", "hret", "hlogret"],
-		["hdmx", "hdpt", "hdzn"]
+		["hdmx", "hdod", "hdpt", "hdzn"]
 	],
 	"feat-hourly-daily-normalized-symbolized": [
 		["hohlca"],
