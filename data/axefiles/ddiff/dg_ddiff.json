@@ -33,6 +33,42 @@
 		},
 		"trmi3_mkt3_social_ratesBuzz_dohlca_ddiff": {
 			"desc": "trmi3_mkt3_social_ratesBuzz_dohlca_ddiff(1)"
+		},
+		"trmi3_etf3_news_sentiment_dc_ddiff": {
+			"desc": "trmi3_etf3_news_sentiment_dc_ddiff(1)"
+		},
+		"trmi3_etf3_news_forecast_dc_ddiff": {
+			"desc": "trmi3_etf3_news_forecast_dc_ddiff(1)"
+		},
+		"trmi3_etf3_news_fundamental_dc_ddiff": {
+			"desc": "trmi3_etf3_news_fundamental_dc_ddiff(1)"
+		},
+		"trmi3_mkt3_news_stock_dc_ddiff": {
+			"desc": "trmi3_mkt3_news_stock_dc_ddiff(1)"
+		},
+		"trmi3_mkt3_news_bond_dc_ddiff": {
+			"desc": "trmi3_mkt3_news_bond_dc_ddiff(1)"
+		},
+		"trmi3_mkt3_news_bank_dc_ddiff": {
+			"desc": "trmi3_mkt3_news_bank_dc_ddiff(1)"
+		},
+		"trmi3_etf3_social_sentiment_dc_ddiff": {
+			"desc": "trmi3_etf3_social_sentiment_dc_ddiff(1)"
+		},
+		"trmi3_etf3_social_forecast_dc_ddiff": {
+			"desc": "trmi3_etf3_social_forecast_dc_ddiff(1)"
+		},
+		"trmi3_etf3_social_fundamental_dc_ddiff": {
+			"desc": "trmi3_etf3_social_fundamental_dc_ddiff(1)"
+		},
+		"trmi3_mkt3_social_stock_dc_ddiff": {
+			"desc": "trmi3_mkt3_social_stock_dc_ddiff(1)"
+		},
+		"trmi3_mkt3_social_bond_dc_ddiff": {
+			"desc": "trmi3_mkt3_social_bond_dc_ddiff(1)"
+		},
+		"trmi3_mkt3_social_bank_dc_ddiff": {
+			"desc": "trmi3_mkt3_social_bank_dc_ddiff(1)"
 		}
 	}
 }
