@@ -1,0 +1,26 @@
+{
+	"*": {
+		"stage": "mutate",
+		"type": "dwrxmx(-1)"
+	},
+	"/": {
+		"trmi3_etf3_social_sentiment_dc_ddiff_dwrxmx": {
+			"desc": "trmi3_etf3_social_sentiment_dc_ddiff(1)_dwrxmx(-1)"
+		},
+		"trmi3_etf3_social_forecast_dc_ddiff_dwrxmx": {
+			"desc": "trmi3_etf3_social_forecast_dc_ddiff(1)_dwrxmx(-1)"
+		},
+		"trmi3_etf3_social_fundamental_dc_ddiff_dwrxmx": {
+			"desc": "trmi3_etf3_social_fundamental_dc_ddiff(1)_dwrxmx(-1)"
+		},
+		"trmi3_mkt3_social_stock_dc_ddiff_dwrxmx": {
+			"desc": "trmi3_mkt3_social_stock_dc_ddiff(1)_dwrxmx(-1)"
+		},
+		"trmi3_mkt3_social_bond_dc_ddiff_dwrxmx": {
+			"desc": "trmi3_mkt3_social_bond_dc_ddiff(1)_dwrxmx(-1)"
+		},
+		"trmi3_mkt3_social_bank_dc_ddiff_dwrxmx": {
+			"desc": "trmi3_mkt3_social_bank_dc_ddiff(1)_dwrxmx(-1)"
+		}
+	}
+}

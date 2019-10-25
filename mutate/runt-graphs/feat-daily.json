@@ -4,11 +4,16 @@
 		["dlogret"]
 	],
 	"feat-daily-differenced": [
-		["dohlca"],
+		["dc", "dohlca"],
 		["dffd", "ddiff"]
 	],
-	"feat-daily-window-ranked": [
+	"feat-daily-ohlca-window-ranked": [
 		["dohlca"],
 		["dwrmx", "dwrod", "dwrpt", "dwrzn"]
+	],
+	"feat-daily-close-expanding-only-window-ranked": [
+		["dc"],
+		["dffd", "ddiff"],
+		["dwrxmx"]
 	]
 }
