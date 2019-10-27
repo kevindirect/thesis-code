@@ -108,7 +108,7 @@ def aggregated_statistic(stat_type, abs_val=True, agg_freq=DT_CAL_DAILY_FREQ):
 """ ********** diff ********** """
 def difference(num_periods):
 	def fn(ser):
-		return ser.diff(periods=num_periods)
+		return ser.fillna(method='ffill').diff(periods=num_periods)
 	return fn
 
 
