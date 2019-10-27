@@ -1,0 +1,7 @@
+{
+	"features": [
+		["dwrpt", "dwrpt_pba_vol"],
+		["dwrpt", "dwrpt_trmi3_news"],
+		["dwrpt", "dwrpt_trmi3_social"]
+	]
+}

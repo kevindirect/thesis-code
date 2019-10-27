@@ -1,0 +1,7 @@
+{
+	"features": [
+		["hdpt", "hdpt_pba_vol"],
+		["hdpt", "hdpt_trmi3_news"],
+		["hdpt", "hdpt_trmi3_social"]
+	]
+}

@@ -1,7 +1,9 @@
 {
 	"features": [
 		["dffd", "dffd_pba_vol"],
-		["dffd", "dffd_trmi3_news"],
-		["dffd", "dffd_trmi3_social"]
+		["dffd", "dffd_trmi3_news_buzz"],
+		["dffd", "dffd_trmi3_social_buzz"],
+		["dffd", "dffd_trmi3_news_nonbuzz"],
+		["dffd", "dffd_trmi3_social_nonbuzz"]
 	]
 }

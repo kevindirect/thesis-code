@@ -1,0 +1,8 @@
+{
+	"features": [
+		["dwrxmx", "dwrxmx_ddiff_trmi3_news"],
+		["dwrxmx", "dwrxmx_ddiff_trmi3_social"],
+		["dwrxmx", "dwrxmx_dffd_trmi3_news"],
+		["dwrxmx", "dwrxmx_dffd_trmi3_social"]
+	]
+}
