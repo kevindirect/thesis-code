@@ -122,7 +122,7 @@ def fracdiff(d, thresh=None, size=None):
 	dot_weights_fn = lambda ser: ser.dot(weights)
 
 	def fn(ser):
-		return ser.dropna().rolling(window=len(weights), min_periods=len(weights)).apply(dot_weights_fn)
+		return ser.fillna(method='ffill').rolling(window=len(weights), min_periods=len(weights)).apply(dot_weights_fn)
 	return fn
 
 

@@ -136,10 +136,15 @@ class DataAPI:
 			"""
 			Yield from iterator of NamedTuples from matched entry subset
 			"""
-			if (direct_query):
-				match_ids = query_df(cls.DATA_RECORD, search_dict)
-			else:
-				match_ids = search_df(cls.DATA_RECORD, search_dict)
+			try:
+				if (direct_query):
+					match_ids = query_df(cls.DATA_RECORD, search_dict)
+				else:
+					match_ids = search_df(cls.DATA_RECORD, search_dict)
+			except AttributeError as ae:
+				logging.warning('You might not have called DataAPI.__init__() from the main thread before using DataAPI to access data')
+				logging.warning('You must call __init__ for reading and use the DataAPI context manager for reading+writing')
+				raise ae
 			yield from cls.DATA_RECORD.loc[match_ids].itertuples()
 
 		@classmethod
