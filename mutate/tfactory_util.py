@@ -146,6 +146,17 @@ def window_rank(rank_type, num_periods):
 	return fn
 
 
+""" ********** wrx ********** """
+def window_rank_expanding(rank_type):
+	rank_fn = RANK_FN_MAPPING.get(rank_type)
+
+	def fn(ser):
+		win = ser.expanding(min_periods=1)
+		return win.apply(rank_fn, raw=False)
+
+	return fn
+
+
 """ ********** norm ********** """
 NORM_FN_MAPPING = {
 	"zn": (lambda ser: (ser-ser.mean()) / ser.std()),
@@ -254,6 +265,7 @@ RUNT_FN_MAPPING = {
 	"diff": difference,
 	"ffd": fracdiff,
 	"wr": window_rank,
+	"wrx": window_rank_expanding,
 	"norm": normalize,
 	"sym": symbolize,
 	"ret": returnify,
