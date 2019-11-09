@@ -844,6 +844,14 @@ def np_is_ndim(arr, dim=1):
 	"""
 	return arr.ndim == dim
 
+def np_assert_identical_len_dim(*arr):
+	"""
+	Assert that all arrays have identical length and dimension.
+	"""
+	assert all(d.ndim==arr[0].ndim for d in arr[1:]), "arrays must have identical number of dimensions"
+	assert all(len(d)==len(arr[0]) for d in arr[1:]), "arrays must have identical length"
+
+
 def filter_null(arr):
 	"""
 	Return numpy array with all nulls removed.
@@ -887,6 +895,27 @@ def arr_nonzero(arr, ret_idx=False, idx_norm=False, idx_shf=1):
 		return indices / (non_null.size + idx_shf) if (idx_norm) else indices
 	else:
 		return np.take(non_null, non_zero_ids)
+
+
+def np_at_least_nd(arr, dim=3, axis=-1):
+	"""
+	Unsqueeze the passed numpy array to given number of dimensions.
+	If the array already has 'dim' dimensions or more, it is returned unchanged.
+
+	Args:
+		arr (np.array): array to unsqueeze
+		dim (int > 0): desired number of dimensions to unsqueeze to
+		axis (int): axis index to insert singleton dimension(s)
+
+	Returns:
+		Unsqueezed numpy array with at least 'dim' dimensions
+	"""
+	dim_diff = dim - arr.ndim
+
+	for d in range(dim_diff):
+		arr = np.expand_dims(arr, axis=axis)
+
+	return arr
 
 
 """ ********** PANDAS IO UTILS ********** """
@@ -1923,7 +1952,7 @@ def pyt_reverse_dim_order(pyt):
 	"""
 	return torch.reshape(pyt, pyt.shape[::-1])
 
-def pyt_unsqueeze_to(pyt, dim, append_right=True):
+def pyt_at_least_nd(pyt, dim=3, axis=-1):
 	"""
 	Unsqueeze the passed pytorch tensor to given number of dimensions.
 	If the tensor already has 'dim' dimensions or more, it is returned unchanged.
@@ -1931,18 +1960,15 @@ def pyt_unsqueeze_to(pyt, dim, append_right=True):
 	Args:
 		pyt (torch.tensor): Tensor to unsqueeze
 		dim (int > 0): Desired number of dimensions to unsqueeze to
-		append_right (bool): Whether to append singleton dimensions to the right or left side of tensor
+		axis (int): axis index to insert singleton dimension(s)
 
 	Returns:
-		Unsqueezed torch.tensor with 'dim' dimensions or more
+		Unsqueezed torch.tensor with at least 'dim' dimensions
 	"""
-	append_dim = -1 if (append_right) else 0
-	cur_dim = pyt.dim()
-	dim_diff = dim - cur_dim
+	dim_diff = dim - pyt.dim()
 
-	if (dim_diff > 0):
-		for d in range(dim_diff):
-			pyt = pyt.unsqueeze(dim=append_dim)
+	for d in range(dim_diff):
+		pyt = pyt.unsqueeze(dim=axis)
 
 	return pyt
 
