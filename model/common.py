@@ -36,11 +36,11 @@ TEST_RATIO = .2
 
 # PyTorch
 PYTORCH_MODELS_DIR = MODEL_DIR +'model_p' +sep
-PYTORCH_OPT_TRANSLATOR = {
+PYTORCH_OPT_MAPPING = {
 	'RMSprop': torch.optim.RMSprop,
 	'Adam': torch.optim.Adam
 }
-PYTORCH_LOSS_TRANSLATOR = {
+PYTORCH_LOSS_MAPPING = {
 	'bce': torch.nn.BCELoss,						# Binary Probability: Binary Cross Entropy
 	'bcel': torch.nn.BCEWithLogitsLoss,				# Binary: Binary Cross Entropy with Logits (Sigmoid + BCELoss)
 	'sm': torch.nn.SoftMarginLoss,					# Binary: Soft Margin Loss
@@ -55,7 +55,7 @@ PYTORCH_LOSS_TRANSLATOR = {
 """
 # Keras
 KERAS_MODELS_DIR = MODEL_DIR +'model_k' +sep
-KERAS_OPT_TRANSLATOR = {
+KERAS_OPT_MAPPING = {
 	'SGD': SGD,
 	'RMSprop': RMSprop,
 	'Adam': Adam,
@@ -66,11 +66,11 @@ KERAS_OPT_TRANSLATOR = {
 """
 # TensorFlow
 TENSORFLOW_MODELS_DIR = MODEL_DIR +'model_t' +sep
-TENSORFLOW_OPT_TRANSLATOR = {
+TENSORFLOW_OPT_MAPPING = {
 	'RMSprop': RMSPropOptimizer,
 	'Adam': AdamOptimizer
 }
-TENSORFLOW_LOSS_TRANSLATOR = {
+TENSORFLOW_LOSS_MAPPING = {
 	'sparse_ce': sparse_softmax_cross_entropy_with_logits, 	# This version takes in a 1D series of integer labels
 	'onehot_ce': softmax_cross_entropy_with_logits_v2	    # One hot encoded version of sparse_cross_entropy
 }
