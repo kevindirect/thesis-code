@@ -15,6 +15,8 @@ from common_util import RECON_DIR, MODEL_DIR
 
 # OTHER STAGE DEPENDENCIES
 import torch
+import torch.nn as nn
+import torch.optim as optim
 """
 from keras.optimizers import SGD, RMSprop, Adam, Nadam
 from tensorflow.train import RMSPropOptimizer, AdamOptimizer
@@ -36,20 +38,39 @@ TEST_RATIO = .2
 
 # PyTorch
 PYTORCH_MODELS_DIR = MODEL_DIR +'model_p' +sep
+PYTORCH_ACT_MAPPING = {
+	'sig': nn.Sigmoid,
+	'tanh': nn.Tanh,
+	'smax': nn.Softmax,
+	'smax2d': nn.Softmax2d,
+	'logsmax': nn.LogSoftmax,
+	'splus': nn.Softplus,
+	'relu': nn.ReLU,
+	'lrelu': nn.LeakyReLU,
+	'elu': nn.ELU,
+	'celu': nn.CELU,
+	'prelu': nn.PReLU,
+	'selu': nn.SELU
+}
 PYTORCH_OPT_MAPPING = {
-	'RMSprop': torch.optim.RMSprop,
-	'Adam': torch.optim.Adam
+	'rmsp': optim.RMSprop,
+	'adam': optim.Adam
 }
 PYTORCH_LOSS_MAPPING = {
-	'bce': torch.nn.BCELoss,						# Binary Probability: Binary Cross Entropy
-	'bcel': torch.nn.BCEWithLogitsLoss,				# Binary: Binary Cross Entropy with Logits (Sigmoid + BCELoss)
-	'sm': torch.nn.SoftMarginLoss,					# Binary: Soft Margin Loss
-	'ce': torch.nn.CrossEntropyLoss,				# Categorical: Cross Entropy Loss (LogSoftmax + NLLLoss)
-	'mls': torch.nn.MultiLabelSoftMarginLoss,		# Categorical: Multi Label Soft Margin Loss
-	'nll': torch.nn.NLLLoss,						# Categorical: Negative Log Likelihood Loss
-	'mae': torch.nn.L1Loss,							# Regression: Mean Absolute Error Loss
-	'mse': torch.nn.MSELoss,						# Regression: Mean Squared Error Loss
-	'sl1': torch.nn.SmoothL1Loss					# Regression: Smooth L1 Loss
+	# Binary
+	'bce': nn.BCELoss,
+	'bcel': nn.BCEWithLogitsLoss,
+	'sm': nn.SoftMarginLoss,
+
+	# Categorical
+	'ce': nn.CrossEntropyLoss,
+	'mls': nn.MultiLabelSoftMarginLoss,
+	'nll': nn.NLLLoss,
+
+	# Regression
+	'mae': nn.L1Loss,
+	'mse': nn.MSELoss,
+	'sl1': nn.SmoothL1Loss
 }
 
 """
