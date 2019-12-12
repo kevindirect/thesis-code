@@ -125,6 +125,21 @@ def get_class_name(obj):
 	"""
 	return obj.__class__.__name__
 
+"""Attributes"""
+def has_all_attr(obj, *attrs):
+	"""
+	Return True if obj has all attributes.
+	"""
+	attr_list = dir(obj)
+	return all([attr in attr_list for attr in attrs])
+
+def assert_has_all_attr(obj, *attrs):
+	"""
+	Pass assertion if obj has all attributes.
+	"""
+	assert has_all_attr(obj, *attrs), "object must have all of the following attributes: {}".format(str(list(attrs)))
+
+
 """String"""
 """
 Return string with escaped quotes enclosed around it.
