@@ -207,9 +207,9 @@ first_element = lambda lst: lst[0]
 
 def get0(lst):
 	"""
-	Return first element if the list has length one, else return the list.
+	If an object is a list or tuple of length 1 return the singleton element, otherwise return the object.
 	"""
-	if (len(lst) == 1):
+	if (is_type(list, tuple) and len(lst)==1):
 		return lst[0]
 	else:
 		return lst
