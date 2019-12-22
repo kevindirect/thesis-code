@@ -73,8 +73,8 @@ class TemporalLayer1d(nn.Module):
 	def __init__(self, in_shape, out_shape, act, kernel_size, padding_size, dilation, dropout, chomp=False):
 		"""
 		Args:
-			in_shape (tuple): input shape of the layer
-			out_shape (tuple): output shape of the layer
+			in_shape (int): input channels of the Conv1d layer
+			out_shape (int): output channels of the Conv1d layer
 			act (str): layer activation
 			kernel_size (int): size of the kernel
 			padding_size (int): input padding size
@@ -91,7 +91,7 @@ class TemporalLayer1d(nn.Module):
 		modules = nn.ModuleList()
 		modules.append(
 			init_layer(
-				weight_norm(nn.Conv1d(self.in_shape, self.out_shape, kernel_size, stride=1, padding=padding_size, dilation=dilation))
+				weight_norm(nn.Conv1d(self.in_shape, self.out_shape, kernel_size, stride=1, padding=padding_size, dilation=dilation, groups=1)) # XXX groups=1, groups=n, or groups=self.in_shape
 			)
 		)
 		if (chomp):
@@ -139,7 +139,7 @@ class TemporalConvNet(nn.Module):
 	def __init__(self, in_shape, num_blocks=1, block_shapes=[[5, 3, 5]], block_act='elu', out_act='relu', kernel_sizes=[3], dilation_index='global', global_dropout=.2, no_dropout=[0]):
 		"""
 		Args:
-			in_shape (tuple): input shape of the network, expects a shape (N, Channels_in, Length_in)
+			in_shape (tuple): shape of the network's input tensor, expects a shape (Channels_in, Length_in)
 			num_blocks (int): number of residual blocks, each block consists of a tcn network and residual connection
 			block_shapes (list * list): shape of cnn layers in each block, or individual shape per block in sequence
 			block_act (str): activation function of each layer in each block
@@ -153,36 +153,30 @@ class TemporalConvNet(nn.Module):
 		assert num_blocks >= len(block_shapes), "list of block shapes have to be less than or equal to the number of blocks"
 		assert num_blocks % len(block_shapes) == 0, "number of block shapes must equally subdivide number of blocks"
 		assert len(kernel_sizes) == len(block_shapes), "number of kernels must be the same as the number of block shapes"
-		# assert block_shapes[0]
 
-		block_input = in_shape
+		block_input = in_shape[0] # Get the input tensor's channel size
 		blocks = []
 		i = 0
 		for b in range(num_blocks):
 			block_idx = b % len(block_shapes)
-			block_shape, kernel_size = block_shapes[block_idx], kernel_sizes[block_idx]
-			# XXX - parameter for residual connection from input to all nodes?
+			block_shape, kernel_size = block_shapes[block_idx], kernel_sizes[block_idx] # XXX - param for residual connection from input to all nodes?
 
 			layer_input = block_input
 			block_output = block_shape[-1]
-			#layers = nn.ModuleList()
 			layers = []
 			for l, layer_output in enumerate(block_shape):
 				dilation = {
 					'global': 2**i,
 					'block': 2**l
 				}.get(dilation_index)
-				padding_size = (kernel_size-1) * dilation # XXX (Unneeded?) One "step" of the kernel will be needed for padding
+				padding_size = 0 #(kernel_size-1) * dilation # XXX (Unneeded?) One "step" of the kernel will be needed for padding
 				dropout = 0 if (i in no_dropout) else global_dropout
-				#layers.append(TemporalLayer1d(in_shape=layer_input, out_shape=layer_output, act=block_act, kernel_size=kernel_size, padding_size=padding_size, dilation=dilation, dropout=dropout))
-				name = 'TL_{b}:{l}:{i}'.format(b=b, l=l, i=i)
+				name = 'TL_{b}_{l}'.format(b=b, l=l, i=i)
 				layer = TemporalLayer1d(in_shape=layer_input, out_shape=layer_output, act=block_act, kernel_size=kernel_size, padding_size=padding_size, dilation=dilation, dropout=dropout)
 				layers.append((name, layer))
 				layer_input = layer_output
 				i += 1
-			#net = nn.Sequential(*layers)
 			net = nn.Sequential(OrderedDict(layers))
-			#net.in_shape, net.out_shape = layers[0].in_shape, layers[-1].out_shape
 			net.in_shape, net.out_shape = layers[0][1].in_shape, layers[-1][1].out_shape
 			blocks.append(ResidualBlock(net, out_act))
 			block_input = block_output

@@ -13,7 +13,7 @@ import torch
 import pytorch_lightning as pl
 
 from common_util import is_type, assert_has_all_attr, is_valid, isnt, np_at_least_nd, np_assert_identical_len_dim
-from model.common import PYTORCH_ACT_MAPPING, PYTORCH_LOSS_MAPPING
+from model.common import PYTORCH_ACT_MAPPING, PYTORCH_LOSS_MAPPING, PYTORCH_OPT_MAPPING, PYTORCH_SCH_MAPPING
 from model.preproc_util import temporal_preproc
 from model.train_util import pd_get_np_tvt, batchify
 from model.model_util import TemporalConvNet, Classifier

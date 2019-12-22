@@ -52,19 +52,6 @@ PYTORCH_ACT_MAPPING = {
 	'prelu': nn.PReLU,
 	'selu': nn.SELU
 }
-PYTORCH_OPT_MAPPING = {
-	'rmsp': optim.RMSprop,
-	'adam': optim.Adam
-}
-PYTORCH_SCH_MAPPING = {
-	'cos': optim.lr_scheduler.CosineAnnealingLR,
-	'cyc': optim.lr_scheduler.CyclicLR,
-	'exp': optim.lr_scheduler.ExponentialLR,
-	'lam': optim.lr_scheduler.LambdaLR,
-	'mst': optim.lr_scheduler.MultiStepLR,
-	'rpl': optim.lr_scheduler.ReduceLROnPlateau,
-	'st': optim.lr_scheduler.StepLR
-}
 PYTORCH_LOSS_MAPPING = {
 	# Binary
 	'bce': nn.BCELoss,
@@ -80,6 +67,19 @@ PYTORCH_LOSS_MAPPING = {
 	'mae': nn.L1Loss,
 	'mse': nn.MSELoss,
 	'sl1': nn.SmoothL1Loss
+}
+PYTORCH_OPT_MAPPING = {
+	'rmsp': optim.RMSprop,
+	'adam': optim.Adam
+}
+PYTORCH_SCH_MAPPING = {
+	'cos': optim.lr_scheduler.CosineAnnealingLR,
+	'cyc': optim.lr_scheduler.CyclicLR,
+	'exp': optim.lr_scheduler.ExponentialLR,
+	'lam': optim.lr_scheduler.LambdaLR,
+	'mst': optim.lr_scheduler.MultiStepLR,
+	'rpl': optim.lr_scheduler.ReduceLROnPlateau,
+	'st': optim.lr_scheduler.StepLR
 }
 
 """
