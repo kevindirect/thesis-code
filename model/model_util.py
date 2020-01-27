@@ -4,6 +4,7 @@ Kevin Patel
 import sys
 import os
 import logging
+from math import floor
 from collections import OrderedDict
 
 import numpy as np
@@ -73,8 +74,8 @@ class TemporalLayer1d(nn.Module):
 	def __init__(self, in_shape, out_shape, act, kernel_size, padding_size, dilation, dropout, chomp=False):
 		"""
 		Args:
-			in_shape (int): input channels of the Conv1d layer
-			out_shape (int): output channels of the Conv1d layer
+			in_shape (tuple): (in_channels, in_width) of the Conv1d layer
+			out_shape (tuple): (out_channels, out_width) of the Conv1d layer
 			act (str): layer activation
 			kernel_size (int): size of the kernel
 			padding_size (int): input padding size
@@ -91,7 +92,7 @@ class TemporalLayer1d(nn.Module):
 		modules = nn.ModuleList()
 		modules.append(
 			init_layer(
-				weight_norm(nn.Conv1d(self.in_shape, self.out_shape, kernel_size, stride=1, padding=padding_size, dilation=dilation, groups=1)) # XXX groups=1, groups=n, or groups=self.in_shape
+				weight_norm(nn.Conv1d(self.in_shape[0], self.out_shape[0], kernel_size, stride=1, padding=padding_size, dilation=dilation, groups=1)) # XXX groups=1, groups=n, or groups=self.in_shape[0]
 			)
 		)
 		if (chomp):
@@ -99,6 +100,10 @@ class TemporalLayer1d(nn.Module):
 		modules.append(PYTORCH_ACT_MAPPING.get(act)())
 		modules.append(nn.AlphaDropout(dropout) if (act in ('selu',)) else nn.Dropout(dropout))
 		self.layer = nn.Sequential(*modules)
+
+	@classmethod
+	def get_out_width(cls, in_width, kernel_size, dilation=1, padding_size=0, stride=1):
+		return int(floor(((in_width+2*padding_size-dilation*(kernel_size-1)-1)/stride)+1))
 
 	def forward(self, x):
 		return self.layer(x)
@@ -116,17 +121,18 @@ class ResidualBlock(nn.Module):
 		super(ResidualBlock, self).__init__()
 		assert_has_shape_attr(net)
 		self.net = net
-		self.downsample = init_layer(nn.Conv1d(net.in_shape, net.out_shape, 1)) if (net.in_shape != net.out_shape) else None
+		self.downsample = init_layer(nn.Conv1d(net.in_shape[0], net.out_shape[0], 1)) if (net.in_shape != net.out_shape) else None
 		self.out_act = PYTORCH_ACT_MAPPING.get(act)()
 
-	def forward(self):
-		residual = x if (isnt(self.downsample)) else self.downsample(x)
+	def forward(self, x):
+		residual = x if (isnt(self.downsample)) else self.downsample(x) # TODO - shape of residual tensor must be identical to net_out
 		try:
-			return self.out_act(self.net(x) + residual)
+			net_out = self.net(x)
+			return self.out_act(net_out + residual)
 		except RuntimeError as e:
 			print(e)
 			logging.error('self.net(x).shape:  {}'.format(self.net(x).shape))
-			loggine.error('residual.shape: {}'.format(residual.shape))
+			logging.error('residual.shape: {}'.format(residual.shape))
 			sys.exit(0)
 
 class TemporalConvNet(nn.Module):
@@ -136,52 +142,54 @@ class TemporalConvNet(nn.Module):
 
 	Note: Receptive Field Size = Number TCN Blocks * Kernel Size * Last Layer Dilation Size
 	"""
-	def __init__(self, in_shape, num_blocks=1, block_shapes=[[5, 3, 5]], block_act='elu', out_act='relu', kernel_sizes=[3], dilation_index='global', global_dropout=.2, no_dropout=[0]):
+	def __init__(self, in_shape, num_blocks=1, block_channels=[[5, 3, 5]], block_act='elu', out_act='relu', kernel_sizes=[3], dilation_index='global', global_dropout=.2, no_dropout=[0]):
 		"""
 		Args:
-			in_shape (tuple): shape of the network's input tensor, expects a shape (Channels_in, Length_in)
+			in_shape (tuple): shape of the network's input tensor, expects a shape (in_channels, in_width)
 			num_blocks (int): number of residual blocks, each block consists of a tcn network and residual connection
-			block_shapes (list * list): shape of cnn layers in each block, or individual shape per block in sequence
+			block_channels (list * list): cnn channel sizes in each block, or individual channel sizes per block in sequence
 			block_act (str): activation function of each layer in each block
 			out_act (str): output activation of each block
-			kernel_sizes (list): list of CNN kernel sizes, must be the same length as block_shapes
+			kernel_sizes (list): list of CNN kernel sizes, must be the same length as block_channels
 			dilation_index ('global'|'block'): what index to make each layer dilation a function of
 			global_dropout (float): dropout probability of an element to be zeroed for any layer not in no_dropout
 			no_dropout (list): list of global layer indices to disable dropout on
 		"""
 		super(TemporalConvNet, self).__init__()
-		assert num_blocks >= len(block_shapes), "list of block shapes have to be less than or equal to the number of blocks"
-		assert num_blocks % len(block_shapes) == 0, "number of block shapes must equally subdivide number of blocks"
-		assert len(kernel_sizes) == len(block_shapes), "number of kernels must be the same as the number of block shapes"
+		assert num_blocks >= len(block_channels), "list of block shapes have to be less than or equal to the number of blocks"
+		assert num_blocks % len(block_channels) == 0, "number of block shapes must equally subdivide number of blocks"
+		assert len(kernel_sizes) == len(block_channels), "number of kernels must be the same as the number of block channels"
 
-		block_input = in_shape[0] # Get the input tensor's channel size
+		self.in_shape = block_in_shape = in_shape
 		blocks = []
 		i = 0
 		for b in range(num_blocks):
-			block_idx = b % len(block_shapes)
-			block_shape, kernel_size = block_shapes[block_idx], kernel_sizes[block_idx] # XXX - param for residual connection from input to all nodes?
+			block_idx = b % len(block_channels)
+			block_channel_list, kernel_size = block_channels[block_idx], kernel_sizes[block_idx] # XXX - param for residual connection from in_shape to all nodes?
 
-			layer_input = block_input
-			block_output = block_shape[-1]
+			layer_in_shape = block_in_shape
 			layers = []
-			for l, layer_output in enumerate(block_shape):
+			for l, out_channels in enumerate(block_channel_list):
 				dilation = {
 					'global': 2**i,
 					'block': 2**l
 				}.get(dilation_index)
 				padding_size = 0 #(kernel_size-1) * dilation # XXX (Unneeded?) One "step" of the kernel will be needed for padding
 				dropout = 0 if (i in no_dropout) else global_dropout
-				name = 'TL_{b}_{l}'.format(b=b, l=l, i=i)
-				layer = TemporalLayer1d(in_shape=layer_input, out_shape=layer_output, act=block_act, kernel_size=kernel_size, padding_size=padding_size, dilation=dilation, dropout=dropout)
-				layers.append((name, layer))
-				layer_input = layer_output
+				out_width = TemporalLayer1d.get_out_width(layer_in_shape[1], kernel_size=kernel_size, dilation=dilation, padding_size=padding_size)
+				layer_out_shape = (out_channels, out_width)
+				layer = TemporalLayer1d(in_shape=layer_in_shape, out_shape=layer_out_shape, act=block_act, kernel_size=kernel_size, padding_size=padding_size, dilation=dilation, dropout=dropout)
+				layers.append(('TL_{b}_{l}'.format(b=b, l=l, i=i), layer))
+				layer_in_shape = layer_out_shape
 				i += 1
+			block_out_shape = layer_out_shape
 			net = nn.Sequential(OrderedDict(layers))
-			net.in_shape, net.out_shape = layers[0][1].in_shape, layers[-1][1].out_shape
-			blocks.append(ResidualBlock(net, out_act))
-			block_input = block_output
-		self.in_shape, self.out_shape = in_shape, block_output
-		self.convnet = nn.Sequential(*blocks)
+			net.in_shape, net.out_shape = block_in_shape, block_out_shape
+			#net.in_shape, net.out_shape = layers[0][1].in_shape, layers[-1][1].out_shape
+			blocks.append(('RB_{b}'.format(b=b), ResidualBlock(net, out_act)))
+			block_in_shape = block_out_shape
+		self.out_shape = block_out_shape
+		self.convnet = nn.Sequential(OrderedDict(blocks))
 
 	def forward(self, x):
 		return self.convnet(x)
@@ -199,7 +207,7 @@ class Classifier(nn.Module):
 		super(Classifier, self).__init__()
 		assert_has_shape_attr(emb)
 		self.emb = emb
-		self.out = nn.Linear(emb.out_shape, out_shape)
+		self.out = nn.Linear(emb.out_shape[0], out_shape)
 		self.logprob = nn.LogSoftmax(dim=1)
 
 	def forward(self, x):
@@ -221,7 +229,7 @@ class Regressor(nn.Module):
 		super(Regressor, self).__init__()
 		assert_has_shape_attr(emb)
 		self.emb = emb
-		self.out = nn.Linear(emb.out_shape, out_shape)
+		self.out = nn.Linear(emb.out_shape[0], out_shape)
 
 	def forward(self, x):
 		out_embedding = self.emb(x)
