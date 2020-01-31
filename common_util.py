@@ -933,6 +933,56 @@ def np_at_least_nd(arr, dim=3, axis=-1):
 	return arr
 
 
+def np_truncate_split_1d(arr, size, trunc_end=True):
+	"""
+	Reshape/split a 1d ndarray by first cutting off the beginning or end if it's incompatible with the final shape.
+
+	Args:
+		arr (np.array): 1d numpy array
+		size (int): split size
+		trunc_end (bool): whether to truncate the beginning or the end
+
+	Returns:
+		2D numpy array
+
+	Example:
+		arr = np.array([0, 1, 2, 3, 4, 5, 6])
+		np_truncate_split_1d(arr, 3, True) -> array([[0, 1, 2], [3, 4, 5]])
+	"""
+	cutoff = arr.shape[0] % size
+	if (cutoff > 0):
+		arr = arr[:-cutoff] if (trunc_end) else arr[cutoff:]
+	return np.reshape(arr, (arr.shape[0]//size, size))
+
+
+def np_truncate_vstack_2d(arr, size):
+	"""
+	Reshape a 2d ndarray into a 3d ndarray by vertically stacking elements of the last dimension.
+	If the size given doesn't allow the reshape, the array will be truncated at the last dimension.
+
+	Args:
+		arr (np.array): 2d numpy array
+		size (int): number of elements to stack in the last dimension
+
+	Returns:
+		3d numpy array
+
+	Example:
+		arr = np.array([[0, 1, 2, 3],
+				[4, 5, 6, 7],
+				[8, 9, 10, 11],
+				[12, 13, 14, 15]]])
+		np_truncate_vstack_2d(arr, 3) ->
+				array([[[ 0,  4,  8],
+					[ 1,  5,  9],
+					[ 2,  6, 10],
+					[ 3,  7, 11]]])
+	"""
+	swap = arr.T
+	stack = np.hstack([np_truncate_split_1d(swap[i], size) for i in range(swap.shape[0])])
+	return np.reshape(stack, (stack.shape[0], swap.shape[0], size))
+
+
 """ ********** PANDAS IO UTILS ********** """
 def load_df(fname, dir_path=None, data_format=DF_DATA_FMT, subset=None, dti_freq=None):
 	"""
