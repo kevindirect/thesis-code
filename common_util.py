@@ -1364,6 +1364,39 @@ def ser_range_center_clip(ser, thresh=None, inner=0, outer=False, inclusive=Fals
 
 	return out
 
+def df_split_ternary_to_binary(df, column_names=['neg', 'pos'], split_val=0, fill_val=0):
+	"""
+	Return the original ternary (three-valued) valued dataframe as a two column MultiIndex DataFrame where the first column contains values
+	below the 'split_value' and the second contains values above it; all other cells are overwitten with 'fill_value'.
+
+	Args:
+		df (pd.DataFrame): input dataframe
+		column_names (list): column names to use for the output dataframe in order
+		split_val (float): value to split on
+		fill_val: value to fill with
+
+	Returns:
+		MultiIndexed pd.DataFrame with two columns based on passed split_val.
+
+	Example:
+				-------------
+				|    col    |
+		-------         -------------
+		| col |         | neg | pos |
+		-------         ------|------
+		| -1  |   ->    | -1  |  0  |
+		|  0  |         |  0  |  0  |
+		|  1  |         |  0  |  1  |
+		-------         -------------
+	"""
+	d = df.copy().stack(dropna=True).to_frame()
+	d[1] = d[0]
+	d[0][d[0]>split_val] = fill_val
+	d[1][d[1]<split_val] = fill_val
+	d.columns = column_names
+	return d
+
+
 """Datetime"""
 def df_dti_index_to_date(df, new_freq=DT_CAL_DAILY_FREQ, new_tz=False):
 	"""
