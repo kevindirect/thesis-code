@@ -139,6 +139,13 @@ def assert_has_all_attr(obj, *attrs):
 	"""
 	assert has_all_attr(obj, *attrs), "object must have all of the following attributes: {}".format(str(list(attrs)))
 
+"""Equality"""
+def all_eq(first, *others):
+	for oth in others:
+		if (oth != first):
+			return False
+	return True
+
 
 """String"""
 """
@@ -199,9 +206,10 @@ def remove_dups_list(lst):
 def flatten2D(list2D):
 	return list(chain(*list2D))
 
-def all_equal(lst):
-	first_item = lst[0]
-	return all(element==first_item for element in lst)
+def all_equal_list(lst):
+	return all_eq(lst[0], *lst[1:])
+
+all_equal = all_equal_list # Legacy
 
 first_element = lambda lst: lst[0]
 
