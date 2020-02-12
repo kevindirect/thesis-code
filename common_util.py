@@ -1376,7 +1376,23 @@ def ser_range_center_clip(ser, thresh=None, inner=0, outer=False, inclusive=Fals
 
 	return out
 
-def pd_split_ternary_to_binary(pd_obj, column_names=['neg', 'pos'], split_val=0, fill_val=0):
+def pd_idx_to_midx(pd_obj, col_name=0):
+	"""
+	Convert a single index pandas Series or DataFrame to a single column MultiIndexed DataFrame.
+
+	Args:
+		pd_obj (pd.DataFrame|pd.Series): input series or dataframe
+		column_names (list): column names to use for the output dataframe in order
+
+	Returns:
+		MultiIndexed pd.DataFrame with one column.
+	"""
+	df = pd_obj.to_frame() if (is_ser(pd_obj)) else pd_obj
+	df = pd_idx_rename(df.dropna().stack().to_frame(), ['id0', 'id1'])
+	df.columns = [col_name]
+	return df
+
+def pd_split_ternary_to_binary(pd_obj, col_names=['neg', 'pos'], split_val=0, fill_val=0):
 	"""
 	Return the original ternary (three-valued) valued series/dataframe as a two column MultiIndex DataFrame where the first column contains values
 	below the 'split_value' and the second contains values above it; all other cells are overwitten with 'fill_value'.
@@ -1401,13 +1417,12 @@ def pd_split_ternary_to_binary(pd_obj, column_names=['neg', 'pos'], split_val=0,
 		|  1  |         |  0  |  1  |
 		-------         -------------
 	"""
-	d = pd_obj.to_frame() if (is_ser(pd_obj)) else pd_obj
-	d = d.copy().stack(dropna=True).to_frame()
-	d[1] = d[0]
-	d[0][d[0]>split_val] = fill_val
-	d[1][d[1]<split_val] = fill_val
-	d.columns = column_names
-	return pd_idx_rename(d, ['id0', 'id1'])
+	df = pd_idx_to_midx(pd_obj, col_name=0)
+	df[1] = df[0]
+	df[0][df[0]>split_val] = fill_val
+	df[1][df[1]<split_val] = fill_val
+	df.columns = col_names
+	return df
 
 
 """Datetime"""

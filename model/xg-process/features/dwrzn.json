@@ -6,6 +6,6 @@
 	"parts": ["features"],
 	"how": [["features"]],
 	"prep_fn": {
-		"features": "pd_idx_date_only"
+		"features": "prep_stack_data"
 	}
 }

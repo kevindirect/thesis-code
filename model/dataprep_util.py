@@ -9,7 +9,7 @@ import logging
 import numpy as np
 import pandas as pd
 
-from common_util import is_type, compose, dcompose, pd_idx_rename, pd_dti_idx_date_only, filter_cols_below, reindex_on_time_mask, df_downsample_transpose, pd_single_ser, ser_shift, pd_common_idx_rows
+from common_util import is_type, compose, dcompose, pd_idx_rename, pd_idx_to_midx, pd_dti_idx_date_only, filter_cols_below, reindex_on_time_mask, df_downsample_transpose, pd_single_ser, ser_shift, pd_common_idx_rows
 from model.common import EXPECTED_NUM_HOURS
 
 
@@ -116,6 +116,27 @@ def prep_transpose_data(feature_df, row_masks_df, delayed=False):
 	prep_fn = dcompose(*preproc) if (delayed) else compose(*preproc)
 	return prep_fn(feature_df, row_masks_df)
 
+
+def prep_stack_data(feature_df, delayed=False):
+	"""
+	Converts a single index daily DataFrame into a single column MultiIndex daily DataFrame.
+
+	Args:
+		feature_df (pd.DataFrame): Daily DataFrame
+		row_masks_df (pd.DataFrame): DataFrame of row masks / time mask
+		delayed (boolean): Whether or not to create a delayed function composition
+
+	Returns:
+		pd.DataFrame or dask Delayed object
+	"""
+	preproc = (
+				pd_dti_idx_date_only,			# Removes the time component of the DatetimeIndex index
+				partial(pd_idx_to_midx, col_name=-1)	# Converts to MultiIndex DF
+			)
+	prep_fn = dcompose(*preproc) if (delayed) else compose(*preproc)
+	return prep_fn(feature_df)
+
+
 def prep_trmi_buzzless(feature_df, delayed=False):
 	"""
 	TODO
@@ -184,6 +205,7 @@ COMMON_PREP_MAPPING = {
 
 DATA_PREP_MAPPING = {
 	'prep_transpose_data': prep_transpose_data,
+	'prep_stack_data': prep_stack_data,
 	'prep_label_data': prep_label_data,
 	'prep_target_data': prep_target_data,
 	'pd_idx_date_only': single_prep_fn(pd_dti_idx_date_only)
