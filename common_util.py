@@ -206,10 +206,14 @@ def remove_dups_list(lst):
 def flatten2D(list2D):
 	return list(chain(*list2D))
 
-def all_equal_list(lst):
-	return all_eq(lst[0], *lst[1:])
+def list_all_eq(first, *others):
+	for oth in others:
+		if (any(oth != first)):
+			return False
+	return True
 
-all_equal = all_equal_list # Legacy
+def all_equal(lst): # Legacy
+	return all_eq(lst[0], *lst[1:])
 
 first_element = lambda lst: lst[0]
 
