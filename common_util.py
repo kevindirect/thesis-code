@@ -1407,7 +1407,7 @@ def pd_split_ternary_to_binary(pd_obj, column_names=['neg', 'pos'], split_val=0,
 	d[0][d[0]>split_val] = fill_val
 	d[1][d[1]<split_val] = fill_val
 	d.columns = column_names
-	return d
+	return pd_idx_rename(d, ['id0', 'id1'])
 
 
 """Datetime"""
