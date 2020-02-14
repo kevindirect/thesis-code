@@ -1376,6 +1376,13 @@ def ser_range_center_clip(ser, thresh=None, inner=0, outer=False, inclusive=Fals
 
 	return out
 
+def df_midx_restack(df):
+	"""
+	'Restack' a MultiIndex DataFrame, fixes https://github.com/pandas-dev/pandas/issues/2770 for DTI DataFrames.
+	I think this bug exists because of the frequency component saving null rows despite dropna calls.
+	"""
+	return df.unstack().stack()
+
 def pd_idx_to_midx(pd_obj, col_name=0):
 	"""
 	Convert a single index pandas Series or DataFrame to a single column MultiIndexed DataFrame.

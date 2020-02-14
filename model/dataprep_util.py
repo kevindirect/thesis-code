@@ -9,7 +9,7 @@ import logging
 import numpy as np
 import pandas as pd
 
-from common_util import is_type, compose, dcompose, pd_idx_rename, pd_idx_to_midx, pd_dti_idx_date_only, filter_cols_below, reindex_on_time_mask, df_downsample_transpose, pd_single_ser, ser_shift, pd_common_idx_rows
+from common_util import is_type, compose, dcompose, pd_idx_rename, pd_idx_to_midx, pd_dti_idx_date_only, filter_cols_below, reindex_on_time_mask, df_downsample_transpose, pd_single_ser, ser_shift, pd_common_idx_rows, df_midx_restack
 from model.common import EXPECTED_NUM_HOURS
 
 
@@ -72,7 +72,7 @@ def prune_nulls(df, method='ffill', limit=EXPECTED_NUM_HOURS//2):
 	Conveninence Function to remove nulls/NaNs from df or series rows.
 	"""
 	if (method=='ffill'):
-		return df.dropna(axis=0, how='all').fillna(axis=1, method='ffill', limit=limit).dropna(axis=0, how='any')
+		return df.dropna(axis=0, how='all').fillna(axis=1, method='ffill', limit=limit).dropna(axis=0, how='any') # Drops rows that start with null values or exceed the limit
 	elif (method=='drop'):
 		return df.dropna(axis=0, how='any')
 
@@ -111,7 +111,8 @@ def prep_transpose_data(feature_df, row_masks_df, delayed=False):
 				filter_cols_below,		# Filters out columns with 90% or less of their data missing (relative to the most populated column)
 				align_first_last_cols,		# Removes an extra column due to misalignment if it exists
 				prune_nulls,			# Removes or fills any last null data
-				pd_dti_idx_date_only		# Removes the time component of the DatetimeIndex index
+				pd_dti_idx_date_only,		# Removes the time component of the DatetimeIndex index
+				df_midx_restack			# Restacks to fix https://github.com/pandas-dev/pandas/issues/2770
 			)
 	prep_fn = dcompose(*preproc) if (delayed) else compose(*preproc)
 	return prep_fn(feature_df, row_masks_df)
