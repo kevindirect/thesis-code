@@ -33,7 +33,7 @@ def dump_root(argv):
 			for trmi_cat, trmi_list in trmi_ver_groups.items():
 				trmi_list_path = RAW_DIR +'trmi' +sep +trmi_ver +sep +trmi_cat +sep
 				sents = [load_df(sent, dir_path=trmi_list_path) for sent in trmi_list]
-				joined = reduce(right_join, [joined] + sents)
+				joined = fill_ver(reduce(outer_join, [joined] + sents))
 		logging.info('joined all data...')
 
 		# TODO - move index conversion to dti upstream to dump_price and dump_trmi
@@ -45,6 +45,14 @@ def dump_root(argv):
 		DataAPI.dump(make_entry('raw', 'root', 'join', dti_freq, name=equity, cat=cat_map(file_list['price'])), joined)
 		logging.info('dumped df')
 
+def fill_ver(trmi_df):
+	"""
+	Hacky
+	"""
+	for col in trmi_df.columns:
+		if (col.endswith('ver')):
+			trmi_df[col] = trmi_df.loc[:, col].fillna(method='ffill').fillna(method='bfill')
+	return trmi_df
 
 def cat_map(primary_target):
 	return {
