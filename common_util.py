@@ -199,6 +199,17 @@ dt_delta = lambda start, end: datetime.combine(date.min, end) - datetime.combine
 now_tz = lambda fmt='%z': dt_now().astimezone().strftime(fmt)
 str_now_dtz = lambda fmt=DT_FMT_YMD_HMS: str_now(fmt=fmt) +' ' +now_tz()
 
+def timestamp_on(timestamp):
+	"""
+	Return a constructor for a timestamp at a particular timestamped date.
+	"""
+	return partial(pd.Timestamp,
+			freq=timestamp.freq if (hasattr(timestamp, 'freq')) else None,
+			tz=timestamp.tz if (hasattr(timestamp, 'tz')) else None,
+			year=timestamp.year,
+			month=timestamp.month,
+			day=timestamp.day)
+
 """List"""
 def remove_dups_list(lst):
 	return list(OrderedDict.fromkeys(lst))
