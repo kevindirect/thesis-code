@@ -13,7 +13,7 @@ from raw.common import default_pricefile, default_pathsfile, default_columnsfile
 def get_price(argv):
 	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 	cmd_args_list = ['filename=', 'pathsfile=', 'columnsfile=', 'rowsfile=']
-	cmd_args = get_cmd_args(argv, cmd_args_listi, script_name=basename(__file__))
+	cmd_args = get_cmd_args(argv, cmd_args_list, script_name=basename(__file__))
 	pricefile = default_pricefile if (isnt(cmd_args['filename='])) else cmd_args['filename=']
 	pathsfile = default_pathsfile if (isnt(cmd_args['pathsfile='])) else cmd_args['pathsfile=']
 	columnsfile = default_columnsfile if (isnt(cmd_args['columnsfile='])) else cmd_args['columnsfile=']
@@ -116,10 +116,17 @@ def clean_rows(frame, clean_rows_instr):
 			for col_set in row_filter["one"]:
 				frame = frame[(frame[col_set] != 1).all(axis=1)]
 
+		# Drop duplicate rows (keep first)
+		if ("dup" in row_filter):
+			for col_set in row_filter["dup"]:
+				frame = frame.drop_duplicates(subset=col_set, keep='first')
+
+		# Drop rows with same-valued columns
 		if ("same" in row_filter):
 			for col_set in row_filter["same"]:
 				assert(len(col_set)>1)
 				frame = frame[~frame[col_set].eq(frame[col_set[0]], axis=0).all(axis=1)]
+
 	return frame
 
 

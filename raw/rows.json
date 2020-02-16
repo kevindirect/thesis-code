@@ -3,7 +3,7 @@
 		"filter": {
 			"null": [["pba_open", "pba_high", "pba_low", "pba_close"]],
 			"zero": [["pba_open", "pba_high", "pba_low", "pba_close"]],
-			"same": [["pba_open", "pba_high", "pba_low", "pba_close"]]
+			"dup": [["pba_open", "pba_high", "pba_low", "pba_close"]]
 		},
 		"DJI": {
 		},
@@ -12,7 +12,7 @@
 		"NDX": {
 		},
 		"RUT": {
-		}, 
+		},
 		"USO": {
 		},
 		"GLD": {
@@ -22,7 +22,7 @@
 		"filter": {
 			"null": [["vol_open", "vol_high", "vol_low", "vol_close"]],
 			"zero": [["vol_open", "vol_high", "vol_low", "vol_close"]],
-			"same": [["vol_open", "vol_high", "vol_low", "vol_close"]]
+			"dup": [["vol_open", "vol_high", "vol_low", "vol_close"]]
 		},
 		"VXD": {
 		},
