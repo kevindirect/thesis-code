@@ -2,17 +2,15 @@
 	"*": null,
 	"/": {
 		"pba": {
-			"exact": ["pba_gmtOffset"]
+			"exact": ["pba_close"]
 		},
 		"vol": {
-			"exact": ["vol_gmtOffset"]
+			"exact": ["vol_close"]
 		},
 		"trmi2": {
-			"exact": ["pba_gmtOffset"],
 			"endswith": ["2_ver"]
 		},
 		"trmi3": {
-			"exact": ["pba_gmtOffset"],
 			"endswith": ["3_ver"]
 		}
 	}

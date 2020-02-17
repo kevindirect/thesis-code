@@ -10,7 +10,7 @@ import logging
 import numpy as np
 import pandas as pd
 
-from common_util import RAW_DIR, DT_HOURLY_FREQ, DT_CAL_DAILY_FREQ, DT_FMT_YMD_HM, load_json, load_df, benchmark, get_cmd_args, isnt, series_to_dti_noreindex, right_join, outer_join, timestamp_on, dt_now
+from common_util import RAW_DIR, DT_HOURLY_FREQ, DT_CAL_DAILY_FREQ, DT_FMT_YMD_HM, load_json, load_df, benchmark, get_cmd_args, isnt, series_to_dti_noreindex, pd_before_cutoff, right_join, outer_join
 from raw.common import default_joinsfile
 from data.data_api import DataAPI
 from data.data_util import make_entry
@@ -45,9 +45,8 @@ def dump_root(argv):
 		joined = joined.asfreq(dti_freq)
 		logging.info('converted index to dti with freq: {}...'.format(dti_freq))
 
-		joined = joined.groupby(pd.Grouper(freq=agg_freq)).apply(partial(filter_day))
-		joined.index = joined.index.droplevel(level=0)
-		logging.info('Filtered days that don\'t begin at or before cutoff time...')
+		joined = joined.groupby(pd.Grouper(freq=agg_freq)).filter(pd_before_cutoff)
+		logging.info('filtered days that don\'t begin at or before cutoff time...')
 
 		logging.debug(joined.index, joined)
 		DataAPI.dump(make_entry('raw', 'root', 'join', dti_freq, name=equity, cat=cat_map(file_list['price'])), joined)
@@ -61,27 +60,6 @@ def fill_ver(trmi_df):
 		if (col.endswith('ver')):
 			trmi_df[col] = trmi_df.loc[:, col].fillna(method='ffill').fillna(method='bfill')
 	return trmi_df
-
-def filter_day(day_df, cutoff_time=timestamp_on(dt_now())(hour=9), offset_col='pba_gmtOffset', offset_unit=DT_HOURLY_FREQ):
-	"""
-	Filter function used to remove days that don't start at or before the cutoff time.
-
-	Args:
-		day_df (pd.DataFrame): intraday dataframe
-		cutoff_time (pd.Timestamp): pandas timestamp specifying the intraday cutoff time, only the time components are used
-		offset_col (str): offset column to convert the UTC index to local time
-		offset_unit (str): offset unit of the offset column
-
-	Returns:
-		None or pd.DataFrame
-	"""
-	local_times = day_df.index + pd.to_timedelta(day_df.loc[:, offset_col], unit=offset_unit)
-	if (not all(pd.isnull(local_times))):
-		min_time = local_times.min()
-		cutoff_time = timestamp_on(min_time)(hour=cutoff_time.hour, minute=cutoff_time.minute, second=cutoff_time.second)
-		if (min_time <= cutoff_time):
-			return day_df
-	return None
 
 def cat_map(primary_target):
 	return {

@@ -199,6 +199,12 @@ dt_delta = lambda start, end: datetime.combine(date.min, end) - datetime.combine
 now_tz = lambda fmt='%z': dt_now().astimezone().strftime(fmt)
 str_now_dtz = lambda fmt=DT_FMT_YMD_HMS: str_now(fmt=fmt) +' ' +now_tz()
 
+def dti_tz_convert(dti, tz='US/Eastern'):
+	"""
+	Return pd.DatetimeIndex converted to destination timezone.
+	"""
+	return dti.tz_convert(tz)
+
 def timestamp_on(timestamp):
 	"""
 	Return a constructor for a timestamp at a particular timestamped date.
@@ -209,6 +215,29 @@ def timestamp_on(timestamp):
 			year=timestamp.year,
 			month=timestamp.month,
 			day=timestamp.day)
+
+def pd_before_cutoff(pd_obj, cutoff_time=timestamp_on(dt_now())(hour=9, tz='US/Eastern')):
+	"""
+	Pandas filter helper function to remove days that don't start at or before the cutoff time.
+
+	Args:
+		pd_obj (pd.Series|pd.DataFrame): dti-indexed intraday series/dataframe
+		cutoff_time (pd.Timestamp): pandas timestamp for the cutoff time, the date component is not used; default is 9AM US/Eastern
+
+	Returns:
+		True if the pandas object index starts at or before the cutoff time, else False
+	"""
+	unique_dates = list(set(pd_obj.index.date))
+	assert(len(unique_dates)==1)
+	date = unique_dates[0]
+	local_times = dti_tz_convert(pd_obj.dropna(how='all').index, tz=cutoff_time.tz)
+	valid_local_times = local_times[local_times.date==date]
+
+	if (not all(pd.isnull(valid_local_times))):
+		min_time = valid_local_times.min()
+		cutoff_time = timestamp_on(min_time)(hour=cutoff_time.hour, minute=cutoff_time.minute, second=cutoff_time.second)
+		return min_time <= cutoff_time
+	return False
 
 """List"""
 def remove_dups_list(lst):
@@ -1635,8 +1664,29 @@ def cust_count(df):
 
 	return cust, dti_to_ymd(count_df)
 
+def dti_local_time_mask(dti, interval, tz=None):
+	"""
+	Return a df of shifted, range-masked times based on the interval indexed by the passed DatetimeIndex.
+
+	Args:
+		dti (pd.DatetimeIndex): datetimes to convert to tz and filter by interval
+		interval (list): list of string/datetime start and end time of the interval in the destination timezone
+			if using strings, times are formatted as with 'pandas.DataFrame.between_time'
+		tz (str): timezone of the interval and mask values
+
+	Returns:
+		pd.DataFrame with dti as the index and the shifted/filtered values as the sole column 'times'
+	"""
+	mask_df = pd.DataFrame(index=dti_tz_convert(dti, tz=tz))
+	mask_df.index.name = 'times'
+	mask_df['id'] = dti
+	mask_df = mask_df.between_time(start_time=interval[0], end_time=interval[1])
+	mask_df = mask_df.reset_index(drop=False).set_index('id')
+	return mask_df
+
 def get_time_mask(df, offset_col_name=None, offset_unit=DT_HOURLY_FREQ, offset_tz=None, time_range=None):
 	"""
+	XXX - Deprecated in favor of dti_local_time_mask
 	Return a df of shifted, range-masked times.
 	Setting start time temporally after end time filters for times outside of the time range.
 
@@ -1652,6 +1702,7 @@ def get_time_mask(df, offset_col_name=None, offset_unit=DT_HOURLY_FREQ, offset_t
 	Returns:
 		pd.DataFrame indexed by original time with times column (shifted if an offset column was specified)
 	"""
+	raise DeprecationWarning('use dti_local_time_mask instead')
 	mask_df = pd.DataFrame(data={'times': df.index}, index=df.index)
 
 	if (offset_col_name is not None):

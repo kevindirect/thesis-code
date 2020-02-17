@@ -1,121 +1,105 @@
 {
 	"dow_jones": {
 		"pba": {
-			"intraday_hourly": {
-				"time_range": ["08:00", "16:00"],
-				"target_tz": "US/Eastern",
-				"type": "hrm"
+			"hrm": {
+				"interval": ["08:00:00", "16:00:00"],
+				"tz": "US/Eastern"
 			}
 		},
 		"vol": {
-			"intraday_hourly": {
-				"time_range": ["08:00", "16:00"],
-				"target_tz": "US/Eastern",
-				"type": "hrm"
+			"hrm": {
+				"interval": ["08:00:00", "16:00:00"],
+				"tz": "US/Eastern"
 			}
 		},
 		"trmi2": {
-			"intraday_hourly": {
-				"time_range": ["08:00", "16:00"],
-				"target_tz": "US/Eastern",
-				"type": "hrm"
+			"hrm": {
+				"interval": ["08:00:00", "16:00:00"],
+				"tz": "US/Eastern"
 			}
 		},
 		"trmi3": {
-			"intraday_hourly": {
-				"time_range": ["08:00", "16:00"],
-				"target_tz": "US/Eastern",
-				"type": "hrm"
+			"hrm": {
+				"interval": ["08:00:00", "16:00:00"],
+				"tz": "US/Eastern"
 			}
 		}
 	},
 	"sp_500": {
 		"pba": {
-			"intraday_hourly": {
-				"time_range": ["08:00", "16:00"],
-				"target_tz": "US/Eastern",
-				"type": "hrm"
+			"hrm": {
+				"interval": ["08:00:00", "16:00:00"],
+				"tz": "US/Eastern"
 			}
 		},
 		"vol": {
-			"intraday_hourly": {
-				"time_range": ["08:00", "16:00"],
-				"target_tz": "US/Eastern",
-				"type": "hrm"
+			"hrm": {
+				"interval": ["08:00:00", "16:00:00"],
+				"tz": "US/Eastern"
 			}
 		},
 		"trmi2": {
-			"intraday_hourly": {
-				"time_range": ["08:00", "16:00"],
-				"target_tz": "US/Eastern",
-				"type": "hrm"
+			"hrm": {
+				"interval": ["08:00:00", "16:00:00"],
+				"tz": "US/Eastern"
 			}
 		},
 		"trmi3": {
-			"intraday_hourly": {
-				"time_range": ["08:00", "16:00"],
-				"target_tz": "US/Eastern",
-				"type": "hrm"
+			"hrm": {
+				"interval": ["08:00:00", "16:00:00"],
+				"tz": "US/Eastern"
 			}
 		}
 	},
 	"nasdaq_100": {
 		"pba": {
-			"intraday_hourly": {
-				"time_range": ["08:00", "16:00"],
-				"target_tz": "US/Eastern",
-				"type": "hrm"
+			"hrm": {
+				"interval": ["08:00:00", "16:00:00"],
+				"tz": "US/Eastern"
 			}
 		},
 		"vol": {
-			"intraday_hourly": {
-				"time_range": ["08:00", "16:00"],
-				"target_tz": "US/Eastern",
-				"type": "hrm"
+			"hrm": {
+				"interval": ["08:00:00", "16:00:00"],
+				"tz": "US/Eastern"
 			}
 		},
 		"trmi2": {
-			"intraday_hourly": {
-				"time_range": ["08:00", "16:00"],
-				"target_tz": "US/Eastern",
-				"type": "hrm"
+			"hrm": {
+				"interval": ["08:00:00", "16:00:00"],
+				"tz": "US/Eastern"
 			}
 		},
 		"trmi3": {
-			"intraday_hourly": {
-				"time_range": ["08:00", "16:00"],
-				"target_tz": "US/Eastern",
-				"type": "hrm"
+			"hrm": {
+				"interval": ["08:00:00", "16:00:00"],
+				"tz": "US/Eastern"
 			}
 		}
 	},
 	"russell_2000": {
 		"pba": {
-			"intraday_hourly": {
-				"time_range": ["08:00", "16:00"],
-				"target_tz": "US/Eastern",
-				"type": "hrm"
+			"hrm": {
+				"interval": ["08:00:00", "16:00:00"],
+				"tz": "US/Eastern"
 			}
 		},
 		"vol": {
-			"intraday_hourly": {
-				"time_range": ["08:00", "16:00"],
-				"target_tz": "US/Eastern",
-				"type": "hrm"
+			"hrm": {
+				"interval": ["08:00:00", "16:00:00"],
+				"tz": "US/Eastern"
 			}
 		},
 		"trmi2": {
-			"intraday_hourly": {
-				"time_range": ["08:00", "16:00"],
-				"target_tz": "US/Eastern",
-				"type": "hrm"
+			"hrm": {
+				"interval": ["08:00:00", "16:00:00"],
+				"tz": "US/Eastern"
 			}
 		},
 		"trmi3": {
-			"intraday_hourly": {
-				"time_range": ["08:00", "16:00"],
-				"target_tz": "US/Eastern",
-				"type": "hrm"
+			"hrm": {
+				"interval": ["08:00:00", "16:00:00"],
+				"tz": "US/Eastern"
 			}
 		}
 	}

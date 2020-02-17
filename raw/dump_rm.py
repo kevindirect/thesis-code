@@ -5,7 +5,7 @@ import sys
 from os.path import basename
 import logging
 
-from common_util import RAW_DIR, DT_HOURLY_FREQ, benchmark, get_cmd_args, isnt, load_json, load_df, series_to_dti, right_join, outer_join, list_get_dict, get_time_mask
+from common_util import RAW_DIR, DT_HOURLY_FREQ, benchmark, get_cmd_args, isnt, load_json, dti_local_time_mask
 from raw.common import GMT_OFFSET_COL_SFX, default_row_masksfile
 from data.data_api import DataAPI
 from data.data_util import make_entry
@@ -18,28 +18,17 @@ def dump_row_masks(argv):
 	row_masksfile = default_row_masksfile if (isnt(cmd_input['row_masksfile='])) else cmd_input['row_masksfile=']
 	row_masks = load_json(row_masksfile, dir_path=RAW_DIR)
 
-	for keychain, raw_rec, raw_df in DataAPI.axe_yield(['root', 'root_split_gmtoffset'], lazy=False):
+	for keychain, raw_rec, raw_df in DataAPI.axe_yield(['root', 'root_split_rows'], lazy=False):
 		logging.info(str(keychain))
 		asset_name, data_subset = keychain[0], keychain[-1]
-		gmt_col = raw_df.columns[0]
-		assert(gmt_col.endswith(GMT_OFFSET_COL_SFX))
-		if (raw_df.shape[1] > 1):
-			# XXX - Filling nulls may lead to error if the time_range includes the times when Daylight savings is switched on/off
-			#raw_df = raw_df.fillna(method='bfill', axis=0)
-			#logging.info('Found more than one column, backfilled null gmt offsets')
-			# XXX - this is commented out for now. Front or backfilling null gmt offsets causes problems in some data because the wrong
-			# gmt offset is set to some rows, either duplicsting an hour (ffill) or removing one (bfill).
-			# In the future use a library to do all dtz conversion, so we dont need to deal with this mess.
-			pass
-		logging.debug(raw_df)
 
 		for mask_type, mask in row_masks[asset_name][data_subset].items():
-			logging.info('mask name: {}'.format(mask_type))
-			mask_freq = DT_HOURLY_FREQ if (mask['type'].startswith('h')) else None
-			mask_df = get_time_mask(raw_df, offset_col_name=gmt_col, offset_tz=mask['target_tz'], time_range=mask['time_range'])
+			logging.info('mask type: {}'.format(mask_type))
+			mask_freq = DT_HOURLY_FREQ if (mask_type == 'hrm') else None
+			mask_df = dti_local_time_mask(raw_df.dropna(how='all').index, mask['interval'], mask['tz'])
 			logging.debug(mask_df)
-			DataAPI.dump(make_entry('raw', mask['type'], data_subset, mask_freq, base_rec=raw_rec), mask_df)
-			logging.info('dumped {} {}...'.format(mask['type'], data_subset))
+			DataAPI.dump(make_entry('raw', mask_type, data_subset, mask_freq, base_rec=raw_rec), mask_df)
+			logging.info('dumped {} {}...'.format(mask_type, data_subset))
 
 
 if __name__ == '__main__':

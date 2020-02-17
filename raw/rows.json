@@ -1,9 +1,9 @@
 {
 	"price": {
 		"filter": {
-			"null": [["pba_open", "pba_high", "pba_low", "pba_close"]],
-			"zero": [["pba_open", "pba_high", "pba_low", "pba_close"]],
-			"dup": [["pba_open", "pba_high", "pba_low", "pba_close"]]
+			"null": [["pba_open", "pba_high", "pba_low", "pba_close", "pba_avgPrice"]],
+			"zero": [["pba_open", "pba_high", "pba_low", "pba_close", "pba_avgPrice"]],
+			"dup": [["pba_open", "pba_high", "pba_low", "pba_close", "pba_avgPrice"]]
 		},
 		"DJI": {
 		},
@@ -20,9 +20,9 @@
 	},
 	"vol": {
 		"filter": {
-			"null": [["vol_open", "vol_high", "vol_low", "vol_close"]],
-			"zero": [["vol_open", "vol_high", "vol_low", "vol_close"]],
-			"dup": [["vol_open", "vol_high", "vol_low", "vol_close"]]
+			"null": [["vol_open", "vol_high", "vol_low", "vol_close", "vol_avgPrice"]],
+			"zero": [["vol_open", "vol_high", "vol_low", "vol_close", "vol_avgPrice"]],
+			"dup": [["vol_open", "vol_high", "vol_low", "vol_close", "vol_avgPrice"]]
 		},
 		"VXD": {
 		},
