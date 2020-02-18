@@ -1239,23 +1239,6 @@ def index_intersection(*pd_idx):
 	"""
 	return reduce(lambda idx, oth: idx.intersection(oth), pd_idx)
 
-def pd_midx_to_arr(pd_obj, drop_null=True):
-	"""
-	XXX - Currently works with 3D pandas objects, untested with higher dim frames
-	Converts a MultiIndex DataFrame into a numpy array.
-	Adapted from code by Igor Raush
-	Source: https://stackoverflow.com/questions/35047882/transform-pandas-dataframe-with-n-level-hierarchical-index-into-n-d-numpy-array
-	"""
-	shape = tuple(map(len, pd_obj.index.levels))
-	arr = np.full(shape, np.nan)							# create an empty array of NaN of the right dimensions
-	arr[tuple(pd_obj.index.codes)] = pd_obj.values.flat 	# fill it using Numpy's advanced indexing
-	if (drop_null):
-		mask = np.all(np.isnan(arr), axis=-1)
-		arr = arr[~mask]
-		new_shape = (arr.shape[0]//mask.shape[-1], mask.shape[-1], arr.shape[-1])
-		arr = np.reshape(arr, new_shape)
-	return arr
-
 def midx_intersect(*idxs):
 	"""
 	Return the common intersection of all passed pandas single index or MultiIndex objects.
@@ -1866,7 +1849,52 @@ def abs_pd(pd_obj): # XXX - deprecated
 	return pd_obj.transform(lambda p: p.abs() if p.dtype.kind in 'iufc' else p)
 
 """Numpy"""
-def pd_to_np(fn):
+def pd_to_np(pd_obj):
+	"""
+	Return a DataFrame as a numpy array with MultiIndex levels and columns interpreted correctly,
+	unlike standard .to_numpy() or .values, which doesn't handle MultiIndex correctly.
+	Untested with MultiIndex frames of dimensions higher than 3, but should work.
+
+	Adapted from code by Igor Raush
+	Source: https://stackoverflow.com/questions/35047882/transform-pandas-dataframe-with-n-level-hierarchical-index-into-n-d-numpy-array
+
+	Args:
+		pd_obj (pd.Series|pd.DataFrame): panel data to convert to numpy tensor, handles MultiIndex intelligently
+
+	Returns:
+		Numpy tensor with the following shape depending on the object type:
+			* pd.Series -> (len(df),)
+			* single indexed pd.DataFrame -> (len(df), len(df.columns))
+			* MultiIndexed pd.DataFrame -> (len(MultiIndex.level[0]), ..., len(MultiIndex.level[-1]), len(df.columns))
+	"""
+	if (is_type(pd_obj.index, pd.MultiIndex)):
+		shape = tuple(map(len, [*pd_obj.index.levels, pd_obj.columns]))
+		arr = np.full(shape, np.nan)					# create an empty array of NaN of the right dimensions
+		arr[tuple(pd_obj.index.codes)] = pd_obj.values			# fill it using Numpy's advanced indexing
+	else:
+		arr = pd_obj.to_numpy()
+	return arr
+
+def pd_midx_to_arr(pd_obj, drop_null=True):
+	"""
+	XXX - Deprecated
+	XXX - Currently works with 3D pandas objects, untested with higher dim frames
+	Converts a MultiIndex DataFrame into a numpy array.
+	Adapted from code by Igor Raush
+	Source: https://stackoverflow.com/questions/35047882/transform-pandas-dataframe-with-n-level-hierarchical-index-into-n-d-numpy-array
+	"""
+	raise DeprecationWarning('Deprecated, use pd_to_np instead')
+	shape = tuple(map(len, pd_obj.index.levels))
+	arr = np.full(shape, np.nan)							# create an empty array of NaN of the right dimensions
+	arr[tuple(pd_obj.index.codes)] = pd_obj.values.flat 	# fill it using Numpy's advanced indexing
+	if (drop_null):
+		mask = np.all(np.isnan(arr), axis=-1)
+		arr = arr[~mask]
+		new_shape = (arr.shape[0]//mask.shape[-1], mask.shape[-1], arr.shape[-1])
+		arr = np.reshape(arr, new_shape)
+	return arr
+
+def pd_to_np_decorator(fn):
 	"""
 	Return function with all pandas typed arguments converted to their numpy counterparts.
 	For use as a decorator.
