@@ -1125,8 +1125,8 @@ def pd_rows(pd_obj, idx):
 	Returns:
 		Indexed rows of pd_obj at the correct dimensionality/MultiIndexing levels
 	"""
-	if (is_type(idx, pd.core.index.MultiIndex)):
-		if (is_type(pd_obj.index, pd.core.index.MultiIndex)):
+	if (is_type(idx, pd.MultiIndex)):
+		if (is_type(pd_obj.index, pd.MultiIndex)):
 			if (pd_obj.index.nlevels < idx.nlevels):
 				higher_levels = list(set(range(idx.nlevels)).difference(set(range(pd_obj.index.nlevels))))
 				selected = pd_obj.loc[idx.droplevel(higher_levels).drop_duplicates()]
@@ -1135,7 +1135,7 @@ def pd_rows(pd_obj, idx):
 		else:
 			selected = pd_obj.loc[idx.levels[0].drop_duplicates()]
 	else:
-		if (is_type(pd_obj.index, pd.core.index.MultiIndex)):
+		if (is_type(pd_obj.index, pd.MultiIndex)):
 			selected = pd_obj.loc[idx.drop_duplicates()]
 		else:
 			selected = pd_obj.loc[idx]
@@ -1173,7 +1173,7 @@ def idx_level_top_up(idx, midx):
 	Returns:
 		Topped up idx (as MultiIndex)
 	"""
-	if (is_type(idx, pd.core.index.MultiIndex)):
+	if (is_type(idx, pd.MultiIndex)):
 		diff = midx.nlevels - idx.nlevels
 		if (diff > 0):
 			fix_levels = [*list(idx.levels), *list(midx.levels[-diff:])]
@@ -1196,7 +1196,7 @@ def midx_level_standarize(*idxs):
 	Returns:
 		Level standardized MultiIndexes, or single indexes if no MultiIndexes exist
 	"""
-	midx_list = [idx for idx in idxs if (is_type(idx, pd.core.index.MultiIndex))]
+	midx_list = [idx for idx in idxs if (is_type(idx, pd.MultiIndex))]
 	if (len(midx_list) > 0):
 		highest_dim = max(midx_list, key=lambda i: i.nlevels)
 		yield from (idx_level_top_up(idx, highest_dim) for idx in idxs)
@@ -1214,7 +1214,7 @@ def midx_get_level(idx, level=0):
 	Returns:
 		Index or MultiIndex
 	"""
-	return idx.levels[level] if (is_type(idx, pd.core.index.MultiIndex)) else idx
+	return idx.levels[level] if (is_type(idx, pd.MultiIndex)) else idx
 
 def pd_get_midx_level(pd_obj, level=0):
 	"""
@@ -1274,7 +1274,7 @@ def midx_split(idx, *ratio):
 	"""
 	Split an index or MultiIndex into multiple sub indexes based on ratios passed in.
 	"""
-	if (is_type(idx, pd.core.index.MultiIndex)):
+	if (is_type(idx, pd.MultiIndex)):
 		sub_idx_sizes = list(map(lambda lvl: lvl.size, idx.levels[1:]))
 		block_size = reduce(lambda a,b: a*b, sub_idx_sizes)
 		block_cuts = get_range_cuts(0, int(idx.size/block_size), list(ratio))
@@ -1303,7 +1303,7 @@ def pd_common_idx_rows(*pd_objs):
 		Pandas objects filtered by their common indexed rows
 	"""
 	common_idx = midx_intersect(*midx_level_standarize(*(pd_obj.index for pd_obj in pd_objs)))
-	if (is_type(common_idx, pd.core.index.MultiIndex)):
+	if (is_type(common_idx, pd.MultiIndex)):
 		common_idx = common_idx.sortlevel(level=list(range(common_idx.nlevels)), sort_remaining=False)[0]
 	yield from (pd_rows(pd_obj, common_idx) for pd_obj in pd_objs)
 
@@ -1512,7 +1512,7 @@ def dti_extract_date(dti, date_freq=DT_CAL_DAILY_FREQ, date_tz=None, level=0):
 	Returns:
 		pd.DatetimeIndex or MultiIndex
 	"""
-	if (is_type(dti, pd.core.index.MultiIndex)):
+	if (is_type(dti, pd.MultiIndex)):
 		date_tz = date_tz if (date_tz!='old') else dti.levels[level].tz
 		date_idx = dti.set_levels(pd.DatetimeIndex(dti.levels[level].normalize().date, freq=date_freq, tz=date_tz), level=level)
 	else:
