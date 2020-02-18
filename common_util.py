@@ -1680,7 +1680,7 @@ def dti_local_time_mask(dti, interval, tz=None):
 	mask_df = pd.DataFrame(index=dti_tz_convert(dti, tz=tz))
 	mask_df.index.name = 'times'
 	mask_df['id'] = dti
-	mask_df = mask_df.between_time(start_time=interval[0], end_time=interval[1])
+	mask_df = mask_df.between_time(start_time=interval[0], end_time=interval[1], include_start=True, include_end=True)
 	mask_df = mask_df.reset_index(drop=False).set_index('id')
 	return mask_df
 

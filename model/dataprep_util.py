@@ -150,9 +150,6 @@ def prep_trmi_buzzless(feature_df, delayed=False):
 		pd.DataFrame or dask Delayed object
 	"""
 	preproc = (
-				filter_cols_below,		# Filters out columns with 90% or less of their data missing (relative to the most populated column)
-				prune_nulls,			# Removes or fills any last null data
-				pd_dti_idx_date_only		# Removes the time component of the DatetimeIndex index
 			)
 	prep_fn = dcompose(*preproc) if (delayed) else compose(*preproc)
 	return prep_fn(feature_df)

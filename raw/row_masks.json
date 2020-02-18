@@ -2,25 +2,25 @@
 	"dow_jones": {
 		"pba": {
 			"hrm": {
-				"interval": ["08:00:00", "16:00:00"],
+				"interval": ["09:00:00", "16:00:00"],
 				"tz": "US/Eastern"
 			}
 		},
 		"vol": {
 			"hrm": {
-				"interval": ["08:00:00", "16:00:00"],
+				"interval": ["09:00:00", "16:00:00"],
 				"tz": "US/Eastern"
 			}
 		},
 		"trmi2": {
 			"hrm": {
-				"interval": ["08:00:00", "16:00:00"],
+				"interval": ["09:00:00", "16:00:00"],
 				"tz": "US/Eastern"
 			}
 		},
 		"trmi3": {
 			"hrm": {
-				"interval": ["08:00:00", "16:00:00"],
+				"interval": ["09:00:00", "16:00:00"],
 				"tz": "US/Eastern"
 			}
 		}
@@ -28,25 +28,25 @@
 	"sp_500": {
 		"pba": {
 			"hrm": {
-				"interval": ["08:00:00", "16:00:00"],
+				"interval": ["09:00:00", "16:00:00"],
 				"tz": "US/Eastern"
 			}
 		},
 		"vol": {
 			"hrm": {
-				"interval": ["08:00:00", "16:00:00"],
+				"interval": ["09:00:00", "16:00:00"],
 				"tz": "US/Eastern"
 			}
 		},
 		"trmi2": {
 			"hrm": {
-				"interval": ["08:00:00", "16:00:00"],
+				"interval": ["09:00:00", "16:00:00"],
 				"tz": "US/Eastern"
 			}
 		},
 		"trmi3": {
 			"hrm": {
-				"interval": ["08:00:00", "16:00:00"],
+				"interval": ["09:00:00", "16:00:00"],
 				"tz": "US/Eastern"
 			}
 		}
@@ -54,25 +54,25 @@
 	"nasdaq_100": {
 		"pba": {
 			"hrm": {
-				"interval": ["08:00:00", "16:00:00"],
+				"interval": ["09:00:00", "16:00:00"],
 				"tz": "US/Eastern"
 			}
 		},
 		"vol": {
 			"hrm": {
-				"interval": ["08:00:00", "16:00:00"],
+				"interval": ["09:00:00", "16:00:00"],
 				"tz": "US/Eastern"
 			}
 		},
 		"trmi2": {
 			"hrm": {
-				"interval": ["08:00:00", "16:00:00"],
+				"interval": ["09:00:00", "16:00:00"],
 				"tz": "US/Eastern"
 			}
 		},
 		"trmi3": {
 			"hrm": {
-				"interval": ["08:00:00", "16:00:00"],
+				"interval": ["09:00:00", "16:00:00"],
 				"tz": "US/Eastern"
 			}
 		}
@@ -80,25 +80,25 @@
 	"russell_2000": {
 		"pba": {
 			"hrm": {
-				"interval": ["08:00:00", "16:00:00"],
+				"interval": ["09:00:00", "16:00:00"],
 				"tz": "US/Eastern"
 			}
 		},
 		"vol": {
 			"hrm": {
-				"interval": ["08:00:00", "16:00:00"],
+				"interval": ["09:00:00", "16:00:00"],
 				"tz": "US/Eastern"
 			}
 		},
 		"trmi2": {
 			"hrm": {
-				"interval": ["08:00:00", "16:00:00"],
+				"interval": ["09:00:00", "16:00:00"],
 				"tz": "US/Eastern"
 			}
 		},
 		"trmi3": {
 			"hrm": {
-				"interval": ["08:00:00", "16:00:00"],
+				"interval": ["09:00:00", "16:00:00"],
 				"tz": "US/Eastern"
 			}
 		}
