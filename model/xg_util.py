@@ -19,8 +19,13 @@ def xgload(xg_subset_dir):
 	ndd = NestedDefaultDict()
 	for d in os.listdir(xg_subset_dir):
 		ddir = xg_subset_dir +d +sep
-		index = load_json('index.json', dir_path=ddir)
-		for i, path in enumerate(index):
-			ndd[path] = load_df('{}.pickle'.format(i), dir_path=ddir, data_format='pickle')
+		try:
+			index = load_json('index.json', dir_path=ddir)
+		except FileNotFoundError as f:
+			logging.warning('index.json not found for {}, skipping...'.format(d))
+			continue
+		else:
+			for i, path in enumerate(index):
+				ndd[path] = load_df('{}.pickle'.format(i), dir_path=ddir, data_format='pickle')
 	return ndd
 
