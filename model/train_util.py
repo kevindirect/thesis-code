@@ -4,6 +4,7 @@ Kevin Patel
 import sys
 import os
 from os import sep
+from functools import partial
 import logging
 
 import numpy as np
@@ -12,7 +13,7 @@ import torch
 from torch.utils.data import TensorDataset, DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
-from common_util import MODEL_DIR, identity_fn, is_type, is_ser, isnt, np_inner, get0, midx_split, pd_midx_to_arr
+from common_util import MODEL_DIR, identity_fn, is_type, is_ser, isnt, np_inner, get0, midx_split, pd_rows, pd_midx_to_arr, df_midx_restack, pd_to_np
 from model.common import PYTORCH_MODELS_DIR, ERROR_CODE, TEST_RATIO, VAL_RATIO
 
 
@@ -28,6 +29,7 @@ def pd_get_np_tvt(pd_obj, as_midx=True, train_ratio=.6):
 	Returns:
 		split data as numpy arrays
 	"""
+	raise DeprecationWarning('use pd_to_np_tvt instead')
 	tv_ratio = (1-train_ratio)/2
 	train_idx, val_idx, test_idx = midx_split(pd_obj.index, train_ratio, tv_ratio, tv_ratio)
 	train_pd, val_pd, test_pd = pd_obj.loc[train_idx], pd_obj.loc[val_idx], pd_obj.loc[test_idx]
@@ -37,6 +39,26 @@ def pd_get_np_tvt(pd_obj, as_midx=True, train_ratio=.6):
 	else:
 		train_np, val_np, test_np = train_pd.values, val_pd.values, test_pd.values
 	return train_np, val_np, test_np
+
+
+def pd_to_np_tvt(pd_obj, train_ratio=.6):
+	"""
+	Return the train, val, test numpy splits of a pandas object as a tuple of numpy tensors.
+	Works with MultiIndex DataFrames.
+
+	Args:
+		pd_obj (pd.DataFrame|pd.Series): data to split
+		train_ratio (float (0,1)): training set ratio, remainder is equally split among val/test
+
+	Returns:
+		(train, val, test) data as a tuple of numpy tensors
+	"""
+	tv_ratio = (1-train_ratio)/2
+	train_idx, val_idx, test_idx = midx_split(pd_obj.index, train_ratio, tv_ratio, tv_ratio)
+	train_df, val_df, test_df = map(partial(pd_rows, pd_obj), (train_idx, val_idx, test_idx))
+	if (is_type(pd_obj.index, pd.MultiIndex)):
+		train_df, val_df, test_df = map(df_midx_restack, (train_df, val_df, test_df))
+	return tuple(map(pd_to_np, (train_df, val_df, test_df)))
 
 
 def batchify(params, data, shuffle_batches=False):
