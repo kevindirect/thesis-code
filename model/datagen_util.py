@@ -41,7 +41,7 @@ def process_group(dataset, group, prep=None, constraint=None, delayed=False):
 		part_prd = {part: (path, rec, df) for part, path, rec, df in zip(group, paths, recs, dfs)}
 		main_path, main_rec = part_prd[main_part][0], part_prd[main_part][1]
 		# Get the dataframe(s) in the order of parts
-		input_data = map(lambda x: part_prd[x][-1], parts) if (delayed) else map(lambda x: part_prd[x][-1].compute(), group)
+		input_data = map(lambda x: part_prd[x][-1], group) if (delayed) else map(lambda x: part_prd[x][-1].compute(), group)
 		transformed = prep_fn(*input_data, delayed=delayed).dropna(axis=0, how='all')
 		yield (main_path, transformed)
 
