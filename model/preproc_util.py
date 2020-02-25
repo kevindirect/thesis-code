@@ -42,6 +42,7 @@ def temporal_preproc(data, window_size, apply_idx=[0]):
 	Returns:
 		Tuple of reshaped data
 	"""
+	raise DeprecationWarning('use temporal_preproc_3d instead')
 	np_assert_identical_len_dim(*data)
 	preproc = []
 	for i, d in enumerate(data):
@@ -64,6 +65,7 @@ def stride_preproc(data, window_size):
 	Returns:
 		Tuple of reshaped data
 	"""
+	raise DeprecationWarning('use stride_preproc_3d instead')
 	np_assert_identical_len_dim(*data)
 	preproc = []
 	for i, d in enumerate(data):
@@ -76,3 +78,58 @@ def stride_preproc(data, window_size):
 			raise ValueError("data.ndim must be 1 or 2 after squeezing")
 	np_assert_identical_len_dim(*preproc)
 	return tuple(preproc)
+
+
+##
+
+def temporal_preproc_3d(data, window_size, apply_idx=[0]):
+	"""
+	Reshapes a tuple of three dimensional numpy tensors.
+	Slides a window down the tensor and stacks sub-tensors to the second dimension.
+
+	Given a tensor (N, C, H):
+		(N, C, H) -> (N-window_size-1, C, window_size, H)
+
+	Args:
+		data (tuple): tuple of numpy data with features as first element
+		window_size (int): desired size of window (history length)
+		apply_idx (iterable): indexes to apply preprocessing to, all other data will be truncated to match
+
+	Returns:
+		Tuple of reshaped data
+	"""
+	#np_assert_identical_len_dim(*data)
+	preproc = []
+	for i, d in enumerate(data):
+		if (i in apply_idx):
+			# Reshape features into overlapping moving window samples
+			preproc.append(np.array([np.stack(vec, axis=1) for vec in window_iter(d, n=window_size)]))
+		else:
+			preproc.append(d[window_size-1:]) # Realign by dropping observations prior to the first step
+	#np_assert_identical_len_dim(*preproc)
+	return tuple(preproc)
+
+
+def stride_preproc_3d(data, window_size):
+	"""
+	Reshape by striding through data by window_size, like a moving window with non-overlapping windows.
+
+	Given a tensor (N, C, H):
+		(N, C, H) -> (N//window_size, C, window_size, H)
+
+	Args:
+		data (tuple): tuple of numpy data
+		window_size (int): desired size of window size and stride
+
+	Returns:
+		Tuple of reshaped data
+	"""
+	np_assert_identical_len_dim(*data)
+	preproc = []
+	for i, d in enumerate(data):
+		sub_arr = [np.swapaxes(d[i:i+window_size], 0, 1) for i in range(0, len(d), window_size)]
+		trunc_arr = sub_arr[:-1] if (sub_arr[0].shape != sub_arr[-1].shape) else sub_arr
+		preproc.append(np.stack(trunc_arr, axis=0))
+	np_assert_identical_len_dim(*preproc)
+	return tuple(preproc)
+
