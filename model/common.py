@@ -33,6 +33,7 @@ from tensorflow.nn import sparse_softmax_cross_entropy_with_logits, softmax_cros
 XG_DIR = MODEL_DIR +'xg' +sep
 XG_PROCESS_DIR = MODEL_DIR +'xg-process' +sep
 XG_DATA_DIR = MODEL_DIR +'xg-data' +sep
+XVIZ_DIR = MODEL_DIR +'xg-graphs-viz' +sep
 DATASET_DIR = RECON_DIR +'dataset' +sep
 FILTERSET_DIR = RECON_DIR +'filterset' +sep
 HOPT_WORKER_BIN = 'hyperopt-mongo-worker'

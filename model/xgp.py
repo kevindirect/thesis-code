@@ -30,7 +30,7 @@ def xgp(argv):
 			logging.info('group {}'.format(group_type))
 			for xg_fname in files:
 				xg_outdir = XG_DATA_DIR +sep.join([group_type, xg_fname[:-JSON_SFX_LEN]]) +sep
-				if (exists(xg_outdir) and not process_all):
+				if (exists(xg_outdir) and exists(sep.join([xg_outdir, 'index.json'])) and not process_all):
 					logging.info('skipping {}...'.format(xg_fname))
 					continue
 				logging.info('processing {}...'.format(xg_fname))
