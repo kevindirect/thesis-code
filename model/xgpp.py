@@ -57,9 +57,9 @@ def xgpp(argv):
 		#xgs = dask.compute(*xgs, scheduler='threads', pool=ThreadPool(len(xgs)+2)) # Process experiment groups concurrently
 
 @dask.delayed
-def lazy_dump_result(result, xg_outdir):
-	logging.info('dumping {}...'.format(str(i)))
-	dump_df(result[1].to_frame() if (is_ser(result[1])) else result[1], str(i), dir_path=xg_outdir, data_format='pickle')
+def lazy_dump_result(result, fname, xg_outdir):
+	logging.info('dumping {}...'.format(str(fname)))
+	dump_df(result[1].to_frame() if (is_ser(result[1])) else result[1], fname, dir_path=xg_outdir, data_format='pickle')
 	return result[0]
 
 @dask.delayed
@@ -83,7 +83,7 @@ def xg_process_delayed(xg_path, xg_outdir, group_type, assets):
 		assert(group_type in group)
 		prep = xg_dict['prep_fn'][group_type]
 		constraint = xg_dict['constraint']
-		proc_paths = [lazy_dump_result(d, xg_outdir)
+		proc_paths = [lazy_dump_result(d, str(i), xg_outdir)
 			for i, d in enumerate(process_group(dataset, group=group, prep=prep, constraint=constraint, delayed=True))]
 		xg_index_dumps.append(lazy_dump_index(proc_paths, xg_outdir))
 
