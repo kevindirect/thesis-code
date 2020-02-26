@@ -257,14 +257,14 @@ def all_equal(lst): # Legacy
 
 first_element = lambda lst: lst[0]
 
-def get0(lst):
+def get0(obj):
 	"""
 	If an object is a list or tuple of length 1 return the singleton element, otherwise return the object.
 	"""
-	if (is_type(list, tuple) and len(lst)==1):
-		return lst[0]
+	if (is_type(obj, list, tuple) and len(obj)==1):
+		return obj[0]
 	else:
-		return lst
+		return obj
 
 def getcon(lst, string):
 	"""

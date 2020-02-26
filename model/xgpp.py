@@ -6,6 +6,9 @@ import os
 from os import sep
 from os.path import exists, basename
 from functools import partial
+from multiprocessing import Pool
+from multiprocessing.pool import ThreadPool
+
 import logging
 
 import numpy as np
@@ -51,10 +54,57 @@ def xgpp(argv):
 			xgs[i].visualize(filename=XVIZ_DIR+fname)
 	if ('test' in modes):
 		# Test various parameters to dask.compute(...)
-		res = dask.compute(*xgs) # Process experiment groups concurrently
-	#if ('run' in modes):
+		times = []
+
+		with benchmark('0') as b:
+			res = dask.compute(*xgs)
+		times.append(b.delta)
+		with benchmark('1') as b:
+			res = dask.compute(*xgs, traverse=False)
+		times.append(b.delta)
+		with benchmark('2') as b:
+			res = dask.compute(*xgs, scheduler='synchronous')
+		times.append(b.delta)
+
+		with benchmark('3') as b:
+			res = dask.compute(*xgs, scheduler='threads')
+		times.append(b.delta)
+		with benchmark('4') as b:
+			res = dask.compute(*xgs, scheduler='threads', pool=ThreadPool(2))
+		times.append(b.delta)
+		with benchmark('5') as b:
+			res = dask.compute(*xgs, scheduler='threads', pool=ThreadPool(4))
+		times.append(b.delta)
+		with benchmark('6') as b:
+			res = dask.compute(*xgs, scheduler='threads', pool=ThreadPool(8))
+		times.append(b.delta)
+		with benchmark('7') as b:
+			res = dask.compute(*xgs, scheduler='threads', pool=ThreadPool(16))
+		times.append(b.delta)
+
+		with benchmark('8') as b:
+			res = dask.compute(*xgs, scheduler='processes')
+		times.append(b.delta)
+		with benchmark('9') as b:
+			res = dask.compute(*xgs, scheduler='processes', pool=Pool(2))
+		times.append(b.delta)
+		with benchmark('10') as b:
+			res = dask.compute(*xgs, scheduler='processes', pool=Pool(4))
+		times.append(b.delta)
+		with benchmark('11') as b:
+			res = dask.compute(*xgs, scheduler='processes', pool=Pool(8))
+		times.append(b.delta)
+		with benchmark('12') as b:
+			res = dask.compute(*xgs, scheduler='processes', pool=Pool(16))
+		times.append(b.delta)
+		with benchmark('13') as b:
+			res = dask.compute(*xgs, scheduler='processes', traverse=False)
+		times.append(b.delta)
+
+		print(times)
+	if ('run' in modes):
 		# Standard run
-		#xgs = dask.compute(*xgs, scheduler='threads', pool=ThreadPool(len(xgs)+2)) # Process experiment groups concurrently
+		xgs = dask.compute(*xgs, scheduler='processes', traverse=False)
 
 @dask.delayed
 def lazy_dump_result(result, fname, xg_outdir):
@@ -65,7 +115,7 @@ def lazy_dump_result(result, fname, xg_outdir):
 @dask.delayed
 def lazy_dump_index(proc_paths, xg_outdir):
 	logging.info('dumping index at {}...'.format(xg_outdir))
-	proc_paths_list = list(dask.compute(*proc_paths))
+	proc_paths_list = list(dask.compute(*proc_paths, scheduler='threads', traverse=False))
 	return dump_json(proc_paths_list, fname='index.json', dir_path=xg_outdir)
 
 def xg_process_delayed(xg_path, xg_outdir, group_type, assets):
