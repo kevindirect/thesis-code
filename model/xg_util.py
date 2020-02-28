@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 
 from common_util import JSON_SFX_LEN, NestedDefaultDict, load_json, load_df, benchmark
-from model.common import XG_PROCESS_DIR, XG_DATA_DIR
+from model.common import XG_PROCESS_DIR, XG_DATA_DIR, XG_INDEX_FNAME
 from recon.dataset_util import gen_group
 
 
@@ -20,9 +20,9 @@ def xgload(xg_subset_dir):
 	for d in os.listdir(xg_subset_dir):
 		ddir = xg_subset_dir +d +sep
 		try:
-			index = load_json('index.json', dir_path=ddir)
+			index = load_json(XG_INDEX_FNAME, dir_path=ddir)
 		except FileNotFoundError as f:
-			logging.warning('index.json not found for {}, skipping...'.format(d))
+			logging.warning('{}{}{} not found, skipping...'.format(d, sep, XG_INDEX_FNAME))
 			continue
 		else:
 			for i, path in enumerate(index):
