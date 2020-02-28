@@ -36,6 +36,7 @@ XG_DATA_DIR = MODEL_DIR +'xg-data' +sep
 XVIZ_DIR = MODEL_DIR +'xg-graphs-viz' +sep
 DATASET_DIR = RECON_DIR +'dataset' +sep
 FILTERSET_DIR = RECON_DIR +'filterset' +sep
+XG_INDEX_FNAME = '.index.json'
 HOPT_WORKER_BIN = 'hyperopt-mongo-worker'
 ERROR_CODE = 999999
 EXPECTED_NUM_HOURS = 8

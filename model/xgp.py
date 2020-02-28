@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 
 from common_util import JSON_SFX_LEN, makedir_if_not_exists, get_cmd_args, str_to_list, is_type, is_ser, is_valid, load_json, dump_json, dump_df, benchmark
-from model.common import XG_PROCESS_DIR, XG_DATA_DIR
+from model.common import XG_PROCESS_DIR, XG_DATA_DIR, XG_INDEX_FNAME
 from model.dataprep_util import COMMON_PREP_MAPPING, DATA_PREP_MAPPING
 from model.datagen_util import process_group
 from data.data_api import DataAPI
@@ -30,7 +30,7 @@ def xgp(argv):
 			logging.info('group {}'.format(group_type))
 			for xg_fname in files:
 				xg_outdir = XG_DATA_DIR +sep.join([group_type, xg_fname[:-JSON_SFX_LEN]]) +sep
-				if (exists(xg_outdir) and exists(sep.join([xg_outdir, 'index.json'])) and not process_all):
+				if (exists(xg_outdir) and exists(sep.join([xg_outdir, XG_INDEX_FNAME])) and not process_all):
 					logging.info('skipping {}...'.format(xg_fname))
 					continue
 				logging.info('processing {}...'.format(xg_fname))
@@ -53,7 +53,7 @@ def xgp(argv):
 					except Exception as e:
 						logging.error('exception during {}: {}'.format(str(i+1), e))
 					finally:
-						dump_json(proc_paths, 'index.json', dir_path=xg_outdir)
+						dump_json(proc_paths, XG_INDEX_FNAME, dir_path=xg_outdir)
 
 
 if __name__ == '__main__':

@@ -17,7 +17,7 @@ import dask
 from multiprocessing.pool import ThreadPool
 
 from common_util import JSON_SFX_LEN, makedir_if_not_exists, get_cmd_args, str_to_list, is_type, is_ser, is_valid, dcompose, load_json, dump_json, dump_df, benchmark
-from model.common import XG_PROCESS_DIR, XG_DATA_DIR, XVIZ_DIR
+from model.common import XG_PROCESS_DIR, XG_DATA_DIR, XG_INDEX_FNAME, XVIZ_DIR
 from model.dataprep_util import COMMON_PREP_MAPPING, DATA_PREP_MAPPING
 from model.datagen_util import process_group
 from data.data_api import DataAPI
@@ -38,7 +38,7 @@ def xgpp(argv):
 			logging.info('group {}'.format(group_type))
 			for xg_fname in files:
 				xg_outdir = XG_DATA_DIR +sep.join([group_type, xg_fname[:-JSON_SFX_LEN]]) +sep
-				if ((not exists(xg_outdir) or not exists(sep.join([xg_outdir, 'index.json']))) or process_all):
+				if ((not exists(xg_outdir) or not exists(sep.join([xg_outdir, XG_INDEX_FNAME]))) or process_all):
 					logging.info('queueing {}...'.format(xg_fname))
 					ns.append(xg_fname)
 					xg_path = sep.join([parent_path, xg_fname])
@@ -116,7 +116,7 @@ def lazy_dump_result(result, fname, xg_outdir):
 def lazy_dump_index(proc_paths, xg_outdir):
 	logging.info('dumping index at {}...'.format(xg_outdir))
 	proc_paths_list = list(dask.compute(*proc_paths, scheduler='threads', traverse=False))
-	return dump_json(proc_paths_list, fname='index.json', dir_path=xg_outdir)
+	return dump_json(proc_paths_list, fname=XG_INDEX_FNAME, dir_path=xg_outdir)
 
 def xg_process_delayed(xg_path, xg_outdir, group_type, assets):
 	"""
