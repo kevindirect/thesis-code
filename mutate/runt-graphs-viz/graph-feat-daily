@@ -1,0 +1,20 @@
+digraph "graph-feat-daily" {
+	graph [fontsize=20 label="" overlap=false]
+	node [shape=record]
+	0 [label=dc]
+	1 [label=dohlca]
+	2 [label=dohlca_pba_vol]
+	3 [label=dohlca_pba_vol_pairs]
+	4 [label=dlogret]
+	3 -> 4
+	5 [label=dffd]
+	2 -> 5
+	6 [label=dwrmx]
+	2 -> 6
+	7 [label=dwrod]
+	2 -> 7
+	8 [label=dwrzn]
+	2 -> 8
+	9 [label=ddiff]
+	1 -> 9
+}

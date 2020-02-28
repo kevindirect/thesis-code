@@ -1,0 +1,43 @@
+digraph "graph-label" {
+	graph [fontsize=20 label="" overlap=false]
+	node [shape=record]
+	0 [label=hohlca_pba_vol_pairs]
+	1 [label=hdxret]
+	0 -> 1
+	2 [label=hdxret1]
+	0 -> 2
+	3 [label=hdxret2]
+	0 -> 3
+	4 [label=hdxcret1]
+	0 -> 4
+	5 [label=hdxcret2]
+	0 -> 5
+	6 [label=dxfbcret2]
+	5 -> 6
+	7 [label=dxfbdir2]
+	5 -> 7
+	8 [label=dxfbval2]
+	5 -> 8
+	9 [label=dxfbcret1]
+	4 -> 9
+	10 [label=dxfbdir1]
+	4 -> 10
+	11 [label=dxfbval1]
+	4 -> 11
+	12 [label=dret2]
+	3 -> 12
+	13 [label=ddir2]
+	3 -> 13
+	14 [label=dxfbret2]
+	3 -> 14
+	15 [label=dret1]
+	2 -> 15
+	16 [label=ddir1]
+	2 -> 16
+	17 [label=dxfbret1]
+	2 -> 17
+	18 [label=dret]
+	1 -> 18
+	19 [label=ddir]
+	1 -> 19
+}
