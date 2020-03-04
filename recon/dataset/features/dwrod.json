@@ -1,7 +1,7 @@
 {
 	"features": [
 		["dwrod", "dwrod_pba_vol"],
-		["dwrod", "dwrod_trmi3_news"],
-		["dwrod", "dwrod_trmi3_social"]
+		["dwrod", "dwrod_trmi3_news_buzz"],
+		["dwrod", "dwrod_trmi3_social_buzz"]
 	]
 }

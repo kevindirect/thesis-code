@@ -1,7 +1,7 @@
 {
 	"features": [
 		["dwrmx", "dwrmx_pba_vol"],
-		["dwrmx", "dwrmx_trmi3_news"],
-		["dwrmx", "dwrmx_trmi3_social"]
+		["dwrmx", "dwrmx_trmi3_news_buzz"],
+		["dwrmx", "dwrmx_trmi3_social_buzz"]
 	]
 }

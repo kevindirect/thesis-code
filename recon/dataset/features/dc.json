@@ -1,6 +1,6 @@
 {
 	"features": [
-		["dc", "dc_trmi3_news"],
-		["dc", "dc_trmi3_social"]
+		["dc", "dc_trmi3_news_nonbuzz"],
+		["dc", "dc_trmi3_social_nonbuzz"]
 	]
 }

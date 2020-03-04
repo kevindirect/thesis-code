@@ -1,7 +1,7 @@
 {
 	"features": [
 		["hduni", "hduni_pba_vol"],
-		["hduni", "hduni_trmi3_news"],
-		["hduni", "hduni_trmi3_social"]
+		["hduni", "hduni_trmi3_news_buzz"],
+		["hduni", "hduni_trmi3_social_buzz"]
 	]
 }

@@ -1,7 +1,7 @@
 {
 	"features": [
 		["hdod", "hdod_pba_vol"],
-		["hdod", "hdod_trmi3_news"],
-		["hdod", "hdod_trmi3_social"]
+		["hdod", "hdod_trmi3_news_buzz"],
+		["hdod", "hdod_trmi3_social_buzz"]
 	]
 }
