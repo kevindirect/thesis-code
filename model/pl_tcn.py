@@ -12,16 +12,16 @@ import pandas as pd
 import torch
 import pytorch_lightning as pl
 
-from common_util import is_type, assert_has_all_attr, is_valid, isnt, np_at_least_nd, np_assert_identical_len_dim
+from common_util import is_type, assert_has_all_attr, is_valid, isnt, pairwise, np_at_least_nd, np_assert_identical_len_dim
 from model.common import PYTORCH_ACT_MAPPING, PYTORCH_LOSS_MAPPING, PYTORCH_OPT_MAPPING, PYTORCH_SCH_MAPPING
-from model.preproc_util import temporal_preproc
-from model.train_util import pd_get_np_tvt, batchify
+from model.preproc_util import temporal_preproc_3d, stride_preproc_3d
+from model.train_util import pd_to_np_tvt, batchify
 from model.model_util import TemporalConvNet, Classifier
 
 
 class TCNModel(pl.LightningModule):
 	"""
-	Top level Temporal CNN Classifer.
+	Top level Temporal Convolutional Network Classifer.
 
 	Model Hyperparameters:
 		window_size (int): window size to use (number of observations in the last dimension of the input tensor)
@@ -61,7 +61,7 @@ class TCNModel(pl.LightningModule):
 		loss_fn = PYTORCH_LOSS_MAPPING.get(self.t_params['loss'])
 		self.loss = loss_fn() if (isnt(class_weights)) else loss_fn(weight=class_weights)
 		## if you specify an example input, the summary will show input/output for each layer
-		self.example_input_array = torch.rand(5, 20)
+		#self.example_input_array = torch.rand(5, 20)
 		self.__setup_data__(data)
 		self.__build_model__()
 
@@ -69,14 +69,13 @@ class TCNModel(pl.LightningModule):
 		"""
 		TCN Based Network
 		"""
-		num_cols, obs_size = self.feat_shape[-2:]
-		history_size = obs_size * self.m_params['window_size']
-		scaled_bcs = obs_size * np.array(self.m_params['block_channels'])			# Scale topology by the observation size
+		num_channels, num_win, num_win_obs = self.obs_shape					# Feature observation shape - (Channels, Window, Hours / Window Observations)
+		scaled_bcs = num_win_obs * np.array(self.m_params['block_channels'])			# Scale topology by the observation size
 		clipped_bcs = np.clip(scaled_bcs, a_min=1, a_max=None).astype(int).tolist()		# Make sure layer shape dims >= 1
 		#scaled_ks = obs_size * np.array(self.m_params['kernel_sizes'])
 
 		tcn = TemporalConvNet(
-			in_shape=(num_cols, history_size),
+			in_shape=(num_channels, num_win*num_win_obs),
 			num_blocks=self.m_params['num_blocks'],
 			block_channels=clipped_bcs,
 			block_act=self.m_params['block_act'],
@@ -85,7 +84,7 @@ class TCNModel(pl.LightningModule):
 			dilation_index=self.m_params['dilation_index'],
 			global_dropout=self.m_params['global_dropout'],
 			no_dropout=self.m_params['no_dropout'])
-		self.clf = Classifier(tcn, out_shape=1)
+		self.clf = Classifier(tcn, out_shape=self.m_params['out_shape'])
 
 	def forward(self, x):
 		"""
@@ -186,31 +185,32 @@ class TCNModel(pl.LightningModule):
 		#return [opt], [sch]
 
 	def __setup_data__(self, data):
-		feature_df, label_df, target_df = data
-		ftrain, fval, ftest = map(np_at_least_nd, pd_get_np_tvt(feature_df, as_midx=False))
-		ltrain, lval, ltest = map(partial(np_at_least_nd, axis=-1), pd_get_np_tvt(label_df, as_midx=False))
-		ttrain, tval, ttest = map(partial(np_at_least_nd, axis=-1), pd_get_np_tvt(target_df, as_midx=False))
-		self.flt_train = (ftrain, ltrain, ttrain); np_assert_identical_len_dim(*self.flt_train)
-		self.flt_val = (fval, lval, tval); np_assert_identical_len_dim(*self.flt_val)
-		self.flt_test = (ftest, ltest, ttest); np_assert_identical_len_dim(*self.flt_test)
+		"""
+		Set self.flt_{train, val, test} by converting (feature_df, label_df, target_df) to numpy dataframes split across train, val, and test subsets.
+		"""
+		self.flt_train, self.flt_val, self.flt_test = zip(*map(pd_to_np_tvt, data))
+		self.obs_shape = (self.flt_train[0].shape[1], self.m_params['window_size'], self.flt_train[0].shape[-1])	# Feature observation shape - (Channels, Window, Hours / Window Observations)
+		shapes = np.asarray(tuple(map(lambda tvt: tuple(map(np.shape, tvt)), (self.flt_train, self.flt_val, self.flt_test))))
+		assert all(np.array_equal(a[:, 1:], b[:, 1:]) for a, b in pairwise(shapes)), 'feature, label, target shapes must be identical across splits'
+		assert all(len(np.unique(mat.T[0, :]))==1 for mat in shapes), 'first dimension (N) must be identical length in each split for all (feature, label, and target) tensors'
 
-		self.feat_shape = ftrain.shape # Required to infer input shape of model
-		#self.num_unique_labels = max(map(lambda a: len(np.unique(a)), (ltrain, lval, ltest))) # TODO - set a variable for size of output layer automatically based on label_df
+	def __preproc__(self, data, overlap=True):
+		x, y, z = temporal_preproc_3d(data, window_size=self.m_params['window_size'], apply_idx=[0]) if (overlap) else stride_preproc_3d(data, window_size=self.m_params['window_size'])
+		if (self.t_params['loss'] in ('ce', 'nll')):
+			y_new = np.sum(y, axis=(1, 2), keepdims=False)		# Sum label matrices to scalar values
+			if (y.shape[1] > 1):
+				y_new += y.shape[1]				# Shift to range [0, C-1]
+			y = y_new
+		return (x, y, z)
 
-	def __preproc__(self, data):
-		return temporal_preproc(data, window_size=self.m_params['window_size'])
-
-	@pl.data_loader
 	def train_dataloader(self):
 		logging.info('train_dataloader called')
 		return batchify(self.t_params, self.__preproc__(self.flt_train), False)
 
-	@pl.data_loader
 	def val_dataloader(self):
 		logging.info('val_dataloader called')
 		return batchify(self.t_params, self.__preproc__(self.flt_val), False)
 
-	@pl.data_loader
 	def test_dataloader(self):
 		logging.info('test_dataloader called')
 		return batchify(self.t_params, self.__preproc__(self.flt_test), False)

@@ -34,21 +34,24 @@ class RUNTValueError(ValueError):
 
 
 """ ********** sr ********** """
-def first_nonzero(ser, ret_idx=False, idx_norm=False):
+def nth_nonzero(ser, nth=0, ret_idx=False, idx_norm=False):
 	idx = arr_nonzero(ser.values, ret_idx=ret_idx, idx_norm=idx_norm, idx_shf=1)
-	return idx if (not isinstance(idx, np.ndarray) and (isnt(idx) or idx==0)) else idx.item(0)
+	return idx if (not isinstance(idx, np.ndarray) and (isnt(idx) or idx==0)) else idx.item(nth)
 
 ROW_IDX_SELECTOR_MAPPING = {
 	0: (lambda ser: ser.first_valid_index() if (not ser.empty) else None),
 	-1: (lambda ser: ser.last_valid_index() if (not ser.empty) else None),
 	"h": (lambda ser: ser.idxmax(skipna=True) if (not ser.empty) else None),
 	"l": (lambda ser: ser.idxmin(skipna=True) if (not ser.empty) else None),
-	"fnz": partial(first_nonzero, ret_idx=True, idx_norm=False),
-	"fnz_score": partial(first_nonzero, ret_idx=True, idx_norm=True)	# Returns index as normalized score
+	"0nz": partial(nth_nonzero, nth=0, ret_idx=True, idx_norm=False),
+	"-1nz": partial(nth_nonzero, nth=-1, ret_idx=True, idx_norm=False),
+	"0nz_score": partial(nth_nonzero, nth=0, ret_idx=True, idx_norm=True),	# Returns index as normalized score
+	"-1nz_score": partial(nth_nonzero, nth=-1, ret_idx=True, idx_norm=True)
 }
 
 ROW_VAL_SELECTOR_MAPPING = {
-	"fnz": partial(first_nonzero, ret_idx=False, idx_norm=False)		# First non-zero value, use this instead of fnz+val=True
+	"0nz": partial(nth_nonzero, nth=0, ret_idx=False, idx_norm=False),		# First non-zero value, use this instead of 0nz & val=True
+	"-1nz": partial(nth_nonzero, nth=-1, ret_idx=False, idx_norm=False)		# Last non-zero value, use this instead of -1nz & val=True
 }
 
 def single_row(val, flt):
@@ -56,7 +59,7 @@ def single_row(val, flt):
 	Constructs function that returns index or value for selected row.
 	"""
 	if (val):
-		if (flt in ("fnz_score",)):
+		if (flt in ("0nz_score", "-1nz_score")):
 			error_msg = "cannot set val=True with the given filter {}".format(flt)
 			logging.error(error_msg)
 			raise RUNTValueError(error_msg)

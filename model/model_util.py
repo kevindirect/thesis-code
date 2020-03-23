@@ -17,7 +17,7 @@ from common_util import is_type, assert_has_all_attr, is_valid, isnt
 from model.common import PYTORCH_ACT_MAPPING
 
 
-# ********** FUNCTIONS **********
+# ********** HELPER FUNCTIONS **********
 def assert_has_shape_attr(mod):
 	assert is_type(mod, nn.Module), "object must be a nn.Module"
 	assert_has_all_attr(mod, "in_shape", "out_shape")
@@ -38,8 +38,17 @@ def init_layer(layer, act='relu', init_method='xavier_uniform'):
 			nn.init.xavier_uniform_(layer.weight, gain=gain)
 	return layer
 
+def get_padding(conv_type, in_width, kernel_size, dilation=1, padding_size=0, stride=1):
+	# TODO
+	padding_size = 0
+	if (conv_type == 'same'):
+		padding_size = None
+	elif (conv_type == 'full'):
+		padding_size = None
+	return padding_size
 
-# ********** CLASSES **********
+
+# ********** MODEL CLASSES **********
 class Chomp1d(nn.Module):
 	"""
 	This module is meant to guarantee causal convolutions for sequence modelling if the data set hasn't
@@ -92,7 +101,7 @@ class TemporalLayer1d(nn.Module):
 		modules = nn.ModuleList()
 		modules.append(
 			init_layer(
-				weight_norm(nn.Conv1d(self.in_shape[0], self.out_shape[0], kernel_size, stride=1, padding=padding_size, dilation=dilation, groups=1)) # XXX groups=1, groups=n, or groups=self.in_shape[0]
+				weight_norm(nn.Conv1d(self.in_shape[0], self.out_shape[0], kernel_size, stride=1, padding=padding_size, dilation=dilation, groups=1)) # groups=1, groups=n, or groups=self.in_shape[0]
 			)
 		)
 		if (chomp):
@@ -125,7 +134,7 @@ class ResidualBlock(nn.Module):
 		self.out_act = PYTORCH_ACT_MAPPING.get(act)()
 
 	def forward(self, x):
-		residual = x if (isnt(self.downsample)) else self.downsample(x) # TODO - shape of residual tensor must be identical to net_out
+		residual = x if (isnt(self.downsample)) else self.downsample(x)
 		try:
 			net_out = self.net(x)
 			return self.out_act(net_out + residual)
@@ -174,7 +183,7 @@ class TemporalConvNet(nn.Module):
 					'global': 2**i,
 					'block': 2**l
 				}.get(dilation_index)
-				padding_size = 0 #(kernel_size-1) * dilation # XXX (Unneeded?) One "step" of the kernel will be needed for padding
+				padding_size = int((dilation*(kernel_size-1))//2) # 'SAME' padding #(kernel_size-1) * dilation
 				dropout = 0 if (i in no_dropout) else global_dropout
 				out_width = TemporalLayer1d.get_out_width(layer_in_shape[1], kernel_size=kernel_size, dilation=dilation, padding_size=padding_size)
 				layer_out_shape = (out_channels, out_width)
@@ -194,15 +203,17 @@ class TemporalConvNet(nn.Module):
 	def forward(self, x):
 		return self.convnet(x)
 
+
+# ********** OUTPUT LAYER WRAPPERS **********
 class Classifier(nn.Module):
 	"""
 	Adds a logistic regression output layer to an arbitrary embedding network
 	"""
-	def __init__(self, emb, out_shape=1):
+	def __init__(self, emb, out_shape=2):
 		"""
 		Args:
 			emb (nn.Module): embedding network to add output layer to
-			out_shape (tuple): output shape of the linear layer
+			out_shape (tuple): output shape of the linear layer, should be C sized
 		"""
 		super(Classifier, self).__init__()
 		assert_has_shape_attr(emb)

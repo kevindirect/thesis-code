@@ -911,6 +911,9 @@ def np_is_ndim(arr, dim=1):
 	"""
 	return arr.ndim == dim
 
+def np_value_counts(arr):
+	return np.unique(arr, return_counts=True)
+
 def np_assert_identical_len_dim(*arr):
 	"""
 	Assert that all arrays have identical length and dimension.

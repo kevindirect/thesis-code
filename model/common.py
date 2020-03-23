@@ -68,8 +68,9 @@ PYTORCH_LOSS_MAPPING = {
 
 	# Categorical
 	'ce': nn.CrossEntropyLoss,
-	'mls': nn.MultiLabelSoftMarginLoss,
 	'nll': nn.NLLLoss,
+	'mlm': nn.MultiLabelMarginLoss,
+	'mls': nn.MultiLabelSoftMarginLoss,
 
 	# Regression
 	'mae': nn.L1Loss,
