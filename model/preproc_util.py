@@ -81,8 +81,9 @@ def stride_preproc(data, window_size):
 
 
 ##
+# Must result in shape (number observations, channels, window size, hours/window observations) -> (n, C, W, H)
 
-def temporal_preproc_3d(data, window_size, apply_idx=[0]):
+def temporal_preproc_3d(data, window_size, apply_idx=[0], flatten=True):
 	"""
 	Reshapes a tuple of three dimensional numpy tensors.
 	Slides a window down the tensor and stacks sub-tensors to the second dimension.
@@ -94,19 +95,21 @@ def temporal_preproc_3d(data, window_size, apply_idx=[0]):
 		data (tuple): tuple of numpy data with features as first element
 		window_size (int): desired size of window (history length)
 		apply_idx (iterable): indexes to apply preprocessing to, all other data will be truncated to match
+		flatten (bool): whether or not to flatten last two dimensions into one
 
 	Returns:
 		Tuple of reshaped data
 	"""
-	#np_assert_identical_len_dim(*data)
+	np_assert_identical_len_dim(*data)
 	preproc = []
 	for i, d in enumerate(data):
 		if (i in apply_idx):
-			# Reshape features into overlapping moving window samples
-			preproc.append(np.array([np.stack(vec, axis=1) for vec in window_iter(d, n=window_size)]))
+			pp = np.array([np.stack(vec, axis=1) for vec in window_iter(d, n=window_size)]) # Reshape features into overlapping moving window samples
+			pp = pp.reshape(*pp.shape[:2], np.product(pp.shape[2:])) if (flatten) else pp	# Flatten last two dim (window and window_obs) into one
 		else:
-			preproc.append(d[window_size-1:]) # Realign by dropping observations prior to the first step
-	#np_assert_identical_len_dim(*preproc)
+			pp = d[window_size-1:] # Realign by dropping observations prior to the first step
+		preproc.append(pp)
+
 	return tuple(preproc)
 
 
@@ -131,5 +134,7 @@ def stride_preproc_3d(data, window_size):
 		trunc_arr = sub_arr[:-1] if (sub_arr[0].shape != sub_arr[-1].shape) else sub_arr
 		preproc.append(np.stack(trunc_arr, axis=0))
 	np_assert_identical_len_dim(*preproc)
+
+	#preproc[0] = preproc[0].reshape(*preproc[0].shape[:2], np.product(preproc[0].shape[2:])) # Flatten last two dim of features
 	return tuple(preproc)
 

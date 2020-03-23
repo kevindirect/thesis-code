@@ -12,7 +12,7 @@ import pandas as pd
 import torch
 import pytorch_lightning as pl
 
-from common_util import is_type, assert_has_all_attr, is_valid, isnt, pairwise, np_at_least_nd, np_assert_identical_len_dim
+from common_util import is_type, assert_has_all_attr, is_valid, is_type, isnt, dict_flatten, pairwise, np_at_least_nd, np_assert_identical_len_dim
 from model.common import PYTORCH_ACT_MAPPING, PYTORCH_LOSS_MAPPING, PYTORCH_OPT_MAPPING, PYTORCH_SCH_MAPPING
 from model.preproc_util import temporal_preproc_3d, stride_preproc_3d
 from model.train_util import pd_to_np_tvt, batchify
@@ -34,7 +34,7 @@ class TCNModel(pl.LightningModule):
 		global_dropout (float): dropout probability of an element to be zeroed for any layer not in no_dropout
 		no_dropout (list): list of global layer indices to disable dropout on
 
-	Training Hyperparameters:
+	Training Hyperparameters (Can Be Overridden by Model Hyperparameters):
 		epochs (int): number training epochs
 		batch_size (int): training batch size
 		loss (str): name of loss function to use
@@ -57,7 +57,10 @@ class TCNModel(pl.LightningModule):
 		"""
 		# init superclass
 		super(TCNModel, self).__init__()
-		self.m_params, self.t_params  = m_params, t_params
+		self.hparams = dict_flatten({**t_params, **m_params})		# Pytorch lightning will track/checkpoint parameters saved in hparams instance variable
+		for k, v in filter(lambda i: is_type(i[1], list, tuple), self.hparams.items()):
+			self.hparams[k] = torch.tensor(v)			# Lists/tuples (and any non-torch primitives) must be stored as torch tensors to be tracked by PL
+		self.m_params, self.t_params = m_params, t_params
 		loss_fn = PYTORCH_LOSS_MAPPING.get(self.t_params['loss'])
 		self.loss = loss_fn() if (isnt(class_weights)) else loss_fn(weight=class_weights)
 		## if you specify an example input, the summary will show input/output for each layer
