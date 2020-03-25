@@ -204,10 +204,11 @@ class TemporalConvNet(nn.Module):
 		return self.convnet(x)
 
 
-# ********** OUTPUT LAYER WRAPPERS **********
-class Classifier(nn.Module):
+# ********** OUTPUT LAYER WRAPPER CLASSES **********
+class OutputLinear(nn.Module):
 	"""
-	Adds a logistic regression output layer to an arbitrary embedding network
+	Adds a linear output layer to an arbitrary embedding network.
+	Used for Classification or Regression depending on the loss function used.
 	"""
 	def __init__(self, emb, out_shape=2):
 		"""
@@ -215,29 +216,7 @@ class Classifier(nn.Module):
 			emb (nn.Module): embedding network to add output layer to
 			out_shape (tuple): output shape of the linear layer, should be C sized
 		"""
-		super(Classifier, self).__init__()
-		assert_has_shape_attr(emb)
-		self.emb = emb
-		self.out = nn.Linear(emb.out_shape[0], out_shape)
-		self.logprob = nn.LogSoftmax(dim=1)
-
-	def forward(self, x):
-		out_embedding = self.emb(x)
-		out_score = self.out(out_embedding[:, :, -1])
-		out_prob = self.logprob(out_score)
-		return out_prob
-
-class Regressor(nn.Module):
-	"""
-	Adds a linear regression output layer to an arbitrary embedding network
-	"""
-	def __init__(self, emb, out_shape=1):
-		"""
-		Args:
-			emb (nn.Module): embedding network to add output layer to
-			out_shape (tuple): output shape of the linear layer
-		"""
-		super(Regressor, self).__init__()
+		super(OutputLinear, self).__init__()
 		assert_has_shape_attr(emb)
 		self.emb = emb
 		self.out = nn.Linear(emb.out_shape[0], out_shape)

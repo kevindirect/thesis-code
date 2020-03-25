@@ -16,12 +16,12 @@ from common_util import is_type, assert_has_all_attr, is_valid, is_type, isnt, d
 from model.common import PYTORCH_ACT_MAPPING, PYTORCH_LOSS_MAPPING, PYTORCH_OPT_MAPPING, PYTORCH_SCH_MAPPING
 from model.preproc_util import temporal_preproc_3d, stride_preproc_3d
 from model.train_util import pd_to_np_tvt, batchify
-from model.model_util import TemporalConvNet, Classifier
+from model.model_util import TemporalConvNet, OutputLinear
 
 
 class TCNModel(pl.LightningModule):
 	"""
-	Top level Temporal Convolutional Network Classifer.
+	Top level Temporal Convolutional Network.
 
 	Model Hyperparameters:
 		window_size (int): window size to use (number of observations in the last dimension of the input tensor)
@@ -34,7 +34,7 @@ class TCNModel(pl.LightningModule):
 		global_dropout (float): dropout probability of an element to be zeroed for any layer not in no_dropout
 		no_dropout (list): list of global layer indices to disable dropout on
 
-	Training Hyperparameters (Can Be Overridden by Model Hyperparameters):
+	Training Hyperparameters:
 		epochs (int): number training epochs
 		batch_size (int): training batch size
 		loss (str): name of loss function to use
@@ -87,7 +87,7 @@ class TCNModel(pl.LightningModule):
 			dilation_index=self.m_params['dilation_index'],
 			global_dropout=self.m_params['global_dropout'],
 			no_dropout=self.m_params['no_dropout'])
-		self.clf = Classifier(tcn, out_shape=self.m_params['out_shape'])
+		self.clf = OutputLinear(tcn, out_shape=self.m_params['out_shape'])
 
 	def forward(self, x):
 		"""
