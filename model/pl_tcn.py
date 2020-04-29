@@ -14,8 +14,7 @@ import pytorch_lightning as pl
 
 from common_util import is_type, assert_has_all_attr, is_valid, is_type, isnt, dict_flatten, pairwise, np_at_least_nd, np_assert_identical_len_dim
 from model.common import PYTORCH_ACT_MAPPING, PYTORCH_LOSS_MAPPING, PYTORCH_OPT_MAPPING, PYTORCH_SCH_MAPPING
-from model.preproc_util import temporal_preproc_3d, stride_preproc_3d
-from model.train_util import pd_to_np_tvt, batchify
+from model.train_util import pd_to_np_tvt, get_dataloader
 from model.model_util import TemporalConvNet, OutputLinear
 
 
@@ -38,6 +37,8 @@ class TCNModel(pl.LightningModule):
 
 	Training Hyperparameters:
 		window_size (int): window size to use (number of observations in the last dimension of the input tensor)
+		flatten_features (bool): whether or not to flatten the feature tensor to (N, C)
+			where N is the original first dimension and C is the product of all following dimensions
 		epochs (int): number training epochs
 		batch_size (int): training batch size
 		loss (str): name of loss function to use
@@ -183,6 +184,66 @@ class TCNModel(pl.LightningModule):
 		result = {'progress_bar': tqdm_dict, 'log': tqdm_dict, 'val_loss': val_loss_mean}
 		return result
 
+	def test_step(self, batch, batch_idx):
+		"""
+		Lightning calls this inside the test loop
+		"""
+		x, y, z = batch
+		y_hat = self.forward(x)
+		loss_test = self.loss(y_hat, y)
+
+		# acc
+		labels_hat = torch.argmax(y_hat, dim=1)
+		test_acc = torch.sum(y == labels_hat).item() / (len(y) * 1.0)
+		test_acc = torch.tensor(test_acc)
+
+		if (self.on_gpu):
+			test_acc = test_acc.cuda(loss_test.device.index)
+
+		# in DP mode (default) make sure if result is scalar, there's another dim in the beginning
+		if (self.trainer.use_dp or self.trainer.use_ddp2):
+			loss_test = loss_test.unsqueeze(0)
+			test_acc = test_acc.unsqueeze(0)
+
+		output = OrderedDict({
+			'test_loss': loss_test,
+			'test_acc': test_acc,
+		})
+
+		return output # can also return a scalar (loss test) instead of a dict
+
+	def test_end(self, outputs):
+		"""
+		Called at the end of test to aggregate outputs
+		:param outputs: list of individual outputs of each test step
+		"""
+		# if returned a scalar from test_step, outputs is a list of tensor scalars
+		# we return just the average in this case (if we want)
+		# return torch.stack(outputs).mean()
+
+		test_loss_mean = 0
+		test_acc_mean = 0
+		for output in outputs:
+			test_loss = output['test_loss']
+
+			# reduce manually when using dp
+			if (self.trainer.use_dp or self.trainer.use_ddp2):
+				test_loss = torch.mean(test_loss)
+			test_loss_mean += test_loss
+
+			# reduce manually when using dp
+			test_acc = output['test_acc']
+			if (self.trainer.use_dp or self.trainer.use_ddp2):
+				test_acc = torch.mean(test_acc)
+
+			test_acc_mean += test_acc
+
+		test_loss_mean /= len(outputs)
+		test_acc_mean /= len(outputs)
+		tqdm_dict = {'test_loss': test_loss_mean, 'test_acc': test_acc_mean}
+		result = {'progress_bar': tqdm_dict, 'log': tqdm_dict, 'test_loss': test_loss_mean}
+		return result
+
 	def configure_optimizers(self):
 		"""
 		construct and return optimizers
@@ -205,28 +266,12 @@ class TCNModel(pl.LightningModule):
 		assert all(np.array_equal(a[:, 1:], b[:, 1:]) for a, b in pairwise(shapes)), 'feature, label, target shapes must be identical across splits'
 		assert all(len(np.unique(mat.T[0, :]))==1 for mat in shapes), 'first dimension (N) must be identical length in each split for all (feature, label, and target) tensors'
 
-	def __preproc__(self, data, overlap=True):
-		x, y, z = temporal_preproc_3d(data, window_size=self.t_params['window_size'], apply_idx=[0]) if (overlap) else stride_preproc_3d(data, window_size=self.t_params['window_size'])
-		if (self.t_params['loss'] in ('bce', 'bcel', 'ce', 'nll')):
-			y_new = np.sum(y, axis=(1, 2), keepdims=False)		# Sum label matrices to scalar values
-			if (y.shape[1] > 1):
-				y_new += y.shape[1]				# Shift to range [0, C-1]
-			if (self.t_params['loss'] in ('bce', 'bcel') and len(y_new.shape)==1):
-				y_new = np.expand_dims(y_new, axis=-1)
-			y = y_new
-		return (x, y, z)
+	# Dataloaders:
+	train_dataloader = lambda self: get_dataloader(data=self.flt_train, loss=self.t_params['loss'], window_size=self.t_params['window_size'], window_overlap=True, flatten_features=self.t_params['flatten_features'], batch_size=self.t_params['batch_size'], shuffle=False)
 
-	def train_dataloader(self):
-		logging.info('train_dataloader called')
-		return batchify(self.t_params, self.__preproc__(self.flt_train), False)
+	val_dataloader = lambda self: get_dataloader(data=self.flt_val, loss=self.t_params['loss'], window_size=self.t_params['window_size'], window_overlap=True, flatten_features=self.t_params['flatten_features'], batch_size=self.t_params['batch_size'], shuffle=False)
 
-	def val_dataloader(self):
-		logging.info('val_dataloader called')
-		return batchify(self.t_params, self.__preproc__(self.flt_val), False)
-
-	def test_dataloader(self):
-		logging.info('test_dataloader called')
-		return batchify(self.t_params, self.__preproc__(self.flt_test), False)
+	test_dataloader = lambda self: get_dataloader(data=self.flt_test, loss=self.t_params['loss'], window_size=self.t_params['window_size'], window_overlap=True, flatten_features=self.t_params['flatten_features'], batch_size=self.t_params['batch_size'], shuffle=False)
 
 	@staticmethod
 	def add_model_specific_args(parent_parser, root_dir):  # pragma: no cover

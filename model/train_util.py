@@ -15,8 +15,10 @@ from torch.utils.tensorboard import SummaryWriter
 
 from common_util import MODEL_DIR, identity_fn, is_type, is_ser, isnt, np_inner, get0, midx_split, pd_rows, pd_midx_to_arr, df_midx_restack, pd_to_np
 from model.common import PYTORCH_MODELS_DIR, ERROR_CODE, TEST_RATIO, VAL_RATIO
+from model.preproc_util import temporal_preproc_3d, stride_preproc_3d
 
 
+# ***** Conversion to Numpy *****
 def pd_get_np_tvt(pd_obj, as_midx=True, train_ratio=.6):
 	"""
 	Return the train, val, test numpy splits of a pandas object
@@ -73,9 +75,9 @@ def pd_to_np_purged_kfold(pd_obj, k=5):
 	Returns:
 		data as a tuple of numpy tensors
 	"""
+	raise NotImplementedError()
 	#np_obj = pd_to_np(pd_obj)
 	#sklearn.model_selection.TimeSeriesSplit
-	raise NotImplementedError()
 	#tv_ratio = (1-train_ratio)/2
 	#train_idx, val_idx, test_idx = midx_split(pd_obj.index, train_ratio, tv_ratio, tv_ratio)
 	#train_df, val_df, test_df = map(partial(pd_rows, pd_obj), (train_idx, val_idx, test_idx))
@@ -84,29 +86,78 @@ def pd_to_np_purged_kfold(pd_obj, k=5):
 	#return tuple(map(pd_to_np, (train_df, val_df, test_df)))
 
 
-def batchify(params, data, shuffle_batches=False):
+# ***** Final Processing / Batchification *****
+def window_shifted(data, loss, window_size, window_overlap=True, flatten_features=False):
+	"""
+	Return passed input data shifted into windows and processed with the other options.
+
+	Args:
+		data (tuple): tuple of numpy arrays, features are the first element
+		loss (str): name of loss function to use
+		window_size (int): window size to use (this will be the last dimension of each tensor)
+		window_overlap (bool): whether to use overlapping or nonoverlapping windows
+		flatten_features (bool): whether or not to flatten the feature tensor to (N, C)
+			where N is the original first dimension and C is the product of all following dimensions
+
+	Returns:
+		tuple of numpy arrays, features are the first element
+	"""
+	x, y, z = temporal_preproc_3d(data, window_size=window_size, apply_idx=[0]) if (window_overlap) else stride_preproc_3d(data, window_size=window_size)
+	if (loss in ('bce', 'bcel', 'ce', 'nll')):
+		y_new = np.sum(y, axis=(1, 2), keepdims=False)		# Sum label matrices to scalar values
+		if (y.shape[1] > 1):
+			y_new += y.shape[1]				# Shift to range [0, C-1]
+		if (loss in ('bce', 'bcel') and len(y_new.shape)==1):
+			y_new = np.expand_dims(y_new, axis=-1)
+		y = y_new
+	if (flatten_features):
+		x = x.reshape(x.shape[0], int(self.obs_shape[0]*self.obs_shape[1]*self.obs_shape[2]))
+	return (x, y, z)
+
+def batchify(data, loss, batch_size, shuffle=False):
 	"""
 	Return a torch.DataLoader made from a tuple of numpy arrays.
 
 	Args:
-		params (dict): model parameters dictionary
 		data (tuple): tuple of numpy arrays, features are the first element
-		shuffle_batches (bool): whether or not to shuffle the batches
+		loss (str): name of loss function to use
+		batch_size (int): training batch size
+		shuffle (bool): whether or not to shuffle the batches
 
 	Returns:
 		torch.DataLoader
 	"""
 	f = torch.tensor(data[0], dtype=torch.float32, requires_grad=True)
-	if (params['loss'] in ('bce', 'bcel', 'mae', 'mse')):
+	if (loss in ('bce', 'bcel', 'mae', 'mse')):
 		l = torch.tensor(data[1], dtype=torch.float32, requires_grad=False)
-	elif (params['loss'] in ('ce', 'nll')):
+	elif (loss in ('ce', 'nll')):
 		l = torch.tensor(data[1], dtype=torch.int64, requires_grad=False).squeeze()
 	t = torch.tensor(data[2], dtype=torch.float32, requires_grad=False)
 	ds = TensorDataset(f, l, t)
-	dl = DataLoader(ds, batch_size=params['batch_size'], shuffle=shuffle_batches)
+	dl = DataLoader(ds, batch_size=batch_size, shuffle=shuffle)
 	return dl
 
+def get_dataloader(data, loss, window_size, window_overlap=True, flatten_features=False, batch_size=128, shuffle=False):
+	"""
+	Convenience function to return batches after calling window_lag on data.
 
+	Args:
+		data (tuple): tuple of numpy arrays, features are the first element
+		loss (str): name of loss function to use
+		window_size (int): window size to use (this will be the last dimension of each tensor)
+		window_overlap (bool): whether to use overlapping or nonoverlapping windows
+		flatten_features (bool): whether or not to flatten the feature tensor to (N, C)
+			where N is the original first dimension and C is the product of all following dimensions
+		batch_size (int): training batch size
+		shuffle (bool): whether or not to shuffle the batches
+
+	Returns:
+		torch.DataLoader
+	"""
+	return batchify(window_shifted(data, loss, window_size, window_overlap, flatten_features), loss, batch_size, shuffle)
+
+
+##
 def batch_output(params, model, loss_fn, feat_batch, lab_batch):
 	"""
 	Run batch on model, return output batch and loss.
@@ -124,7 +175,6 @@ def batch_output(params, model, loss_fn, feat_batch, lab_batch):
 	output_batch = model(feat_batch)
 	loss = loss_fn(output_batch, lab_batch)
 	return output_batch, loss
-
 
 def batch_metrics(params, output_batch, lab_batch, metrics_fn):
 	"""
@@ -181,8 +231,8 @@ def fit_model(self, params, logdir, metrics_fns, model, device, train_data, val_
 		for epoch in range(params['epochs']):
 			epoch_str = str(epoch).zfill(3)
 			model.train()
-			losses, nums, metrics = zip(*[batch_loss(params, model, loss_fn, Xb, yb, optimizer=opt) for Xb, yb in batchify(params, self.preproc(params, train_data), device, shuffle_batches=True)])
-			# for Xb, yb in self.batchify(params, self.preproc(params, train_data), device, shuffle_batches=True):
+			losses, nums, metrics = zip(*[batch_loss(params, model, loss_fn, Xb, yb, optimizer=opt) for Xb, yb in batchify(params, self.preproc(params, train_data), device, shuffle=True)])
+			# for Xb, yb in self.batchify(params, self.preproc(params, train_data), device, shuffle=True):
 			# 	losses, nums, metrics = self.batch_loss(params, model, loss_fn, Xb, yb, optimizer=opt)
 			loss = np_inner(losses, nums)
 			soa = {name[0]: tuple(d[name[0]] for d in metrics) for name in zip(*metrics)}
@@ -201,7 +251,7 @@ def fit_model(self, params, logdir, metrics_fns, model, device, train_data, val_
 
 			model.eval()
 			with torch.no_grad():
-				Xe, ye = get0(*batchify(params, self.preproc(params, val_data), device, override_batch_size=val_data[-1].size, shuffle_batches=False))
+				Xe, ye = get0(*batchify(params, self.preproc(params, val_data), device, override_batch_size=val_data[-1].size, shuffle=False))
 				loss, num, metric, pred = batch_loss(params, model, loss_fn, Xe, ye)
 
 			logging.debug('{} val loss: {}'.format(epoch_str, loss))
