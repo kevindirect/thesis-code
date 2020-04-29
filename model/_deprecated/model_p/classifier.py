@@ -16,7 +16,6 @@ from hyperopt import hp, STATUS_OK, STATUS_FAIL
 from common_util import MODEL_DIR, REPORT_DIR, isnt, makedir_if_not_exists, remove_keys, dump_json, str_now, one_minus, is_type, midx_split, pd_midx_to_arr
 from model.common import PYTORCH_MODELS_DIR, ERROR_CODE, VAL_RATIO, TEST_RATIO, PYTORCH_LOSS_TRANSLATOR, PYTORCH_OPT_TRANSLATOR
 from model.model_p.pytorch_model import Model
-from recon.split_util import index_three_split
 
 
 class Classifier(Model):
@@ -32,9 +31,8 @@ class Classifier(Model):
 		default_space = {
 			'loss': hp.choice('loss', ['nll']),
 			'opt': hp.choice('opt', [
-			# 	{'name': 'RMSprop', 'lr': hp.choice('RMSprop_lr', [0.002, 0.001, 0.0005])},
-				# {'name': 'Adam', 'lr': hp.uniform('Adam_lr', 0.0005, 0.0025)}
-				{'name': 'Adam', 'lr': 1e-3}
+				{'name': 'RMSprop', 'lr': hp.choice('RMSprop_lr', [0.002, 0.001, 0.0005])},
+				{'name': 'Adam', 'lr': hp.uniform('Adam_lr', 0.0005, 0.0025)}
 			])
 		}
 		super(Classifier, self).__init__({**default_space, **other_space})
@@ -83,8 +81,8 @@ class Classifier(Model):
 		"""
 		exp_meta = exp_meta or {}
 		exp_meta['params'] = remove_keys(dict(locals().items()), ['self', 'features', 'labels', 'exp_meta'])
-		exp_meta['params']['exp_logdir'] = exp_meta['params']['exp_logdir'].lstrip(REPORT_DIR)
-		exp_meta['data'] = {'size': labels.size, 'lab_dist': labels.value_counts(normalize=True).to_dict()}
+		#exp_meta['params']['exp_logdir'] = None if (exp_meta['params']['exp_logdir'] is None) else exp_meta['params']['exp_logdir'].lstrip(REPORT_DIR)
+		#exp_meta['data'] = {'size': labels.size, 'lab_dist': labels.value_counts(normalize=True).to_dict()}
 		if (exp_logdir is not None):
 			makedir_if_not_exists(exp_logdir)
 			dump_json(exp_meta, 'exp.json', dir_path=exp_logdir)

@@ -1159,6 +1159,23 @@ def pd_rows(pd_obj, idx):
 
 	return selected
 
+def pd_rows_key_in(pd_obj, key, values):
+	"""
+	Return the pd_obj rows where the key is in the list of values.
+	The key can be a MultiIndex axis name or column name.
+
+	pd_obj (pd.Series or pd.DataFrame): MultiIndexed pandas object to index into
+	key (str): key name such as MultiIndex axis name or column name
+	values (list|tuple): listlike of values the key can be
+
+	Returns:
+		pd.Series or pd.DataFrame of relevant rows
+	"""
+	selected = pd_obj.query('{k} in {v}'.format(k=key, v=values))
+	if (is_type(selected.index, pd.MultiIndex)):
+		selected.index = selected.index.remove_unused_levels()
+	return selected
+
 def pd_idx_rename(pd_obj, idx_name=DEFAULT_IDX_NAME, deep=False):
 	"""
 	Wrapper function to rename index of pd_obj. Useful for function

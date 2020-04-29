@@ -16,7 +16,6 @@ from hyperopt import hp, STATUS_OK, STATUS_FAIL
 from common_util import MODEL_DIR, isnt, makedir_if_not_exists, remove_keys, dump_json, str_now, one_minus, is_type, midx_split, pd_midx_to_arr
 from model.common import PYTORCH_MODELS_DIR, ERROR_CODE, VAL_RATIO, TEST_RATIO, PYTORCH_LOSS_TRANSLATOR, PYTORCH_OPT_TRANSLATOR
 from model.model_p.pytorch_model import Model
-from recon.split_util import index_three_split
 
 
 class Regressor(Model):
@@ -32,9 +31,8 @@ class Regressor(Model):
 		default_space = {
 			'loss': hp.choice('loss', ['mae']),
 			'opt': hp.choice('opt', [
-			# 	{'name': 'RMSprop', 'lr': hp.choice('RMSprop_lr', [0.002, 0.001, 0.0005])},
-				# {'name': 'Adam', 'lr': hp.uniform('Adam_lr', 0.0005, 0.0025)}
-				{'name': 'Adam', 'lr': 1e-3}
+				{'name': 'RMSprop', 'lr': hp.choice('RMSprop_lr', [0.002, 0.001, 0.0005])},
+				{'name': 'Adam', 'lr': hp.uniform('Adam_lr', 0.0005, 0.0025)}
 			])
 		}
 		super(Regressor, self).__init__({**default_space, **other_space})

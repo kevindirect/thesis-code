@@ -19,33 +19,64 @@ from model.common import PYTORCH_ACT_MAPPING
 
 # ********** HELPER FUNCTIONS **********
 def assert_has_shape_attr(mod):
-	assert is_type(mod, nn.Module), "object must be a nn.Module"
-	assert_has_all_attr(mod, "in_shape", "out_shape")
+	assert is_type(mod, nn.Module), 'object must be a nn.Module'
+	assert_has_all_attr(mod, 'in_shape', 'out_shape')
 
-def init_layer(layer, act='relu', init_method='xavier_uniform'):
+def init_layer(layer, act='linear', init_method='xavier_uniform'):
 	"""
 	Initialize layer weights
 	"""
-	if (is_valid(layer)):
-		if (init_method == 'normal'):
-			#layer.weight.data.normal_(0, 0.01)
-			nn.init.normal_(layer.weight, mean=0, std=.01)
-		elif (init_method in ('xavier_uniform', 'glorot_uniform')):
-			try:
-				gain = nn.init.calculate_gain(act)
-			except ValueError as ve:
+	def get_gain(act):
+		"""
+		Return recommended gain for activation function.
+		"""
+		try:
+			gain = nn.init.calculate_gain(act)
+		except ValueError as ve:
+			if (act.endswith('elu')):
+				gain = nn.init.calculate_gain('relu')
+			else:
 				gain = np.sqrt(2)
-			nn.init.xavier_uniform_(layer.weight, gain=gain)
+		return gain
+
+	if (is_valid(layer)):
+		if (init_method in ('zeros',)):
+			nn.init.zeros_(layer.weight)
+		elif (init_method in ('ones',)):
+			nn.init.ones_(layer.weight)
+		elif (init_method in ('eye', 'identity')):
+			nn.init.eye_(layer.weight)
+		elif (init_method in ('dirac')):
+			nn.init.dirac_(layer.weight)
+
+		# RANDOM METHODS:
+		elif (init_method in ('normal',)):
+			nn.init.normal_(layer.weight, mean=0, std=.01)
+		elif (init_method in ('orthogonal',)):
+			nn.init.orthogonal_(layer.weight, gain=get_gain(act))
+		elif (init_method in ('xavier_uniform', 'glorot_uniform')):
+			nn.init.xavier_uniform_(layer.weight, gain=get_gain(act))
+		elif (init_method in ('xavier_normal', 'glorot_normal')):
+			nn.init.xavier_normal_(layer.weight, gain=get_gain(act))
+		elif (init_method in ('kaiming_uniform',)):
+			act = 'leaky_relu' if (act == 'lrelu') else act
+			try:
+				nn.init.kaiming_uniform_(layer.weight, nonlinearity=act)
+			except ValueError as ve:
+				nn.init.kaiming_uniform_(layer.weight, nonlinearity='relu') # fallback
+		elif (init_method in ('kaiming_normal',)):
+			act = 'leaky_relu' if (act == 'lrelu') else act
+			try:
+				nn.init.kaiming_normal_(layer.weight, nonlinearity=act)
+			except ValueError as ve:
+				nn.init.kaiming_normal_(layer.weight, nonlinearity='relu') # fallback
 	return layer
 
-def get_padding(conv_type, in_width, kernel_size, dilation=1, padding_size=0, stride=1):
-	# TODO
-	padding_size = 0
-	if (conv_type == 'same'):
-		padding_size = None
-	elif (conv_type == 'full'):
-		padding_size = None
-	return padding_size
+def get_padding(conv_type, in_width, kernel_size, dilation=1, stride=1):
+	return {
+		'same': int((dilation*(kernel_size-1))//2),
+		'full': int(dilation*(kernel_size-1))
+	}.get(conv_type, 0)
 
 
 # ********** MODEL CLASSES **********
@@ -80,7 +111,7 @@ class TemporalLayer1d(nn.Module):
 	RU: ReLu
 	DO: Dropout
 	"""
-	def __init__(self, in_shape, out_shape, act, kernel_size, padding_size, dilation, dropout, chomp=False):
+	def __init__(self, in_shape, out_shape, act, kernel_size, padding_size, dilation, dropout, init_method='xavier_uniform', chomp=False):
 		"""
 		Args:
 			in_shape (tuple): (in_channels, in_width) of the Conv1d layer
@@ -95,13 +126,16 @@ class TemporalLayer1d(nn.Module):
 				if the data already ensures this (for example the labels are shifted)
 				than this is not necessary. If it is set to true, 'padding_size' is removed off the
 				right (temporally recent) end of the data.
+			init_method (str): layer weight initialization method
 		"""
 		super(TemporalLayer1d, self).__init__()
 		self.in_shape, self.out_shape = in_shape, out_shape
 		modules = nn.ModuleList()
 		modules.append(
 			init_layer(
-				weight_norm(nn.Conv1d(self.in_shape[0], self.out_shape[0], kernel_size, stride=1, padding=padding_size, dilation=dilation, groups=1)) # groups=1, groups=n, or groups=self.in_shape[0]
+				weight_norm(nn.Conv1d(self.in_shape[0], self.out_shape[0], kernel_size, stride=1, padding=padding_size, dilation=dilation, groups=1, bias=True)), # groups=1, groups=n, or groups=self.in_shape[0]
+				act=act,
+				init_method=init_method
 			)
 		)
 		if (chomp):
@@ -121,16 +155,18 @@ class ResidualBlock(nn.Module):
 	"""
 	Wrap a residual connection around a network
 	"""
-	def __init__(self, net, act):
+	def __init__(self, net, act, init_method='xavier_uniform'):
 		"""
 		Args:
 			net (nn.Module): nn.Module to wrap
 			act (str): activation function
+			init_method (str): layer weight initialization method
 		"""
 		super(ResidualBlock, self).__init__()
 		assert_has_shape_attr(net)
 		self.net = net
-		self.downsample = init_layer(nn.Conv1d(net.in_shape[0], net.out_shape[0], 1)) if (net.in_shape != net.out_shape) else None
+		padding_size = max(int((net.out_shape[1] - net.in_shape[1])//2), 0)
+		self.downsample = init_layer(nn.Conv1d(net.in_shape[0], net.out_shape[0], 1, padding=padding_size, bias=True), act=act, init_method=init_method) if (net.in_shape != net.out_shape) else None
 		self.out_act = PYTORCH_ACT_MAPPING.get(act)()
 
 	def forward(self, x):
@@ -151,14 +187,17 @@ class TemporalConvNet(nn.Module):
 
 	Note: Receptive Field Size = Number TCN Blocks * Kernel Size * Last Layer Dilation Size
 	"""
-	def __init__(self, in_shape, num_blocks=1, block_channels=[[5, 3, 5]], block_act='elu', out_act='relu', kernel_sizes=[3], dilation_index='global', global_dropout=.2, no_dropout=[0]):
+	def __init__(self, in_shape, pad_type='same', num_blocks=1, block_channels=[[5, 3, 5]], block_act='elu', out_act='relu', block_init='xavier_uniform', out_init='xavier_uniform', kernel_sizes=[3], dilation_index='global', global_dropout=.2, no_dropout=[0]):
 		"""
 		Args:
 			in_shape (tuple): shape of the network's input tensor, expects a shape (in_channels, in_width)
+			pad_type (str): padding method to use ('same' or 'full')
 			num_blocks (int): number of residual blocks, each block consists of a tcn network and residual connection
 			block_channels (list * list): cnn channel sizes in each block, or individual channel sizes per block in sequence
 			block_act (str): activation function of each layer in each block
 			out_act (str): output activation of each block
+			block_init (str): layer weight initialization method of each layer in each block
+			out_init (str): layer weight initialization method of each block
 			kernel_sizes (list): list of CNN kernel sizes, must be the same length as block_channels
 			dilation_index ('global'|'block'): what index to make each layer dilation a function of
 			global_dropout (float): dropout probability of an element to be zeroed for any layer not in no_dropout
@@ -183,11 +222,11 @@ class TemporalConvNet(nn.Module):
 					'global': 2**i,
 					'block': 2**l
 				}.get(dilation_index)
-				padding_size = int((dilation*(kernel_size-1))//2) # 'SAME' padding #(kernel_size-1) * dilation
+				padding_size = get_padding(pad_type, layer_in_shape[1], kernel_size, dilation=dilation)
 				dropout = 0 if (i in no_dropout) else global_dropout
 				out_width = TemporalLayer1d.get_out_width(layer_in_shape[1], kernel_size=kernel_size, dilation=dilation, padding_size=padding_size)
 				layer_out_shape = (out_channels, out_width)
-				layer = TemporalLayer1d(in_shape=layer_in_shape, out_shape=layer_out_shape, act=block_act, kernel_size=kernel_size, padding_size=padding_size, dilation=dilation, dropout=dropout)
+				layer = TemporalLayer1d(in_shape=layer_in_shape, out_shape=layer_out_shape, act=block_act, kernel_size=kernel_size, padding_size=padding_size, dilation=dilation, dropout=dropout, init_method=block_init)
 				layers.append(('TL_{b}_{l}'.format(b=b, l=l, i=i), layer))
 				layer_in_shape = layer_out_shape
 				i += 1
@@ -195,7 +234,7 @@ class TemporalConvNet(nn.Module):
 			net = nn.Sequential(OrderedDict(layers))
 			net.in_shape, net.out_shape = block_in_shape, block_out_shape
 			#net.in_shape, net.out_shape = layers[0][1].in_shape, layers[-1][1].out_shape
-			blocks.append(('RB_{b}'.format(b=b), ResidualBlock(net, out_act)))
+			blocks.append(('RB_{b}'.format(b=b), ResidualBlock(net, out_act, init_method=out_init)))
 			block_in_shape = block_out_shape
 		self.out_shape = block_out_shape
 		self.convnet = nn.Sequential(OrderedDict(blocks))
@@ -210,7 +249,7 @@ class OutputLinear(nn.Module):
 	Adds a linear output layer to an arbitrary embedding network.
 	Used for Classification or Regression depending on the loss function used.
 	"""
-	def __init__(self, emb, out_shape=2):
+	def __init__(self, emb, out_shape=2, init_method='xavier_uniform'):
 		"""
 		Args:
 			emb (nn.Module): embedding network to add output layer to
@@ -219,10 +258,13 @@ class OutputLinear(nn.Module):
 		super(OutputLinear, self).__init__()
 		assert_has_shape_attr(emb)
 		self.emb = emb
-		self.out = nn.Linear(emb.out_shape[0], out_shape)
+		self.out = init_layer(nn.Linear(self.emb.out_shape[0], out_shape), act='linear', init_method=init_method)
 
 	def forward(self, x):
 		out_embedding = self.emb(x)
-		out_linear = self.out(out_embedding[:, :, -1])
+		if (len(self.emb.out_shape) == 1):
+			out_linear = self.out(out_embedding)
+		else:
+			out_linear = self.out(out_embedding[:, :, -1])
 		return out_linear
 

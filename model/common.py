@@ -30,7 +30,7 @@ from tensorflow.nn import sparse_softmax_cross_entropy_with_logits, softmax_cros
 """
 
 # PACKAGE CONSTANTS
-FR_DIR = MODEL_DIR +'frank' +sep
+FR_DIR = MODEL_DIR +'fr' +sep
 XG_DIR = MODEL_DIR +'xg' +sep
 XG_PROCESS_DIR = MODEL_DIR +'xg-process' +sep
 XG_DATA_DIR = MODEL_DIR +'xg-data' +sep
@@ -58,6 +58,7 @@ PYTORCH_ACT_MAPPING = {
 	'lrelu': nn.LeakyReLU,
 	'elu': nn.ELU,
 	'celu': nn.CELU,
+	'gelu': nn.GELU,
 	'prelu': nn.PReLU,
 	'selu': nn.SELU
 }

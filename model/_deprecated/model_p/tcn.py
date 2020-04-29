@@ -49,8 +49,7 @@ class TCN_CLF(TemporalMixin, Classifier):
 												[5, 1], [5, 3], [5, 5], [5, 7],
 												[7, 1], [7, 3], [7, 5], [7, 7]]),
 			'kernel_size': hp.quniform('kernel_size', 2, 16, 1),
-			#'dropout': hp.uniform('dropout', .01, .80),
-			'dropout': 0,
+			'dropout': hp.uniform('dropout', .05, .95),
 			'attention': False, # hp.choice('attention', [False]),
 			'max_attn_len': 120 # hp.quniform('max_attn_len', 24, 120, 1)
 		}
@@ -60,6 +59,7 @@ class TCN_CLF(TemporalMixin, Classifier):
 		tcn_fix_params(params)
 
 	def make_model(self, params, obs_shape, num_outputs=2):
+		# TODO - make this a static method?
 		input_channels, window_size = obs_shape
 		eff_history = window_size * params['input_windows']  								# Effective history = window_size * input_windows
 		real_topology = window_size * np.array(params['topology'])							# Scale topology by the window size

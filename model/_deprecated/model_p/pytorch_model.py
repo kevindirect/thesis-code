@@ -11,7 +11,7 @@ import pandas as pd
 from hyperopt import hp, STATUS_OK
 import torch
 from torch.utils.data import TensorDataset, DataLoader
-from tensorboardX import SummaryWriter
+from torch.utils.tensorboard import SummaryWriter
 
 from common_util import MODEL_DIR, identity_fn, is_type, isnt, np_inner, get0
 from model.common import PYTORCH_MODELS_DIR, ERROR_CODE, TEST_RATIO, VAL_RATIO
@@ -30,10 +30,8 @@ class Model:
 	"""
 	def __init__(self, other_space={}):
 		default_space = {
-			# 'epochs': hp.quniform('epochs', 100, 500, 100),
-			# 'batch_size': hp.choice('batch_size', [128, 256])
-			'epochs': 300,
-			'batch_size': 256
+			'epochs': hp.quniform('epochs', 100, 500, 100),
+			'batch_size': hp.choice('batch_size', [128, 256])
 		}
 		self.space = {**default_space, **other_space}
 		self.tbx = lambda params, logdir: SummaryWriter(log_dir=logdir) # Creates TensorBoardX logger

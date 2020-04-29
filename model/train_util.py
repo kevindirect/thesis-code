@@ -61,6 +61,29 @@ def pd_to_np_tvt(pd_obj, train_ratio=.6):
 	return tuple(map(pd_to_np, (train_df, val_df, test_df)))
 
 
+def pd_to_np_purged_kfold(pd_obj, k=5):
+	"""
+	Return the purged k fold cross validation numpy splits of a pandas object as a tuple of numpy tensors.
+	Works with MultiIndex DataFrames.
+
+	Args:
+		pd_obj (pd.DataFrame|pd.Series): data to split
+		k (int>1): number of cross validation folds
+
+	Returns:
+		data as a tuple of numpy tensors
+	"""
+	#np_obj = pd_to_np(pd_obj)
+	#sklearn.model_selection.TimeSeriesSplit
+	raise NotImplementedError()
+	#tv_ratio = (1-train_ratio)/2
+	#train_idx, val_idx, test_idx = midx_split(pd_obj.index, train_ratio, tv_ratio, tv_ratio)
+	#train_df, val_df, test_df = map(partial(pd_rows, pd_obj), (train_idx, val_idx, test_idx))
+	#if (is_type(pd_obj.index, pd.MultiIndex)):
+	#	train_df, val_df, test_df = map(df_midx_restack, (train_df, val_df, test_df))
+	#return tuple(map(pd_to_np, (train_df, val_df, test_df)))
+
+
 def batchify(params, data, shuffle_batches=False):
 	"""
 	Return a torch.DataLoader made from a tuple of numpy arrays.
@@ -75,10 +98,11 @@ def batchify(params, data, shuffle_batches=False):
 	"""
 	f = torch.tensor(data[0], dtype=torch.float32, requires_grad=True)
 	if (params['loss'] in ('bce', 'bcel', 'mae', 'mse')):
-		l = [torch.tensor(d, dtype=torch.float32, requires_grad=False) for d in data[1:]]
+		l = torch.tensor(data[1], dtype=torch.float32, requires_grad=False)
 	elif (params['loss'] in ('ce', 'nll')):
-		l = [torch.tensor(d, dtype=torch.int64, requires_grad=False).squeeze() for d in data[1:]]
-	ds = TensorDataset(f, *l)
+		l = torch.tensor(data[1], dtype=torch.int64, requires_grad=False).squeeze()
+	t = torch.tensor(data[2], dtype=torch.float32, requires_grad=False)
+	ds = TensorDataset(f, l, t)
 	dl = DataLoader(ds, batch_size=params['batch_size'], shuffle=shuffle_batches)
 	return dl
 

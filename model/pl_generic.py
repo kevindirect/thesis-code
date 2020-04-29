@@ -16,28 +16,16 @@ from common_util import is_type, assert_has_all_attr, is_valid, is_type, isnt, d
 from model.common import PYTORCH_ACT_MAPPING, PYTORCH_LOSS_MAPPING, PYTORCH_OPT_MAPPING, PYTORCH_SCH_MAPPING
 from model.preproc_util import temporal_preproc_3d, stride_preproc_3d
 from model.train_util import pd_to_np_tvt, batchify
-from model.model_util import TemporalConvNet, OutputLinear
+from model.model_util import OutputLinear
 
 
-class TCNModel(pl.LightningModule):
+class GenericModel(pl.LightningModule):
 	"""
-	Top level Temporal Convolutional Network.
-
-	Model Hyperparameters:
-		pad_type (str): padding method to use ('same' or 'full')
-		num_blocks (int): number of residual blocks, each block consists of a tcn network and residual connection
-		block_channels (list * list): cnn channel sizes in each block, or individual channel sizes per block in sequence
-		block_act (str): activation function of each layer in each block
-		out_act (str): output activation of each block
-		block_init (str): layer weight initialization method of each layer in each block
-		out_init (str): layer weight initialization method of each block
-		kernel_sizes (list): list of CNN kernel sizes, must be the same length as block_channels
-		dilation_index ('global'|'block'): what index to make each layer dilation a function of
-		global_dropout (float): dropout probability of an element to be zeroed for any layer not in no_dropout
-		no_dropout (list): list of global layer indices to disable dropout on
+	Generic Pytorch Lightning Wrapper.
 
 	Training Hyperparameters:
 		window_size (int): window size to use (number of observations in the last dimension of the input tensor)
+		flatten (bool): whether to flatten input
 		epochs (int): number training epochs
 		batch_size (int): training batch size
 		loss (str): name of loss function to use
@@ -48,59 +36,43 @@ class TCNModel(pl.LightningModule):
 			name (str): name of scheduler to use
 			kwargs (dict): any keyword arguments to the scheduler constructor
 	"""
-	def __init__(self, m_params, t_params, data, class_weights=None):
+	def __init__(self, model_fn, m_params, t_params, data, class_weights=None):
 		"""
 		Init method
 
 		Args:
-			m_params (dict): dictionary of model (hyper)parameters
-			t_params (dict): dictionary of training (hyper)parameters
+			model_fn (function): pytorch model callback
+			m_params (dict): dictionary of model hyperparameters
+			t_params (dict): dictionary of training hyperparameters
 			data (tuple): tuple of pd.DataFrames
 			class_weights (dict): class weighting scheme
 		"""
 		# init superclass
-		super(TCNModel, self).__init__()
-		self.hparams = dict_flatten({**t_params, **m_params})		# Pytorch lightning will track/checkpoint parameters saved in hparams instance variable
+		super(GenericModel, self).__init__()
+		self.hparams = dict_flatten(t_params)				# Pytorch lightning will track/checkpoint parameters saved in hparams instance variable
 		for k, v in filter(lambda i: is_type(i[1], np.ndarray, list, tuple), self.hparams.items()):
 			self.hparams[k] = torch.tensor(v).flatten()		# Lists/tuples (and any non-torch primitives) must be stored as flat torch tensors to be tracked by PL
 		self.m_params, self.t_params = m_params, t_params
 		self.hparams['lr'] = self.t_params['opt']['kwargs']['lr']
 		loss_fn = PYTORCH_LOSS_MAPPING.get(self.t_params['loss'])
 		self.loss = loss_fn() if (isnt(class_weights)) else loss_fn(weight=class_weights)
+		self.__setup_data__(data)
+		self.__build_model__(model_fn)
 		## if you specify an example input, the summary will show input/output for each layer
 		#self.example_input_array = torch.rand(5, 20)
-		self.__setup_data__(data)
-		self.__build_model__()
 
-	def __build_model__(self):
+	def __build_model__(self, model_fn):
 		"""
-		TCN Based Network
 		"""
 		num_channels, num_win, num_win_obs = self.obs_shape					# Feature observation shape - (Channels, Window, Hours / Window Observations)
-		scaled_bcs = num_win_obs * np.array(self.m_params['block_channels'])			# Scale topology by the observation size
-		clipped_bcs = np.clip(scaled_bcs, a_min=1, a_max=None).astype(int).tolist()		# Make sure layer shape dims >= 1
-		#scaled_ks = obs_size * np.array(self.m_params['kernel_sizes'])
-
-		tcn = TemporalConvNet(
-			in_shape=(num_channels, num_win*num_win_obs),
-			pad_type=self.m_params['pad_type'],
-			num_blocks=self.m_params['num_blocks'],
-			block_channels=clipped_bcs,
-			block_act=self.m_params['block_act'],
-			out_act=self.m_params['out_act'],
-			block_init=self.m_params['block_init'],
-			out_init=self.m_params['out_init'],
-			kernel_sizes=self.m_params['kernel_sizes'],
-			dilation_index=self.m_params['dilation_index'],
-			global_dropout=self.m_params['global_dropout'],
-			no_dropout=self.m_params['no_dropout'])
-		self.clf = OutputLinear(tcn, out_shape=self.m_params['out_shape'], init_method=self.m_params['out_init'])
+		emb = model_fn(in_shape=(num_channels, num_win*num_win_obs), **self.m_params)
+		self.model = OutputLinear(emb, out_shape=self.t_params['out_shape'])
 
 	def forward(self, x):
 		"""
 		Run input through the model.
 		"""
-		return self.clf(x)
+		return self.model(x)
 
 	def training_step(self, batch, batch_idx):
 		"""
@@ -214,6 +186,8 @@ class TCNModel(pl.LightningModule):
 			if (self.t_params['loss'] in ('bce', 'bcel') and len(y_new.shape)==1):
 				y_new = np.expand_dims(y_new, axis=-1)
 			y = y_new
+		if (self.t_params['flatten_input']):
+			x = x.reshape(x.shape[0], int(self.obs_shape[0]*self.obs_shape[1]*self.obs_shape[2]))
 		return (x, y, z)
 
 	def train_dataloader(self):
