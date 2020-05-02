@@ -1,0 +1,11 @@
+{
+	"dataset": {
+		"features": "features/dxfbdir2.json"
+	},
+	"constraint": "no_constraint",
+	"parts": ["features"],
+	"how": [["features"]],
+	"prep_fn": {
+		"features": "prep_stack_data"
+	}
+}

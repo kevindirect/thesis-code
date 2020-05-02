@@ -124,7 +124,6 @@ def prep_stack_data(feature_df, delayed=False):
 
 	Args:
 		feature_df (pd.DataFrame): Daily DataFrame
-		row_masks_df (pd.DataFrame): DataFrame of row masks / time mask
 		delayed (boolean): Whether or not to create a delayed function composition
 
 	Returns:
@@ -133,23 +132,6 @@ def prep_stack_data(feature_df, delayed=False):
 	preproc = (
 				pd_dti_idx_date_only,			# Removes the time component of the DatetimeIndex index
 				partial(pd_idx_to_midx, col_name=-1)	# Converts to MultiIndex DF
-			)
-	prep_fn = dcompose(*preproc) if (delayed) else compose(*preproc)
-	return prep_fn(feature_df)
-
-
-def prep_trmi_buzzless(feature_df, delayed=False):
-	"""
-	TODO
-
-	Args:
-		feature_df (pd.DataFrame): DataFrame
-		delayed (boolean): Whether or not to create a delayed function composition
-
-	Returns:
-		pd.DataFrame or dask Delayed object
-	"""
-	preproc = (
 			)
 	prep_fn = dcompose(*preproc) if (delayed) else compose(*preproc)
 	return prep_fn(feature_df)

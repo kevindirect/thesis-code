@@ -8,7 +8,6 @@ from os.path import exists, basename
 from functools import partial
 from multiprocessing import Pool
 from multiprocessing.pool import ThreadPool
-
 import logging
 
 import numpy as np
@@ -17,7 +16,7 @@ import dask
 from multiprocessing.pool import ThreadPool
 
 from common_util import JSON_SFX_LEN, makedir_if_not_exists, get_cmd_args, str_to_list, is_type, is_ser, is_valid, dcompose, load_json, dump_json, dump_df, benchmark
-from model.common import XG_PROCESS_DIR, XG_DATA_DIR, XG_INDEX_FNAME, XVIZ_DIR
+from model.common import XG_PROCESS_DIR, XG_DATA_DIR, XG_INDEX_FNAME, XG_VIZ_DIR
 from model.dataprep_util import COMMON_PREP_MAPPING, DATA_PREP_MAPPING
 from model.datagen_util import process_group
 from data.data_api import DataAPI
@@ -30,28 +29,30 @@ def xgpp(argv):
 	modes = str_to_list(cmd_input['modes=']) if (is_valid(cmd_input['modes='])) else ('run',)
 	assets = str_to_list(cmd_input['assets=']) if (is_valid(cmd_input['assets='])) else None
 	process_all = is_valid(cmd_input['force'])
-	xgs, ns = [], []
+	xgs = []
 
 	for parent_path, dirs, files in os.walk(XG_PROCESS_DIR, topdown=False):
 		if (len(dirs)==0 and len(files)>0):
 			group_type = basename(parent_path)
 			logging.info('group {}'.format(group_type))
 			for xg_fname in files:
-				xg_outdir = XG_DATA_DIR +sep.join([group_type, xg_fname[:-JSON_SFX_LEN]]) +sep
+				xg_name = xg_fname[:-JSON_SFX_LEN]
+				xg_outdir = XG_DATA_DIR +sep.join([group_type, xg_name]) +sep
 				if ((not exists(xg_outdir) or not exists(sep.join([xg_outdir, XG_INDEX_FNAME]))) or process_all):
 					logging.info('queueing {}...'.format(xg_fname))
-					ns.append(xg_fname)
 					xg_path = sep.join([parent_path, xg_fname])
-					xgs.extend(xg_process_delayed(xg_path, xg_outdir, group_type, assets))
+					xg_objs = xg_process_delayed(xg_path, xg_outdir, group_type, assets)
+					xgs.extend(xg_objs)
+					if ('viz' in modes):
+						logging.info('visualizing {}...'.format(xg_fname))
+						assert(len(xg_objs)==1)
+						viz_outdir = XG_VIZ_DIR+group_type+sep
+						makedir_if_not_exists(viz_outdir)
+						xg_objs[0].visualize(filename='{}{}.svg'.format(viz_outdir, xg_name))
 				else:
 					logging.debug('skipping {}...'.format(xg_fname))
 					continue
-	if ('viz' in modes):
-		# Dump dask graph pictures
-		assert(len(xgs)==len(ns))
-		for i, xg in enumerate(xgs):
-			fname = '{}_{}.svg'.format(str(i), ns[i][:-JSON_SFX_LEN])
-			xgs[i].visualize(filename=XVIZ_DIR+fname)
+
 	if ('test' in modes):
 		# Test various parameters to dask.compute(...)
 		times = []

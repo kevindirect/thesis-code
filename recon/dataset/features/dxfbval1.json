@@ -1,0 +1,6 @@
+{
+	"features": [
+		["dxfbval1", "dxfbval1_lin"],
+		["dxfbval1", "dxfbval1_log"]
+	]
+}
