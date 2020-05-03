@@ -141,19 +141,18 @@ def get_xg_label_target_dfs(asset, xg_l_dir=XG_DATA_DIR +'labels' +sep, xg_t_dir
 	b = 'vol_hlh'; dret1_vol_hlh = {g: list(t_store.childkeys([asset, e, fmt3.format(e, g), fmt4.format(b, e)])) for g in groups}
 
 	# ddir2/dret2
-	scalars = ['0.5', '1', '2']
-	stats = ['avg', 'std', 'mad', 'max', 'min']
-	fmt4, fmt5 = '{}_hdxret2_{}', '{}_hdxret2({}*{},1)_{}'
+	groups = ['avg', 'std', 'mad', 'max', 'min']
+	fmt3, fmt4 = '{}_{}', '{}_hdxret2_{}'
 	e = 'ddir2'
-	b = 'pba_hoc'; ddir2_pba_hoc = {d: [[asset, e, e, fmt4.format(b, e), fmt5.format(b, c, d, e)] for c in scalars] for d in stats}
-	b = 'pba_hlh'; ddir2_pba_hlh = {d: [[asset, e, e, fmt4.format(b, e), fmt5.format(b, c, d, e)] for c in scalars] for d in stats}
-	b = 'vol_hoc'; ddir2_vol_hoc = {d: [[asset, e, e, fmt4.format(b, e), fmt5.format(b, c, d, e)] for c in scalars] for d in stats}
-	b = 'vol_hlh'; ddir2_vol_hlh = {d: [[asset, e, e, fmt4.format(b, e), fmt5.format(b, c, d, e)] for c in scalars] for d in stats}
+	b = 'pba_hoc'; ddir2_pba_hoc = {g: list(l_store.childkeys([asset, e, fmt3.format(e, g), fmt4.format(b, e)])) for g in groups}
+	b = 'pba_hlh'; ddir2_pba_hlh = {g: list(l_store.childkeys([asset, e, fmt3.format(e, g), fmt4.format(b, e)])) for g in groups}
+	b = 'vol_hoc'; ddir2_vol_hoc = {g: list(l_store.childkeys([asset, e, fmt3.format(e, g), fmt4.format(b, e)])) for g in groups}
+	b = 'vol_hlh'; ddir2_vol_hlh = {g: list(l_store.childkeys([asset, e, fmt3.format(e, g), fmt4.format(b, e)])) for g in groups}
 	e = 'dret2'
-	b = 'pba_hoc'; dret2_pba_hoc = {d: [[asset, e, e, fmt4.format(b, e), fmt5.format(b, c, d, e)] for c in scalars] for d in stats}
-	b = 'pba_hlh'; dret2_pba_hlh = {d: [[asset, e, e, fmt4.format(b, e), fmt5.format(b, c, d, e)] for c in scalars] for d in stats}
-	b = 'vol_hoc'; dret2_vol_hoc = {d: [[asset, e, e, fmt4.format(b, e), fmt5.format(b, c, d, e)] for c in scalars] for d in stats}
-	b = 'vol_hlh'; dret2_vol_hlh = {d: [[asset, e, e, fmt4.format(b, e), fmt5.format(b, c, d, e)] for c in scalars] for d in stats}
+	b = 'pba_hoc'; dret2_pba_hoc = {g: list(t_store.childkeys([asset, e, fmt3.format(e, g), fmt4.format(b, e)])) for g in groups}
+	b = 'pba_hlh'; dret2_pba_hlh = {g: list(t_store.childkeys([asset, e, fmt3.format(e, g), fmt4.format(b, e)])) for g in groups}
+	b = 'vol_hoc'; dret2_vol_hoc = {g: list(t_store.childkeys([asset, e, fmt3.format(e, g), fmt4.format(b, e)])) for g in groups}
+	b = 'vol_hlh'; dret2_vol_hlh = {g: list(t_store.childkeys([asset, e, fmt3.format(e, g), fmt4.format(b, e)])) for g in groups}
 
 	# dxfbdir1/dxbret1/dxfbval1
 	groups = ['lin', 'log']
@@ -175,24 +174,23 @@ def get_xg_label_target_dfs(asset, xg_l_dir=XG_DATA_DIR +'labels' +sep, xg_t_dir
 	b = 'vol_hlh'; dxfbval1_vol_hlh = {g: list(t_store.childkeys([asset, e, fmt3.format(e, g), fmt4.format(b, e)])) for g in groups}
 
 	# dxfbdir2/dxfbcret2/dxfbval2
-	scalars = ['0.5', '1', '2']
-	stats = ['avg', 'std', 'mad', 'max', 'min']
-	fmt4, fmt5 = '{}_hdxcret2_{}', '{}_hdxcret2({}*{},1)_{}'
+	groups = ['avg', 'std', 'mad', 'max', 'min']
+	fmt3, fmt4 = '{}_{}', '{}_hdxcret2_{}'
 	e = 'dxfbdir2'
-	b = 'pba_hoc'; dxfbdir2_pba_hoc = {d: [[asset, e, e, fmt4.format(b, e), fmt5.format(b, c, d, e)] for c in scalars] for d in stats}
-	b = 'pba_hlh'; dxfbdir2_pba_hlh = {d: [[asset, e, e, fmt4.format(b, e), fmt5.format(b, c, d, e)] for c in scalars] for d in stats}
-	b = 'vol_hoc'; dxfbdir2_vol_hoc = {d: [[asset, e, e, fmt4.format(b, e), fmt5.format(b, c, d, e)] for c in scalars] for d in stats}
-	b = 'vol_hlh'; dxfbdir2_vol_hlh = {d: [[asset, e, e, fmt4.format(b, e), fmt5.format(b, c, d, e)] for c in scalars] for d in stats}
+	b = 'pba_hoc'; dxfbdir2_pba_hoc = {g: list(l_store.childkeys([asset, e, fmt3.format(e, g), fmt4.format(b, e)])) for g in groups}
+	b = 'pba_hlh'; dxfbdir2_pba_hlh = {g: list(l_store.childkeys([asset, e, fmt3.format(e, g), fmt4.format(b, e)])) for g in groups}
+	b = 'vol_hoc'; dxfbdir2_vol_hoc = {g: list(l_store.childkeys([asset, e, fmt3.format(e, g), fmt4.format(b, e)])) for g in groups}
+	b = 'vol_hlh'; dxfbdir2_vol_hlh = {g: list(l_store.childkeys([asset, e, fmt3.format(e, g), fmt4.format(b, e)])) for g in groups}
 	e = 'dxfbcret2'
-	b = 'pba_hoc'; dxfbcret2_pba_hoc = {d: [[asset, e, e, fmt4.format(b, e), fmt5.format(b, c, d, e)] for c in scalars] for d in stats}
-	b = 'pba_hlh'; dxfbcret2_pba_hlh = {d: [[asset, e, e, fmt4.format(b, e), fmt5.format(b, c, d, e)] for c in scalars] for d in stats}
-	b = 'vol_hoc'; dxfbcret2_vol_hoc = {d: [[asset, e, e, fmt4.format(b, e), fmt5.format(b, c, d, e)] for c in scalars] for d in stats}
-	b = 'vol_hlh'; dxfbcret2_vol_hlh = {d: [[asset, e, e, fmt4.format(b, e), fmt5.format(b, c, d, e)] for c in scalars] for d in stats}
+	b = 'pba_hoc'; dxfbcret2_pba_hoc = {g: list(t_store.childkeys([asset, e, fmt3.format(e, g), fmt4.format(b, e)])) for g in groups}
+	b = 'pba_hlh'; dxfbcret2_pba_hlh = {g: list(t_store.childkeys([asset, e, fmt3.format(e, g), fmt4.format(b, e)])) for g in groups}
+	b = 'vol_hoc'; dxfbcret2_vol_hoc = {g: list(t_store.childkeys([asset, e, fmt3.format(e, g), fmt4.format(b, e)])) for g in groups}
+	b = 'vol_hlh'; dxfbcret2_vol_hlh = {g: list(t_store.childkeys([asset, e, fmt3.format(e, g), fmt4.format(b, e)])) for g in groups}
 	e = 'dxfbval2'
-	b = 'pba_hoc'; dxfbval2_pba_hoc = {d: [[asset, e, e, fmt4.format(b, e), fmt5.format(b, c, d, e)] for c in scalars] for d in stats}
-	b = 'pba_hlh'; dxfbval2_pba_hlh = {d: [[asset, e, e, fmt4.format(b, e), fmt5.format(b, c, d, e)] for c in scalars] for d in stats}
-	b = 'vol_hoc'; dxfbval2_vol_hoc = {d: [[asset, e, e, fmt4.format(b, e), fmt5.format(b, c, d, e)] for c in scalars] for d in stats}
-	b = 'vol_hlh'; dxfbval2_vol_hlh = {d: [[asset, e, e, fmt4.format(b, e), fmt5.format(b, c, d, e)] for c in scalars] for d in stats}
+	b = 'pba_hoc'; dxfbval2_pba_hoc = {g: list(t_store.childkeys([asset, e, fmt3.format(e, g), fmt4.format(b, e)])) for g in groups}
+	b = 'pba_hlh'; dxfbval2_pba_hlh = {g: list(t_store.childkeys([asset, e, fmt3.format(e, g), fmt4.format(b, e)])) for g in groups}
+	b = 'vol_hoc'; dxfbval2_vol_hoc = {g: list(t_store.childkeys([asset, e, fmt3.format(e, g), fmt4.format(b, e)])) for g in groups}
+	b = 'vol_hlh'; dxfbval2_vol_hlh = {g: list(t_store.childkeys([asset, e, fmt3.format(e, g), fmt4.format(b, e)])) for g in groups}
 
 	return ({
 		'hoc': {
