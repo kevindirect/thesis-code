@@ -1,0 +1,11 @@
+{
+	"*": {
+		"stage": "mutate",
+		"type": "dxfbval2"
+	},
+	"/": {
+		"pba_hoc_hdxcret2_dxfbval2": {
+			"desc": ["pba_hoc_hdxcret2(0.5*mad,1)_dxfbval2", "pba_hoc_hdxcret2(1*mad,1)_dxfbval2", "pba_hoc_hdxcret2(2*mad,1)_dxfbval2"]
+		}
+	}
+}

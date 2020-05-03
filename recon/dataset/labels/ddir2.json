@@ -1,5 +1,9 @@
 {
 	"labels": [
-		["ddir2", "ddir2"]
+		["ddir2", "ddir2_avg"],
+		["ddir2", "ddir2_std"],
+		["ddir2", "ddir2_mad"],
+		["ddir2", "ddir2_max"],
+		["ddir2", "ddir2_min"]
 	]
 }

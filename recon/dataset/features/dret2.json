@@ -1,5 +1,9 @@
 {
 	"features": [
-		["dret2", "dret2"]
+		["dret2", "dret2_avg"],
+		["dret2", "dret2_std"],
+		["dret2", "dret2_mad"],
+		["dret2", "dret2_max"],
+		["dret2", "dret2_min"]
 	]
 }

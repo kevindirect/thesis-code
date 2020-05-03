@@ -1,5 +1,9 @@
 {
 	"features": [
-		["dxfbdir2", "dxfbdir2"]
+		["dxfbdir2", "dxfbdir2_avg"],
+		["dxfbdir2", "dxfbdir2_std"],
+		["dxfbdir2", "dxfbdir2_mad"],
+		["dxfbdir2", "dxfbdir2_max"],
+		["dxfbdir2", "dxfbdir2_min"]
 	]
 }

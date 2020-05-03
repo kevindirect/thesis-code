@@ -1,5 +1,9 @@
 {
 	"targets": [
-		["dxfbval2", "dxfbval2"]
+		["dxfbval2", "dxfbval2_avg"],
+		["dxfbval2", "dxfbval2_std"],
+		["dxfbval2", "dxfbval2_mad"],
+		["dxfbval2", "dxfbval2_max"],
+		["dxfbval2", "dxfbval2_min"]
 	]
 }

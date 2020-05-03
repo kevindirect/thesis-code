@@ -1,0 +1,11 @@
+{
+	"*": {
+		"stage": "mutate",
+		"type": "dxfbcret2"
+	},
+	"/": {
+		"pba_hoc_hdxcret2_dxfbcret2": {
+			"desc": ["pba_hoc_hdxcret2(0.5*min,1)_dxfbcret2", "pba_hoc_hdxcret2(1*min,1)_dxfbcret2", "pba_hoc_hdxcret2(2*min,1)_dxfbcret2"]
+		}
+	}
+}

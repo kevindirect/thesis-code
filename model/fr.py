@@ -4,7 +4,7 @@ Kevin Patel
 import sys
 import os
 from os import sep
-from os.path import basename
+from os.path import isfile, basename
 from functools import partial
 import logging
 
@@ -17,7 +17,7 @@ from sklearn.feature_selection import mutual_info_classif, mutual_info_regressio
 #from sklearn.tree import DecisionTreeClassifier
 #from sklearn.ensemble import BaggingClassifier, RandomForestClassifier, GradientBoostingClassifier, StackingClassifier
 
-from common_util import MODEL_DIR, JSON_SFX_LEN, makedir_if_not_exists, is_valid, str_to_list, get_cmd_args, load_json, dump_df, benchmark
+from common_util import MODEL_DIR, JSON_SFX_LEN, DF_DATA_FMT, makedir_if_not_exists, is_valid, str_to_list, get_cmd_args, load_json, dump_df, benchmark
 from common_util import pairwise, compose, pd_split_ternary_to_binary, df_midx_restack, np_value_counts, pd_rows, midx_intersect, pd_get_midx_level
 from model.common import FR_DIR
 from model.xg_util import get_xg_feature_dfs, get_xg_label_target_dfs
@@ -47,23 +47,26 @@ def fr(argv):
 				makedir_if_not_exists(dest_dir)
 
 				for axe, subsets in fd[freq][src].items():
-					res = []
+					res, dest_fname = [], '{a}.{m}.w{w}.n{n}'.format(a=axe, m='mi', w=params['window_size'], n=params['knn'])
+					if (isfile('{}{}.{}'.format(dest_dir, dest_fname, DF_DATA_FMT))):
+						logging.info('skipping {}...'.format(dest_fname))
+					else:
+						logging.info('running {}...'.format(dest_fname))
+						for subset_key, subset_df in subsets.items():
+							logging.info(subset_key)
 
-					for subset_key, subset_df in subsets.items():
-						logging.info(subset_key)
-
-						for ser_name in list(subset_df.index.unique(level='id1')):
-							logging.info(ser_name)
-							ser_subset_df = subset_df.xs(ser_name, level=1, drop_level=False)
-							ser_subset_df.index = ser_subset_df.index.remove_unused_levels()
-							flt_train_win, flt_val_win, flt_test_win = data_preproc(ser_subset_df, pba_hoc_ddir, pba_hoc_dret, params)
-							# X = np.concatenate((flt_train_win[0], flt_val_win[0], flt_test_win[0]), axis=0)
-							# y = np.concatenate((flt_train_win[1], flt_val_win[1], flt_test_win[1]), axis=0)
-							# z = np.concatenate((flt_train_win[2], flt_val_win[2], flt_test_win[2]), axis=0)
-							for mi in mutual_info(*flt_train_win, params, list(ser_subset_df.columns)):
-								res.append((subset_key, ser_name, *mi))
-					res_df = pd.DataFrame.from_records(res, columns=['sub', 'ser', 'col', 'clf', 'reg', 'win', 'knn'])
-					dump_df(res_df, '{a}.{m}.w{w}.n{n}'.format(a=axe, m='mi', w=params['window_size'], n=params['knn']), dir_path=dest_dir)
+							for ser_name in list(subset_df.index.unique(level='id1')):
+								logging.info(ser_name)
+								ser_subset_df = subset_df.xs(ser_name, level=1, drop_level=False)
+								ser_subset_df.index = ser_subset_df.index.remove_unused_levels()
+								flt_train_win, flt_val_win, flt_test_win = data_preproc(ser_subset_df, pba_hoc_ddir, pba_hoc_dret, params)
+								# X = np.concatenate((flt_train_win[0], flt_val_win[0], flt_test_win[0]), axis=0)
+								# y = np.concatenate((flt_train_win[1], flt_val_win[1], flt_test_win[1]), axis=0)
+								# z = np.concatenate((flt_train_win[2], flt_val_win[2], flt_test_win[2]), axis=0)
+								for mi in mutual_info(*flt_train_win, params, list(ser_subset_df.columns)):
+									res.append((subset_key, ser_name, *mi))
+						res_df = pd.DataFrame.from_records(res, columns=['sub', 'ser', 'col', 'clf', 'reg', 'win', 'knn'])
+						dump_df(res_df, dest_fname, dir_path=dest_dir)
 
 
 # Data

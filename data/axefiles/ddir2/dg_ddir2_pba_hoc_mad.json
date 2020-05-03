@@ -1,0 +1,11 @@
+{
+	"*": {
+		"stage": "mutate",
+		"type": "ddir2"
+	},
+	"/": {
+		"pba_hoc_hdxret2_ddir2": {
+			"desc": ["pba_hoc_hdxret2(0.5*mad,1)_ddir2", "pba_hoc_hdxret2(1*mad,1)_ddir2", "pba_hoc_hdxret2(2*mad,1)_ddir2"]
+		}
+	}
+}
