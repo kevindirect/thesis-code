@@ -174,7 +174,7 @@ def get_xg_label_target_dfs(asset, xg_l_dir=XG_DATA_DIR +'labels' +sep, xg_t_dir
 	b = 'vol_hoc'; dxfbval1_vol_hoc = {g: list(t_store.childkeys([asset, e, fmt3.format(e, g), fmt4.format(b, e)])) for g in groups}
 	b = 'vol_hlh'; dxfbval1_vol_hlh = {g: list(t_store.childkeys([asset, e, fmt3.format(e, g), fmt4.format(b, e)])) for g in groups}
 
-	# dxfbdir2/dxbret2/dxfbval2
+	# dxfbdir2/dxfbcret2/dxfbval2
 	scalars = ['0.5', '1', '2']
 	stats = ['avg', 'std', 'mad', 'max', 'min']
 	fmt4, fmt5 = '{}_hdxcret2_{}', '{}_hdxcret2({}*{},1)_{}'
@@ -198,28 +198,78 @@ def get_xg_label_target_dfs(asset, xg_l_dir=XG_DATA_DIR +'labels' +sep, xg_t_dir
 		'hoc': {
 			'pba': {
 				'ddir': get_lt_df(ddir_pba_hoc, l_store),
-				'ddir1': get_lt_df(ddir1_pba_hoc['log'], l_store),
-				'dxfbdir1': get_lt_df(dxfbdir1_pba_hoc['log'], l_store)
+				'ddir1_log': get_lt_df(ddir1_pba_hoc['log'], l_store),
+				'dxfbdir1_log': get_lt_df(dxfbdir1_pba_hoc['log'], l_store),
+				'ddir2_avg': get_lt_df(ddir2_pba_hoc['avg'], l_store),
+				'ddir2_std': get_lt_df(ddir2_pba_hoc['std'], l_store),
+				'ddir2_mad': get_lt_df(ddir2_pba_hoc['mad'], l_store),
+				'ddir2_max': get_lt_df(ddir2_pba_hoc['max'], l_store),
+				'ddir2_min': get_lt_df(ddir2_pba_hoc['min'], l_store),
+				'dxfbdir2_avg': get_lt_df(dxfbdir2_pba_hoc['avg'], l_store),
+				'dxfbdir2_std': get_lt_df(dxfbdir2_pba_hoc['std'], l_store),
+				'dxfbdir2_mad': get_lt_df(dxfbdir2_pba_hoc['mad'], l_store),
+				'dxfbdir2_max': get_lt_df(dxfbdir2_pba_hoc['max'], l_store),
+				'dxfbdir2_min': get_lt_df(dxfbdir2_pba_hoc['min'], l_store)
 			},
 			'vol': {
 				'ddir': get_lt_df(ddir_vol_hoc, l_store),
-				'ddir1': get_lt_df(ddir1_vol_hoc['log'], l_store),
-				'dxfbdir1': get_lt_df(dxfbdir1_vol_hoc['log'], l_store)
+				'ddir1_log': get_lt_df(ddir1_vol_hoc['log'], l_store),
+				'dxfbdir1_log': get_lt_df(dxfbdir1_vol_hoc['log'], l_store),
+				'ddir2_avg': get_lt_df(ddir2_vol_hoc['avg'], l_store),
+				'ddir2_std': get_lt_df(ddir2_vol_hoc['std'], l_store),
+				'ddir2_mad': get_lt_df(ddir2_vol_hoc['mad'], l_store),
+				'ddir2_max': get_lt_df(ddir2_vol_hoc['max'], l_store),
+				'ddir2_min': get_lt_df(ddir2_vol_hoc['min'], l_store),
+				'dxfbdir2_avg': get_lt_df(dxfbdir2_vol_hoc['avg'], l_store),
+				'dxfbdir2_std': get_lt_df(dxfbdir2_vol_hoc['std'], l_store),
+				'dxfbdir2_mad': get_lt_df(dxfbdir2_vol_hoc['mad'], l_store),
+				'dxfbdir2_max': get_lt_df(dxfbdir2_vol_hoc['max'], l_store),
+				'dxfbdir2_min': get_lt_df(dxfbdir2_vol_hoc['min'], l_store)
 			}
 		}
 	}, {
 		'hoc': {
 			'pba': {
 				'dret': get_lt_df(dret_pba_hoc, t_store),
-				'dret1': get_lt_df(dret1_pba_hoc['log'], t_store),
-				'dxfbcret1': get_lt_df(dxfbcret1_pba_hoc['log'], t_store),
-				'dxfbval1': get_lt_df(dxfbval1_pba_hoc['log'], t_store)
+				'dret1_log': get_lt_df(dret1_pba_hoc['log'], t_store),
+				'dxfbcret1_log': get_lt_df(dxfbcret1_pba_hoc['log'], t_store),
+				'dxfbval1_log': get_lt_df(dxfbval1_pba_hoc['log'], t_store),
+				'dret2_avg': get_lt_df(dret2_pba_hoc['avg'], t_store),
+				'dret2_std': get_lt_df(dret2_pba_hoc['std'], t_store),
+				'dret2_mad': get_lt_df(dret2_pba_hoc['mad'], t_store),
+				'dret2_max': get_lt_df(dret2_pba_hoc['max'], t_store),
+				'dret2_min': get_lt_df(dret2_pba_hoc['min'], t_store),
+				'dxfbcret2_avg': get_lt_df(dxfbcret2_pba_hoc['avg'], t_store),
+				'dxfbcret2_std': get_lt_df(dxfbcret2_pba_hoc['std'], t_store),
+				'dxfbcret2_mad': get_lt_df(dxfbcret2_pba_hoc['mad'], t_store),
+				'dxfbcret2_max': get_lt_df(dxfbcret2_pba_hoc['max'], t_store),
+				'dxfbcret2_min': get_lt_df(dxfbcret2_pba_hoc['min'], t_store),
+				'dxfbval2_avg': get_lt_df(dxfbval2_pba_hoc['avg'], t_store),
+				'dxfbval2_std': get_lt_df(dxfbval2_pba_hoc['std'], t_store),
+				'dxfbval2_mad': get_lt_df(dxfbval2_pba_hoc['mad'], t_store),
+				'dxfbval2_max': get_lt_df(dxfbval2_pba_hoc['max'], t_store),
+				'dxfbval2_min': get_lt_df(dxfbval2_pba_hoc['min'], t_store)
 			},
 			'vol': {
 				'dret': get_lt_df(dret_vol_hoc, t_store),
-				'dret1': get_lt_df(dret1_vol_hoc['log'], t_store),
-				'dxfbcret1': get_lt_df(dxfbcret1_vol_hoc['log'], t_store),
-				'dxfbval1': get_lt_df(dxfbval1_vol_hoc['log'], t_store)
+				'dret1_log': get_lt_df(dret1_vol_hoc['log'], t_store),
+				'dxfbcret1_log': get_lt_df(dxfbcret1_vol_hoc['log'], t_store),
+				'dxfbval1_log': get_lt_df(dxfbval1_vol_hoc['log'], t_store),
+				'dret2_avg': get_lt_df(dret2_vol_hoc['avg'], t_store),
+				'dret2_std': get_lt_df(dret2_vol_hoc['std'], t_store),
+				'dret2_mad': get_lt_df(dret2_vol_hoc['mad'], t_store),
+				'dret2_max': get_lt_df(dret2_vol_hoc['max'], t_store),
+				'dret2_min': get_lt_df(dret2_vol_hoc['min'], t_store),
+				'dxfbcret2_avg': get_lt_df(dxfbcret2_vol_hoc['avg'], t_store),
+				'dxfbcret2_std': get_lt_df(dxfbcret2_vol_hoc['std'], t_store),
+				'dxfbcret2_mad': get_lt_df(dxfbcret2_vol_hoc['mad'], t_store),
+				'dxfbcret2_max': get_lt_df(dxfbcret2_vol_hoc['max'], t_store),
+				'dxfbcret2_min': get_lt_df(dxfbcret2_vol_hoc['min'], t_store),
+				'dxfbval2_avg': get_lt_df(dxfbval2_vol_hoc['avg'], t_store),
+				'dxfbval2_std': get_lt_df(dxfbval2_vol_hoc['std'], t_store),
+				'dxfbval2_mad': get_lt_df(dxfbval2_vol_hoc['mad'], t_store),
+				'dxfbval2_max': get_lt_df(dxfbval2_vol_hoc['max'], t_store),
+				'dxfbval2_min': get_lt_df(dxfbval2_vol_hoc['min'], t_store)
 			}
 		}
 	})
