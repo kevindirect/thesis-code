@@ -1433,6 +1433,22 @@ def ser_range_center_clip(ser, thresh=None, inner=0, outer=False, inclusive=Fals
 
 	return out
 
+def df_add_midx_level(df, value, loc=0, name='id0'):
+	"""
+	Adds a MultiIndex level to a regular dataframe.
+	If provided value is not a list, expands it to one to fill all indices.
+	"""
+	old_idx = df.index.to_frame()
+	old_idx.insert(loc, name, value if (is_type(value, list)) else [value]*len(df))
+	df.index = pd.MultiIndex.from_frame(old_idx)
+	return df
+
+def df_del_midx_level(df, loc=0):
+	"""
+	Delete a MultiIndex level from a dataframe at loc positition.
+	"""
+	return df.droplevel(loc, axis=0)
+
 def df_midx_restack(df):
 	"""
 	'Restack' a MultiIndex DataFrame, fixes https://github.com/pandas-dev/pandas/issues/2770 for DTI DataFrames.

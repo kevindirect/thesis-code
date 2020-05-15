@@ -6,6 +6,7 @@ import os
 import logging
 from functools import partial
 from collections import OrderedDict
+from inspect import getfullargspec
 
 import numpy as np
 import pandas as pd
@@ -26,6 +27,8 @@ class GenericModel(pl.LightningModule):
 		window_size (int): window size to use (number of observations in the last dimension of the input tensor)
 		flatten_features (bool): whether or not to flatten the feature tensor to (N, C)
 			where N is the original first dimension and C is the product of all following dimensions
+		shuffle_features (bool): whether or not to shuffle the feature batches before training, this shuffles
+			the batches among each other it does not shuffle inside each batch
 		epochs (int): number training epochs
 		batch_size (int): training batch size
 		loss (str): name of loss function to use
@@ -64,9 +67,10 @@ class GenericModel(pl.LightningModule):
 	def __build_model__(self, model_fn):
 		"""
 		"""
-		num_channels, num_win, num_win_obs = self.obs_shape					# Feature observation shape - (Channels, Window, Hours / Window Observations)
-		emb = model_fn(in_shape=(num_channels, num_win*num_win_obs), **self.m_params)
-		self.model = OutputLinear(emb, out_shape=self.t_params['out_shape'])
+		num_channels, num_win, num_win_obs = self.obs_shape						# Feature observation shape - (Channels, Window, Hours / Window Observations)
+		emb_params = {k: v for k, v in self.m_params.items() if (k in getfullargspec(model_fn).args)}
+		emb = model_fn(in_shape=(num_channels, num_win*num_win_obs), **emb_params)
+		self.model = OutputLinear(emb, out_shapes=self.m_params['out_shapes'], init_method=self.m_params['out_init'])
 
 	def forward(self, x):
 		"""
@@ -238,7 +242,7 @@ class GenericModel(pl.LightningModule):
 		assert all(len(np.unique(mat.T[0, :]))==1 for mat in shapes), 'first dimension (N) must be identical length in each split for all (feature, label, and target) tensors'
 
 	# Dataloaders:
-	train_dataloader = lambda self: get_dataloader(data=self.flt_train, loss=self.t_params['loss'], window_size=self.t_params['window_size'], window_overlap=True, flatten_features=self.t_params['flatten_features'], batch_size=self.t_params['batch_size'], shuffle=False)
+	train_dataloader = lambda self: get_dataloader(data=self.flt_train, loss=self.t_params['loss'], window_size=self.t_params['window_size'], window_overlap=True, flatten_features=self.t_params['flatten_features'], batch_size=self.t_params['batch_size'], shuffle=self.t_params['shuffle_features'])
 
 	val_dataloader = lambda self: get_dataloader(data=self.flt_val, loss=self.t_params['loss'], window_size=self.t_params['window_size'], window_overlap=True, flatten_features=self.t_params['flatten_features'], batch_size=self.t_params['batch_size'], shuffle=False)
 
