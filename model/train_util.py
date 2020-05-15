@@ -111,7 +111,7 @@ def window_shifted(data, loss, window_size, window_overlap=True, flatten_feature
 			y_new = np.expand_dims(y_new, axis=-1)
 		y = y_new
 	if (flatten_features):
-		x = x.reshape(x.shape[0], int(self.obs_shape[0]*self.obs_shape[1]*self.obs_shape[2]))
+		x = x.reshape(x.shape[0], np.product(x.shape[1:]))
 	return (x, y, z)
 
 def batchify(data, loss, batch_size, shuffle=False):
