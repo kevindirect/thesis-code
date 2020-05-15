@@ -11,7 +11,7 @@ import logging
 import numpy as np
 import pandas as pd
 
-from common_util import JSON_SFX_LEN, NestedDefaultDict, load_json, load_df, is_type, in_debug_mode, benchmark
+from common_util import JSON_SFX_LEN, NestedDefaultDict, load_json, load_df, is_type, pd_rows_key_in, in_debug_mode, benchmark
 from model.common import XG_PROCESS_DIR, XG_DATA_DIR, XG_INDEX_FNAME
 from recon.dataset_util import gen_group
 
@@ -272,6 +272,43 @@ def get_xg_label_target_dfs(asset, xg_l_dir=XG_DATA_DIR +'labels' +sep, xg_t_dir
 		}
 	})
 
+def get_hardcoded_daily_dfs(fd, src):
+	"""
+	Return hardcoded daily freq feature dfs to use in experiments.
+	"""
+	feature_dfs = []
+
+	if (src in ('pba', 'vol')):
+		feature_dfs.append(fd['d'][src]['dlogret']['{src}_dlh_dlogret'.format(src=src)])
+
+	if (src in ('pba', 'vol', 'buzz')):
+		for axe in ('dffd', 'dwrmx', 'dwrod', 'dwrpt', 'dwrzn'):
+			for fdf in fd['d'][src][axe].values():
+				#feature_dfs.append(df_filter_by_keywords(fdf, ('avgPrice', 'high', 'low')))
+				feature_dfs.append(df_filter_by_keywords(fdf, ('avgPrice', 'high', 'low', 'close')))
+
+	if (src in ('nonbuzz',)):
+		for axe in ('dffd', 'dwrxmx'):
+			for fdf in fd['d'][src][axe].values():
+				feature_dfs.append(fdf)
+
+	#return pd.concat(feature_dfs).sort_index(axis=0)
+	return pd.concat(feature_dfs)
+
+def get_hardcoded_hourly_dfs(fd, src):
+	"""
+	Return hardcoded hourly freq feature dfs to use in experiments.
+	"""
+	feature_dfs = []
+
+	if (src in ('pba', 'vol', 'buzz')):
+		for axe in ('hdmx', 'hdod', 'hdpt', 'hdzn', 'hdgau', 'hduni'):
+			for fdf in fd['h'][src][axe].values():
+				feature_dfs.append(df_filter_by_keywords(fdf, ('avgPrice', 'high', 'low', 'close')))
+
+	return pd.concat(feature_dfs)
+
+
 
 """ ********** HELPER FNS ********** """
 def src_in_axefile(axefile, f_store, asset, src):
@@ -288,4 +325,8 @@ def get_lt_df(paths, lt_store):
 	lt_df = pd.concat([lt_store[path] for path in paths], axis=1, keys=[path[-1] for path in paths])
 	lt_df.columns = lt_df.columns.droplevel(-1)
 	return lt_df
+
+def df_filter_by_keywords(fdf, keywords):
+	cols = [col for col in fdf.index.levels[1] if (any(keyword in col for keyword in keywords))]
+	return pd_rows_key_in(fdf, 'id1', cols)
 
