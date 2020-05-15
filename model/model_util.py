@@ -13,7 +13,7 @@ import torch
 import torch.nn as nn
 from torch.nn.utils import weight_norm
 
-from common_util import is_type, assert_has_all_attr, is_valid, isnt
+from common_util import is_type, assert_has_all_attr, is_valid, isnt, pairwise
 from model.common import PYTORCH_ACT_MAPPING
 
 
@@ -155,7 +155,7 @@ class ResidualBlock(nn.Module):
 	"""
 	Wrap a residual connection around a network
 	"""
-	def __init__(self, net, act, init_method='xavier_uniform'):
+	def __init__(self, net, act, downsample_type='linear', init_method='xavier_uniform'):
 		"""
 		Args:
 			net (nn.Module): nn.Module to wrap
@@ -165,9 +165,14 @@ class ResidualBlock(nn.Module):
 		super(ResidualBlock, self).__init__()
 		assert_has_shape_attr(net)
 		self.net = net
-		padding_size = max(int((net.out_shape[1] - net.in_shape[1])//2), 0)
-		self.downsample = init_layer(nn.Conv1d(net.in_shape[0], net.out_shape[0], 1, padding=padding_size, bias=True), act=act, init_method=init_method) if (net.in_shape != net.out_shape) else None
 		self.out_act = PYTORCH_ACT_MAPPING.get(act)()
+		self.downsample = None
+		if (net.in_shape != net.out_shape):
+			if (downsample_type == 'linear'):
+				self.downsample = init_layer(nn.Linear(net.in_shape[0], net.out_shape[0], bias=True), act=act, init_method=init_method)
+			elif (downsample_type == 'conv1d'):
+				padding_size = max(int((net.out_shape[1] - net.in_shape[1])//2), 0)
+				self.downsample = init_layer(nn.Conv1d(net.in_shape[0], net.out_shape[0], 1, padding=padding_size, bias=True), act=act, init_method=init_method)
 
 	def forward(self, x):
 		residual = x if (isnt(self.downsample)) else self.downsample(x)
@@ -234,7 +239,7 @@ class TemporalConvNet(nn.Module):
 			net = nn.Sequential(OrderedDict(layers))
 			net.in_shape, net.out_shape = block_in_shape, block_out_shape
 			#net.in_shape, net.out_shape = layers[0][1].in_shape, layers[-1][1].out_shape
-			blocks.append(('RB_{b}'.format(b=b), ResidualBlock(net, out_act, init_method=out_init)))
+			blocks.append(('RB_{b}'.format(b=b), ResidualBlock(net, out_act, downsample_type='conv1d', init_method=out_init)))
 			block_in_shape = block_out_shape
 		self.out_shape = block_out_shape
 		self.convnet = nn.Sequential(OrderedDict(blocks))
@@ -249,16 +254,22 @@ class OutputLinear(nn.Module):
 	Adds a linear output layer to an arbitrary embedding network.
 	Used for Classification or Regression depending on the loss function used.
 	"""
-	def __init__(self, emb, out_shape=2, init_method='xavier_uniform'):
+	def __init__(self, emb, out_shapes=[2], init_method='xavier_uniform'):
 		"""
 		Args:
 			emb (nn.Module): embedding network to add output layer to
-			out_shape (tuple): output shape of the linear layer, should be C sized
+			out_shapes (list): output shape of the linear layer, if this has multiple numbers it this module will have multiple layers
 		"""
 		super(OutputLinear, self).__init__()
 		assert_has_shape_attr(emb)
 		self.emb = emb
-		self.out = init_layer(nn.Linear(self.emb.out_shape[0], out_shape), act='linear', init_method=init_method)
+		out_net = [init_layer(nn.Linear(self.emb.out_shape[0], out_shapes[0]), act='linear', init_method=init_method)]
+
+		if (len(out_shapes)>1):
+			for lay_in, lay_out in pairwise(out_shapes):
+				out_net.append(init_layer(nn.Linear(lay_in, lay_out), act='linear', init_method=init_method))
+
+		self.out = nn.Sequential(*out_net)
 
 	def forward(self, x):
 		out_embedding = self.emb(x)
