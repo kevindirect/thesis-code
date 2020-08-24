@@ -4,7 +4,6 @@ Kevin Patel
 import sys
 import os
 import logging
-from functools import partial
 from collections import OrderedDict
 from inspect import getfullargspec
 
@@ -25,12 +24,13 @@ class GenericModel(pl.LightningModule):
 
 	Training Hyperparameters:
 		window_size (int): window size to use (number of observations in the last dimension of the input tensor)
-		flatten_features (bool): whether or not to flatten the feature tensor to (N, C)
-			where N is the original first dimension and C is the product of all following dimensions
-		shuffle_features (bool): whether or not to shuffle the feature batches before training, this shuffles
-			the batches among each other it does not shuffle inside each batch
+		feat_dim (int): dimension of resulting feature tensor, if 'None' doesn't reshape
 		epochs (int): number training epochs
-		batch_size (int): training batch size
+		batch_size (int): batch (or batch window) size
+		batch_step_size (int): batch window step size.
+			if this is None DataLoader uses its own default sampler,
+			otherwise WindowBatchSampler is used as batch_sampler
+		train_shuffle (bool): whether or not to shuffle the order of the training batches
 		loss (str): name of loss function to use
 		opt (dict): pytorch optimizer settings
 			name (str): name of optimizer to use
@@ -38,6 +38,8 @@ class GenericModel(pl.LightningModule):
 		sch (dict): pytorch scheduler settings
 			name (str): name of scheduler to use
 			kwargs (dict): any keyword arguments to the scheduler constructor
+		num_workers (int>=0): DataLoader option - number cpu workers to attach
+		pin_memory (bool): DataLoader option - whether to pin memory to gpu
 	"""
 	def __init__(self, model_fn, m_params, t_params, data, class_weights=None):
 		"""
@@ -53,7 +55,8 @@ class GenericModel(pl.LightningModule):
 		# init superclass
 		super(GenericModel, self).__init__()
 		self.hparams = dict_flatten(t_params)				# Pytorch lightning will track/checkpoint parameters saved in hparams instance variable
-		for k, v in filter(lambda i: is_type(i[1], np.ndarray, list, tuple), self.hparams.items()):
+		for k, v in filter(lambda i: is_type(i[1], np.ndarray, list, tuple), \
+			self.hparams.items()):
 			self.hparams[k] = torch.tensor(v).flatten()		# Lists/tuples (and any non-torch primitives) must be stored as flat torch tensors to be tracked by PL
 		self.m_params, self.t_params = m_params, t_params
 		self.hparams['lr'] = self.t_params['opt']['kwargs']['lr']
@@ -70,13 +73,12 @@ class GenericModel(pl.LightningModule):
 		num_channels, num_win, num_win_obs = self.obs_shape						# Feature observation shape - (Channels, Window, Hours / Window Observations)
 		emb_params = {k: v for k, v in self.m_params.items() if (k in getfullargspec(model_fn).args)}
 		emb = model_fn(in_shape=(num_channels, num_win*num_win_obs), **emb_params)
-		self.model = OutputLinear(emb, out_shapes=self.m_params['out_shapes'], init_method=self.m_params['out_init'])
+		if ('out_shapes' in self.m_params.keys() and 'out_init' in self.m_params.keys()):
+			self.model = OutputLinear(emb, out_shapes=self.m_params['out_shapes'], init_method=self.m_params['out_init'])
+		else:
+			self.model = emb
 
-	def forward(self, x):
-		"""
-		Run input through the model.
-		"""
-		return self.model(x)
+	forward = lambda self, x: self.model(x)
 
 	def training_step(self, batch, batch_idx):
 		"""
@@ -236,17 +238,45 @@ class GenericModel(pl.LightningModule):
 		Set self.flt_{train, val, test} by converting (feature_df, label_df, target_df) to numpy dataframes split across train, val, and test subsets.
 		"""
 		self.flt_train, self.flt_val, self.flt_test = zip(*map(pd_to_np_tvt, data))
-		self.obs_shape = (self.flt_train[0].shape[1], self.t_params['window_size'], self.flt_train[0].shape[-1])	# Feature observation shape - (Channels, Window, Hours / Window Observations)
+		self.obs_shape = (self.flt_train[0].shape[1], self.t_params['window_size'], self.flt_train[0].shape[-1])	# Feature observation shape - (Channels, Window, Hours or Window Observations)
 		shapes = np.asarray(tuple(map(lambda tvt: tuple(map(np.shape, tvt)), (self.flt_train, self.flt_val, self.flt_test))))
 		assert all(np.array_equal(a[:, 1:], b[:, 1:]) for a, b in pairwise(shapes)), 'feature, label, target shapes must be identical across splits'
 		assert all(len(np.unique(mat.T[0, :]))==1 for mat in shapes), 'first dimension (N) must be identical length in each split for all (feature, label, and target) tensors'
 
 	# Dataloaders:
-	train_dataloader = lambda self: get_dataloader(data=self.flt_train, loss=self.t_params['loss'], window_size=self.t_params['window_size'], window_overlap=True, flatten_features=self.t_params['flatten_features'], batch_size=self.t_params['batch_size'], shuffle=self.t_params['shuffle_features'])
+	train_dataloader = lambda self: get_dataloader(
+		data=self.flt_train,
+		loss=self.t_params['loss'],
+		window_size=self.t_params['window_size'],
+		window_overlap=True,
+		feat_dim=self.t_params['feat_dim'],
+		batch_size=self.t_params['batch_size'],
+		batch_step_size=self.t_params['batch_step_size'],
+		batch_shuffle=self.t_params['train_shuffle'],
+		num_workers=self.t_params['num_workers'],
+		pin_memory=self.t_params['pin_memory'])
 
-	val_dataloader = lambda self: get_dataloader(data=self.flt_val, loss=self.t_params['loss'], window_size=self.t_params['window_size'], window_overlap=True, flatten_features=self.t_params['flatten_features'], batch_size=self.t_params['batch_size'], shuffle=False)
+	val_dataloader = lambda self: get_dataloader(
+		data=self.flt_val,
+		loss=self.t_params['loss'],
+		window_size=self.t_params['window_size'],
+		window_overlap=True,
+		feat_dim=self.t_params['feat_dim'],
+		batch_size=self.t_params['batch_size'],
+		batch_step_size=self.t_params['batch_step_size'],
+		num_workers=self.t_params['num_workers'],
+		pin_memory=self.t_params['pin_memory'])
 
-	test_dataloader = lambda self: get_dataloader(data=self.flt_test, loss=self.t_params['loss'], window_size=self.t_params['window_size'], window_overlap=True, flatten_features=self.t_params['flatten_features'], batch_size=self.t_params['batch_size'], shuffle=False)
+	test_dataloader = lambda self: get_dataloader(
+		data=self.flt_test,
+		loss=self.t_params['loss'],
+		window_size=self.t_params['window_size'],
+		window_overlap=True,
+		feat_dim=self.t_params['feat_dim'],
+		batch_size=self.t_params['batch_size'],
+		batch_step_size=self.t_params['batch_step_size'],
+		num_workers=self.t_params['num_workers'],
+		pin_memory=self.t_params['pin_memory'])
 
 	@staticmethod
 	def add_model_specific_args(parent_parser, root_dir):  # pragma: no cover

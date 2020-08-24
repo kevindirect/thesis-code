@@ -13,7 +13,7 @@ from torch.nn.utils import weight_norm
 
 from common_util import np_assert_identical_len_dim, window_iter, np_truncate_split_1d, np_truncate_vstack_2d
 from model.common import PYTORCH_ACT_MAPPING
-
+# This module is deprecated in favor of model.train_util
 
 def temporal_preproc(data, window_size, apply_idx=[0]):
 	"""
@@ -91,6 +91,12 @@ def temporal_preproc_3d(data, window_size, apply_idx=[0], flatten=True):
 	Given a tensor (N, C, H):
 		(N, C, H) -> (N-window_size-1, C, window_size, H)
 
+	example with window_size of '2':
+				0 | a b c
+				1 | d e f ---> 1 | a b c d e f
+				2 | g h i      2 | d e f g h i
+				3 | j k l      3 | g h i j k l
+
 	Args:
 		data (tuple): tuple of numpy data with features as first element
 		window_size (int): desired size of window (history length)
@@ -100,6 +106,7 @@ def temporal_preproc_3d(data, window_size, apply_idx=[0], flatten=True):
 	Returns:
 		Tuple of reshaped data
 	"""
+	raise DeprecationWarning('use model.train_util.temporal_preproc_3d instead')
 	np_assert_identical_len_dim(*data)
 	preproc = []
 	for i, d in enumerate(data):
@@ -127,6 +134,7 @@ def stride_preproc_3d(data, window_size):
 	Returns:
 		Tuple of reshaped data
 	"""
+	raise DeprecationWarning('use model.train_util.stride_preproc_3d instead')
 	np_assert_identical_len_dim(*data)
 	preproc = []
 	for i, d in enumerate(data):

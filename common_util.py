@@ -694,8 +694,10 @@ def group_iter(iterable, n=2, fill_value=None):
 	yield from zip_longest(*args, fillvalue=fill_value)
 
 def window_iter(iterable, n=2):
-	"""Returns a sliding window (of width n) over data from the iterable"""
-	"""	s -> (s0,s1,...s[n-1]), (s1,s2,...,sn), ... """
+	"""
+	Returns a sliding window (of width n) over data from the iterable
+		s -> (s0,s1,...s[n-1]), (s1,s2,...,sn), ...
+	"""
 	it = iter(iterable)
 	result = tuple(islice(it, n))
 	if len(result) == n:

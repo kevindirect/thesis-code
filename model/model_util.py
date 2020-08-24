@@ -1,4 +1,5 @@
 """
+Generic model utils
 Kevin Patel
 """
 import sys
@@ -12,6 +13,7 @@ import pandas as pd
 import torch
 import torch.nn as nn
 from torch.nn.utils import weight_norm
+from kymatio.torch import Scattering1D as pyt_wavelet_scatter_1d
 
 from common_util import is_type, assert_has_all_attr, is_valid, isnt, pairwise
 from model.common import PYTORCH_ACT_MAPPING
@@ -21,6 +23,34 @@ from model.common import PYTORCH_ACT_MAPPING
 def assert_has_shape_attr(mod):
 	assert is_type(mod, nn.Module), 'object must be a nn.Module'
 	assert_has_all_attr(mod, 'in_shape', 'out_shape')
+
+def log_prob_sigma(value, loc, log_scale):
+	"""
+	A slightly more stable (not confirmed yet) log prob taking in log_var instead of scale.
+	modified from https://github.com/pytorch/pytorch/blob/2431eac7c011afe42d4c22b8b3f46dedae65e7c0/torch/distributions/normal.py#L65
+	"""
+	var = torch.exp(log_scale * 2)
+	return (
+		-((value - loc) ** 2) / (2 * var) - log_scale - math.log(math.sqrt(2 * math.pi))
+	)
+
+def kl_loss_var(prior_mu, log_var_prior, post_mu, log_var_post):
+	"""
+	Analytical KLD for two gaussians, taking in log_variance instead of scale
+	(given variance=scale**2) for more stable gradients
+
+	For version using scale see:
+		https://github.com/pytorch/pytorch/blob/master/torch/distributions/kl.py#L398
+	"""
+	var_ratio_log = log_var_post - log_var_prior
+	kl_div = (
+		(var_ratio_log.exp() + (post_mu - prior_mu) ** 2) / log_var_prior.exp()
+		- 1.0
+		- var_ratio_log
+	)
+	kl_div = 0.5 * kl_div
+	logger.warning('seems to be an error in kl_loss_var, dont use it')
+	return kl_div
 
 def init_layer(layer, act='linear', init_method='xavier_uniform'):
 	"""
@@ -78,8 +108,29 @@ def get_padding(conv_type, in_width, kernel_size, dilation=1, stride=1):
 		'full': int(dilation*(kernel_size-1))
 	}.get(conv_type, 0)
 
+def pyt_multihead_attention(W, q, k, v):
+	"""
+	Applies Pytorch Multiheaded Attention using existing MultiheadAttention object,
+	assumes q, k, v tensors are shaped (batch, channels, sequence)
+	Modified from: KurochkinAlexey/Recurrent-neural-processes
 
-# ********** MODEL CLASSES **********
+	Args:
+		W (torch.nn.modules.activation.MultiheadAttention): pytorch Multihead attention object
+		q (torch.tensor): query tensor, shaped like (Batch, Channels, Sequence)
+		k (torch.tensor): key tensor, shaped like (Batch, Channels, Sequence)
+		v (torch.tensor): value tensor, shaped like (Batch, Channels, Sequence)
+
+	Returns:
+		torch.tensor shaped like (Batch, Channels, Sequence)
+	"""
+	q = q.permute(2, 0, 1)
+	k = k.permute(2, 0, 1)
+	v = v.permute(2, 0, 1)
+	o = W(q, k, v)[0]
+	return o.permute(1, 2, 0).contiguous()
+
+
+# ********** HELPER MODULES **********
 class Chomp1d(nn.Module):
 	"""
 	This module is meant to guarantee causal convolutions for sequence modelling if the data set hasn't
@@ -102,6 +153,63 @@ class Chomp1d(nn.Module):
 	def forward(self, x):
 		return x[:, :, :-self.chomp_size].contiguous()
 
+class WaveletScatter1d(nn.Module):
+	"""
+	Apply One Dimensional Wavelet Scattering Transform on a vector and return the coefficients as a tuple of torch tensors.
+	Wrapper around the Kymatio library, uses analytic (complex-valued) Morlet Wavelets down to 2nd order wavelets.
+	arXiv:1812.11214
+	"""
+	def __init__(self, input_shape, max_scale_power, fo_wavelets):
+		"""
+		Args:
+			input_shape (tuple): Length of the input vector
+			max_scale_power (int): Maximum base 2 log scale of scattering transform
+			fo_wavelets (int>=1): Number of first order wavelets per octave (2nd order is fixed to 1)
+		"""
+		super(WaveletScatter1d, self).__init__()
+		self.scatter = pyt_wavelet_scatter_1d(max_scale_power, input_shape, fo_wavelets)
+		#self.scatter.cuda()
+		meta = self.scatter.meta()
+		self.orders = [np.where(meta['order'] == i) for i in range(3)]
+
+	def forward(self, x):
+		Sx = self.scatter(x)
+		coefficients = tuple(Sx[order] for order in self.orders)
+		return coefficients
+
+
+# ********** BLOCK MODULES **********
+class OutputLinear(nn.Module):
+	"""
+	Adds a linear output layer or block to the end of an arbitrary embedding network.
+	Used for Classification or Regression depending on the loss function used.
+	"""
+	def __init__(self, emb, out_shapes=[2], init_method='xavier_uniform'):
+		"""
+		Args:
+			emb (nn.Module): embedding network to add output layer to
+			out_shapes (list): output shape of the linear layer, if this has multiple numbers it this module will have multiple layers
+		"""
+		super(OutputLinear, self).__init__()
+		assert_has_shape_attr(emb)
+		self.emb = emb
+		out_net = [init_layer(nn.Linear(self.emb.out_shape[0], out_shapes[0]),
+			act='linear', init_method=init_method)]
+
+		if (len(out_shapes)>1):
+			for lay_in, lay_out in pairwise(out_shapes):
+				out_net.append(init_layer(nn.Linear(lay_in, lay_out), act='linear', init_method=init_method))
+
+		self.out = nn.Sequential(*out_net)
+
+	def forward(self, x):
+		out_embedding = self.emb(x)
+		if (len(self.emb.out_shape) == 1):
+			out_linear = self.out(out_embedding)
+		else:
+			out_linear = self.out(out_embedding[:, :, -1])
+		return out_linear
+
 class TemporalLayer1d(nn.Module):
 	"""
 	Temporal convolutional layer (1d)
@@ -111,7 +219,8 @@ class TemporalLayer1d(nn.Module):
 	RU: ReLu
 	DO: Dropout
 	"""
-	def __init__(self, in_shape, out_shape, act, kernel_size, padding_size, dilation, dropout, init_method='xavier_uniform', chomp=False):
+	def __init__(self, in_shape, out_shape, act, kernel_size, padding_size,
+		dilation, dropout, init_method='xavier_uniform', chomp=False):
 		"""
 		Args:
 			in_shape (tuple): (in_channels, in_width) of the Conv1d layer
@@ -133,7 +242,8 @@ class TemporalLayer1d(nn.Module):
 		modules = nn.ModuleList()
 		modules.append(
 			init_layer(
-				weight_norm(nn.Conv1d(self.in_shape[0], self.out_shape[0], kernel_size, stride=1, padding=padding_size, dilation=dilation, groups=1, bias=True)), # groups=1, groups=n, or groups=self.in_shape[0]
+				weight_norm(nn.Conv1d(self.in_shape[0], self.out_shape[0], kernel_size,
+					stride=1, padding=padding_size, dilation=dilation, groups=1, bias=True)), # groups=1, groups=n, or groups=self.in_shape[0]
 				act=act,
 				init_method=init_method
 			)
@@ -169,10 +279,12 @@ class ResidualBlock(nn.Module):
 		self.downsample = None
 		if (net.in_shape != net.out_shape):
 			if (downsample_type == 'linear'):
-				self.downsample = init_layer(nn.Linear(net.in_shape[0], net.out_shape[0], bias=True), act=act, init_method=init_method)
+				self.downsample = init_layer(nn.Linear(net.in_shape[0], net.out_shape[0], bias=True),
+					act=act, init_method=init_method)
 			elif (downsample_type == 'conv1d'):
 				padding_size = max(int((net.out_shape[1] - net.in_shape[1])//2), 0)
-				self.downsample = init_layer(nn.Conv1d(net.in_shape[0], net.out_shape[0], 1, padding=padding_size, bias=True), act=act, init_method=init_method)
+				self.downsample = init_layer(nn.Conv1d(net.in_shape[0], net.out_shape[0],
+					1, padding=padding_size, bias=True), act=act, init_method=init_method)
 
 	def forward(self, x):
 		residual = x if (isnt(self.downsample)) else self.downsample(x)
@@ -185,6 +297,8 @@ class ResidualBlock(nn.Module):
 			logging.error('residual.shape: {}'.format(residual.shape))
 			sys.exit(0)
 
+
+# ********** MODEL MODULES **********
 class TemporalConvNet(nn.Module):
 	"""
 	Temporal ConvNet
@@ -192,7 +306,10 @@ class TemporalConvNet(nn.Module):
 
 	Note: Receptive Field Size = Number TCN Blocks * Kernel Size * Last Layer Dilation Size
 	"""
-	def __init__(self, in_shape, pad_type='same', num_blocks=1, block_channels=[[5, 3, 5]], block_act='elu', out_act='relu', block_init='xavier_uniform', out_init='xavier_uniform', kernel_sizes=[3], dilation_index='global', global_dropout=.2, no_dropout=[0]):
+	def __init__(self, in_shape, pad_type='same', num_blocks=1,
+		block_channels=[[5, 3, 5]], block_act='elu', out_act='relu',
+		block_init='xavier_uniform', out_init='xavier_uniform', kernel_sizes=[3],
+		dilation_index='global', global_dropout=.2, no_dropout=[0]):
 		"""
 		Args:
 			in_shape (tuple): shape of the network's input tensor, expects a shape (in_channels, in_width)
@@ -228,18 +345,22 @@ class TemporalConvNet(nn.Module):
 					'block': 2**l
 				}.get(dilation_index)
 				padding_size = get_padding(pad_type, layer_in_shape[1], kernel_size, dilation=dilation)
-				dropout = 0 if (i in no_dropout) else global_dropout
-				out_width = TemporalLayer1d.get_out_width(layer_in_shape[1], kernel_size=kernel_size, dilation=dilation, padding_size=padding_size)
+				dropout = 0 if (is_valid(no_dropout) and i in no_dropout) else global_dropout
+				out_width = TemporalLayer1d.get_out_width(layer_in_shape[1],
+					kernel_size=kernel_size, dilation=dilation, padding_size=padding_size)
 				layer_out_shape = (out_channels, out_width)
-				layer = TemporalLayer1d(in_shape=layer_in_shape, out_shape=layer_out_shape, act=block_act, kernel_size=kernel_size, padding_size=padding_size, dilation=dilation, dropout=dropout, init_method=block_init)
-				layers.append(('TL_{b}_{l}'.format(b=b, l=l, i=i), layer))
+				layer = TemporalLayer1d(in_shape=layer_in_shape, out_shape=layer_out_shape,
+					act=block_act, kernel_size=kernel_size, padding_size=padding_size,
+					dilation=dilation, dropout=dropout, init_method=block_init)
+				layers.append(('tl_{b}_{l}'.format(b=b, l=l, i=i), layer))
 				layer_in_shape = layer_out_shape
 				i += 1
 			block_out_shape = layer_out_shape
 			net = nn.Sequential(OrderedDict(layers))
 			net.in_shape, net.out_shape = block_in_shape, block_out_shape
 			#net.in_shape, net.out_shape = layers[0][1].in_shape, layers[-1][1].out_shape
-			blocks.append(('RB_{b}'.format(b=b), ResidualBlock(net, out_act, downsample_type='conv1d', init_method=out_init)))
+			blocks.append(('rb_{b}'.format(b=b), ResidualBlock(net, out_act,
+				downsample_type='conv1d', init_method=out_init)))
 			block_in_shape = block_out_shape
 		self.out_shape = block_out_shape
 		self.convnet = nn.Sequential(OrderedDict(blocks))
@@ -247,35 +368,73 @@ class TemporalConvNet(nn.Module):
 	def forward(self, x):
 		return self.convnet(x)
 
-
-# ********** OUTPUT LAYER WRAPPER CLASSES **********
-class OutputLinear(nn.Module):
+class FFN(nn.Module):
 	"""
-	Adds a linear output layer to an arbitrary embedding network.
-	Used for Classification or Regression depending on the loss function used.
+	MLP Feedforward Network
 	"""
-	def __init__(self, emb, out_shapes=[2], init_method='xavier_uniform'):
-		"""
-		Args:
-			emb (nn.Module): embedding network to add output layer to
-			out_shapes (list): output shape of the linear layer, if this has multiple numbers it this module will have multiple layers
-		"""
-		super(OutputLinear, self).__init__()
-		assert_has_shape_attr(emb)
-		self.emb = emb
-		out_net = [init_layer(nn.Linear(self.emb.out_shape[0], out_shapes[0]), act='linear', init_method=init_method)]
+	def __init__(self, in_shape, out_shapes=[128, 128, 128], act='relu',
+		init_method='xavier_uniform'):
+		super(FFN, self).__init__()
+		ffn_layers = []
+		in_layer_shape = np.product(in_shape)
+		for i, out_layer_shape in enumerate(out_shapes):
+			ffn_layers.append(('ff_{i}'.format(i=i), init_layer(nn.Linear(in_layer_shape, out_layer_shape),
+				act=act, init_method=init_method)))
+			ffn_layers.append(('af_{i}'.format(i=i), PYTORCH_ACT_MAPPING.get(act)()))
+			in_layer_shape = out_layer_shape
 
-		if (len(out_shapes)>1):
-			for lay_in, lay_out in pairwise(out_shapes):
-				out_net.append(init_layer(nn.Linear(lay_in, lay_out), act='linear', init_method=init_method))
-
-		self.out = nn.Sequential(*out_net)
+		self.ffn = nn.Sequential(OrderedDict(ffn_layers))
 
 	def forward(self, x):
-		out_embedding = self.emb(x)
-		if (len(self.emb.out_shape) == 1):
-			out_linear = self.out(out_embedding)
-		else:
-			out_linear = self.out(out_embedding[:, :, -1])
-		return out_linear
+		return self.ffn(x)
+
+class MultichannelFFN(nn.Module):
+	"""
+	Multi channel MLP Feedforward Network
+	Cretes a FFN over independent channels (analagous to torch.nn.conv1d)
+	"""
+	def __init__(self, in_shape, out_shapes=[128, 128, 128], act='relu',
+		init_method='xavier_uniform'):
+		"""
+		Args:
+			in_shape (tuple): shape of the network's input tensor, expects a shape (in_channels, in_width)
+		"""
+		super(MultichannelFFN, self).__init__()
+		self.channel_ffn = [FFN(in_shape[1], out_shapes=out_shapes) for i in range(in_shape[0])]
+
+	def forward(self, x):
+		# TODO - iterate across channels and apply channel_ffn[i] to each and concatenate output
+		return self.channel_ffn(x)
+
+class AE(nn.Module):
+	"""
+	MLP Autoencoder
+	"""
+	def __init__(self, in_shape, out_shapes=[128, 64, 32, 16], act='relu',
+		init_method='xavier_uniform'):
+		super(AE, self).__init__()
+		encoder_layers = []
+		in_ae = np.product(in_shape)
+		in_lay_shape = in_ae
+		for i, out_lay_shape in enumerate(out_shapes):
+			encoder_layers.append(('ff_{i}'.format(i=i), init_layer(nn.Linear(in_lay_shape, out_lay_shape),
+				act='linear', init_method=init_method)))
+			encoder_layers.append(('af_{i}'.format(i=i), PYTORCH_ACT_MAPPING.get(act)()))
+			in_lay_shape = out_lay_shape
+
+		decoder_layers = []
+		in_lay_shape = in_shape
+		for i, (in_lay_shape, out_lay_shape) in enumerate(pairwise(reversed(out_shapes))):
+			decoder_layers.append(('ff_{i}'.format(i=i), init_layer(nn.Linear(in_lay_shape, out_lay_shape),
+				act='linear', init_method=init_method)))
+			decoder_layers.append(('af_{i}'.format(i=i), PYTORCH_ACT_MAPPING.get(act)()))
+		decoder_layers.append(('ff_{i}'.format(i=len(out_shapes)-1),
+			init_layer(nn.Linear(out_shapes[0], in_ae), act='linear', init_method=init_method)))
+		decoder_layers.append(('af_{i}'.format(i=len(out_shapes)-1), PYTORCH_ACT_MAPPING.get(act)()))
+
+		self.encoder = nn.Sequential(OrderedDict(encoder_layers))
+		self.decoder = nn.Sequential(OrderedDict(decoder_layers))
+
+	def forward(self, x):
+		return self.decoder(self.encoder(x))
 

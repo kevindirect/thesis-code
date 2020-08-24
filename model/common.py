@@ -118,7 +118,7 @@ TENSORFLOW_LOSS_MAPPING = {
 """
 
 # PACKAGE DEFAULTS
-dum = 0
+dum = None
 default_ray_config = {
 	"init": {
 		"num_cpus": 8,
