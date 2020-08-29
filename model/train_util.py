@@ -179,7 +179,7 @@ def window_shifted(data, loss, window_size, window_overlap=True, feat_dim=None):
 	elif (len(win_shifted) == 3):
 		x, y, z = win_shifted
 
-		if (loss in ('bce', 'bcel', 'ce', 'nll')):
+		if (loss in ('clf', 'bce', 'bcel', 'ce', 'nll')):
 			y_new = np.sum(y, axis=(1, 2), keepdims=False)		# Sum label matrices to scalar values
 			if (y.shape[1] > 1):
 				y_new += y.shape[1]				# Shift to range [0, C-1]
@@ -209,6 +209,7 @@ class WindowBatchSampler(torch.utils.data.Sampler):
 	"""
 
 	def __init__(self, data_source, batch_size=128, batch_step_size=1, batch_shuffle=False):
+		super().__init__(data_source)
 		self.data_source = data_source
 		self.batch_size = batch_size
 		self.batch_step_size = batch_step_size
@@ -248,9 +249,9 @@ def batchify(data, loss, batch_size, shuffle=False, batch_step_size=None,
 		torch.DataLoader
 	"""
 	f = torch.tensor(data[0], dtype=torch.float32, requires_grad=True)
-	if (loss in ('bce', 'bcel', 'mae', 'mse')):
+	if (loss in ('reg', 'bce', 'bcel', 'mae', 'mse')):
 		l = torch.tensor(data[1], dtype=torch.float32, requires_grad=False)
-	elif (loss in ('ce', 'nll')):
+	elif (loss in ('clf', 'ce', 'nll')):
 		l = torch.tensor(data[1], dtype=torch.int64, requires_grad=False).squeeze()
 	t = torch.tensor(data[2], dtype=torch.float32, requires_grad=False)
 	ds = TensorDataset(f, l, t)

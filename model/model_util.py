@@ -34,24 +34,6 @@ def log_prob_sigma(value, loc, log_scale):
 		-((value - loc) ** 2) / (2 * var) - log_scale - math.log(math.sqrt(2 * math.pi))
 	)
 
-def kl_loss_var(prior_mu, log_var_prior, post_mu, log_var_post):
-	"""
-	Analytical KLD for two gaussians, taking in log_variance instead of scale
-	(given variance=scale**2) for more stable gradients
-
-	For version using scale see:
-		https://github.com/pytorch/pytorch/blob/master/torch/distributions/kl.py#L398
-	"""
-	var_ratio_log = log_var_post - log_var_prior
-	kl_div = (
-		(var_ratio_log.exp() + (post_mu - prior_mu) ** 2) / log_var_prior.exp()
-		- 1.0
-		- var_ratio_log
-	)
-	kl_div = 0.5 * kl_div
-	logger.warning('seems to be an error in kl_loss_var, dont use it')
-	return kl_div
-
 def init_layer(layer, act='linear', init_method='xavier_uniform'):
 	"""
 	Initialize layer weights
@@ -147,7 +129,7 @@ class Chomp1d(nn.Module):
 		Args:
 			chomp_size (int): size of input to cut off the right side of the input
 		"""
-		super(Chomp1d, self).__init__()
+		super().__init__()
 		self.chomp_size = chomp_size
 
 	def forward(self, x):
@@ -166,7 +148,7 @@ class WaveletScatter1d(nn.Module):
 			max_scale_power (int): Maximum base 2 log scale of scattering transform
 			fo_wavelets (int>=1): Number of first order wavelets per octave (2nd order is fixed to 1)
 		"""
-		super(WaveletScatter1d, self).__init__()
+		super().__init__()
 		self.scatter = pyt_wavelet_scatter_1d(max_scale_power, input_shape, fo_wavelets)
 		#self.scatter.cuda()
 		meta = self.scatter.meta()
@@ -190,7 +172,7 @@ class OutputLinear(nn.Module):
 			emb (nn.Module): embedding network to add output layer to
 			out_shapes (list): output shape of the linear layer, if this has multiple numbers it this module will have multiple layers
 		"""
-		super(OutputLinear, self).__init__()
+		super().__init__()
 		assert_has_shape_attr(emb)
 		self.emb = emb
 		out_net = [init_layer(nn.Linear(self.emb.out_shape[0], out_shapes[0]),
@@ -237,7 +219,7 @@ class TemporalLayer1d(nn.Module):
 				right (temporally recent) end of the data.
 			init_method (str): layer weight initialization method
 		"""
-		super(TemporalLayer1d, self).__init__()
+		super().__init__()
 		self.in_shape, self.out_shape = in_shape, out_shape
 		modules = nn.ModuleList()
 		modules.append(
@@ -272,7 +254,7 @@ class ResidualBlock(nn.Module):
 			act (str): activation function
 			init_method (str): layer weight initialization method
 		"""
-		super(ResidualBlock, self).__init__()
+		super().__init__()
 		assert_has_shape_attr(net)
 		self.net = net
 		self.out_act = PYTORCH_ACT_MAPPING.get(act)()
@@ -325,7 +307,7 @@ class TemporalConvNet(nn.Module):
 			global_dropout (float): dropout probability of an element to be zeroed for any layer not in no_dropout
 			no_dropout (list): list of global layer indices to disable dropout on
 		"""
-		super(TemporalConvNet, self).__init__()
+		super().__init__()
 		assert num_blocks >= len(block_channels), "list of block shapes have to be less than or equal to the number of blocks"
 		assert num_blocks % len(block_channels) == 0, "number of block shapes must equally subdivide number of blocks"
 		assert len(kernel_sizes) == len(block_channels), "number of kernels must be the same as the number of block channels"
@@ -374,7 +356,7 @@ class FFN(nn.Module):
 	"""
 	def __init__(self, in_shape, out_shapes=[128, 128, 128], act='relu',
 		init_method='xavier_uniform'):
-		super(FFN, self).__init__()
+		super().__init__()
 		ffn_layers = []
 		in_layer_shape = np.product(in_shape)
 		for i, out_layer_shape in enumerate(out_shapes):
@@ -399,7 +381,7 @@ class MultichannelFFN(nn.Module):
 		Args:
 			in_shape (tuple): shape of the network's input tensor, expects a shape (in_channels, in_width)
 		"""
-		super(MultichannelFFN, self).__init__()
+		super().__init__()
 		self.channel_ffn = [FFN(in_shape[1], out_shapes=out_shapes) for i in range(in_shape[0])]
 
 	def forward(self, x):
@@ -412,7 +394,7 @@ class AE(nn.Module):
 	"""
 	def __init__(self, in_shape, out_shapes=[128, 64, 32, 16], act='relu',
 		init_method='xavier_uniform'):
-		super(AE, self).__init__()
+		super().__init__()
 		encoder_layers = []
 		in_ae = np.product(in_shape)
 		in_lay_shape = in_ae

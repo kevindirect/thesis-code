@@ -5,14 +5,13 @@ import sys
 import os
 import logging
 from collections import OrderedDict
-from inspect import getfullargspec
 
 import numpy as np
 import pandas as pd
 import torch
 import pytorch_lightning as pl
 
-from common_util import is_type, assert_has_all_attr, is_valid, is_type, isnt, dict_flatten, pairwise, np_at_least_nd, np_assert_identical_len_dim
+from common_util import is_type, is_valid, isnt
 from model.common import PYTORCH_ACT_MAPPING, PYTORCH_LOSS_MAPPING, PYTORCH_OPT_MAPPING, PYTORCH_SCH_MAPPING
 from model.pl_generic import GenericModel
 
@@ -57,36 +56,12 @@ class NP(GenericModel):
 			data (tuple): tuple of pd.DataFrames
 			class_weights (dict): class weighting scheme
 		"""
-		# init superclass
-		super(NP, self).__init__(model_fn, m_params, t_params, data, class_weights=None)
-		# self.hparams = dict_flatten(t_params)				# Pytorch lightning will track/checkpoint parameters saved in hparams instance variable
-		# for k, v in filter(lambda i: is_type(i[1], np.ndarray, list, tuple), \
-		# 	self.hparams.items()):
-		# 	self.hparams[k] = torch.tensor(v).flatten()		# Lists/tuples (and any non-torch primitives) must be stored as flat torch tensors to be tracked by PL
-		# self.m_params, self.t_params = m_params, t_params
-		# self.hparams['lr'] = self.t_params['opt']['kwargs']['lr']
-		# loss_fn = PYTORCH_LOSS_MAPPING.get(self.t_params['loss'])
-		# self.loss = loss_fn() if (isnt(class_weights)) else loss_fn(weight=class_weights)
-		# self.__setup_data__(data)
-		# self.__build_model__(model_fn)
-		## if you specify an example input, the summary will show input/output for each layer
-		#self.example_input_array = torch.rand(5, 20)
-
-	# def __build_model__(self, model_fn):
-	# 	"""
-	# 	"""
-	# 	num_channels, num_win, num_win_obs = self.obs_shape						# Feature observation shape - (Channels, Window, Hours / Window Observations)
-	# 	emb_params = {k: v for k, v in self.m_params.items() if (k in getfullargspec(model_fn).args)}
-	# 	emb = model_fn(in_shape=(num_channels, num_win*num_win_obs), **emb_params)
-	# 	if ('out_shapes' in self.m_params.keys() and 'out_init' in self.m_params.keys()):
-	# 		self.model = OutputLinear(emb, out_shapes=self.m_params['out_shapes'], init_method=self.m_params['out_init'])
-	# 	else:
-	# 		self.model = emb
+		super().__init__(model_fn, m_params, t_params, data, class_weights=None)
 
 	def forward(self, context_x, context_y, target_x, target_y=None, \
 		train_mode=False, sample_latent=True):
 		"""
-		Run input through the model.
+		Run input through the neural process.
 		"""
 		return self.model(context_x, context_y, target_x, target_y, \
 			train_mode=train_mode, sample_latent=sample_latent)
@@ -98,20 +73,28 @@ class NP(GenericModel):
 		x, y, z = batch
 		ctx = self.t_params['batch_size'] // 2 # split batch into context/target
 		y_hat, losses = self.forward(x[:ctx], y[:ctx], x[ctx:], y[ctx:], train_mode=True)
-		loss_val = losses['loss']		# TODO change loss calculation
+		train_loss = losses['loss']
+		train_nll = losses['nll']
+		train_kldiv = losses['kldiv']
 
 		# in DP mode (default) make sure if result is scalar, there's another dim in the beginning
 		if (self.trainer.use_dp or self.trainer.use_ddp2):
-			loss_val = loss_val.unsqueeze(0)
+			train_loss = train_loss.unsqueeze(0)
+			train_nll = train_nll.unsqueeze(0)
+			train_kldiv = train_kldiv.unsqueeze(0)
 
-		tqdm_dict = {'train_loss': loss_val}
+		tqdm_dict = {
+			'train_loss': train_loss,
+			'train_nll': train_nll,
+			'train_kldiv': train_kldiv
+		}
 		output = OrderedDict({
-			'loss': loss_val,
 			'progress_bar': tqdm_dict,
-			'log': tqdm_dict
+			'log': tqdm_dict,
+			'loss': train_loss
 		})
 
-		return output # can also return a scalar (loss val) instead of a dict
+		return output # can also return a scalar (train_loss) instead of a dict
 
 	def validation_step(self, batch, batch_idx):
 		"""
@@ -120,7 +103,9 @@ class NP(GenericModel):
 		x, y, z = batch
 		ctx = self.t_params['batch_size'] // 2 # split batch into context/target
 		y_hat, losses = self.forward(x[:ctx], y[:ctx], x[ctx:], y[ctx:], train_mode=False)
-		loss_val = losses['loss']		# TODO change loss calculation
+		val_loss = losses['loss']		# TODO change loss calculation
+		val_nll = losses['nll']
+		val_kldiv = losses['kldiv']
 
 		# # acc
 		# labels_hat = torch.argmax(y_hat, dim=1)
@@ -128,15 +113,19 @@ class NP(GenericModel):
 		# val_acc = torch.tensor(val_acc)
 
 		# if (self.on_gpu):
-		# 	val_acc = val_acc.cuda(loss_val.device.index)
+		# 	val_acc = val_acc.cuda(val_loss.device.index)
 
 		# in DP mode (default) make sure if result is scalar, there's another dim in the beginning
 		if (self.trainer.use_dp or self.trainer.use_ddp2):
-			loss_val = loss_val.unsqueeze(0)
+			val_loss = val_loss.unsqueeze(0)
+			val_nll = val_nll.unsqueeze(0)
+			val_kldiv = val_kldiv.unsqueeze(0)
 			# val_acc = val_acc.unsqueeze(0)
 
 		output = OrderedDict({
-			'val_loss': loss_val,
+			'val_loss': val_loss,
+			'val_nll': val_nll,
+			'val_kldiv': val_kldiv,
 			# 'val_acc': val_acc,
 		})
 
@@ -152,29 +141,47 @@ class NP(GenericModel):
 		# return torch.stack(outputs).mean()
 
 		val_loss_mean = 0
+		val_nll_mean = 0
+		val_kldiv_mean = 0
 		val_acc_mean = 0
 		for output in outputs:
 			val_loss = output['val_loss']
+			val_nll = output['val_nll']
+			val_kldiv = output['val_kldiv']
 
 			# reduce manually when using dp
 			if (self.trainer.use_dp or self.trainer.use_ddp2):
 				val_loss = torch.mean(val_loss)
+				val_nll = torch.mean(val_nll)
+				val_kldiv = torch.mean(val_kldiv)
 			val_loss_mean += val_loss
+			val_nll_mean += val_nll
+			val_kldiv_mean += val_kldiv
 
 			# # reduce manually when using dp
 			# val_acc = output['val_acc']
 			# if (self.trainer.use_dp or self.trainer.use_ddp2):
 			# 	val_acc = torch.mean(val_acc)
-
 			# val_acc_mean += val_acc
 
 		val_loss_mean /= len(outputs)
+		val_nll_mean /= len(outputs)
+		val_kldiv_mean /= len(outputs)
 		# val_acc_mean /= len(outputs)
+
 		tqdm_dict = {
 			'val_loss': val_loss_mean,
+			'val_nll': val_nll_mean,
+			'val_kldiv': val_kldiv_mean,
 		#	'val_acc': val_acc_mean
 		}
-		result = {'progress_bar': tqdm_dict, 'log': tqdm_dict, 'val_loss': val_loss_mean}
+		result = {
+			'progress_bar': tqdm_dict,
+			'log': tqdm_dict,
+			'val_loss': val_loss_mean,
+			'val_nll': val_nll_mean,
+			'val_kldiv': val_kldiv_mean
+		}
 		return result
 
 	def test_step(self, batch, batch_idx):
@@ -184,7 +191,9 @@ class NP(GenericModel):
 		x, y, z = batch
 		ctx = self.t_params['batch_size'] // 2 # split batch into context/target
 		y_hat, losses = self.forward(x[:ctx], y[:ctx], x[ctx:], y[ctx:], train_mode=False)
-		loss_val = losses['loss']		# TODO change loss calculation
+		test_loss = losses['loss']		# TODO change loss calculation
+		test_nll = losses['nll']
+		test_kldiv = losses['kldiv']
 
 		# # acc
 		# labels_hat = torch.argmax(y_hat, dim=1)
@@ -192,15 +201,19 @@ class NP(GenericModel):
 		# test_acc = torch.tensor(test_acc)
 
 		# if (self.on_gpu):
-		# 	test_acc = test_acc.cuda(loss_test.device.index)
+		# 	test_acc = test_acc.cuda(test_loss.device.index)
 
 		# in DP mode (default) make sure if result is scalar, there's another dim in the beginning
 		if (self.trainer.use_dp or self.trainer.use_ddp2):
-			loss_test = loss_test.unsqueeze(0)
+			test_loss = test_loss.unsqueeze(0)
+			test_nll = test_nll.unsqueeze(0)
+			test_kldiv = test_kldiv.unsqueeze(0)
 			# test_acc = test_acc.unsqueeze(0)
 
 		output = OrderedDict({
-			'test_loss': loss_test,
+			'test_loss': test_loss,
+			'test_nll': test_nll,
+			'test_kldiv': test_kldiv,
 			# 'test_acc': test_acc,
 		})
 
@@ -216,28 +229,46 @@ class NP(GenericModel):
 		# return torch.stack(outputs).mean()
 
 		test_loss_mean = 0
+		test_nll_mean = 0
+		test_kldiv_mean = 0
 		# test_acc_mean = 0
 		for output in outputs:
 			test_loss = output['test_loss']
+			test_nll = output['test_nll']
+			test_kldiv = output['test_kldiv']
 
 			# reduce manually when using dp
 			if (self.trainer.use_dp or self.trainer.use_ddp2):
 				test_loss = torch.mean(test_loss)
+				test_nll = torch.mean(test_nll)
+				test_kldiv = torch.mean(test_kldiv)
 			test_loss_mean += test_loss
+			test_nll_mean += test_nll
+			test_kldiv_mean += test_kldiv
 
 			# # reduce manually when using dp
 			# test_acc = output['test_acc']
 			# if (self.trainer.use_dp or self.trainer.use_ddp2):
 			# 	test_acc = torch.mean(test_acc)
-
 			# test_acc_mean += test_acc
 
 		test_loss_mean /= len(outputs)
+		test_nll_mean /= len(outputs)
+		test_kldiv_mean /= len(outputs)
 		# test_acc_mean /= len(outputs)
+
 		tqdm_dict = {
 			'test_loss': test_loss_mean,
+			'test_nll': test_nll_mean,
+			'test_kldiv': test_kldiv_mean,
 			# 'test_acc': test_acc_mean
 		}
-		result = {'progress_bar': tqdm_dict, 'log': tqdm_dict, 'test_loss': test_loss_mean}
+		result = {
+			'progress_bar': tqdm_dict,
+			'log': tqdm_dict,
+			'test_loss': test_loss_mean,
+			'test_nll': test_nll_mean,
+			'test_kldiv': test_kldiv_mean,
+		}
 		return result
 

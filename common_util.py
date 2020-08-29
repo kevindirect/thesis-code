@@ -18,6 +18,7 @@ import math
 import numbers
 import operator
 import getopt
+import inspect
 import collections.abc
 from copy import deepcopy
 from collections import Mapping
@@ -683,6 +684,23 @@ def dcompose(*fns):
 		return val
 
 	return dcomposed
+
+def fn_default_args(fn):
+	"""
+	Return the default argument values of a function.
+	Source: https://stackoverflow.com/questions/12627118/get-a-function-arguments-default-value
+
+	Args:
+		fn (function): function to get default arguments of
+
+	Returns:
+		dict of default arguments and values
+	"""
+	signature = inspect.signature(fn)
+	return {
+		k: v.default for k, v in signature.parameters.items()
+			if (v.default is not inspect.Parameter.empty)
+	}
 
 """Iterator"""
 def group_iter(iterable, n=2, fill_value=None):

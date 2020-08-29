@@ -31,7 +31,9 @@ class GenericModel(pl.LightningModule):
 			if this is None DataLoader uses its own default sampler,
 			otherwise WindowBatchSampler is used as batch_sampler
 		train_shuffle (bool): whether or not to shuffle the order of the training batches
-		loss (str): name of loss function to use
+		loss (str): name of the loss function to use,
+			'clf' (classsifer) and 'reg' (regressor) are generic 'dummy losses' that only affect how
+			the labels/targets are preprocessed (look at model.train_util.py)
 		opt (dict): pytorch optimizer settings
 			name (str): name of optimizer to use
 			kwargs (dict): any keyword arguments to the optimizer constructor
@@ -53,15 +55,16 @@ class GenericModel(pl.LightningModule):
 			class_weights (dict): class weighting scheme
 		"""
 		# init superclass
-		super(GenericModel, self).__init__()
+		super().__init__()
 		self.hparams = dict_flatten(t_params)				# Pytorch lightning will track/checkpoint parameters saved in hparams instance variable
 		for k, v in filter(lambda i: is_type(i[1], np.ndarray, list, tuple), \
 			self.hparams.items()):
 			self.hparams[k] = torch.tensor(v).flatten()		# Lists/tuples (and any non-torch primitives) must be stored as flat torch tensors to be tracked by PL
 		self.m_params, self.t_params = m_params, t_params
 		self.hparams['lr'] = self.t_params['opt']['kwargs']['lr']
-		loss_fn = PYTORCH_LOSS_MAPPING.get(self.t_params['loss'])
-		self.loss = loss_fn() if (isnt(class_weights)) else loss_fn(weight=class_weights)
+		loss_fn = PYTORCH_LOSS_MAPPING.get(self.t_params['loss'], None)
+		if (is_valid(loss_fn)):
+			self.loss = loss_fn() if (isnt(class_weights)) else loss_fn(weight=class_weights)
 		self.__setup_data__(data)
 		self.__build_model__(model_fn)
 		## if you specify an example input, the summary will show input/output for each layer
@@ -86,17 +89,19 @@ class GenericModel(pl.LightningModule):
 		"""
 		x, y, z = batch
 		y_hat = self.forward(x)
-		loss_val = self.loss(y_hat, y)
+		train_loss = self.loss(y_hat, y)
 
 		# in DP mode (default) make sure if result is scalar, there's another dim in the beginning
 		if (self.trainer.use_dp or self.trainer.use_ddp2):
-			loss_val = loss_val.unsqueeze(0)
+			train_loss = train_loss.unsqueeze(0)
 
-		tqdm_dict = {'train_loss': loss_val}
+		tqdm_dict = {
+			'train_loss': train_loss
+		}
 		output = OrderedDict({
-			'loss': loss_val,
 			'progress_bar': tqdm_dict,
-			'log': tqdm_dict
+			'log': tqdm_dict,
+			'loss': train_loss
 		})
 
 		return output # can also return a scalar (loss val) instead of a dict
@@ -107,7 +112,7 @@ class GenericModel(pl.LightningModule):
 		"""
 		x, y, z = batch
 		y_hat = self.forward(x)
-		loss_val = self.loss(y_hat, y)
+		val_loss = self.loss(y_hat, y)
 
 		# acc
 		labels_hat = torch.argmax(y_hat, dim=1)
@@ -115,15 +120,15 @@ class GenericModel(pl.LightningModule):
 		val_acc = torch.tensor(val_acc)
 
 		if (self.on_gpu):
-			val_acc = val_acc.cuda(loss_val.device.index)
+			val_acc = val_acc.cuda(val_loss.device.index)
 
 		# in DP mode (default) make sure if result is scalar, there's another dim in the beginning
 		if (self.trainer.use_dp or self.trainer.use_ddp2):
-			loss_val = loss_val.unsqueeze(0)
+			val_loss = val_loss.unsqueeze(0)
 			val_acc = val_acc.unsqueeze(0)
 
 		output = OrderedDict({
-			'val_loss': loss_val,
+			'val_loss': val_loss,
 			'val_acc': val_acc,
 		})
 
@@ -157,8 +162,15 @@ class GenericModel(pl.LightningModule):
 
 		val_loss_mean /= len(outputs)
 		val_acc_mean /= len(outputs)
-		tqdm_dict = {'val_loss': val_loss_mean, 'val_acc': val_acc_mean}
-		result = {'progress_bar': tqdm_dict, 'log': tqdm_dict, 'val_loss': val_loss_mean}
+		tqdm_dict = {
+			'val_loss': val_loss_mean,
+			'val_acc': val_acc_mean
+		}
+		result = {
+			'progress_bar': tqdm_dict,
+			'log': tqdm_dict,
+			'val_loss': val_loss_mean
+		}
 		return result
 
 	def test_step(self, batch, batch_idx):
@@ -167,7 +179,7 @@ class GenericModel(pl.LightningModule):
 		"""
 		x, y, z = batch
 		y_hat = self.forward(x)
-		loss_test = self.loss(y_hat, y)
+		test_loss= self.loss(y_hat, y)
 
 		# acc
 		labels_hat = torch.argmax(y_hat, dim=1)
@@ -175,15 +187,15 @@ class GenericModel(pl.LightningModule):
 		test_acc = torch.tensor(test_acc)
 
 		if (self.on_gpu):
-			test_acc = test_acc.cuda(loss_test.device.index)
+			test_acc = test_acc.cuda(test_loss.device.index)
 
 		# in DP mode (default) make sure if result is scalar, there's another dim in the beginning
 		if (self.trainer.use_dp or self.trainer.use_ddp2):
-			loss_test = loss_test.unsqueeze(0)
+			test_loss= test_loss.unsqueeze(0)
 			test_acc = test_acc.unsqueeze(0)
 
 		output = OrderedDict({
-			'test_loss': loss_test,
+			'test_loss': test_loss,
 			'test_acc': test_acc,
 		})
 
@@ -217,8 +229,15 @@ class GenericModel(pl.LightningModule):
 
 		test_loss_mean /= len(outputs)
 		test_acc_mean /= len(outputs)
-		tqdm_dict = {'test_loss': test_loss_mean, 'test_acc': test_acc_mean}
-		result = {'progress_bar': tqdm_dict, 'log': tqdm_dict, 'test_loss': test_loss_mean}
+		tqdm_dict = {
+			'test_loss': test_loss_mean,
+			'test_acc': test_acc_mean
+		}
+		result = {
+			'progress_bar': tqdm_dict,
+			'log': tqdm_dict,
+			'test_loss': test_loss_mean
+		}
 		return result
 
 	def configure_optimizers(self):
