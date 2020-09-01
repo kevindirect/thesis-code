@@ -15,7 +15,7 @@ import torch.nn as nn
 from torch.nn.utils import weight_norm
 from kymatio.torch import Scattering1D as pyt_wavelet_scatter_1d
 
-from common_util import is_type, assert_has_all_attr, is_valid, isnt, pairwise
+from common_util import is_type, is_valid, isnt, list_wrap, assert_has_all_attr, pairwise
 from model.common import PYTORCH_ACT_MAPPING
 
 
@@ -288,49 +288,66 @@ class TemporalConvNet(nn.Module):
 
 	Note: Receptive Field Size = Number TCN Blocks * Kernel Size * Last Layer Dilation Size
 	"""
-	def __init__(self, in_shape, pad_type='same', num_blocks=1,
-		block_channels=[[5, 3, 5]], block_act='elu', out_act='relu',
-		block_init='xavier_uniform', out_init='xavier_uniform', kernel_sizes=[3],
-		dilation_index='global', global_dropout=.2, no_dropout=[0]):
+	def __init__(self, in_shape, block_channels=[[5, 3, 5]], num_blocks=1,
+		kernel_sizes=3, dropouts=0.0, global_dropout=.5, global_dilation=True,
+		block_act='elu', out_act='relu', block_init='xavier_uniform',
+		out_init='xavier_uniform', pad_type='same'):
 		"""
 		Args:
-			in_shape (tuple): shape of the network's input tensor, expects a shape (in_channels, in_width)
-			pad_type (str): padding method to use ('same' or 'full')
-			num_blocks (int): number of residual blocks, each block consists of a tcn network and residual connection
-			block_channels (list * list): cnn channel sizes in each block, or individual channel sizes per block in sequence
+			in_shape (tuple): shape of the network's input tensor,
+				expects a shape (in_channels, in_width)
+			block_channels (list * list): cnn channel sizes in each block,
+				or individual channel sizes per block in sequence
+			num_blocks (int): number of residual blocks,
+				each block consists of a tcn network and residual connection
+			kernel_sizes (int|list): list of CNN kernel sizes,
+				if a list its length must be either 1 or len(block_channels)
+			dropouts (float|list): dropout probability ordered by global index
+				if a single floating point value, sets dropout for first layer only
+				if None, uses global_dropout everywhere
+				if the list size doesn't match the network layer count,
+					uses global_dropout for all layers past the list size.
+				if a particular element is None, uses global_dropout at that index
+			global_dropout (float): default dropout probability
+			global_dilation (bool): whether to use global or block indexed dilation
 			block_act (str): activation function of each layer in each block
 			out_act (str): output activation of each block
-			block_init (str): layer weight initialization method of each layer in each block
-			out_init (str): layer weight initialization method of each block
-			kernel_sizes (list): list of CNN kernel sizes, must be the same length as block_channels
-			dilation_index ('global'|'block'): what index to make each layer dilation a function of
-			global_dropout (float): dropout probability of an element to be zeroed for any layer not in no_dropout
-			no_dropout (list): list of global layer indices to disable dropout on
+			block_init (str): hidden layer weight initialization method
+			out_init (str): output layer weight initialization method
+			pad_type ('same'|'full'): padding method to use
 		"""
 		super().__init__()
-		assert num_blocks >= len(block_channels), "list of block shapes have to be less than or equal to the number of blocks"
-		assert num_blocks % len(block_channels) == 0, "number of block shapes must equally subdivide number of blocks"
-		assert len(kernel_sizes) == len(block_channels), "number of kernels must be the same as the number of block channels"
-
 		self.in_shape = block_in_shape = in_shape
+		kernel_sizes, dropouts = list_wrap(kernel_sizes), list_wrap(dropouts)
 		blocks = []
 		i = 0
+
+		assert num_blocks >= len(block_channels), \
+			'list of block shapes have to be less than or equal to the number of blocks'
+		assert num_blocks % len(block_channels) == 0, \
+			'number of block shapes must equally subdivide number of blocks'
+		assert len(kernel_sizes) == len(block_channels), \
+			'number of kernels must be the same as the number of block channels'
+
 		for b in range(num_blocks):
 			block_idx = b % len(block_channels)
 			block_channel_list, kernel_size = block_channels[block_idx], kernel_sizes[block_idx] # XXX - param for residual connection from in_shape to all nodes?
-
 			layer_in_shape = block_in_shape
 			layers = []
+
 			for l, out_channels in enumerate(block_channel_list):
 				dilation = {
-					'global': 2**i,
-					'block': 2**l
-				}.get(dilation_index)
-				padding_size = get_padding(pad_type, layer_in_shape[1], kernel_size, dilation=dilation)
-				dropout = 0 if (is_valid(no_dropout) and i in no_dropout) else global_dropout
+					True: 2**i,
+					False: 2**l
+				}.get(global_dilation)
+				padding_size = get_padding(pad_type, layer_in_shape[1], kernel_size,
+					dilation=dilation)
 				out_width = TemporalLayer1d.get_out_width(layer_in_shape[1],
 					kernel_size=kernel_size, dilation=dilation, padding_size=padding_size)
 				layer_out_shape = (out_channels, out_width)
+				dropout = global_dropout \
+					if (isnt(dropouts) or i >= len(dropouts) or isnt(dropouts[i])) \
+					else dropouts[i]
 				layer = TemporalLayer1d(in_shape=layer_in_shape, out_shape=layer_out_shape,
 					act=block_act, kernel_size=kernel_size, padding_size=padding_size,
 					dilation=dilation, dropout=dropout, init_method=block_init)
@@ -345,10 +362,10 @@ class TemporalConvNet(nn.Module):
 				downsample_type='conv1d', init_method=out_init)))
 			block_in_shape = block_out_shape
 		self.out_shape = block_out_shape
-		self.convnet = nn.Sequential(OrderedDict(blocks))
+		self.model = nn.Sequential(OrderedDict(blocks))
 
 	def forward(self, x):
-		return self.convnet(x)
+		return self.model(x)
 
 class FFN(nn.Module):
 	"""
@@ -365,15 +382,15 @@ class FFN(nn.Module):
 			ffn_layers.append(('af_{i}'.format(i=i), PYTORCH_ACT_MAPPING.get(act)()))
 			in_layer_shape = out_layer_shape
 
-		self.ffn = nn.Sequential(OrderedDict(ffn_layers))
+		self.model = nn.Sequential(OrderedDict(ffn_layers))
 
 	def forward(self, x):
-		return self.ffn(x)
+		return self.model(x)
 
 class MultichannelFFN(nn.Module):
 	"""
 	Multi channel MLP Feedforward Network
-	Cretes a FFN over independent channels (analagous to torch.nn.conv1d)
+	Creates a FFN over independent channels (analagous to torch.nn.conv1d)
 	"""
 	def __init__(self, in_shape, out_shapes=[128, 128, 128], act='relu',
 		init_method='xavier_uniform'):
@@ -382,11 +399,12 @@ class MultichannelFFN(nn.Module):
 			in_shape (tuple): shape of the network's input tensor, expects a shape (in_channels, in_width)
 		"""
 		super().__init__()
-		self.channel_ffn = [FFN(in_shape[1], out_shapes=out_shapes) for i in range(in_shape[0])]
+		raise NotImplementedError()
+		self.model = [FFN(in_shape[1], out_shapes=out_shapes) for i in range(in_shape[0])]
 
 	def forward(self, x):
-		# TODO - iterate across channels and apply channel_ffn[i] to each and concatenate output
-		return self.channel_ffn(x)
+		# TODO - iterate across channels and apply model[i] to each and concatenate output
+		return self.model(x)
 
 class AE(nn.Module):
 	"""
@@ -416,7 +434,8 @@ class AE(nn.Module):
 
 		self.encoder = nn.Sequential(OrderedDict(encoder_layers))
 		self.decoder = nn.Sequential(OrderedDict(decoder_layers))
+		self.model = nn.Sequential(self.encoder, self.decoder)
 
 	def forward(self, x):
-		return self.decoder(self.encoder(x))
+		return self.model(x)
 

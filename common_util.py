@@ -241,6 +241,9 @@ def pd_before_cutoff(pd_obj, cutoff_time=timestamp_on(dt_now())(hour=9, tz='US/E
 	return False
 
 """List"""
+def list_wrap(obj):
+	return obj if (is_type(obj, list)) else [obj]
+
 def remove_dups_list(lst):
 	return list(OrderedDict.fromkeys(lst))
 

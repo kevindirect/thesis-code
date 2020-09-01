@@ -20,44 +20,73 @@ from model.model_util import log_prob_sigma, init_layer, get_padding, pyt_multih
 # Inspired by:
 # * https://github.com/3springs/attentive-neural-processes/blob/master/neural_processes/models/neural_process/model.py
 # * https://github.com/soobinseo/Attentive-Neural-Process/blob/master/module.py
-# TODO - allow addition of other transforms besides TCN
-# 	ConvANP module should pass constructor for the transform to encoders and decoder submodules
 
 
 # ********** HELPER FUNCTIONS **********
-def tcn(transform_params):
-	raise NotImplementedError()
-	tcn_fn = partial(TemporalConvNet,
-		block_channels=[[embed_size for _ in range(encoder_depth)]],
-		pad_type='full', kernel_sizes=[encoder_kernel_size],
-		global_dropout=encoder_dropout, no_dropout=None)
+class StackedTCN(TemporalConvNet):
+	"""
+	Wrapper Module for model_util.TemporalConvNet,
+	creates a fixed width, single block TCN.
+	"""
+	def __init__(self, in_shape, size=128, depth=3, kernel_sizes=3,
+		input_dropout=0.0, output_dropout=0.0, global_dropout=.5,
+		global_dilation=True, block_act='elu', out_act='relu',
+		block_init='xavier_uniform', out_init='xavier_uniform', pad_type='full'):
+		"""
+		Args:
+			in_shape (tuple): shape of the network's input tensor (C, S)
+			size (int): network embedding size
+			depth (int): number of hidden layers to stack
+			kernel_sizes (int|list): list of CNN kernel sizes,
+				if a list its length must be either 1 or depth
+			input_dropout (float): first layer dropout
+			output_dropout (float): last layer dropout
+			global_dropout (float): default dropout probability
+			global_dilation (bool): whether to use global or block indexed dilation
+			block_act (str): activation function of each layer in each block
+			out_act (str): output activation of each block
+			block_init (str): hidden layer weight initialization method
+			out_init (str): output layer weight initialization method
+			pad_type ('same'|'full'): padding method to use
+		"""
+		dropouts = [None] * depth
+		dropouts[0], dropouts[-1] = input_dropout, output_dropout
+		super().__init__(in_shape, block_channels=[[size] * depth], num_blocks=1,
+			kernel_sizes=kernel_sizes, dropouts=dropouts,
+			global_dropout=global_dropout, global_dilation=global_dilation,
+			block_act=block_act, out_act=out_act, block_init=block_init,
+			out_init=out_init, pad_type=pad_type)
+
+NP_TRANSFORMS_MAPPING = {
+	'tcn': StackedTCN
+}
 
 
 # ********** HELPER MODULES **********
-class DetConvEncoder(nn.Module):
+class DetEncoder(nn.Module):
 	"""
-	Attentive Neural Process (ANP) Convolutional (TCN) Deterministic Encoder.
+	Attentive Neural Process (ANP) Deterministic Encoder.
 	Takes in examples of shape (n, C, S), where
 		n: batch size
 		C: channels
 		S: sequence
-
-	XXX:
-		* Target transform is a tcn
-		* Context transform is a tcn
 	"""
-	def __init__(self, in_shape, label_size, embed_size=128, encoder_depth=3,
-		encoder_kernel_size=3, encoder_dropout=0.0,
+	def __init__(self, in_shape, label_size, it_name='tcn', it_params=None,
+		tt_name='tcn', tt_params=None, ct_name='tcn', ct_params=None,
+		embed_size=128,
 		sa_depth=2, sa_heads=8, sa_dropout=0.0,
 		xa_depth=2, xa_heads=8, xa_dropout=0.0):
 		"""
 		Args:
 			in_shape (tuple): input size as (C, S)
 			label_size (int>0): size of the label vector
-			embed_size (int>0): embedding size of tcn encoder and attention modules
-			encoder_depth (int>0): tcn encoder depth
-			encoder_kernel_size (int>0): convolution kernel size of tcn layers
-			encoder_dropout (float>=0): tcn encoder dropout
+			it_name (str): input transform name
+			it_params (dict): input transform hyperparameters
+			tt_name (str): target transform name
+			tt_params (dict): target transform hyperparameters
+			ct_name (str): context transform name
+			ct_params (dict): context transform hyperparameters
+			embed_size (int>0): embedding size of attention modules
 			sa_depth (int>0): self-attention network depth
 			sa_heads (int>0): self-attention heads
 			sa_dropout (float>=0): self-attention dropout
@@ -68,13 +97,20 @@ class DetConvEncoder(nn.Module):
 		super().__init__()
 		self.in_shape = in_shape
 		self.label_size = label_size
-		tcn_fn = partial(TemporalConvNet,
-			block_channels=[[embed_size for _ in range(encoder_depth)]],
-			pad_type='full', kernel_sizes=[encoder_kernel_size],
-			global_dropout=encoder_dropout, no_dropout=None)
-		self.target_transform = tcn_fn(in_shape)
-		self.context_transform = tcn_fn(in_shape)
-		self.input_encoder = tcn_fn((in_shape[0]+self.label_size, in_shape[1]))
+		if (isnt(it_params)):
+			it_params = {}
+		if (isnt(tt_params)):
+			tt_params = {}
+		if (isnt(ct_params)):
+			ct_params = {}
+
+		self.input_encoder = NP_TRANSFORMS_MAPPING[it_name] \
+			((in_shape[0]+self.label_size, in_shape[1]), **it_params)
+		self.target_transform = NP_TRANSFORMS_MAPPING[tt_name] \
+			(self.in_shape, **tt_params)
+		self.context_transform = NP_TRANSFORMS_MAPPING[ct_name] \
+			(self.in_shape, **ct_params)
+
 		self.attention_fn = pyt_multihead_attention
 		self.sa_W = nn.ModuleList([nn.MultiheadAttention(
 			embed_size, sa_heads, dropout=sa_dropout, bias=True, add_bias_kv=False,
@@ -86,7 +122,7 @@ class DetConvEncoder(nn.Module):
 
 	def forward(self, context_x, context_y, target_x):
 		"""
-		ANP Deterministic Convolutional Encoder forward Pass
+		ANP Deterministic Encoder forward Pass
 		Returns all representations, need to be aggregated to form r_*.
 		"""
 		query = self.target_transform(target_x)
@@ -100,31 +136,30 @@ class DetConvEncoder(nn.Module):
 			query = self.attention_fn(W, query, keys, values)
 		return query
 
-class LatConvEncoder(nn.Module):
+class LatEncoder(nn.Module):
 	"""
-	Attentive Neural Process (ANP) Convolutional (TCN) Latent Encoder.
+	Attentive Neural Process (ANP) Latent Encoder.
 
 	XXX:
 		* using linear layers for map_layer, mean, and logvar modules
 		* taking mean over sequence dimension of encoder output
 	"""
-	def __init__(self, in_shape, label_size, embed_size=128, encoder_depth=3,
-		encoder_kernel_size=3, encoder_dropout=0.0, dist_type='normal', latent_size=256,
+	def __init__(self, in_shape, label_size, it_name='tcn', it_params=None,
+		embed_size=128, latent_size=256, dist_type='normal',
 		sa_depth=2, sa_heads=8, sa_dropout=0.0, min_std=.01, use_lvar=False):
 		"""
 		Args:
 			in_shape (tuple): input size as (C, S)
 			label_size (int>0): size of the label vector
-			embed_size (int>0): embedding size of tcn encoder and self-attention modules
-			encoder_depth (int>0): tcn encoder depth
-			encoder_kernel_size (int>0): convolution kernel size of tcn layers
-			encoder_dropout (float>=0): tcn encoder dropout
+			it_name (str): input transform name
+			it_params (dict): input transform hyperparameters
+			embed_size (int>0): embedding size of attention modules
+			latent_size (int>0): size of latent representation
 			dist_type (str): latent distribution, allowed values:
 				* beta
 				* normal
 				* lognormal
 				* gamma
-			latent_size (int>0): size of latent representation
 			sa_depth (int>0): self-attention network depth
 			sa_heads (int>0): self-attention heads
 			sa_dropout (float>=0): self-attention dropout
@@ -134,12 +169,11 @@ class LatConvEncoder(nn.Module):
 		super().__init__()
 		self.in_shape = in_shape
 		self.label_size = label_size
-		self.input_encoder = TemporalConvNet(
-			in_shape=(in_shape[0]+self.label_size, in_shape[1]),
-			block_channels=[[embed_size for _ in range(encoder_depth)]],
-			pad_type='full', kernel_sizes=[encoder_kernel_size],
-			global_dropout=encoder_dropout, no_dropout=None)
+		if (isnt(it_params)):
+			it_params = {}
 
+		self.input_encoder = NP_TRANSFORMS_MAPPING[it_name] \
+			((in_shape[0]+self.label_size, in_shape[1]), **it_params)
 		self.attention_fn = pyt_multihead_attention
 		self.sa_W = nn.ModuleList([nn.MultiheadAttention(
 			embed_size, sa_heads, dropout=sa_dropout, bias=True, add_bias_kv=False,
@@ -152,7 +186,8 @@ class LatConvEncoder(nn.Module):
 			'lognormal': torch.distributions.LogNormal,
 			'gamma': torch.distributions.Gamma
 		}.get(self.dist_type, None)
-		assert is_valid(self.dist_fn), 'dist_type must be a valid latent distribution type'
+		assert is_valid(self.dist_fn), \
+			'dist_type must be a valid latent distribution type'
 
 		self.map_layer = nn.Linear(embed_size, embed_size)
 		self.mean = nn.Linear(embed_size, latent_size)
@@ -193,17 +228,15 @@ class LatConvEncoder(nn.Module):
 		lat_dist = self.dist_fn(lat_mean, lat_sigma)
 		return lat_dist, lat_logvar
 
-class ConvDecoder(nn.Module):
+class Decoder(nn.Module):
 	"""
-	ANP Convolutional Decoder.
+	ANP Decoder.
 	XXX:
-		* target transform is a tcn
-		* decoder is a tcn
 		* mean and logsig layers are linear layers
 		* decoder output is flattened to be able to send to mean and logsig layers
 	"""
 	def __init__(self, in_shape, label_size, det_encoder_params, lat_encoder_params,
-		embed_size=128, decoder_depth=3, decoder_kernel_size=3, decoder_dropout=0.0,
+		tt_name='tcn', tt_params=None, de_name='tcn', de_params=None, embed_size=128,
 		dist_type='normal', min_std=.01, use_lvar=False):
 		"""
 		Args:
@@ -211,10 +244,11 @@ class ConvDecoder(nn.Module):
 			label_size (int>0): size of the label vector
 			det_encoder_params (dict): deterministic encoder hyperparameters
 			lat_encoder_params (dict): latent encoder hyperparameters
+			tt_name (str): target transform name
+			tt_params (dict): target transform hyperparameters
+			de_name (str): decoder name
+			de_params (dict): decoder hyperparameters
 			embed_size (int>0): embedding size of tcn decoder modules
-			decoder_depth (int>0): tcn encoder depth
-			decoder_kernel_size (int>0): convolution kernel size of tcn layers
-			decoder_dropout (float>=0): tcn decoder dropout
 			dist_type (str): output distribution, allowed values:
 				* beta
 				* normal
@@ -228,15 +262,24 @@ class ConvDecoder(nn.Module):
 		super().__init__()
 		self.in_shape = in_shape
 		self.label_size = label_size
-		tcn_fn = partial(TemporalConvNet,
-			block_channels=[[embed_size for _ in range(decoder_depth)]],
-			pad_type='full', kernel_sizes=[decoder_kernel_size],
-			global_dropout=decoder_dropout, no_dropout=None)
-		self.target_transform = tcn_fn(in_shape)
+		if (isnt(tt_params)):
+			tt_params = {}
+		if (isnt(de_params)):
+			de_params = {}
 
-		decoder_channels = sum((det_encoder_params['embed_size'],
-			lat_encoder_params['latent_size'], embed_size))
-		self.decoder = tcn_fn((decoder_channels, self.target_transform.out_shape[1]))
+		det_embed_size = det_encoder_params.get('embed_size', \
+			fn_default_args(DetEncoder)['embed_size'])
+		lat_latent_size = lat_encoder_params.get('latent_size', \
+			fn_default_args(LatEncoder)['latent_size'])
+		de_size = de_params.get('size', \
+			fn_default_args(NP_TRANSFORMS_MAPPING[de_name])['size'])
+		decoder_channels = sum((det_embed_size, lat_latent_size, de_size))
+
+		self.target_transform = NP_TRANSFORMS_MAPPING[tt_name] \
+			(self.in_shape, **tt_params)
+		self.decoder = NP_TRANSFORMS_MAPPING[de_name] \
+			((decoder_channels, self.target_transform.out_shape[1]), **de_params)
+
 		self.dist_type = dist_type
 		self.dist_fn = {
 			'beta': torch.distributions.Beta,
@@ -244,7 +287,8 @@ class ConvDecoder(nn.Module):
 			'lognormal': torch.distributions.LogNormal,
 			'gamma': torch.distributions.Gamma
 		}.get(self.dist_type, None)
-		assert is_valid(self.dist_fn), 'dist_type must be a valid output distribution type'
+		assert is_valid(self.dist_fn), \
+			'dist_type must be a valid output distribution type'
 
 		# Interpretation of alpha and beta depends on the dist_type
 		self.alpha = nn.Linear(mul(*self.decoder.out_shape), self.label_size)
@@ -283,11 +327,13 @@ class ConvDecoder(nn.Module):
 
 
 # ********** MODEL MODULES **********
-class ConvANP(nn.Module):
+class AttentiveNP(nn.Module):
 	"""
-	Convolutional Attentive Neural Process Module
+	Attentive Neural Process Module
 	"""
-	def __init__(self, in_shape, label_size=1, det_encoder_params=None, lat_encoder_params=None, decoder_params=None, anp_params=None):
+	def __init__(self, in_shape, label_size=1, det_encoder_params=None,
+		lat_encoder_params=None, decoder_params=None, use_lvar=False,
+		context_in_target=False):
 		"""
 		Args:
 			in_shape (tuple): input size as (C, S)
@@ -295,30 +341,24 @@ class ConvANP(nn.Module):
 			det_encoder_params (dict): deterministic encoder hyperparameters
 			lat_encoder_params (dict): latent encoder hyperparameters
 			decoder_params (dict): decoder hyperparameters
-			anp_params (dict): miscellanous anp hyperparameters
+			use_lvar (bool):
+			context_in_target (bool):
 		"""
 		super().__init__()
 		self.in_shape = in_shape
 		self.label_size = label_size
-
-		# Default model hyperparameters:
-		if (not det_encoder_params):
-			det_encoder_params = fn_default_args(DetConvEncoder)
-		if (not lat_encoder_params):
-			lat_encoder_params = fn_default_args(LatConvEncoder)
-		if (not decoder_params):
+		if (isnt(det_encoder_params)):
+			det_encoder_params = {}
+		if (isnt(lat_encoder_params)):
+			lat_encoder_params = {}
+		if (isnt(decoder_params)):
 			decoder_params = {}
-		if (not anp_params):
-			anp_params = {
-				'use_lvar': False,
-				'context_in_target': False
-			}
 
-		self.det_encoder = DetConvEncoder(in_shape, label_size, **det_encoder_params)
-		self.lat_encoder = LatConvEncoder(in_shape, label_size, **lat_encoder_params)
-		self.decoder = ConvDecoder(in_shape, label_size,
-			det_encoder_params, lat_encoder_params, **decoder_params)
-		self.anp_params = anp_params
+		self.det_encoder = DetEncoder(in_shape, label_size, **det_encoder_params)
+		self.lat_encoder = LatEncoder(in_shape, label_size, **lat_encoder_params)
+		self.decoder = Decoder(in_shape, label_size, det_encoder_params,
+			lat_encoder_params, **decoder_params)
+		self.use_lvar, self.context_in_target = use_lvar, context_in_target
 		self.out_shape = self.decoder.out_shape
 
 	def forward(self, context_x, context_y, target_x, target_y=None, \
@@ -383,14 +423,14 @@ class ConvANP(nn.Module):
 		losses = None
 
 		if (is_valid(target_y)):
-			if (self.anp_params['use_lvar']):
+			if (self.use_lvar):
 				pass # custom log prob and kl div here
 			else:
 				nll = -out_dist.log_prob(target_y).mean(-1).unsqueeze(-1)
 				kldiv = torch.distributions.kl_divergence(posterior_dist, prior_dist) \
 					.mean(-1).unsqueeze(-1)
 				# use kl beta factor (disentangled representation)?
-				if (self.anp_params['context_in_target']):
+				if (self.context_in_target):
 					pass
 			# mse = self.mse(out_dist.loc, target_y) # TODO: switch to a classifier loss (BCE?)
 
