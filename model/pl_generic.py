@@ -15,7 +15,8 @@ import pytorch_lightning as pl
 from common_util import is_type, assert_has_all_attr, is_valid, is_type, isnt, dict_flatten, pairwise, np_at_least_nd, np_assert_identical_len_dim
 from model.common import PYTORCH_ACT_MAPPING, PYTORCH_LOSS_MAPPING, PYTORCH_OPT_MAPPING, PYTORCH_SCH_MAPPING
 from model.train_util import pd_to_np_tvt, get_dataloader
-from model.model_util import OutputLinear
+from model.metrics_util import SimulatedReturn
+from model.model_util import OutputBlock
 
 
 class GenericModel(pl.LightningModule):
@@ -54,191 +55,168 @@ class GenericModel(pl.LightningModule):
 			data (tuple): tuple of pd.DataFrames
 			class_weights (dict): class weighting scheme
 		"""
-		# init superclass
 		super().__init__()
-		self.hparams = dict_flatten(t_params)				# Pytorch lightning will track/checkpoint parameters saved in hparams instance variable
+		self.name = f'{self._get_name()}_{model_fn.__name__}'
+		self.m_params, self.t_params = m_params, t_params
+		self.hparams = dict_flatten({**self.m_params, **self.t_params})	# Pytorch lightning will track/checkpoint parameters saved in hparams instance variable
+
 		for k, v in filter(lambda i: is_type(i[1], np.ndarray, list, tuple), \
 			self.hparams.items()):
 			self.hparams[k] = torch.tensor(v).flatten()		# Lists/tuples (and any non-torch primitives) must be stored as flat torch tensors to be tracked by PL
-		self.m_params, self.t_params = m_params, t_params
 		self.hparams['lr'] = self.t_params['opt']['kwargs']['lr']
 		loss_fn = PYTORCH_LOSS_MAPPING.get(self.t_params['loss'], None)
 		if (is_valid(loss_fn)):
 			self.loss = loss_fn() if (isnt(class_weights)) else loss_fn(weight=class_weights)
+		self.ret_fn = SimulatedReturn(return_type='binary_confidence')
 		self.__setup_data__(data)
 		self.__build_model__(model_fn)
 		## if you specify an example input, the summary will show input/output for each layer
 		#self.example_input_array = torch.rand(5, 20)
 
-	def __build_model__(self, model_fn):
+	@classmethod
+	def suggest_params(cls, trial=None):
 		"""
+		suggest training hyperparameters from an optuna trial object
+		or return fixed default hyperparameters
 		"""
-		num_channels, num_win, num_win_obs = self.obs_shape						# Feature observation shape - (Channels, Window, Hours / Window Observations)
-		emb_params = {k: v for k, v in self.m_params.items() if (k in getfullargspec(model_fn).args)}
-		emb = model_fn(in_shape=(num_channels, num_win*num_win_obs), **emb_params)
-		if ('out_shapes' in self.m_params.keys() and 'out_init' in self.m_params.keys()):
-			self.model = OutputLinear(emb, out_shapes=self.m_params['out_shapes'], init_method=self.m_params['out_init'])
+		if (is_valid(trial)):
+			params = {
+				'window_size': trial.suggest_int('window_size', 3, 120),
+				'feat_dim': None,
+				'train_shuffle': False,
+				'epochs': 200,
+				'batch_size': trial.suggest_int('batch_size', 128, 512),
+				'batch_step_size': trial.suggest_int('batch_step_size', 1, 128),
+				'loss': 'clf',
+				'opt': {
+					'name': 'adam',
+					'kwargs': {
+						'lr': trial.suggest_loguniform('lr', 1e-6, 1e-1)
+					}
+				},
+				'num_workers': 0,
+				'pin_memory': True
+			}
 		else:
-			self.model = emb
+			params = {
+				'window_size': 20,
+				'feat_dim': None,
+				'train_shuffle': False,    
+				'epochs': 200,
+				'batch_size': 128,
+				'batch_step_size': 64,
+				'loss': 'clf',
+				'opt': {
+					'name': 'adam',
+					'kwargs': {
+						'lr': 1e-3
+					}
+				},
+				'num_workers': 0,
+				'pin_memory': True
+			}
+		return params
 
-	forward = lambda self, x: self.model(x)
+	def forward(self, x):
+		"""
+		Run input through the model.
+		"""
+		return self.model(x)
+
+	def calculate_metrics_step(self, losses, y_hat, y, z=None, calc_pfx=''):
+		"""
+		process metrics during step
+		"""
+		if (is_valid(z) and is_valid(self.ret_fn)):
+			returns = self.ret_fn(y_hat.squeeze(), y, z, kelly=False)
+			kelly_returns = self.ret_fn(y_hat.squeeze(), y, z, kelly=True)
+			returns_cumsum = returns.cumsum(dim=0)
+			kelly_returns_cumsum = kelly_returns.cumsum(dim=0)
+			calc_returns = {
+				f'{calc_pfx}_ret': returns.sum(),
+				f'{calc_pfx}_kret': kelly_returns.sum(),
+				f'{calc_pfx}_retmin': returns_cumsum.min(),
+				f'{calc_pfx}_kretmin': kelly_returns_cumsum.min(),
+				f'{calc_pfx}_retmax': returns_cumsum.max(),
+				f'{calc_pfx}_kretmax': kelly_returns_cumsum.max(),
+				f'{calc_pfx}_rethigh': torch.abs(z).sum()
+			}
+		else:
+			calc_returns = {}
+		calc_metrics = {f'{calc_pfx}_{k}':v for k,v in losses.items()}
+
+		# in DP mode (default) make sure if result is scalar, there's another dim in the beginning
+		if (self.trainer.use_dp or self.trainer.use_ddp2):
+			for k,v in calc_metrics.items():
+				calc_metrics[k] = v.unsqueeze(0)
+			for k,v in calc_returns.items():
+				calc_returns[k] = v.unsqueeze(0)
+
+		return OrderedDict(**calc_metrics, **calc_returns)
+
+	def aggregate_metrics_end(self, outputs):
+		"""
+		aggregate metrics at the end of validation or test 
+		"""
+		# if returned a scalar from _step, outputs is a list of tensor scalars
+		# we return just the average in this case (if we want)
+		# return torch.stack(outputs).mean()
+		output_means = {k:0 for k in outputs[0].keys()}
+		for output in outputs:
+			output_ = {k:v for k,v in output.items()}
+
+			# reduce manually when using dp
+			if (self.trainer.use_dp or self.trainer.use_ddp2):
+				for k,v in output_.items():
+					output_[k] = torch.mean(v)
+
+			for k in output_means.keys():
+				output_means[k] += output_[k]
+
+		for k in output_means.keys():
+			output_means[k] /= len(outputs)
+
+		out = output_means.copy()
+		out['progress_bar'] = output_means
+		out['log'] = output_means
+		return out
+
+	def forward_metrics_step(self, batch, batch_idx, calc_pfx=''):
+		x, y, z = batch
+		y_hat = self.forward(x)
+		loss_score = self.loss(y_hat, y)
+		losses = {
+			'loss': loss_score,
+			'acc': GenericModel.acc(y_hat, y, loss_score)
+		}
+		return self.calculate_metrics_step(losses, y_hat=y_hat, y=y, z=z, \
+			calc_pfx=calc_pfx)
 
 	def training_step(self, batch, batch_idx):
 		"""
 		Lightning calls this inside the training loop
 		"""
-		x, y, z = batch
-		y_hat = self.forward(x)
-		train_loss = self.loss(y_hat, y)
-
-		# in DP mode (default) make sure if result is scalar, there's another dim in the beginning
-		if (self.trainer.use_dp or self.trainer.use_ddp2):
-			train_loss = train_loss.unsqueeze(0)
-
-		tqdm_dict = {
-			'train_loss': train_loss
-		}
-		output = OrderedDict({
+		tqdm_dict = self.forward_metrics_step(batch, batch_idx, calc_pfx='train')
+		return OrderedDict({
 			'progress_bar': tqdm_dict,
 			'log': tqdm_dict,
-			'loss': train_loss
+			'loss': tqdm_dict['train_loss']
 		})
-
-		return output # can also return a scalar (loss val) instead of a dict
 
 	def validation_step(self, batch, batch_idx):
 		"""
 		Lightning calls this inside the validation loop
 		"""
-		x, y, z = batch
-		y_hat = self.forward(x)
-		val_loss = self.loss(y_hat, y)
-
-		# acc
-		labels_hat = torch.argmax(y_hat, dim=1)
-		val_acc = torch.sum(y == labels_hat).item() / (len(y) * 1.0)
-		val_acc = torch.tensor(val_acc)
-
-		if (self.on_gpu):
-			val_acc = val_acc.cuda(val_loss.device.index)
-
-		# in DP mode (default) make sure if result is scalar, there's another dim in the beginning
-		if (self.trainer.use_dp or self.trainer.use_ddp2):
-			val_loss = val_loss.unsqueeze(0)
-			val_acc = val_acc.unsqueeze(0)
-
-		output = OrderedDict({
-			'val_loss': val_loss,
-			'val_acc': val_acc,
-		})
-
-		return output # can also return a scalar (loss val) instead of a dict
-
-	def validation_end(self, outputs):
-		"""
-		Called at the end of validation to aggregate outputs
-		:param outputs: list of individual outputs of each validation step
-		"""
-		# if returned a scalar from validation_step, outputs is a list of tensor scalars
-		# we return just the average in this case (if we want)
-		# return torch.stack(outputs).mean()
-
-		val_loss_mean = 0
-		val_acc_mean = 0
-		for output in outputs:
-			val_loss = output['val_loss']
-
-			# reduce manually when using dp
-			if (self.trainer.use_dp or self.trainer.use_ddp2):
-				val_loss = torch.mean(val_loss)
-			val_loss_mean += val_loss
-
-			# reduce manually when using dp
-			val_acc = output['val_acc']
-			if (self.trainer.use_dp or self.trainer.use_ddp2):
-				val_acc = torch.mean(val_acc)
-
-			val_acc_mean += val_acc
-
-		val_loss_mean /= len(outputs)
-		val_acc_mean /= len(outputs)
-		tqdm_dict = {
-			'val_loss': val_loss_mean,
-			'val_acc': val_acc_mean
-		}
-		result = {
-			'progress_bar': tqdm_dict,
-			'log': tqdm_dict,
-			'val_loss': val_loss_mean
-		}
-		return result
+		return self.forward_metrics_step(batch, batch_idx, calc_pfx='val')
 
 	def test_step(self, batch, batch_idx):
 		"""
 		Lightning calls this inside the test loop
 		"""
-		x, y, z = batch
-		y_hat = self.forward(x)
-		test_loss= self.loss(y_hat, y)
+		return self.forward_metrics_step(batch, batch_idx, calc_pfx='test')
 
-		# acc
-		labels_hat = torch.argmax(y_hat, dim=1)
-		test_acc = torch.sum(y == labels_hat).item() / (len(y) * 1.0)
-		test_acc = torch.tensor(test_acc)
-
-		if (self.on_gpu):
-			test_acc = test_acc.cuda(test_loss.device.index)
-
-		# in DP mode (default) make sure if result is scalar, there's another dim in the beginning
-		if (self.trainer.use_dp or self.trainer.use_ddp2):
-			test_loss= test_loss.unsqueeze(0)
-			test_acc = test_acc.unsqueeze(0)
-
-		output = OrderedDict({
-			'test_loss': test_loss,
-			'test_acc': test_acc,
-		})
-
-		return output # can also return a scalar (loss test) instead of a dict
-
-	def test_end(self, outputs):
-		"""
-		Called at the end of test to aggregate outputs
-		:param outputs: list of individual outputs of each test step
-		"""
-		# if returned a scalar from test_step, outputs is a list of tensor scalars
-		# we return just the average in this case (if we want)
-		# return torch.stack(outputs).mean()
-
-		test_loss_mean = 0
-		test_acc_mean = 0
-		for output in outputs:
-			test_loss = output['test_loss']
-
-			# reduce manually when using dp
-			if (self.trainer.use_dp or self.trainer.use_ddp2):
-				test_loss = torch.mean(test_loss)
-			test_loss_mean += test_loss
-
-			# reduce manually when using dp
-			test_acc = output['test_acc']
-			if (self.trainer.use_dp or self.trainer.use_ddp2):
-				test_acc = torch.mean(test_acc)
-
-			test_acc_mean += test_acc
-
-		test_loss_mean /= len(outputs)
-		test_acc_mean /= len(outputs)
-		tqdm_dict = {
-			'test_loss': test_loss_mean,
-			'test_acc': test_acc_mean
-		}
-		result = {
-			'progress_bar': tqdm_dict,
-			'log': tqdm_dict,
-			'test_loss': test_loss_mean
-		}
-		return result
+	validation_end = aggregate_metrics_end
+	test_end = aggregate_metrics_end
 
 	def configure_optimizers(self):
 		"""
@@ -251,6 +229,16 @@ class GenericModel(pl.LightningModule):
 		#sch_fn = PYTORCH_SCH_MAPPING.get(self.t_params['sch']['name'])
 		#sch = sch_fn(opt, **self.t_params['sch']['kwargs'])
 		#return [opt], [sch]
+
+	def __build_model__(self, model_fn):
+		"""
+		Feature observation shape - (Channels, Window, Hours or Window Observations)
+		"""
+		num_channels, num_win, num_win_obs = self.obs_shape
+		model_params = {k: v for k, v in self.m_params.items() \
+			if (k in getfullargspec(model_fn).args)}
+		emb = model_fn(in_shape=(num_channels, num_win*num_win_obs), **model_params)
+		self.model = OutputBlock.wrap(emb)	# Appends an OutputBlock if emb.ob_out_shapes exists and is not None
 
 	def __setup_data__(self, data):
 		"""
@@ -297,10 +285,13 @@ class GenericModel(pl.LightningModule):
 		num_workers=self.t_params['num_workers'],
 		pin_memory=self.t_params['pin_memory'])
 
-	@staticmethod
-	def add_model_specific_args(parent_parser, root_dir):  # pragma: no cover
-		"""
-		Parameters you define here will be available to your model through self.params
-		"""
-		pass
+	@classmethod
+	def acc(cls, y_hat, y, loss_score):
+		labels_hat = torch.argmax(y_hat, dim=1)
+		acc_score = torch.sum(y == labels_hat).item() / (len(y) * 1.0)
+		acc_score = torch.tensor(acc_score)
+
+		if (self.on_gpu):
+			acc_score = acc_score.cuda(loss_score.device.index)
+		return acc_score
 

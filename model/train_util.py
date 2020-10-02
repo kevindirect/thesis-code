@@ -179,6 +179,11 @@ def window_shifted(data, loss, window_size, window_overlap=True, feat_dim=None):
 	elif (len(win_shifted) == 3):
 		x, y, z = win_shifted
 
+		if (feat_dim == 1):
+			x = x.reshape(np.product(x.shape))
+		elif (feat_dim == 2):
+			x = x.reshape(x.shape[0], np.product(x.shape[1:]))
+
 		if (loss in ('clf', 'bce', 'bcel', 'ce', 'nll')):
 			y_new = np.sum(y, axis=(1, 2), keepdims=False)		# Sum label matrices to scalar values
 			if (y.shape[1] > 1):
@@ -186,11 +191,8 @@ def window_shifted(data, loss, window_size, window_overlap=True, feat_dim=None):
 			if (loss in ('bce', 'bcel') and len(y_new.shape)==1):
 				y_new = np.expand_dims(y_new, axis=-1)
 			y = y_new
+			z = np.sum(z, axis=(1, 2), keepdims=False)
 
-		if (feat_dim == 1):
-			x = x.reshape(np.product(x.shape))
-		elif (feat_dim == 2):
-			x = x.reshape(x.shape[0], np.product(x.shape[1:]))
 		return (x, y, z)
 
 
@@ -208,7 +210,8 @@ class WindowBatchSampler(torch.utils.data.Sampler):
 		batch_shuffle (bool): whether to shuffle the batch order
 	"""
 
-	def __init__(self, data_source, batch_size=128, batch_step_size=1, batch_shuffle=False):
+	def __init__(self, data_source, batch_size=128, batch_step_size=1, \
+		batch_shuffle=False):
 		super().__init__(data_source)
 		self.data_source = data_source
 		self.batch_size = batch_size
@@ -218,7 +221,7 @@ class WindowBatchSampler(torch.utils.data.Sampler):
 	def __iter__(self):
 		iterable = more_itertools.windowed(
 			range(len(self.data_source)), n=self.batch_size, step=self.batch_step_size,
-			fillvalue=-1)		# fillvalue of -1 ffills/pads the last minibatch
+				fillvalue=-1)	# fillvalue of -1 ffills the last minibatch
 		if (self.batch_shuffle):
 			raise NotImplementedError("Need to add ability to shuffle batches")
 		return iterable

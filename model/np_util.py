@@ -13,56 +13,20 @@ import pandas as pd
 import torch
 import torch.nn as nn
 
-from common_util import is_valid, isnt, fn_default_args
-from model.common import dum
-from model.model_util import log_prob_sigma, init_layer, get_padding, pyt_multihead_attention, FFN, TemporalConvNet
+from common_util import is_valid, isnt, fn_default_args, odd_only
+from model.common import PYTORCH_ACT1D_LIST, PYTORCH_INIT_LIST
+from model.model_util import log_prob_sigma, init_layer, get_padding, pyt_multihead_attention, StackedTCN
 # Tensors are column-major, shaped as (batch, channel, sequence) unless otherwise specified
 # Inspired by:
 # * https://github.com/3springs/attentive-neural-processes/blob/master/neural_processes/models/neural_process/model.py
 # * https://github.com/soobinseo/Attentive-Neural-Process/blob/master/module.py
 
 
-# ********** HELPER FUNCTIONS **********
-class StackedTCN(TemporalConvNet):
-	"""
-	Wrapper Module for model_util.TemporalConvNet,
-	creates a fixed width, single block TCN.
-	"""
-	def __init__(self, in_shape, size=128, depth=3, kernel_sizes=3,
-		input_dropout=0.0, output_dropout=0.0, global_dropout=.5,
-		global_dilation=True, block_act='elu', out_act='relu',
-		block_init='xavier_uniform', out_init='xavier_uniform', pad_type='full'):
-		"""
-		Args:
-			in_shape (tuple): shape of the network's input tensor (C, S)
-			size (int): network embedding size
-			depth (int): number of hidden layers to stack
-			kernel_sizes (int|list): list of CNN kernel sizes,
-				if a list its length must be either 1 or depth
-			input_dropout (float): first layer dropout
-			output_dropout (float): last layer dropout
-			global_dropout (float): default dropout probability
-			global_dilation (bool): whether to use global or block indexed dilation
-			block_act (str): activation function of each layer in each block
-			out_act (str): output activation of each block
-			block_init (str): hidden layer weight initialization method
-			out_init (str): output layer weight initialization method
-			pad_type ('same'|'full'): padding method to use
-		"""
-		dropouts = [None] * depth
-		dropouts[0], dropouts[-1] = input_dropout, output_dropout
-		super().__init__(in_shape, block_channels=[[size] * depth], num_blocks=1,
-			kernel_sizes=kernel_sizes, dropouts=dropouts,
-			global_dropout=global_dropout, global_dilation=global_dilation,
-			block_act=block_act, out_act=out_act, block_init=block_init,
-			out_init=out_init, pad_type=pad_type)
-
+# ********** HELPER MODULES **********
 NP_TRANSFORMS_MAPPING = {
 	'tcn': StackedTCN
 }
 
-
-# ********** HELPER MODULES **********
 class DetEncoder(nn.Module):
 	"""
 	Attentive Neural Process (ANP) Deterministic Encoder.
@@ -141,7 +105,7 @@ class LatEncoder(nn.Module):
 	Attentive Neural Process (ANP) Latent Encoder.
 
 	XXX:
-		* using linear layers for map_layer, mean, and logvar modules
+		* using linear layers for map_layer, alpha, and beta modules
 		* taking mean over sequence dimension of encoder output
 	"""
 	def __init__(self, in_shape, label_size, it_name='tcn', it_params=None,
@@ -159,7 +123,6 @@ class LatEncoder(nn.Module):
 				* beta
 				* normal
 				* lognormal
-				* gamma
 			sa_depth (int>0): self-attention network depth
 			sa_heads (int>0): self-attention heads
 			sa_dropout (float>=0): self-attention dropout
@@ -169,6 +132,7 @@ class LatEncoder(nn.Module):
 		super().__init__()
 		self.in_shape = in_shape
 		self.label_size = label_size
+		self.min_std, self.use_lvar = min_std, use_lvar
 		if (isnt(it_params)):
 			it_params = {}
 
@@ -183,23 +147,22 @@ class LatEncoder(nn.Module):
 		self.dist_fn = {
 			'beta': torch.distributions.Beta,
 			'normal': torch.distributions.Normal,
-			'lognormal': torch.distributions.LogNormal,
-			'gamma': torch.distributions.Gamma
+			'lognormal': torch.distributions.LogNormal
 		}.get(self.dist_type, None)
 		assert is_valid(self.dist_fn), \
 			'dist_type must be a valid latent distribution type'
 
 		self.map_layer = nn.Linear(embed_size, embed_size)
-		self.mean = nn.Linear(embed_size, latent_size)
-		self.logvar = nn.Linear(embed_size, latent_size)
+		self.alpha = nn.Linear(embed_size, latent_size)
+		self.beta = nn.Linear(embed_size, latent_size)
 
 		# self.map_layer = nn.Conv1d(embed_size, embed_size, 1)
-		# self.mean = nn.Conv1d(embed_size, latent_size, 1)
-		# self.logvar = nn.Conv1d(embed_size, latent_size, 1)
+		# self.alpha = nn.Conv1d(embed_size, latent_size, 1)
+		# self.beta = nn.Conv1d(embed_size, latent_size, 1)
 
-		self.min_std = min_std
-		self.use_lvar = use_lvar
-		self.sig = nn.LogSigmoid() if (self.use_lvar) else nn.Sigmoid()
+		self.sig = None
+		if (self.dist_type.endswith('normal')):
+			self.sig = nn.LogSigmoid() if (self.use_lvar) else nn.Sigmoid()
 		self.out_shape = (latent_size,)
 
 	def forward(self, x, y):
@@ -212,21 +175,23 @@ class LatEncoder(nn.Module):
 		for W in self.sa_W:
 			enc = self.attention_fn(W, enc, enc, enc)
 		sa_mean = torch.relu(self.map_layer(enc.mean(dim=2))) # Average over sequence dim
-		lat_mean = self.mean(sa_mean)
-		lat_logvar = self.logvar(sa_mean)
+		lat_dist_alpha, lat_dist_beta = self.alpha(sa_mean), self.beta(sa_mean)
 
-		if (self.use_lvar):
-			# Variance clipping in the log domain (should be more stable)
-			lat_logvar = self.sig(lat_logvar)
-			lat_logvar = torch.clamp(lat_logvar, np.log(self.min_std), \
-				-np.log(self.min_std))
-			lat_sigma = torch.exp(0.5 * lat_logvar)
-		else:
-			# Simple variance clipping (from deep mind repo)
-			lat_sigma = self.min_std + (1 - self.min_std) * self.sig(lat_logvar * 0.5)
+		if (self.dist_type.endswith('normal')):
+			if (self.use_lvar):
+				# Variance clipping in the log domain (should be more stable)
+				lat_dist_beta = self.sig(lat_dist_beta)
+				lat_dist_beta = torch.clamp(lat_dist_beta, np.log(self.min_std), \
+					-np.log(self.min_std))
+				lat_dist_sigma = torch.exp(0.5 * lat_dist_beta)
+			else:
+				# Simple variance clipping (from deep mind repo)
+				lat_dist_sigma = self.min_std + (1 - self.min_std) * \
+					self.sig(lat_dist_beta * 0.5)
+			lat_dist_beta = lat_dist_sigma
 
-		lat_dist = self.dist_fn(lat_mean, lat_sigma)
-		return lat_dist, lat_logvar
+		lat_dist = self.dist_fn(lat_dist_alpha, lat_dist_beta)
+		return lat_dist, lat_dist_beta
 
 class Decoder(nn.Module):
 	"""
@@ -237,7 +202,7 @@ class Decoder(nn.Module):
 	"""
 	def __init__(self, in_shape, label_size, det_encoder_params, lat_encoder_params,
 		tt_name='tcn', tt_params=None, de_name='tcn', de_params=None, embed_size=128,
-		dist_type='normal', min_std=.01, use_lvar=False):
+		dist_type='beta', min_std=.01, use_lvar=False):
 		"""
 		Args:
 			in_shape (tuple): input size as (C, S)
@@ -250,18 +215,19 @@ class Decoder(nn.Module):
 			de_params (dict): decoder hyperparameters
 			embed_size (int>0): embedding size of tcn decoder modules
 			dist_type (str): output distribution, allowed values:
+				* bernoulli
+				* categorical
 				* beta
 				* normal
 				* lognormal
-				* gamma
-				* dirichlet (add?)
-				* bernoulli (add?)
+				* dirichlet (XXX add?)
 			min_std (float): value used to limit output distribution sigma
 			use_lvar (bool): whether to use log domain variance clipping
 		"""
 		super().__init__()
 		self.in_shape = in_shape
 		self.label_size = label_size
+		self.min_std, self.use_lvar = min_std, use_lvar
 		if (isnt(tt_params)):
 			tt_params = {}
 		if (isnt(de_params)):
@@ -282,21 +248,26 @@ class Decoder(nn.Module):
 
 		self.dist_type = dist_type
 		self.dist_fn = {
+			'bernoulli': torch.distributions.Bernoulli,
+			'categorical': torch.distributions.Categorical,
 			'beta': torch.distributions.Beta,
 			'normal': torch.distributions.Normal,
-			'lognormal': torch.distributions.LogNormal,
-			'gamma': torch.distributions.Gamma
+			'lognormal': torch.distributions.LogNormal
 		}.get(self.dist_type, None)
 		assert is_valid(self.dist_fn), \
 			'dist_type must be a valid output distribution type'
 
-		# Interpretation of alpha and beta depends on the dist_type
-		self.alpha = nn.Linear(mul(*self.decoder.out_shape), self.label_size)
-		self.beta = nn.Linear(mul(*self.decoder.out_shape), self.label_size)
-		self.min_std = min_std
-		self.use_lvar = use_lvar
-		self.softplus = None if (self.use_lvar or not self.dist_type.endswith('normal')) \
-			else nn.Softplus()
+		self.alpha = nn.Linear(mul(*self.decoder.out_shape), self.label_size) # primary out_dist parameter
+		if (self.dist_type in ('bernoulli', 'categorical')):
+			self.beta = None
+			self.clamp = nn.Sigmoid()
+		elif (self.dist_type in ('beta',)):
+			self.beta = nn.Linear(mul(*self.decoder.out_shape), self.label_size)
+			self.clamp = nn.Softplus()
+		elif (self.dist_type.endswith('normal')):
+			self.beta = nn.Linear(mul(*self.decoder.out_shape), self.label_size)
+			self.clamp = torch.clamp if (self.use_lvar) else nn.Softplus()
+
 		self.out_shape = (self.label_size,)
 
 	def forward(self, det_rep, lat_rep, target_x):
@@ -311,19 +282,26 @@ class Decoder(nn.Module):
 			.expand(-1, -1, x.shape[2]), x], dim=1))
 
 		# For now we're flattening the decoded embedding
-		out_dist_alpha = self.alpha(torch.flatten(decoded, start_dim=1, end_dim=-1))
-		out_dist_beta = self.beta(torch.flatten(decoded, start_dim=1, end_dim=-1))
+		out_dist_alpha = self.clamp(self.alpha(torch.flatten(decoded, start_dim=1, end_dim=-1)))
 
-		if (self.dist_type.endswith('normal')):
+		if (self.dist_type in ('bernoulli', 'categorical')):
+			out_dist = self.dist_fn(probs=out_dist_alpha)
+		elif (self.dist_type in ('beta',)):
+			out_dist_beta = self.clamp(self.beta(torch.flatten(decoded, start_dim=1, end_dim=-1)))
+			out_dist = self.dist_fn(out_dist_alpha, out_dist_beta)
+		elif (self.dist_type.endswith('normal')):
+			out_dist_beta = self.clamp(self.beta(torch.flatten(decoded, start_dim=1, end_dim=-1)))
 			if (self.use_lvar):
-				out_dist_beta = torch.clamp(out_dist_beta, math.log(self._min_std), \
+				out_dist_beta = self.clamp(out_dist_beta, math.log(self._min_std), \
 					-math.log(self._min_std))
 				out_dist_sigma = torch.exp(out_dist_beta)
 			else:
-				out_dist_sigma = self.min_std + (1 - self.min_std) * self.softplus(out_dist_beta)
+				out_dist_sigma = self.min_std + (1 - self.min_std) \
+					* self.clamp(out_dist_beta)
 			out_dist_beta = out_dist_sigma # Bounded or clamped variance
+			out_dist = self.dist_fn(out_dist_alpha, out_dist_beta)
 
-		return self.dist_fn(out_dist_alpha, out_dist_beta)
+		return out_dist 
 
 
 # ********** MODEL MODULES **********
@@ -332,8 +310,8 @@ class AttentiveNP(nn.Module):
 	Attentive Neural Process Module
 	"""
 	def __init__(self, in_shape, label_size=1, det_encoder_params=None,
-		lat_encoder_params=None, decoder_params=None, use_lvar=False,
-		context_in_target=False):
+		lat_encoder_params=None, decoder_params=None, sample_latent=True,
+		use_lvar=False, context_in_target=False):
 		"""
 		Args:
 			in_shape (tuple): input size as (C, S)
@@ -341,12 +319,14 @@ class AttentiveNP(nn.Module):
 			det_encoder_params (dict): deterministic encoder hyperparameters
 			lat_encoder_params (dict): latent encoder hyperparameters
 			decoder_params (dict): decoder hyperparameters
+			sample_latent (bool): whether to sample latent dist or use EV
 			use_lvar (bool):
 			context_in_target (bool):
 		"""
 		super().__init__()
 		self.in_shape = in_shape
 		self.label_size = label_size
+		self.use_lvar, self.context_in_target = use_lvar, context_in_target
 		if (isnt(det_encoder_params)):
 			det_encoder_params = {}
 		if (isnt(lat_encoder_params)):
@@ -358,22 +338,26 @@ class AttentiveNP(nn.Module):
 		self.lat_encoder = LatEncoder(in_shape, label_size, **lat_encoder_params)
 		self.decoder = Decoder(in_shape, label_size, det_encoder_params,
 			lat_encoder_params, **decoder_params)
-		self.use_lvar, self.context_in_target = use_lvar, context_in_target
+		self.sample_latent = sample_latent
+		self.bce = nn.BCEWithLogitsLoss()
+		self.mae = nn.L1Loss()
+		self.mse = nn.MSELoss()
 		self.out_shape = self.decoder.out_shape
 
 	def forward(self, context_x, context_y, target_x, target_y=None, \
-		train_mode=False, sample_latent=True):
+		train_mode=False):
 		"""
 		Convenience method to propagate context and targets through networks,
 		and sample the output distribution.
 		"""
 		prior, posterior, out = self.forward_net(context_x, context_y, target_x, \
-			target_y, train_mode=train_mode, sample_latent=sample_latent)
-		y_pred, losses = self.sample(prior, posterior, out, target_y, train_mode)
-		return y_pred, losses
+			target_y, train_mode=train_mode)
+		pred_y, losses = self.sample(prior, posterior, out, target_y=target_y, \
+			train_mode=train_mode)
+		return pred_y, losses
 
 	def forward_net(self, context_x, context_y, target_x, target_y=None, \
-		train_mode=False, sample_latent=True):
+		train_mode=False):
 		"""
 		Propagate context and target through neural process network.
 
@@ -385,27 +369,28 @@ class AttentiveNP(nn.Module):
 			train_mode (bool): whether the model is in training or not.
 				If in training, the model will use the (target_x,target_y)
 				conditioned posterior as the global latent.
-			sample_latent (bool): if False, use sample mean instead of sampling latent
 		"""
 		det_rep = self.det_encoder(context_x, context_y, target_x)
-		prior_dist, prior_logvar = self.lat_encoder(context_x, context_y)
+		prior_dist, prior_beta = self.lat_encoder(context_x, context_y)
 
 		if (is_valid(target_y)):
-			# Training:
-			posterior_dist, posterior_logvar = self.lat_encoder(target_x, target_y)
+			posterior_dist, posterior_beta = self.lat_encoder(target_x, target_y)
 			if (train_mode):
-				lat_rep = posterior_dist.rsample() if (sample_latent) else posterior_dist.loc
+				lat_rep = posterior_dist.rsample() if (self.sample_latent) \
+					else posterior_dist.mean
 			else:
-				lat_rep = prior_dist.rsample() if (sample_latent) else prior_dist.loc
+				lat_rep = prior_dist.rsample() if (self.sample_latent) \
+					else prior_dist.mean
 		else:
-			# Generation:
-			lat_rep = prior_dist.rsample() if (sample_latent) else prior_dist.loc
+			# At prediction time:
+			posterior_dist, posterior_beta = None, None
+			lat_rep = prior_dist.rsample() if (self.sample_latent) else prior_dist.mean
 
 		out_dist = self.decoder(det_rep, lat_rep, target_x)
 		return prior_dist, posterior_dist, out_dist
 
 	def sample(self, prior_dist, posterior_dist, out_dist, target_y=None, \
-		train_mode=False):
+		train_mode=False, cast_precision=16):
 		"""
 		Sample neural proces output distribution to return prediction,
 		calculate and return loss if a target label was passed in.
@@ -418,32 +403,195 @@ class AttentiveNP(nn.Module):
 			train_mode (bool): whether the model is in training or not.
 				If in training, the model will sample the output distribution
 				instead of using its first moment.
+			cast_precision (16|32|64):
 		"""
-		y_pred = out_dist.rsample() if (train_mode) else out_dist.loc # XXX ?
+		# In train mode sample dist, in val/test use expected value:
+		pred_y = out_dist.rsample() if (train_mode and out_dist.has_rsample) \
+			else out_dist.mean
 		losses = None
 
 		if (is_valid(target_y)):
 			if (self.use_lvar):
 				pass # custom log prob and kl div here
 			else:
-				nll = -out_dist.log_prob(target_y).mean(-1).unsqueeze(-1)
+				label_y = target_y
+				if (type(out_dist).__name__ in ('Bernoulli', 'Beta', 'Normal')):
+					ftype = {
+						16: torch.float16,
+						32: torch.float32,
+						64: torch.float64
+					}.get(cast_precision, 16)
+					label_y = label_y.to(ftype)
+					if (type(out_dist).__name__ in ('Beta',)):
+						eps = 1e-3
+						label_y = label_y.clamp(min=eps, max=1-eps)
+
+				# print('target_y', label_y)
+				# print('pred_y', pred_y)
+				# # print('out_dist.mean', out_dist.mean)
+				# # print('out_dist.log_prob(label_y)', out_dist.log_prob(label_y))
+				# # for i in [-1.0, 0.0, 0.25, 0.5, 0.75, 1.0]:
+				# # 	print(str(i))
+				# # 	print(out_dist.log_prob(torch.tensor([i], device='cuda')))
+				# print('log pd:', out_dist.log_prob(label_y))
+				# print('pd:', out_dist.log_prob(label_y).exp())
+
+				logpd = out_dist.log_prob(label_y).mean(-1).unsqueeze(-1)
 				kldiv = torch.distributions.kl_divergence(posterior_dist, prior_dist) \
 					.mean(-1).unsqueeze(-1)
 				# use kl beta factor (disentangled representation)?
 				if (self.context_in_target):
 					pass
-			# mse = self.mse(out_dist.loc, target_y) # TODO: switch to a classifier loss (BCE?)
-
 			# Weight loss nearer to prediction time?
 			# weight = (torch.arange(nll.shape[1]) + 1).float().to(dev)[None, :]
 			# lossprob_weighted = nll / torch.sqrt(weight)  # We want to  weight nearer stuff more
 			losses = {
-				'loss': (nll + kldiv).mean(),
-				'nll': nll.mean(),
+				'loss': (kldiv - logpd).mean(),
+				'logpd': logpd.mean(),
 				'kldiv': kldiv.mean(),
-				# 'mse': mse.mean(),
+				'bce': self.bce(out_dist.mean.squeeze(), label_y.squeeze()).mean(),
+				'mae': self.mae(out_dist.mean.squeeze(), label_y.squeeze()).mean(),
+				'mse': self.mse(out_dist.mean.squeeze(), label_y.squeeze()).mean()
 				# 'lossprob_weighted': lossprob_weighted.mean()
 			}
 
-		return y_pred, losses
+		return pred_y, losses
 
+	@classmethod
+	def suggest_params(cls, trial=None, label_size=1):
+		"""
+		suggest model hyperparameters from an optuna trial object
+		or return fixed default hyperparameters
+		"""
+		if (is_valid(trial)):
+			# TODO - add spaces for suggested parameter values
+			params = {
+				'label_size': label_size,
+				'det_encoder_params': {
+					'it_params': {
+						'size': 128, 'depth': 3, 'kernel_sizes': 3,
+						'input_dropout': 0.0, 'output_dropout': 0.0, 'global_dropout': .5,
+						'global_dilation': True, 'block_act': 'elu', 'out_act': 'relu',
+						'block_init': 'xavier_uniform', 'out_init': 'xavier_uniform', 'pad_type': 'full'
+					},
+					'tt_name': 'tcn',
+					'tt_params': {
+						'size': 128, 'depth': 3, 'kernel_sizes': 3,
+						'input_dropout': 0.0, 'output_dropout': 0.0, 'global_dropout': .5,
+						'global_dilation': True, 'block_act': 'elu', 'out_act': 'relu',
+						'block_init': 'xavier_uniform', 'out_init': 'xavier_uniform', 'pad_type': 'full'
+					},
+					'ct_name': 'tcn',
+					'ct_params': {
+						'size': 128, 'depth': 3, 'kernel_sizes': 3,
+						'input_dropout': 0.0, 'output_dropout': 0.0, 'global_dropout': .5,
+						'global_dilation': True, 'block_act': 'elu', 'out_act': 'relu',
+						'block_init': 'xavier_uniform', 'out_init': 'xavier_uniform', 'pad_type': 'full'
+					},
+					'embed_size': 128,
+					'sa_depth': 2, 'sa_heads': 8, 'sa_dropout': 0.8,
+					'xa_depth': 2, 'xa_heads': 8, 'xa_dropout': 0.8
+				},
+				'lat_encoder_params': {
+					'it_name': 'tcn',
+					'it_params': {
+						'size': 128, 'depth': 3, 'kernel_sizes': 3,
+						'input_dropout': 0.0, 'output_dropout': 0.0, 'global_dropout': .5,
+						'global_dilation': True, 'block_act': 'elu', 'out_act': 'relu',
+						'block_init': 'xavier_uniform', 'out_init': 'xavier_uniform', 'pad_type': 'full'
+					},
+					'embed_size': 128,
+					'latent_size': 256,
+					'dist_type': 'normal',
+					'sa_depth': 2, 'sa_heads': 8, 'sa_dropout': 0.0,
+					'min_std': .01, 'use_lvar': False
+				},
+				'decoder_params': {
+					'tt_name': 'tcn',
+					'tt_params': {
+						'size': 128, 'depth': 3, 'kernel_sizes': 3,
+						'input_dropout': 0.0, 'output_dropout': 0.0, 'global_dropout': .5,
+						'global_dilation': True, 'block_act': 'elu', 'out_act': 'relu',
+						'block_init': 'xavier_uniform', 'out_init': 'xavier_uniform', 'pad_type': 'full'
+					},
+					'de_name': 'tcn',
+					'de_params': {
+						'size': 128, 'depth': 3, 'kernel_sizes': 3,
+						'input_dropout': 0.0, 'output_dropout': 0.0, 'global_dropout': .5,
+						'global_dilation': True, 'block_act': 'elu', 'out_act': 'relu',
+						'block_init': 'xavier_uniform', 'out_init': 'xavier_uniform', 'pad_type': 'full'
+					},
+					'embed_size': 128,
+					'dist_type': 'normal',
+					'min_std': .01, 'use_lvar': False
+				},
+				'sample_latent': True,
+				'use_lvar': False,
+				'context_in_target': False
+			}
+		else:
+			params = {
+				'label_size': label_size,
+				'det_encoder_params': {
+					'it_params': {
+						'size': 128, 'depth': 3, 'kernel_sizes': 3,
+						'input_dropout': 0.0, 'output_dropout': 0.0, 'global_dropout': .5,
+						'global_dilation': True, 'block_act': 'elu', 'out_act': 'relu',
+						'block_init': 'xavier_uniform', 'out_init': 'xavier_uniform', 'pad_type': 'full'
+					},
+					'tt_name': 'tcn',
+					'tt_params': {
+						'size': 128, 'depth': 3, 'kernel_sizes': 3,
+						'input_dropout': 0.0, 'output_dropout': 0.0, 'global_dropout': .5,
+						'global_dilation': True, 'block_act': 'elu', 'out_act': 'relu',
+						'block_init': 'xavier_uniform', 'out_init': 'xavier_uniform', 'pad_type': 'full'
+					},
+					'ct_name': 'tcn',
+					'ct_params': {
+						'size': 128, 'depth': 3, 'kernel_sizes': 3,
+						'input_dropout': 0.0, 'output_dropout': 0.0, 'global_dropout': .5,
+						'global_dilation': True, 'block_act': 'elu', 'out_act': 'relu',
+						'block_init': 'xavier_uniform', 'out_init': 'xavier_uniform', 'pad_type': 'full'
+					},
+					'embed_size': 128,
+					'sa_depth': 2, 'sa_heads': 8, 'sa_dropout': 0.8,
+					'xa_depth': 2, 'xa_heads': 8, 'xa_dropout': 0.8
+				},
+				'lat_encoder_params': {
+					'it_name': 'tcn',
+					'it_params': {
+						'size': 128, 'depth': 3, 'kernel_sizes': 3,
+						'input_dropout': 0.0, 'output_dropout': 0.0, 'global_dropout': .5,
+						'global_dilation': True, 'block_act': 'elu', 'out_act': 'relu',
+						'block_init': 'xavier_uniform', 'out_init': 'xavier_uniform', 'pad_type': 'full'
+					},
+					'embed_size': 128,
+					'latent_size': 256,
+					'dist_type': 'normal',
+					'sa_depth': 2, 'sa_heads': 8, 'sa_dropout': 0.0,
+					'min_std': .01, 'use_lvar': False
+				},
+				'decoder_params': {
+					'tt_name': 'tcn',
+					'tt_params': {
+						'size': 128, 'depth': 3, 'kernel_sizes': 3,
+						'input_dropout': 0.0, 'output_dropout': 0.0, 'global_dropout': .5,
+						'global_dilation': True, 'block_act': 'elu', 'out_act': 'relu',
+						'block_init': 'xavier_uniform', 'out_init': 'xavier_uniform', 'pad_type': 'full'
+					},
+					'de_name': 'tcn',
+					'de_params': {
+						'size': 128, 'depth': 3, 'kernel_sizes': 3,
+						'input_dropout': 0.0, 'output_dropout': 0.0, 'global_dropout': .5,
+						'global_dilation': True, 'block_act': 'elu', 'out_act': 'relu',
+						'block_init': 'xavier_uniform', 'out_init': 'xavier_uniform', 'pad_type': 'full'
+					},
+					'embed_size': 128,
+					'dist_type': 'bernoulli',
+					'min_std': .01, 'use_lvar': False
+				},
+				'sample_latent': True,
+				'use_lvar': False,
+				'context_in_target': False
+			}
+		return params

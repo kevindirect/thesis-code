@@ -47,21 +47,25 @@ TEST_RATIO = .2
 
 # PyTorch
 PYTORCH_MODELS_DIR = MODEL_DIR +'model_p' +sep
+PYTORCH_ACT1D_LIST = ('relu', 'lrelu', 'elu', 'celu', 'gelu', 'prelu', \
+	'selu', 'sig', 'tanh', 'smax', 'logsmax', 'splus')
 PYTORCH_ACT_MAPPING = {
-	'sig': nn.Sigmoid,
-	'tanh': nn.Tanh,
-	'smax': nn.Softmax,
-	'smax2d': nn.Softmax2d,
-	'logsmax': nn.LogSoftmax,
-	'splus': nn.Softplus,
 	'relu': nn.ReLU,
 	'lrelu': nn.LeakyReLU,
 	'elu': nn.ELU,
 	'celu': nn.CELU,
 	'gelu': nn.GELU,
 	'prelu': nn.PReLU,
-	'selu': nn.SELU
+	'selu': nn.SELU,
+	'sig': nn.Sigmoid,
+	'tanh': nn.Tanh,
+	'smax': nn.Softmax,
+	'smax2d': nn.Softmax2d,
+	'logsmax': nn.LogSoftmax,
+	'splus': nn.Softplus
 }
+PYTORCH_INIT_LIST = ('zeros', 'ones', 'eye', 'dirac', 'normal', 'orthogonal', \
+	'xavier_uniform', 'xavier_normal', 'kaiming_uniform', 'kaiming_normal')
 PYTORCH_LOSS_MAPPING = {
 	# Binary
 	'bce': nn.BCELoss,

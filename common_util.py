@@ -534,7 +534,7 @@ def dict_flatten(d, parent_key='', sep='_'):
 	items = []
 	for k, v in d.items():
 		new_key = parent_key + sep + k if parent_key else k
-		if isinstance(v, MutableMapping):
+		if (is_type(v, MutableMapping)):
 			items.extend(dict_flatten(v, new_key, sep=sep).items())
 		else:
 			items.append((new_key, v))
@@ -826,6 +826,7 @@ def apply_nz_nn(fn):
 	return func
 
 one_minus = lambda val: 1 - val
+odd_only = lambda val: val if (val % 2 in (1, -1)) else val-1
 identity_fn = lambda val, *args, **kwargs: val
 null_fn = lambda *args, **kwargs: None
 
