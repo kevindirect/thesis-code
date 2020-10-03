@@ -874,7 +874,9 @@ def get_cmd_args(argv, arg_list, script_name='', script_pkg='', set_logging=True
 
 	Args:
 		argv (sys.argv): system argument input vector
-		arg_list (list): list of non-static commandline arguments (end with '=' for non-flag arguments)
+		arg_list (list): list of non-static commandline arguments,
+			end with '=' for non-flag arguments
+			no options can start with 'h' or 'l', these are reserved
 		script_name (str): name of calling script for use in the help dialog
 		set_logging (bool): whether or not to include a logging level commandline argument and initialize logging
 

@@ -17,7 +17,7 @@ from model.metrics_util import SimulatedReturn
 from model.pl_generic import GenericModel
 
 
-class NP(GenericModel):
+class NPModel(GenericModel):
 	"""
 	Neural Process Pytorch Lightning Wrapper.
 
@@ -59,6 +59,51 @@ class NP(GenericModel):
 		"""
 		super().__init__(model_fn, m_params, t_params, data, class_weights=None)
 		self.ret_fn = SimulatedReturn(return_type='binary_confidence')
+
+	@classmethod
+	def suggest_params(cls, trial=None):
+		"""
+		suggest training hyperparameters from an optuna trial object
+		or return fixed default hyperparameters
+		"""
+		if (is_valid(trial)):
+			raise Error('look at batch_step_size')
+			params = {
+				'window_size': trial.suggest_int('window_size', 3, 120),
+				'feat_dim': None,
+				'train_shuffle': False,
+				'epochs': trial.suggest_int('epochs', 200, 500),
+				'batch_size': trial.suggest_int('batch_size', 128, 512),
+				'batch_step_size': trial.suggest_int('batch_step_size', 1, 128),
+				'loss': 'clf',
+				'opt': {
+					'name': 'adam',
+					'kwargs': {
+						'lr': trial.suggest_loguniform('lr', 1e-6, 1e-1)
+					}
+				},
+				'num_workers': 0,
+				'pin_memory': True
+			}
+		else:
+			params = {
+				'window_size': 20,
+				'feat_dim': None,
+				'train_shuffle': False,    
+				'epochs': 200,
+				'batch_size': 128,
+				'batch_step_size': 64,
+				'loss': 'clf',
+				'opt': {
+					'name': 'adam',
+					'kwargs': {
+						'lr': 1e-3
+					}
+				},
+				'num_workers': 0,
+				'pin_memory': True
+			}
+		return params
 
 	def forward(self, context_x, context_y, target_x, target_y=None, \
 		train_mode=False):

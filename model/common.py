@@ -64,7 +64,7 @@ PYTORCH_ACT_MAPPING = {
 	'logsmax': nn.LogSoftmax,
 	'splus': nn.Softplus
 }
-PYTORCH_INIT_LIST = ('zeros', 'ones', 'eye', 'dirac', 'normal', 'orthogonal', \
+PYTORCH_INIT_LIST = ('zeros', 'ones', 'dirac', 'normal', 'orthogonal', \
 	'xavier_uniform', 'xavier_normal', 'kaiming_uniform', 'kaiming_normal')
 PYTORCH_LOSS_MAPPING = {
 	# Binary

@@ -66,7 +66,10 @@ class GenericModel(pl.LightningModule):
 		self.hparams['lr'] = self.t_params['opt']['kwargs']['lr']
 		loss_fn = PYTORCH_LOSS_MAPPING.get(self.t_params['loss'], None)
 		if (is_valid(loss_fn)):
-			self.loss = loss_fn() if (isnt(class_weights)) else loss_fn(weight=class_weights)
+			self.loss = loss_fn() if (isnt(class_weights)) \
+				else loss_fn(weight=class_weights)
+		else:
+			logging.info('no loss function set in pytorch lightning')
 		self.ret_fn = SimulatedReturn(return_type='binary_confidence')
 		self.__setup_data__(data)
 		self.__build_model__(model_fn)
@@ -84,10 +87,10 @@ class GenericModel(pl.LightningModule):
 				'window_size': trial.suggest_int('window_size', 3, 120),
 				'feat_dim': None,
 				'train_shuffle': False,
-				'epochs': 200,
+				'epochs': trial.suggest_int('epochs', 200, 500),
 				'batch_size': trial.suggest_int('batch_size', 128, 512),
 				'batch_step_size': trial.suggest_int('batch_step_size', 1, 128),
-				'loss': 'clf',
+				'loss': 'nll',
 				'opt': {
 					'name': 'adam',
 					'kwargs': {
@@ -105,7 +108,7 @@ class GenericModel(pl.LightningModule):
 				'epochs': 200,
 				'batch_size': 128,
 				'batch_step_size': 64,
-				'loss': 'clf',
+				'loss': 'nll',
 				'opt': {
 					'name': 'adam',
 					'kwargs': {
