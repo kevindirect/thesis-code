@@ -82,6 +82,7 @@ class NPModel(GenericModel):
 						'lr': trial.suggest_loguniform('lr', 1e-6, 1e-1)
 					}
 				},
+				'prune_trials': True,
 				'num_workers': 0,
 				'pin_memory': True
 			}
@@ -100,6 +101,7 @@ class NPModel(GenericModel):
 						'lr': 1e-3
 					}
 				},
+				'prune_trials': True,
 				'num_workers': 0,
 				'pin_memory': True
 			}

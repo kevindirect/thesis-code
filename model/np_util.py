@@ -466,7 +466,6 @@ class AttentiveNP(nn.Module):
 		if (is_valid(trial)):
 			# TODO - add spaces for suggested parameter values
 			params = {
-				'label_size': label_size,
 				'det_encoder_params': {
 					'it_params': {
 						'size': 128, 'depth': 3, 'kernel_sizes': 3,
@@ -527,11 +526,11 @@ class AttentiveNP(nn.Module):
 				},
 				'sample_latent': True,
 				'use_lvar': False,
-				'context_in_target': False
+				'context_in_target': False,
+				'label_size': label_size
 			}
 		else:
 			params = {
-				'label_size': label_size,
 				'det_encoder_params': {
 					'it_params': {
 						'size': 128, 'depth': 3, 'kernel_sizes': 3,
@@ -592,6 +591,7 @@ class AttentiveNP(nn.Module):
 				},
 				'sample_latent': True,
 				'use_lvar': False,
-				'context_in_target': False
+				'context_in_target': False,
+				'label_size': label_size
 			}
 		return params

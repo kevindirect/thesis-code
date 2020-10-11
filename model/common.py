@@ -38,12 +38,13 @@ XG_VIZ_DIR = MODEL_DIR +'xg-graphs-viz' +sep
 DATASET_DIR = RECON_DIR +'dataset' +sep
 FILTERSET_DIR = RECON_DIR +'filterset' +sep
 XG_INDEX_FNAME = '.index.json'
-HOPT_WORKER_BIN = 'hyperopt-mongo-worker'
-ERROR_CODE = 999999
 EXPECTED_NUM_HOURS = 8
-INTRADAY_LEN = EXPECTED_NUM_HOURS
-VAL_RATIO = .2
-TEST_RATIO = .2
+INTRADAY_LEN = 8
+ASSETS = ('sp_500', 'russell_2000', 'nasdaq_100', 'dow_jones')
+INTERVAL_YEARS = ('2009', '2018')
+VAL_RATIO, TEST_RATIO = .2, .2
+# HOPT_WORKER_BIN = 'hyperopt-mongo-worker'
+# ERROR_CODE = 999999
 
 # PyTorch
 PYTORCH_MODELS_DIR = MODEL_DIR +'model_p' +sep
@@ -64,7 +65,7 @@ PYTORCH_ACT_MAPPING = {
 	'logsmax': nn.LogSoftmax,
 	'splus': nn.Softplus
 }
-PYTORCH_INIT_LIST = ('zeros', 'ones', 'dirac', 'normal', 'orthogonal', \
+PYTORCH_INIT_LIST = ('zeros', 'ones', 'normal', 'orthogonal', \
 	'xavier_uniform', 'xavier_normal', 'kaiming_uniform', 'kaiming_normal')
 PYTORCH_LOSS_MAPPING = {
 	# Binary
@@ -97,6 +98,12 @@ PYTORCH_SCH_MAPPING = {
 	'st': optim.lr_scheduler.StepLR
 }
 
+# Optuna
+OPTUNA_DB_FNAME = 'trials.db'
+OPTUNA_CSV_FNAME = 'trials.csv'
+OPTUNA_N_TRIALS = 100
+OPTUNA_TIMEOUT = 8*60*60 # optimize timeout in seconds
+
 """
 # Keras
 KERAS_MODELS_DIR = MODEL_DIR +'model_k' +sep
@@ -123,25 +130,25 @@ TENSORFLOW_LOSS_MAPPING = {
 
 # PACKAGE DEFAULTS
 dum = None
-default_ray_config = {
-	"init": {
-		"num_cpus": 8,
-		"num_gpus": 1,
-		"redirect_output": True,
-		"include_webui": False
-	}
-}
-default_ray_trial_resources = {"cpu": 2, "gpu": 1}
-default_model = 'TCN'
-default_xg = 'xg0_reteod_direod.json'
-default_dataset = 'xg0_reteod_direod.json'
-default_backend = 'pytorch'
-default_trials_count = 100
-default_filter = ["0"]
-default_nt_filter = ["1"]
-default_opt_filter = ["1", "2"]
-default_target_col_idx = 0
-default_target_idx = [0, 1, 2]
+# default_ray_config = {
+# 	"init": {
+# 		"num_cpus": 8,
+# 		"num_gpus": 1,
+# 		"redirect_output": True,
+# 		"include_webui": False
+# 	}
+# }
+# default_ray_trial_resources = {"cpu": 2, "gpu": 1}
+# default_model = 'TCN'
+# default_xg = 'xg0_reteod_direod.json'
+# default_dataset = 'xg0_reteod_direod.json'
+# default_backend = 'pytorch'
+# default_trials_count = 100
+# default_filter = ["0"]
+# default_nt_filter = ["1"]
+# default_opt_filter = ["1", "2"]
+# default_target_col_idx = 0
+# default_target_idx = [0, 1, 2]
 
 
 # PACKAGE UTIL FUNCTIONS

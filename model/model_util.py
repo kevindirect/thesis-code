@@ -434,9 +434,9 @@ class StackedTCN(TemporalConvNet):
 		"""
 		if (is_valid(trial)):
 			params = {
-				'size': trial.suggest_int('size', 2**6, 2**12),
-				'depth': trial.suggest_int('depth', 2, 20),
-				'kernel_sizes': odd_only(trial.suggest_int('kernel_sizes', 3, 121)),
+				'size': trial.suggest_int('size', 2**5, 2**8),
+				'depth': trial.suggest_int('depth', 2, 6),
+				'kernel_sizes': odd_only(trial.suggest_int('kernel_sizes', 3, 15)),
 				'input_dropout': trial.suggest_uniform('input_dropout', 0.0, 1.0),
 				'output_dropout': trial.suggest_uniform('output_dropout', 0.0, 1.0),
 				'global_dropout': trial.suggest_uniform('global_dropout', 0.0, 1.0),
@@ -446,8 +446,9 @@ class StackedTCN(TemporalConvNet):
 				'block_init': trial.suggest_categorical('block_init', PYTORCH_INIT_LIST),
 				'out_init': trial.suggest_categorical('out_init', PYTORCH_INIT_LIST),
 				'pad_type': trial.suggest_categorical('pad_type', ('same', 'full')),
+				'label_size': label_size,
 				'ob_out_shapes': label_size+1 if (add_ob) else None,
-				'ob_act': trial.suggest_categorical('out_act', PYTORCH_ACT1D_LIST),
+				'ob_act': trial.suggest_categorical('ob_act', PYTORCH_ACT1D_LIST),
 				'ob_init': trial.suggest_categorical('ob_init', PYTORCH_INIT_LIST)
 			}
 		else:
@@ -464,6 +465,7 @@ class StackedTCN(TemporalConvNet):
 				'block_init': 'xavier_uniform',
 				'out_init': 'xavier_uniform',
 				'pad_type': 'full',
+				'label_size': label_size,
 				'ob_out_shapes': label_size+1 if (add_ob) else None,
 				'ob_act': 'linear',
 				'ob_init': 'xavier_uniform'

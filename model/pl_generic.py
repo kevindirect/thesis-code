@@ -10,6 +10,7 @@ from inspect import getfullargspec
 import numpy as np
 import pandas as pd
 import torch
+import torch.nn.functional as F
 import pytorch_lightning as pl
 
 from common_util import is_type, assert_has_all_attr, is_valid, is_type, isnt, dict_flatten, pairwise, np_at_least_nd, np_assert_identical_len_dim
@@ -81,22 +82,28 @@ class GenericModel(pl.LightningModule):
 		"""
 		suggest training hyperparameters from an optuna trial object
 		or return fixed default hyperparameters
+
+		Pytorch recommends not using num_workers > 0 to return CUDA tensors
+		because of the subtleties of CUDA multiprocessing, instead pin the
+		memory to the GPU for fast data transfer:
+		https://pytorch.org/docs/stable/data.html#single-and-multi-process-data-loading
 		"""
 		if (is_valid(trial)):
 			params = {
-				'window_size': trial.suggest_int('window_size', 3, 120),
+				'window_size': trial.suggest_int('window_size', 3, 30),
 				'feat_dim': None,
 				'train_shuffle': False,
 				'epochs': trial.suggest_int('epochs', 200, 500),
 				'batch_size': trial.suggest_int('batch_size', 128, 512),
-				'batch_step_size': trial.suggest_int('batch_step_size', 1, 128),
-				'loss': 'nll',
+				'batch_step_size': None,
+				'loss': 'ce',
 				'opt': {
 					'name': 'adam',
 					'kwargs': {
 						'lr': trial.suggest_loguniform('lr', 1e-6, 1e-1)
 					}
 				},
+				'prune_trials': True,
 				'num_workers': 0,
 				'pin_memory': True
 			}
@@ -107,14 +114,15 @@ class GenericModel(pl.LightningModule):
 				'train_shuffle': False,    
 				'epochs': 200,
 				'batch_size': 128,
-				'batch_step_size': 64,
-				'loss': 'nll',
+				'batch_step_size': None,
+				'loss': 'ce',
 				'opt': {
 					'name': 'adam',
 					'kwargs': {
 						'lr': 1e-3
 					}
 				},
+				'prune_trials': True,
 				'num_workers': 0,
 				'pin_memory': True
 			}
@@ -131,8 +139,8 @@ class GenericModel(pl.LightningModule):
 		process metrics during step
 		"""
 		if (is_valid(z) and is_valid(self.ret_fn)):
-			returns = self.ret_fn(y_hat.squeeze(), y, z, kelly=False)
-			kelly_returns = self.ret_fn(y_hat.squeeze(), y, z, kelly=True)
+			returns = self.ret_fn(y_hat, y, z, kelly=False)
+			kelly_returns = self.ret_fn(y_hat, y, z, kelly=True)
 			returns_cumsum = returns.cumsum(dim=0)
 			kelly_returns_cumsum = kelly_returns.cumsum(dim=0)
 			calc_returns = {
@@ -186,12 +194,18 @@ class GenericModel(pl.LightningModule):
 
 	def forward_metrics_step(self, batch, batch_idx, calc_pfx=''):
 		x, y, z = batch
-		y_hat = self.forward(x)
-		loss_score = self.loss(y_hat, y)
+		y_hat_raw = self.forward(x)
+		loss_score = self.loss(y_hat_raw, y)
 		losses = {
 			'loss': loss_score,
-			'acc': GenericModel.acc(y_hat, y, loss_score)
+			'acc': GenericModel.acc(y_hat_raw, y, loss_score)
 		}
+		if (self.t_params['loss'] in ('ce',)):
+			y_hat = F.softmax(y_hat_raw, dim=1)
+			if (self.m_params['label_size'] == 1):
+				y_hat = y_hat[:, 1]
+		else:
+			y_hat = y_hat_raw
 		return self.calculate_metrics_step(losses, y_hat=y_hat, y=y, z=z, \
 			calc_pfx=calc_pfx)
 
@@ -250,8 +264,10 @@ class GenericModel(pl.LightningModule):
 		self.flt_train, self.flt_val, self.flt_test = zip(*map(pd_to_np_tvt, data))
 		self.obs_shape = (self.flt_train[0].shape[1], self.t_params['window_size'], self.flt_train[0].shape[-1])	# Feature observation shape - (Channels, Window, Hours or Window Observations)
 		shapes = np.asarray(tuple(map(lambda tvt: tuple(map(np.shape, tvt)), (self.flt_train, self.flt_val, self.flt_test))))
-		assert all(np.array_equal(a[:, 1:], b[:, 1:]) for a, b in pairwise(shapes)), 'feature, label, target shapes must be identical across splits'
-		assert all(len(np.unique(mat.T[0, :]))==1 for mat in shapes), 'first dimension (N) must be identical length in each split for all (feature, label, and target) tensors'
+		assert all(np.array_equal(a[:, 1:], b[:, 1:]) for a, b in pairwise(shapes)), \
+			'feature, label, target shapes must be identical across splits'
+		assert all(len(np.unique(mat.T[0, :]))==1 for mat in shapes), \
+			'first dimension (N) must be equal in each split for all (f, l, t) tensors'
 
 	# Dataloaders:
 	train_dataloader = lambda self: get_dataloader(
@@ -289,12 +305,12 @@ class GenericModel(pl.LightningModule):
 		pin_memory=self.t_params['pin_memory'])
 
 	@classmethod
-	def acc(cls, y_hat, y, loss_score):
-		labels_hat = torch.argmax(y_hat, dim=1)
-		acc_score = torch.sum(y == labels_hat).item() / (len(y) * 1.0)
+	def acc(cls, y_hat_raw, y, loss_score, on_gpu=True):
+		y_hat_dir = torch.argmax(y_hat_raw, dim=1)
+		acc_score = torch.sum(y == y_hat_dir).item() / (len(y) * 1.0)
 		acc_score = torch.tensor(acc_score)
 
-		if (self.on_gpu):
+		if (on_gpu):
 			acc_score = acc_score.cuda(loss_score.device.index)
 		return acc_score
 
