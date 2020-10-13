@@ -12,7 +12,7 @@ import pandas as pd
 import torch
 import torch.nn.functional as F
 import pytorch_lightning as pl
-from pytorch_lightning.metrics.classification import Accuracy#, Fbeta
+from pytorch_lightning.metrics.classification import Accuracy, Precision, Recall, Fbeta
 
 from common_util import load_df, dump_df, is_type, assert_has_all_attr, is_valid, is_type, isnt, dict_flatten, pairwise, np_at_least_nd, np_assert_identical_len_dim
 from model.common import PYTORCH_ACT_MAPPING, PYTORCH_LOSS_MAPPING, PYTORCH_OPT_MAPPING, PYTORCH_SCH_MAPPING
@@ -81,9 +81,17 @@ class GenericModel(pl.LightningModule):
 
 		self.epoch_metrics = {
 			epoch_type: {
-				'acc': Accuracy(compute_on_step=False),
-				# 'fbeta(.5)': Fbeta(num_classes=self.m_params['label_size'], \
-				# 	beta=0.5, average='macro', compute_on_step=False)
+				'accuracy': Accuracy(compute_on_step=False),
+				'precision': Precision(num_classes=self.m_params['label_size'], \
+					average='macro', compute_on_step=False),
+				'recall': Recall(num_classes=self.m_params['label_size'], \
+					average='macro', compute_on_step=False),
+				# 'f0.5': Fbeta(num_classes=self.m_params['label_size'], beta=0.5,
+				# 	average='macro', compute_on_step=False),
+				# 'f1.0': Fbeta(num_classes=self.m_params['label_size'], beta=1.0,
+				# 	average='macro', compute_on_step=False),
+				# 'f2.0': Fbeta(num_classes=self.m_params['label_size'], beta=2.0,
+				# 	average='macro', compute_on_step=False),
 			}
 			for epoch_type in epoch_metric_types
 		}

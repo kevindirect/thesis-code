@@ -40,14 +40,14 @@ class SimulatedReturn(Metric):
 	Call self.reset() to clear the state lists and begin a new return period.
 	"""
 	def __init__(self, use_conf=True, use_kelly=False, threshold=.5,
-		compute_on_step=False, ddp_sync_on_step=False, process_group=None):
+		compute_on_step=False, dist_sync_on_step=False, process_group=None):
 		"""
 		use_conf (bool): whether to use confidence score for betsizing
 		use_kelly (bool): whether to use kelly criterion for betsizing
 		threshold (float): threshold to determine prediction direction
 		"""
 		super().__init__(compute_on_step=compute_on_step, \
-			ddp_sync_on_step=ddp_sync_on_step, process_group=process_group)
+			dist_sync_on_step=dist_sync_on_step, process_group=process_group)
 		self.use_conf = use_conf
 		self.use_kelly = use_kelly
 		self.threshold = threshold
