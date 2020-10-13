@@ -3,7 +3,7 @@ Kevin Patel
 """
 import sys
 import os
-from os.path import sep, basename
+from os.path import sep, basename, dirname
 from functools import partial
 import logging
 
@@ -16,16 +16,21 @@ import optuna
 from optuna.integration import PyTorchLightningPruningCallback
 
 from common_util import MODEL_DIR, benchmark, makedir_if_not_exists, is_type, is_valid, isnt, get_cmd_args, compose, pd_split_ternary_to_binary, midx_intersect, pd_get_midx_level, pd_rows, df_midx_restack
-from model.common import ASSETS, INTERVAL_YEARS, OPTUNA_DB_FNAME, OPTUNA_N_TRIALS, OPTUNA_TIMEOUT, INTRADAY_LEN
+from model.common import ASSETS, INTERVAL_YEARS, OPTUNA_DB_FNAME, OPTUNA_N_TRIALS, OPTUNA_TIMEOUT_HOURS, INTRADAY_LEN
 from model.xg_util import get_xg_feature_dfs, get_xg_label_target_dfs, get_hardcoded_feature_dfs, get_hardcoded_label_target_dfs
 
 
 def optuna_run(argv):
-	cmd_arg_list = ['dry-run', 'trials=', 'model=', 'assets=', 'xdata=', 'ydata=']
-	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name=basename(__file__))
+	cmd_arg_list = ['dry-run', 'trials=', 'epochs=', 'run-hours=', 'model=', 'assets=', 'xdata=', 'ydata=']
+	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name=basename(__file__), \
+		script_pkg=basename(dirname(__file__)))
 	dry_run = cmd_input['dry-run']
 	n_trials = int(cmd_input['trials=']) if (cmd_input['trials=']) \
 		else OPTUNA_N_TRIALS
+	max_epochs = int(cmd_input['epochs=']) if (cmd_input['epochs=']) \
+		else None
+	hourly_timeout = int(cmd_input['run-hours=']) if (cmd_input['run-hours=']) \
+		else OPTUNA_TIMEOUT_HOURS
 	model_name = cmd_input['model='] or 'stcn'
 	asset_name = cmd_input['assets='] or ASSETS[0]
 	fdata_name = cmd_input['xdata='] or 'h_pba'
@@ -77,7 +82,9 @@ def optuna_run(argv):
 
 	logging.info('cuda status: {}'.format( \
 		'✓' if (torch.cuda.is_available()) else '🞩'))
-	logging.info(f'num trials:  {n_trials}')
+	if (is_valid(max_epochs)):
+		logging.info(f'max_epochs:  {max_epochs}')
+	logging.info(f'num trials:  {n_trials} for {hourly_timeout} hour(s)')
 	logging.info(f'study name:  {study_name}')
 	logging.info(f'study dir:   {study_dir}')
 	logging.info(f'study db:    {study_db_path}')
@@ -89,21 +96,24 @@ def optuna_run(argv):
 	# logging.getLogger("lightning").setLevel(logging.ERROR) # Disable pl warnings
 	torch.cuda.empty_cache()
 	obj_fn = partial(objective, pl_model_fn=pl_model_fn, pt_model_fn=pt_model_fn,
-		fdata=fdata, ldata=ldata, tdata=tdata, study_dir=study_dir)
+		fdata=fdata, ldata=ldata, tdata=tdata, study_dir=study_dir,
+		max_epochs=max_epochs)
+	sampler = optuna.samplers.TPESampler(multivariate=True)
 	study = optuna.create_study(storage=study_db_path, load_if_exists=True,
-		study_name=study_name, direction='minimize')
-	study.optimize(obj_fn, n_trials=n_trials, timeout=OPTUNA_TIMEOUT,
+		sampler=sampler, direction='minimize', study_name=study_name)
+	study.optimize(obj_fn, n_trials=n_trials, timeout=hourly_timeout*60*60,
 		n_jobs=1, gc_after_trial=False, show_progress_bar=False)
-	# TODO dump simulated return and loss graphs?
 	# TODO save/record random seed used
 
 
-def objective(trial, pl_model_fn, pt_model_fn, fdata, ldata, tdata, study_dir):
+def objective(trial, pl_model_fn, pt_model_fn, fdata, ldata, tdata,
+	study_dir, max_epochs=None):
 	"""
 	Args:
 		trial
 		pl_model_fn: pytorch lightning model wrapper module constructor
 		pt_model_fn: pytorch model module constructor
+		max_epochs: override traning params epoch value
 	"""
 	trial_dir = f'{study_dir}{str(trial.number).zfill(6)}{sep}'
 	logging.info(f'trial dir:   {trial_dir}')
@@ -121,13 +131,15 @@ def objective(trial, pl_model_fn, pt_model_fn, fdata, ldata, tdata, study_dir):
 	es_callback = t_params['prune_trials'] and \
 		PyTorchLightningPruningCallback(trial, monitor='val_loss')
 
-	trainer = pl.Trainer(max_epochs=t_params['epochs'], logger=[csv_log, tb_log],
-			checkpoint_callback=checkpoint_callback, early_stop_callback=es_callback,
+	trainer = pl.Trainer(max_epochs=max_epochs or t_params['epochs'],
+			logger=[csv_log, tb_log], callbacks=[es_callback],
+			checkpoint_callback=checkpoint_callback,
 			limit_val_batches=1.0, gradient_clip_val=0., track_grad_norm=2,
 			auto_lr_find=False, amp_level='O1', precision=16,
 			default_root_dir=trial_dir, weights_summary=None,
 			gpus=-1 if (torch.cuda.is_available()) else None)
 	trainer.fit(mdl)
+	pl_model_fn.fix_metrics_csv('metrics.csv', dir_path=trial_dir)
 
 	return trainer.callback_metrics['val_loss']
 

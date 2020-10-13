@@ -21,11 +21,6 @@ class NPModel(GenericModel):
 	"""
 	Neural Process Pytorch Lightning Wrapper.
 
-	TODO:
-		* add optuna objective
-		* how will loss function param be used?
-		* optimizer?
-
 	Training Hyperparameters:
 		window_size (int): window size to use (number of observations in the last dimension of the input tensor)
 		feat_dim (int): dimension of resulting feature tensor, if 'None' doesn't reshape
@@ -46,7 +41,8 @@ class NPModel(GenericModel):
 		num_workers (int>=0): DataLoader option - number cpu workers to attach
 		pin_memory (bool): DataLoader option - whether to pin memory to gpu
 	"""
-	def __init__(self, model_fn, m_params, t_params, data, class_weights=None):
+	def __init__(self, model_fn, m_params, t_params, data, class_weights=None,
+		epoch_metric_types=('train', 'val')):
 		"""
 		Init method
 
@@ -57,8 +53,8 @@ class NPModel(GenericModel):
 			data (tuple): tuple of pd.DataFrames
 			class_weights (dict): class weighting scheme
 		"""
-		super().__init__(model_fn, m_params, t_params, data, class_weights=None)
-		self.ret_fn = SimulatedReturn(return_type='binary_confidence')
+		super().__init__(model_fn, m_params, t_params, data, class_weights=None, \
+			epoch_metric_types=epoch_metric_types)
 
 	@classmethod
 	def suggest_params(cls, trial=None):
@@ -115,11 +111,14 @@ class NPModel(GenericModel):
 		return self.model(context_x, context_y, target_x, target_y, \
 			train_mode=train_mode)
 
-	def forward_metrics_step(self, batch, batch_idx, calc_pfx=''):
-		x, y, z = batch
-		ctx = self.t_params['batch_size'] // 2 # split batch into context/target
-		y_hat, losses = self.forward(x[:ctx], y[:ctx], x[ctx:], y[ctx:], \
-			train_mode=calc_pfx=='train')
-		return self.calculate_metrics_step(losses, y_hat, y[ctx:], z[ctx:], \
-			calc_pfx=calc_pfx)
+	def forward_step(self, batch, batch_idx, epoch_type='train'):
+		raise NotImplementedError()
+
+	# def forward_metrics_step(self, batch, batch_idx, calc_pfx=''):
+	# 	x, y, z = batch
+	# 	ctx = self.t_params['batch_size'] // 2 # split batch into context/target
+	# 	y_hat, losses = self.forward(x[:ctx], y[:ctx], x[ctx:], y[ctx:], \
+	# 		train_mode=calc_pfx=='train')
+	# 	return self.calculate_metrics_step(losses, y_hat, y[ctx:], z[ctx:], \
+	# 		calc_pfx=calc_pfx)
 

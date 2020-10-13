@@ -1,4 +1,6 @@
-# Kevin Patel
+"""
+Kevin Patel
+"""
 
 import sys
 import os
@@ -7,58 +9,63 @@ import logging
 import numpy as np
 import pandas as pd
 import torch
-from pytorch_lightning.metrics.metric import TensorMetric
-# import keras.backend as K
+from pytorch_lightning.metrics import Metric
 
 from common_util import MODEL_DIR, isnt
 from model.common import PYTORCH_LOSS_MAPPING 
 
 
 # ********** PYTORCH LIGHTNING METRICS **********
-class SimulatedReturn(TensorMetric):
+class SimulatedReturn(Metric):
 	"""
-	Simulated Return pytorch lightning TensorMetric.
-	Maximum trade value of $1.00 per trade.
-	Assumes zero transaction cost.
+	Simulated Return pytorch lightning Metric.
+	Maximum bet size of $1 per trade. Assumes zero transaction cost.
+
+	Uses confidence score based betsizing if use_conf is True, this allows
+	the betsize to be less than $1.
+	If use_conf and use_kelly are True, uses even kelly criterion based betsizing.
+
+	The update method updates the class state (hit_dir, reward, and betsize).
+	Each state list looks something like this:
+		[tensor(a, b, c), tensor(d, e, f), tensor(g, h, i)]
+
+	Each of these lists are flattened into tensors in the compute method and are used
+	to compute simulated return metrics. These include:
+		* end of period cumulative return
+		* minimum of cumulative return (max drawdown)
+		* maximum of cumulative return
+		* sharpe ratio over period
+		* potential maximum return
+
+	Call self.reset() to clear the state lists and begin a new return period.
 	"""
-	def __init__(self, return_type='binary_confidence', reduce_group=None, reduce_op=None):
-		super().__init__(type(self).__name__, reduce_group, reduce_op)
-		self.return_fn = {
-			'binary': SimulatedReturn.binary,
-			'binary_confidence': SimulatedReturn.binary_confidence
-		}.get(return_type)
-
-	@classmethod
-	def binary(cls, pred, actual, reward, threshold=.5):
+	def __init__(self, use_conf=True, use_kelly=False, threshold=.5,
+		compute_on_step=False, ddp_sync_on_step=False, process_group=None):
 		"""
-		Calculate simulated binary return.
-		Size of each bet is $1.
-
-		Args:
-			pred: prediction direction/confidence in interval [0, 1],
-				below threshold is bearish, above threshold is bullish.
-			actual: actual direction or direction/confidence in interval [0, 1],
-				can be a float or binary integer value.
-			reward: value gained or lost based on correctness of prediction,
-				e.g. the percent change over the period.
-			threshold: threshold where neutral (no direction) is, default is 0.5
-
-		Returns:
-			hit/miss * reward/penalty
+		use_conf (bool): whether to use confidence score for betsizing
+		use_kelly (bool): whether to use kelly criterion for betsizing
+		threshold (float): threshold to determine prediction direction
 		"""
-		pred_dir = torch.sign(pred - threshold)
-		actual_dir = torch.sign(actual - threshold)
-		hit_dir = torch.ones_like(pred)			# reward hit
-		hit_dir[pred_dir.eq(threshold)] = 0		# no trade, no reward
-		hit_dir[pred_dir != actual_dir] = -1		# penalize misses
-		return hit_dir * torch.abs(reward)
+		super().__init__(compute_on_step=compute_on_step, \
+			ddp_sync_on_step=ddp_sync_on_step, process_group=process_group)
+		self.use_conf = use_conf
+		self.use_kelly = use_kelly
+		self.threshold = threshold
+		self.name = {
+			not self.use_conf: 'bret',			# simple binary return
+			self.use_conf and not self.use_kelly: 'cret',	# conf betsize return
+			self.use_conf and self.use_kelly: 'kret'	# kelly betsize return
+		}.get(True)
+		self.add_state('hit_dir', default=[], dist_reduce_fx='cat')
+		self.add_state('reward', default=[], dist_reduce_fx='cat')
+		if (self.use_conf):
+			self.add_state('betsize', default=[], dist_reduce_fx='cat')
 
-	@classmethod
-	def binary_confidence(cls, pred, actual, reward, threshold=.5, kelly=False):
+	def update(self, pred, actual, reward):
 		"""
-		Calculate simulated binary confidence return.
-		Same as binary return except each $1 bet is scaled by a confidence
-		value so that the final bet size is min(2 * abs(pred-threshold), 1).
+		Update simulated return state taking into account use_conf and use_kelly flags.
+		Each call to update appends the new state tensors to the lists of current state
+		tensors.
 
 		Args:
 			pred: prediction direction/confidence in interval [0, 1],
@@ -68,25 +75,48 @@ class SimulatedReturn(TensorMetric):
 				can be a float or binary integer value.
 			reward: value gained or lost based on correctness of prediction,
 				e.g. the percent change over the period.
-			threshold: threshold where neutral (no direction) is, default is 0.5
-			kelly: whether to use even money kelly criterion for bet sizing
 
 		Returns:
-			hit/miss * betsize * reward/penalty
+			None
 		"""
-		pred_dir = torch.sign(pred - threshold)
-		actual_dir = torch.sign(actual - threshold)
+		pred_dir = torch.sign(pred - self.threshold)
+		actual_dir = torch.sign(actual - self.threshold)
 		hit_dir = torch.ones_like(pred)			# reward hit
-		hit_dir[pred_dir.eq(threshold)] = 0		# no trade, no reward
+		hit_dir[pred_dir.eq(self.threshold)] = 0	# no trade, no reward
 		hit_dir[pred_dir != actual_dir] = -1		# penalize misses
-		betsize = torch.clamp(2 * abs(pred-threshold), min=0.0, max=1.0)	# confidence score / probability betsize
-		if (kelly):
-			betsize = torch.clamp(2 * betsize - 1, min=0.0, max=1.0)	# even money kelly
-		return hit_dir * betsize * torch.abs(reward)
+		self.hit_dir.append(hit_dir)
+		self.reward.append(reward)
 
-	def forward(self, pred, actual, reward, **kwargs):
-		with torch.no_grad():
-			return self.return_fn(pred, actual, reward, **kwargs)
+		if (self.use_conf):
+			# confidence score / probability betsize
+			betsize = torch.clamp(2 * abs(pred-self.threshold), min=0.0, max=1.0)
+			if (self.use_kelly):
+				# even money kelly
+				betsize = torch.clamp(2 * betsize - 1, min=0.0, max=1.0)
+			self.betsize.append(betsize)
+
+	def compute(self, pfx=''):
+		"""
+		Compute return stats using hit dir (whether prediction hit or not),
+		betsize (size of bet in [0, 1]), and the reward.
+		Does not use the confidence score to scale return if use_conf is False.
+		"""
+		hit_dir = torch.cat(self.hit_dir, dim=0)
+		reward = torch.abs(torch.cat(self.reward, dim=0))
+		returns = hit_dir * reward
+		if (self.use_conf):
+			betsize = torch.cat(self.betsize, dim=0)
+			returns *= betsize
+		returns_cumsum = returns.cumsum(dim=0)
+
+		return {
+			f'{pfx}_{self.name}': returns_cumsum[-1],
+			f'{pfx}_{self.name}_min': returns_cumsum.min(),
+			f'{pfx}_{self.name}_max': returns_cumsum.max(),
+			f'{pfx}_{self.name}_sharpe': returns.mean()/returns.std(),
+			f'{pfx}_{self.name}_high': reward.sum()
+		}
+
 
 # """ ********** KERAS METRICS ********** """
 # def mean_pred(y_true, y_pred):

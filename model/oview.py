@@ -3,21 +3,21 @@ Kevin Patel
 """
 import sys
 import os
-from os.path import sep, basename
-import yaml
+from os.path import sep, basename, dirname
 import logging
 
 import numpy as np
 import pandas as pd
 import optuna
 
-from common_util import MODEL_DIR, benchmark, get_cmd_args
+from common_util import MODEL_DIR, dump_df, benchmark, get_cmd_args
 from model.common import ASSETS, INTERVAL_YEARS, OPTUNA_DB_FNAME, OPTUNA_CSV_FNAME
 
 
 def optuna_view(argv):
 	cmd_arg_list = ['dump-csv', 'model=', 'assets=', 'xdata=', 'ydata=']
-	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name=basename(__file__))
+	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name=basename(__file__), \
+		script_pkg=basename(dirname(__file__)))
 	dump_csv = cmd_input['dump-csv']
 	model_name = cmd_input['model='] or 'stcn'
 	asset_name = cmd_input['assets='] or ASSETS[0]
@@ -50,37 +50,32 @@ def optuna_view(argv):
 		.trials_dataframe()
 	print(df_study_stats(study_df, study_dir))
 	if (dump_csv):
-		study_df.to_csv(f'{study_dir}{OPTUNA_CSV_FNAME}')
+		dump_df(study_df.set_index('number'), OPTUNA_CSV_FNAME, dir_path=study_dir, \
+			data_format='csv')
 
 def df_study_stats(study_df: pd.DataFrame, study_dir: str):
 	"""
 	"""
 	completed_trials = study_df.loc[study_df['state'] == 'COMPLETE']
 	pruned_trials = study_df.loc[study_df['state'] == 'PRUNED']
-	top5 = completed_trials.nsmallest(5, 'value', keep='all')[['number', 'value']]
-	bot5 = completed_trials.nlargest(5, 'value', keep='all')[['number', 'value']]
-	top_params_file = f'{study_dir}{str(int(top5.iloc[0].number)).zfill(6)}{sep}hparams.yaml'
-	with open(top_params_file) as f:
-		top_params = yaml.full_load(f)
-	bot_params_file = f'{study_dir}{str(int(bot5.iloc[0].number)).zfill(6)}{sep}hparams.yaml'
-	with open(bot_params_file) as f:
-		bot_params = yaml.full_load(f)
+	top5 = completed_trials.nsmallest(5, 'value', keep='all')
+	bot5 = completed_trials.nlargest(5, 'value', keep='all')
 	shortest = completed_trials.nsmallest(1, 'duration', keep='all') \
 		[['number', 'duration']]
 	longest = completed_trials.nlargest(1, 'duration', keep='all') \
 		[['number', 'duration']]
 
 	return (
-		f'total trials:     {len(study_df)}\n'
-		f'completed trials: {len(completed_trials)}\n'
-		f'pruned trials:    {len(pruned_trials)}\n'
-		f'null trials:      {len(study_df)-(len(completed_trials)+len(pruned_trials))}\n\n'
+		f'total trials:            {len(study_df)}\n'
+		f'completed trials:        {len(completed_trials)}\n'
+		f'pruned trials:           {len(pruned_trials)}\n'
+		f'running or null trials:  {len(study_df)-(len(completed_trials)+len(pruned_trials))}\n\n'
 
 		f'top 5:\n{top5}\n'
-		f'top params:\n{top_params}\n\n'
+		f'top params:\n{top5.iloc[0]}\n\n'
 
 		f'bot 5:\n{bot5}\n'
-		f'bot params:\n{bot_params}\n\n'
+		f'bot params:\n{bot5.iloc[0]}\n\n'
 
 		f'shortest completed:   {shortest.duration.iloc[0]} ({shortest.number.iloc[0]})\n'
 		f'longest completed:    {longest.duration.iloc[0]} ({longest.number.iloc[0]})\n'

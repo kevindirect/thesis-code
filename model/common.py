@@ -102,7 +102,7 @@ PYTORCH_SCH_MAPPING = {
 OPTUNA_DB_FNAME = 'trials.db'
 OPTUNA_CSV_FNAME = 'trials.csv'
 OPTUNA_N_TRIALS = 100
-OPTUNA_TIMEOUT = 8*60*60 # optimize timeout in seconds
+OPTUNA_TIMEOUT_HOURS = 12
 
 """
 # Keras
