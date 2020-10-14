@@ -17,6 +17,7 @@ sys.path.insert(0, dirname(dirname(dirname(realpath(sys.argv[0])))))
 # ********** SPECIFIC TO THIS CRUNCH PACKAGE **********
 # MODEL
 from os import sep
+from functools import partial
 from common_util import RECON_DIR, MODEL_DIR
 
 # OTHER STAGE DEPENDENCIES
@@ -49,7 +50,7 @@ VAL_RATIO, TEST_RATIO = .2, .2
 # PyTorch
 PYTORCH_MODELS_DIR = MODEL_DIR +'model_p' +sep
 PYTORCH_ACT1D_LIST = ('relu', 'lrelu', 'elu', 'celu', 'gelu', 'prelu', \
-	'selu', 'sig', 'tanh', 'smax', 'logsmax', 'splus')
+	'selu', 'sig', 'tanh', 'splus', 'smax', 'logsmax')
 PYTORCH_ACT_MAPPING = {
 	'relu': nn.ReLU,
 	'lrelu': nn.LeakyReLU,
@@ -60,10 +61,10 @@ PYTORCH_ACT_MAPPING = {
 	'selu': nn.SELU,
 	'sig': nn.Sigmoid,
 	'tanh': nn.Tanh,
-	'smax': nn.Softmax,
-	'smax2d': nn.Softmax2d,
-	'logsmax': nn.LogSoftmax,
-	'splus': nn.Softplus
+	'splus': nn.Softplus,
+	'smax': partial(nn.Softmax, dim=0),
+	'logsmax': partial(nn.LogSoftmax, dim=0),
+	'smax2d': nn.Softmax2d
 }
 PYTORCH_INIT_LIST = ('zeros', 'ones', 'normal', 'orthogonal', \
 	'xavier_uniform', 'xavier_normal', 'kaiming_uniform', 'kaiming_normal')

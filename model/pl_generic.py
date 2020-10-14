@@ -17,7 +17,7 @@ from pytorch_lightning.metrics.classification import Accuracy, Precision, Recall
 from common_util import load_df, dump_df, is_type, assert_has_all_attr, is_valid, is_type, isnt, dict_flatten, pairwise, np_at_least_nd, np_assert_identical_len_dim
 from model.common import PYTORCH_ACT_MAPPING, PYTORCH_LOSS_MAPPING, PYTORCH_OPT_MAPPING, PYTORCH_SCH_MAPPING
 from model.train_util import pd_to_np_tvt, get_dataloader
-from model.metrics_util import SimulatedReturn
+from model.metrics_util import BuyAndHoldStrategy, OptimalStrategy, SimulatedReturn
 from model.model_util import OutputBlock
 
 
@@ -97,8 +97,11 @@ class GenericModel(pl.LightningModule):
 		}
 		self.epoch_returns = {
 			epoch_type: {
-				'cret': SimulatedReturn(use_conf=True, use_kelly=False),
-				'kret': SimulatedReturn(use_conf=True, use_kelly=True)
+				# 'br': SimulatedReturn(use_conf=False),
+				'cr': SimulatedReturn(use_conf=True, use_kelly=False),
+				'kr': SimulatedReturn(use_conf=True, use_kelly=True),
+				'bs': BuyAndHoldStrategy(),
+				'os': OptimalStrategy()
 			}
 			for epoch_type in epoch_metric_types
 		}

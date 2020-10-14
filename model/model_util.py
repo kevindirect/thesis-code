@@ -443,13 +443,13 @@ class StackedTCN(TemporalConvNet):
 				'global_dilation': True,
 				'block_act': trial.suggest_categorical('block_act', PYTORCH_ACT1D_LIST),
 				'out_act': trial.suggest_categorical('out_act', PYTORCH_ACT1D_LIST),
-				'block_init': trial.suggest_categorical('block_init', PYTORCH_INIT_LIST),
-				'out_init': trial.suggest_categorical('out_init', PYTORCH_INIT_LIST),
-				'pad_type': trial.suggest_categorical('pad_type', ('same', 'full')),
+				'block_init': trial.suggest_categorical('block_init', PYTORCH_INIT_LIST[2:]),
+				'out_init': trial.suggest_categorical('out_init', PYTORCH_INIT_LIST[2:]),
+				'pad_type': 'full',
 				'label_size': label_size,
 				'ob_out_shapes': label_size+1 if (add_ob) else None,
 				'ob_act': trial.suggest_categorical('ob_act', PYTORCH_ACT1D_LIST),
-				'ob_init': trial.suggest_categorical('ob_init', PYTORCH_INIT_LIST)
+				'ob_init': trial.suggest_categorical('ob_init', PYTORCH_INIT_LIST[2:])
 			}
 		else:
 			params = {
