@@ -427,7 +427,7 @@ class StackedTCN(TemporalConvNet):
 			ob_out_shapes=ob_out_shapes, ob_act=ob_act, ob_init=ob_init)
 
 	@classmethod
-	def suggest_params(cls, trial=None, label_size=1, add_ob=False):
+	def suggest_params(cls, trial=None, num_classes=2, add_ob=False):
 		"""
 		suggest model hyperparameters from an optuna trial object
 		or return fixed default hyperparameters
@@ -446,8 +446,8 @@ class StackedTCN(TemporalConvNet):
 				'block_init': trial.suggest_categorical('block_init', PYTORCH_INIT_LIST[2:]),
 				'out_init': trial.suggest_categorical('out_init', PYTORCH_INIT_LIST[2:]),
 				'pad_type': 'full',
-				'label_size': label_size,
-				'ob_out_shapes': label_size+1 if (add_ob) else None,
+				'label_size': num_classes-1,
+				'ob_out_shapes': num_classes if (add_ob) else None,
 				'ob_act': trial.suggest_categorical('ob_act', PYTORCH_ACT1D_LIST),
 				'ob_init': trial.suggest_categorical('ob_init', PYTORCH_INIT_LIST[2:])
 			}
@@ -465,8 +465,8 @@ class StackedTCN(TemporalConvNet):
 				'block_init': 'xavier_uniform',
 				'out_init': 'xavier_uniform',
 				'pad_type': 'full',
-				'label_size': label_size,
-				'ob_out_shapes': label_size+1 if (add_ob) else None,
+				'label_size': num_classes-1,
+				'ob_out_shapes': num_classes if (add_ob) else None,
 				'ob_act': 'linear',
 				'ob_init': 'xavier_uniform'
 			}

@@ -4,7 +4,6 @@ Kevin Patel
 import sys
 import os
 import logging
-from collections import OrderedDict
 
 import numpy as np
 import pandas as pd
@@ -57,10 +56,11 @@ class NPModel(GenericModel):
 			epoch_metric_types=epoch_metric_types)
 
 	@classmethod
-	def suggest_params(cls, trial=None):
+	def suggest_params(cls, trial=None, num_classes=1):
 		"""
 		suggest training hyperparameters from an optuna trial object
 		or return fixed default hyperparameters
+		XXX - call super class method to sample most of the tparams
 		"""
 		if (is_valid(trial)):
 			raise Error('look at batch_step_size')
@@ -72,6 +72,7 @@ class NPModel(GenericModel):
 				'batch_size': trial.suggest_int('batch_size', 128, 512),
 				'batch_step_size': trial.suggest_int('batch_step_size', 1, 128),
 				'loss': 'clf',
+				'class_weights': None,
 				'opt': {
 					'name': 'adam',
 					'kwargs': {
@@ -91,6 +92,7 @@ class NPModel(GenericModel):
 				'batch_size': 128,
 				'batch_step_size': 64,
 				'loss': 'clf',
+				'class_weights': None,
 				'opt': {
 					'name': 'adam',
 					'kwargs': {

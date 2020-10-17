@@ -4,14 +4,13 @@ Kevin Patel
 import sys
 import os
 import logging
-from collections import OrderedDict
 from inspect import getfullargspec
 
 import numpy as np
 import pandas as pd
 import torch
 import torch.nn.functional as F
-import pytorch_lightning as pl
+import pytorch_lightning as pl # PL ver 1.0.2
 from pytorch_lightning.metrics.classification import Accuracy, Precision, Recall, Fbeta
 
 from common_util import load_df, dump_df, is_type, assert_has_all_attr, is_valid, is_type, isnt, dict_flatten, pairwise, np_at_least_nd, np_assert_identical_len_dim
@@ -35,18 +34,20 @@ class GenericModel(pl.LightningModule):
 			otherwise WindowBatchSampler is used as batch_sampler
 		train_shuffle (bool): whether or not to shuffle the order of the training batches
 		loss (str): name of the loss function to use,
-			'clf' (classsifer) and 'reg' (regressor) are generic 'dummy losses' that only affect how
+			'clf' (classsifer) and 'reg' (regressor) are 'dummy losses' that only affect how
 			the labels/targets are preprocessed (look at model.train_util.py)
+		class_weights (list): loss function class weights of size C (optional)
 		opt (dict): pytorch optimizer settings
 			name (str): name of optimizer to use
 			kwargs (dict): any keyword arguments to the optimizer constructor
 		sch (dict): pytorch scheduler settings
 			name (str): name of scheduler to use
 			kwargs (dict): any keyword arguments to the scheduler constructor
+		prune_trials (bool):
 		num_workers (int>=0): DataLoader option - number cpu workers to attach
 		pin_memory (bool): DataLoader option - whether to pin memory to gpu
 	"""
-	def __init__(self, model_fn, m_params, t_params, data, class_weights=None,\
+	def __init__(self, model_fn, m_params, t_params, data, \
 		epoch_metric_types=('train', 'val')):
 		"""
 		Init method
@@ -56,7 +57,6 @@ class GenericModel(pl.LightningModule):
 			m_params (dict): dictionary of model hyperparameters
 			t_params (dict): dictionary of training hyperparameters
 			data (tuple): tuple of pd.DataFrames
-			class_weights (dict): class weighting scheme
 			epoch_metric_types (tuple): which epoch types to init metric objects for
 		"""
 		super().__init__()
@@ -68,12 +68,10 @@ class GenericModel(pl.LightningModule):
 		# Lists/tuples must be stored as flat torch tensors to be tracked by PL:
 		for k, v in filter(lambda i: is_type(i[1], np.ndarray, list, tuple), \
 			self.hparams.items()):
-			self.hparams[k] = torch.tensor(v).flatten()
+			self.hparams[k] = torch.tensor(v, device='cpu', requires_grad=False).flatten()
 		self.hparams['lr'] = self.t_params['opt']['kwargs']['lr']
-		loss_fn = PYTORCH_LOSS_MAPPING.get(self.t_params['loss'], None)
-		if (is_valid(loss_fn)):
-			self.loss = loss_fn() if (isnt(class_weights)) \
-				else loss_fn(weight=class_weights)
+		if (is_valid(loss_fn := PYTORCH_LOSS_MAPPING.get(self.t_params['loss'], None))):
+			self.loss = loss_fn(weight=self.t_params['class_weights'])
 		else:
 			logging.info('no loss function set in pytorch lightning')
 		self.__setup_data__(data)
@@ -138,7 +136,7 @@ class GenericModel(pl.LightningModule):
 		return self.model(x)
 
 	@classmethod
-	def suggest_params(cls, trial=None):
+	def suggest_params(cls, trial=None, num_classes=2):
 		"""
 		suggest training hyperparameters from an optuna trial object
 		or return fixed default hyperparameters
@@ -149,6 +147,12 @@ class GenericModel(pl.LightningModule):
 		https://pytorch.org/docs/stable/data.html#single-and-multi-process-data-loading
 		"""
 		if (is_valid(trial)):
+			class_weights = torch.zeros(num_classes, dtype=torch.float32, device='cpu', \
+				requires_grad=False)
+			for i in range(num_classes):
+				class_weights[i] = trial.suggest_uniform(f'class_weights[{i}]', 1e-6, 1)
+			class_weights.div_(class_weights.sum()) # Vector class weights must sum to 1
+
 			params = {
 				'window_size': trial.suggest_int('window_size', 3, 30),
 				'feat_dim': None,
@@ -157,6 +161,7 @@ class GenericModel(pl.LightningModule):
 				'batch_size': trial.suggest_int('batch_size', 128, 512),
 				'batch_step_size': None,
 				'loss': 'ce',
+				'class_weights': class_weights,
 				'opt': {
 					'name': 'adam',
 					'kwargs': {
@@ -171,11 +176,12 @@ class GenericModel(pl.LightningModule):
 			params = {
 				'window_size': 20,
 				'feat_dim': None,
-				'train_shuffle': False,    
+				'train_shuffle': False,
 				'epochs': 200,
 				'batch_size': 128,
 				'batch_step_size': None,
 				'loss': 'ce',
+				'class_weights': None,
 				'opt': {
 					'name': 'adam',
 					'kwargs': {

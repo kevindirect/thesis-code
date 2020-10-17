@@ -458,7 +458,7 @@ class AttentiveNP(nn.Module):
 		return pred_y, losses
 
 	@classmethod
-	def suggest_params(cls, trial=None, label_size=1):
+	def suggest_params(cls, trial=None, num_classes=2):
 		"""
 		suggest model hyperparameters from an optuna trial object
 		or return fixed default hyperparameters
@@ -527,7 +527,7 @@ class AttentiveNP(nn.Module):
 				'sample_latent': True,
 				'use_lvar': False,
 				'context_in_target': False,
-				'label_size': label_size
+				'label_size': num_classes-1
 			}
 		else:
 			params = {
@@ -592,6 +592,6 @@ class AttentiveNP(nn.Module):
 				'sample_latent': True,
 				'use_lvar': False,
 				'context_in_target': False,
-				'label_size': label_size
+				'label_size': num_classes-1
 			}
 		return params

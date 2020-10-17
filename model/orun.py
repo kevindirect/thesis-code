@@ -118,8 +118,8 @@ def objective(trial, pl_model_fn, pt_model_fn, fdata, ldata, tdata,
 	trial_dir = f'{study_dir}{str(trial.number).zfill(6)}{sep}'
 	logging.info(f'trial dir:   {trial_dir}')
 	data = common_interval_data(fdata, ldata, tdata)
-	t_params = pl_model_fn.suggest_params(trial)
-	m_params = pt_model_fn.suggest_params(trial, label_size=1, add_ob=True)
+	t_params = pl_model_fn.suggest_params(trial, num_classes=2)
+	m_params = pt_model_fn.suggest_params(trial, num_classes=2, add_ob=True)
 	mdl = pl_model_fn(pt_model_fn, m_params, t_params, data)
 	# logging.info(f'gpu mem: {torch.cuda.max_memory_allocated()} mb')
 
