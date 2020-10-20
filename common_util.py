@@ -12,7 +12,8 @@ import sys
 from os import sep, path, makedirs, walk, listdir, rmdir
 from os.path import dirname, basename, realpath, normpath, exists, isfile, getsize, join as path_join
 import socket
-from json import load, dump, dumps
+import json
+import yaml
 import re
 import math
 import numbers
@@ -88,6 +89,7 @@ BYTES_PER_MEGABYTE = 10**6
 EMPTY_STR = ''
 JSON_SFX = '.json'
 JSON_SFX_LEN = len(JSON_SFX)
+YAML_SFX = '.yaml'
 DT_DAILY_FREQ = 'D'
 DT_HOURLY_FREQ = 'H'
 DT_CAL_DAILY_FREQ = DT_DAILY_FREQ
@@ -100,7 +102,7 @@ DT_FMT_YMD_HMSF = '%Y-%m-%d %H:%M:%S:%f'
 
 """Type"""
 def is_type(obj, *types):
-	return any([isinstance(obj, tp) for tp in types])
+	return isinstance(obj, types)
 
 def is_valid(obj):
 	return obj is not None
@@ -517,7 +519,7 @@ class NestedDefaultDict(MutableMapping):
 		"""
 		Returns string representation
 		"""
-		return str(dumps(self.tree, indent=4, sort_keys=True))
+		return str(json.dumps(self.tree, indent=4, sort_keys=True))
 
 	def __repr__(self):
 		"""
@@ -547,7 +549,7 @@ def dict_combine(a, b):
 	return {**a, **b}
 
 def nice_print_dict(dictionary):
-	print(dumps(dictionary, indent=4, sort_keys=True))
+	print(json.dumps(dictionary, indent=4, sort_keys=True))
 
 def remove_keys(dictionary, list_keys):
 	for key in list_keys:
@@ -844,12 +846,21 @@ def load_json(fname, dir_path=None):
 	if (isfile(fpath)):
 		with open(fpath) as json_data:
 			try:
-				return load(json_data)
+				return json.load(json_data)
 			except Exception as e:
-				logging.error('error in file {fname}: {err}'.format(fname=str(fname), err=str(e)))
+				logging.error(f'error in file {fname}: {e}')
 				raise e
 	else:
-		raise FileNotFoundError(str(basename(fpath) +' must be in: ' +dirname(fpath)))
+		raise FileNotFoundError(f'{basename(fpath)} must be in: {dirname(fpath)}')
+
+def rectify_json(json_dict):
+	"""
+	Convert types in dictionary to json serializable types
+	"""
+	for k, v in filter(lambda i: is_type(i[1], torch.Tensor, np.ndarray), \
+		json_dict.items()):
+		json_dict[k] = v.tolist()
+	return json_dict
 
 def dump_json(json_dict, fname, dir_path=None, ind="\t", seps=None, **kwargs):
 	fpath = str(add_sep_if_none(dir_path) + fname) if dir_path else fname
@@ -857,15 +868,32 @@ def dump_json(json_dict, fname, dir_path=None, ind="\t", seps=None, **kwargs):
 		fpath += JSON_SFX
 
 	if (isfile(fpath)):
-		logging.debug('json file exists at ' +str(fpath) +', syncing...')
+		logging.debug(f'json file exists at {fpath}, syncing...')
 	else:
-		logging.debug('json file does not exist at ' +str(fpath) +', writing...')
+		logging.debug(f'json file does not exist at {fpath}, writing...')
 
 	with open(fpath, 'w', **kwargs) as json_fp:
 		try:
-			return dump(json_dict, json_fp, indent=ind, separators=seps, **kwargs)
+			return json.dump(json_dict, json_fp, indent=ind, separators=seps, **kwargs)
 		except Exception as e:
-			logging.error('error in file', str(fname +':'), str(e))
+			logging.error(f'error in file {fname}: {e}')
+			raise e
+
+def dump_yaml(yaml_dict, fname, dir_path=None, **kwargs):
+	fpath = str(add_sep_if_none(dir_path) + fname) if dir_path else fname
+	if (not fname.endswith(YAML_SFX)):
+		fpath += YAML_SFX
+
+	if (isfile(fpath)):
+		logging.debug(f'yaml file exists at {fpath}, syncing...')
+	else:
+		logging.debug(f'yaml file does not exist at {fpath}, writing...')
+
+	with open(fpath, 'w', **kwargs) as yaml_fp:
+		try:
+			return yaml.dump(yaml_dict, yaml_fp, **kwargs)
+		except Exception as e:
+			logging.error(f'error in file {fname}: {e}')
 			raise e
 
 def get_cmd_args(argv, arg_list, script_name='', script_pkg='', set_logging=True):
@@ -2240,6 +2268,8 @@ def df_sk_mw_transform(df, trf, num_cols, win_size):
 
 
 """ ********** PYTORCH GENERAL UTILS ********** """
+pyt_round_float = lambda pyt, n=6: (pyt * 10**n).round().div(10**n)
+
 def pyt_reverse_dim_order(pyt):
 	"""
 	Reverse the order of the dimensions of the passed tensor.

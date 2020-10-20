@@ -56,7 +56,7 @@ class NPModel(GenericModel):
 			epoch_metric_types=epoch_metric_types)
 
 	@classmethod
-	def suggest_params(cls, trial=None, num_classes=1):
+	def suggest_params(cls, trial=None, num_classes=2):
 		"""
 		suggest training hyperparameters from an optuna trial object
 		or return fixed default hyperparameters
@@ -68,18 +68,17 @@ class NPModel(GenericModel):
 				'window_size': trial.suggest_int('window_size', 3, 120),
 				'feat_dim': None,
 				'train_shuffle': False,
-				'epochs': trial.suggest_int('epochs', 200, 500),
-				'batch_size': trial.suggest_int('batch_size', 128, 512),
-				'batch_step_size': trial.suggest_int('batch_step_size', 1, 128),
+				'epochs': trial.suggest_int('epochs', 200, 700, step=10),
+				'batch_size': trial.suggest_int('batch_size', 64, 512, step=8),
+				'batch_step_size': trial.suggest_int('batch_step_size', 1, 64),
 				'loss': 'clf',
 				'class_weights': None,
 				'opt': {
 					'name': 'adam',
 					'kwargs': {
-						'lr': trial.suggest_loguniform('lr', 1e-6, 1e-1)
+						'lr': trial.suggest_float('lr', 1e-6, 1e-1, log=True)
 					}
 				},
-				'prune_trials': True,
 				'num_workers': 0,
 				'pin_memory': True
 			}
@@ -99,7 +98,6 @@ class NPModel(GenericModel):
 						'lr': 1e-3
 					}
 				},
-				'prune_trials': True,
 				'num_workers': 0,
 				'pin_memory': True
 			}

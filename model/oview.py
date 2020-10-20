@@ -15,7 +15,7 @@ from model.common import ASSETS, INTERVAL_YEARS, OPTUNA_DB_FNAME, OPTUNA_CSV_FNA
 
 
 def optuna_view(argv):
-	cmd_arg_list = ['dump-csv', 'model=', 'assets=', 'xdata=', 'ydata=']
+	cmd_arg_list = ['dump-csv', 'model=', 'assets=', 'xdata=', 'ydata=', 'optuna-monitor=']
 	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name=basename(__file__), \
 		script_pkg=basename(dirname(__file__)))
 	dump_csv = cmd_input['dump-csv']
@@ -23,6 +23,7 @@ def optuna_view(argv):
 	asset_name = cmd_input['assets='] or ASSETS[0]
 	fdata_name = cmd_input['xdata='] or 'h_pba'
 	ldata_name = cmd_input['ydata='] or 'ddir'
+	monitor = cmd_input['optuna-monitor='] or 'val_loss'
 	data_name = f'{ldata_name}_{fdata_name}'
 
 	# model options: stcn, anp
@@ -36,9 +37,9 @@ def optuna_view(argv):
 		pl_model_fn, pt_model_fn = NPModel, AttentiveNP
 	model_name = f'{pl_model_fn.__name__}_{pt_model_fn.__name__}'
 
-	# Set parameters of objective function to optimize:
-	study_dir = MODEL_DIR +sep.join(['log', model_name, asset_name, data_name]) +sep
-	study_name = ','.join([model_name, asset_name, data_name])
+	study_dir = MODEL_DIR \
+		+sep.join(['log', model_name, asset_name, data_name, monitor]) +sep
+	study_name = ','.join([model_name, asset_name, data_name, monitor])
 	study_db_path = f'sqlite:///{study_dir}{OPTUNA_DB_FNAME}'
 
 	print(f'study name:  {study_name}')
@@ -48,10 +49,10 @@ def optuna_view(argv):
 
 	study_df = optuna.load_study(storage=study_db_path, study_name=study_name) \
 		.trials_dataframe()
-	print(df_study_stats(study_df, study_dir))
 	if (dump_csv):
 		dump_df(study_df.set_index('number'), OPTUNA_CSV_FNAME, dir_path=study_dir, \
 			data_format='csv')
+	print(df_study_stats(study_df, study_dir))
 
 def df_study_stats(study_df: pd.DataFrame, study_dir: str):
 	"""

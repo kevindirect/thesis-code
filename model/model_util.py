@@ -15,7 +15,7 @@ import torch.nn as nn
 from torch.nn.utils import weight_norm
 from kymatio.torch import Scattering1D as pyt_wavelet_scatter_1d
 
-from common_util import is_type, is_valid, isnt, odd_only, list_wrap, assert_has_all_attr, pairwise
+from common_util import is_type, is_valid, isnt, list_wrap, assert_has_all_attr, pairwise
 from model.common import PYTORCH_ACT_MAPPING, PYTORCH_ACT1D_LIST, PYTORCH_INIT_LIST
 
 
@@ -436,10 +436,13 @@ class StackedTCN(TemporalConvNet):
 			params = {
 				'size': trial.suggest_int('size', 2**5, 2**8),
 				'depth': trial.suggest_int('depth', 2, 6),
-				'kernel_sizes': odd_only(trial.suggest_int('kernel_sizes', 3, 15)),
-				'input_dropout': trial.suggest_uniform('input_dropout', 0.0, 1.0),
-				'output_dropout': trial.suggest_uniform('output_dropout', 0.0, 1.0),
-				'global_dropout': trial.suggest_uniform('global_dropout', 0.0, 1.0),
+				'kernel_sizes': trial.suggest_int('kernel_sizes', 3, 15, step=2),
+				'input_dropout': trial.suggest_float('input_dropout', \
+					0.0, 1.0, step=1e-6),
+				'output_dropout': trial.suggest_float('output_dropout', \
+					0.0, 1.0, step=1e-6),
+				'global_dropout': trial.suggest_float('global_dropout', \
+					0.0, 1.0, step=1e-6),
 				'global_dilation': True,
 				'block_act': trial.suggest_categorical('block_act', PYTORCH_ACT1D_LIST),
 				'out_act': trial.suggest_categorical('out_act', PYTORCH_ACT1D_LIST),

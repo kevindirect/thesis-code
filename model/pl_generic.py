@@ -3,6 +3,7 @@ Kevin Patel
 """
 import sys
 import os
+from os.path import exists
 import logging
 from inspect import getfullargspec
 
@@ -13,7 +14,7 @@ import torch.nn.functional as F
 import pytorch_lightning as pl # PL ver 1.0.2
 from pytorch_lightning.metrics.classification import Accuracy, Precision, Recall, Fbeta
 
-from common_util import load_df, dump_df, is_type, assert_has_all_attr, is_valid, is_type, isnt, dict_flatten, pairwise, np_at_least_nd, np_assert_identical_len_dim
+from common_util import rectify_json, dump_json, load_df, dump_df, is_type, assert_has_all_attr, is_valid, is_type, isnt, dict_flatten, pairwise, np_at_least_nd, np_assert_identical_len_dim
 from model.common import PYTORCH_ACT_MAPPING, PYTORCH_LOSS_MAPPING, PYTORCH_OPT_MAPPING, PYTORCH_SCH_MAPPING
 from model.train_util import pd_to_np_tvt, get_dataloader
 from model.metrics_util import BuyAndHoldStrategy, OptimalStrategy, SimulatedReturn
@@ -27,7 +28,7 @@ class GenericModel(pl.LightningModule):
 	Training Hyperparameters:
 		window_size (int): window size to use (number of observations in the last dimension of the input tensor)
 		feat_dim (int): dimension of resulting feature tensor, if 'None' doesn't reshape
-		epochs (int): number training epochs
+		epochs (int): max number of training epochs
 		batch_size (int): batch (or batch window) size
 		batch_step_size (int): batch window step size.
 			if this is None DataLoader uses its own default sampler,
@@ -43,7 +44,6 @@ class GenericModel(pl.LightningModule):
 		sch (dict): pytorch scheduler settings
 			name (str): name of scheduler to use
 			kwargs (dict): any keyword arguments to the scheduler constructor
-		prune_trials (bool):
 		num_workers (int>=0): DataLoader option - number cpu workers to attach
 		pin_memory (bool): DataLoader option - whether to pin memory to gpu
 	"""
@@ -62,14 +62,14 @@ class GenericModel(pl.LightningModule):
 		super().__init__()
 		self.name = f'{self._get_name()}_{model_fn.__name__}'
 		self.m_params, self.t_params = m_params, t_params
-		# PL will track/checkpoint parameters saved in hparams instance variable:
-		self.hparams = dict_flatten({**self.m_params, **self.t_params})
-
-		# Lists/tuples must be stored as flat torch tensors to be tracked by PL:
-		for k, v in filter(lambda i: is_type(i[1], np.ndarray, list, tuple), \
-			self.hparams.items()):
-			self.hparams[k] = torch.tensor(v, device='cpu', requires_grad=False).flatten()
-		self.hparams['lr'] = self.t_params['opt']['kwargs']['lr']
+		# # PL will track/checkpoint parameters saved in hparams instance variable:
+		# self.hparams = dict_flatten({**self.m_params, **self.t_params})
+		# # Lists/tuples must be stored as flat torch tensors to be tracked by PL:
+		# for k, v in filter(lambda i: is_type(i[1], np.ndarray, list, tuple), \
+		# 	self.hparams.items()):
+		# 	self.hparams[k] = torch.tensor(v, device='cpu', requires_grad=False) \
+		# 		.flatten()
+		# self.hparams['lr'] = self.t_params['opt']['kwargs']['lr']
 		if (is_valid(loss_fn := PYTORCH_LOSS_MAPPING.get(self.t_params['loss'], None))):
 			self.loss = loss_fn(weight=self.t_params['class_weights'])
 		else:
@@ -77,6 +77,7 @@ class GenericModel(pl.LightningModule):
 		self.__setup_data__(data)
 		self.__build_model__(model_fn)
 
+		# 'micro' weights by class frequency, 'macro' weights classes equally
 		self.epoch_metrics = {
 			epoch_type: {
 				'accuracy': Accuracy(compute_on_step=False),
@@ -85,21 +86,19 @@ class GenericModel(pl.LightningModule):
 				'recall': Recall(num_classes=self.m_params['label_size'], \
 					average='macro', compute_on_step=False),
 				# 'f0.5': Fbeta(num_classes=self.m_params['label_size'], beta=0.5,
-				# 	average='macro', compute_on_step=False),
-				# 'f1.0': Fbeta(num_classes=self.m_params['label_size'], beta=1.0,
-				# 	average='macro', compute_on_step=False),
+				# 	average='micro', compute_on_step=False),
+				'f1.0': Fbeta(num_classes=self.m_params['label_size'], beta=1.0,
+					average='micro', compute_on_step=False),
 				# 'f2.0': Fbeta(num_classes=self.m_params['label_size'], beta=2.0,
-				# 	average='macro', compute_on_step=False),
+				# 	average='micro', compute_on_step=False),
 			}
 			for epoch_type in epoch_metric_types
 		}
 		self.epoch_returns = {
 			epoch_type: {
-				# 'br': SimulatedReturn(use_conf=False),
+				'br': SimulatedReturn(use_conf=False),
 				'cr': SimulatedReturn(use_conf=True, use_kelly=False),
 				'kr': SimulatedReturn(use_conf=True, use_kelly=True),
-				'bs': BuyAndHoldStrategy(),
-				'os': OptimalStrategy()
 			}
 			for epoch_type in epoch_metric_types
 		}
@@ -113,7 +112,7 @@ class GenericModel(pl.LightningModule):
 		"""
 		opt_fn = PYTORCH_OPT_MAPPING.get(self.t_params['opt']['name'])
 		#opt = opt_fn(self.parameters(), **self.t_params['opt']['kwargs'])
-		opt = opt_fn(self.parameters(), lr=self.hparams['lr'])
+		opt = opt_fn(self.parameters(), lr=self.t_params['opt']['kwargs']['lr'])
 		return opt
 		#sch_fn = PYTORCH_SCH_MAPPING.get(self.t_params['sch']['name'])
 		#sch = sch_fn(opt, **self.t_params['sch']['kwargs'])
@@ -128,6 +127,24 @@ class GenericModel(pl.LightningModule):
 			if (k in getfullargspec(model_fn).args)}
 		emb = model_fn(in_shape=(num_channels, num_win*num_win_obs), **model_params)
 		self.model = OutputBlock.wrap(emb)	# Append OB if is_valid(emb.ob_out_shapes)
+
+	def dump_benchmarks(self, fname, bench_dir):
+		"""
+		Convenience method to dump benchmarks from loaded data.
+		"""
+		if (not exists('{bench_dir}{fname}')):
+			bench = {}
+			bench_strats = (BuyAndHoldStrategy(), OptimalStrategy())
+			for pfx, flt in zip(('train', 'val', 'test'), \
+				(self.flt_train, self.flt_val, self.flt_test)):
+				t = np.sum(flt[2], axis=(1, 2), keepdims=False)
+				t = torch.tensor(t, dtype=torch.float32, requires_grad=False)
+				for strat in bench_strats:
+					strat.update(None, None, t)
+					vals = strat.compute(pfx=pfx)
+					bench.update(vals)
+					strat.reset()
+			dump_json(rectify_json(bench), fname, bench_dir)
 
 	def forward(self, x):
 		"""
@@ -147,28 +164,28 @@ class GenericModel(pl.LightningModule):
 		https://pytorch.org/docs/stable/data.html#single-and-multi-process-data-loading
 		"""
 		if (is_valid(trial)):
-			class_weights = torch.zeros(num_classes, dtype=torch.float32, device='cpu', \
-				requires_grad=False)
+			class_weights = torch.zeros(num_classes, dtype=torch.float32, \
+				device='cpu', requires_grad=False)
 			for i in range(num_classes):
-				class_weights[i] = trial.suggest_uniform(f'class_weights[{i}]', 1e-6, 1)
+				class_weights[i] = trial.suggest_float(f'class_weights[{i}]', \
+					1e-6, 1.0, step=1e-6)
 			class_weights.div_(class_weights.sum()) # Vector class weights must sum to 1
 
 			params = {
 				'window_size': trial.suggest_int('window_size', 3, 30),
 				'feat_dim': None,
 				'train_shuffle': False,
-				'epochs': trial.suggest_int('epochs', 200, 500),
-				'batch_size': trial.suggest_int('batch_size', 128, 512),
+				'epochs': trial.suggest_int('epochs', 200, 700, step=10),
+				'batch_size': trial.suggest_int('batch_size', 64, 512, step=8),
 				'batch_step_size': None,
 				'loss': 'ce',
 				'class_weights': class_weights,
 				'opt': {
 					'name': 'adam',
 					'kwargs': {
-						'lr': trial.suggest_loguniform('lr', 1e-6, 1e-1)
+						'lr': trial.suggest_float('lr', 1e-6, 1e-1, log=True)
 					}
 				},
-				'prune_trials': True,
 				'num_workers': 0,
 				'pin_memory': True
 			}
@@ -188,7 +205,6 @@ class GenericModel(pl.LightningModule):
 						'lr': 1e-3
 					}
 				},
-				'prune_trials': True,
 				'num_workers': 0,
 				'pin_memory': True
 			}
@@ -339,5 +355,5 @@ class GenericModel(pl.LightningModule):
 		csv_df = load_df(fname, dir_path=dir_path, data_format='csv')
 		csv_df = csv_df.groupby('epoch').ffill().dropna(how='any')
 		dump_df(csv_df, f'fix_{fname}', dir_path=dir_path, data_format='csv')
-		logging.info(f'fixed {fname}')
+		logging.debug(f'fixed {fname}')
 
