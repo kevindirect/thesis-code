@@ -48,7 +48,7 @@ def optuna_view(argv):
 	print()
 
 	study_df = optuna.load_study(storage=study_db_path, study_name=study_name) \
-		.trials_dataframe()
+		.trials_dataframe().sort_values(by='value')
 	if (dump_csv):
 		dump_df(study_df.set_index('number'), OPTUNA_CSV_FNAME, dir_path=study_dir, \
 			data_format='csv')

@@ -368,8 +368,8 @@ def get_hardcoded_daily_feature_dfs(fd, src):
 	if (src in ('pba', 'vol', 'buzz')):
 		for axe in ('dffd', 'dwrmx', 'dwrod', 'dwrpt', 'dwrzn'):
 			for fdf in fd['d'][src][axe].values():
-				# feature_dfs.append(df_filter_by_keywords(fdf, ('avgPrice', 'high', 'low')))
-				# feature_dfs.append(df_filter_by_keywords(fdf, ('avgPrice', 'high', 'low', 'close')))
+				# feature_dfs.append(df_filter_by_keywords(fdf, \
+				# ('avgPrice', 'open', 'high', 'low', 'close')))
 				feature_dfs.append(fdf)
 
 	if (src in ('nonbuzz',)):
@@ -393,7 +393,8 @@ def get_hardcoded_hourly_feature_dfs(fd, src):
 					feature_dfs.append(df_filter_by_keywords(fdf, ('open',)))
 			else:
 				for fdf in fd['h'][src][axe].values():
-					# feature_dfs.append(df_filter_by_keywords(fdf, ('avgPrice', 'high', 'low', 'close')))
+					# feature_dfs.append(df_filter_by_keywords(fdf, \
+					# ('avgPrice', 'open', 'high', 'low', 'close')))
 					feature_dfs.append(fdf)
 
 	return pd.concat(feature_dfs)

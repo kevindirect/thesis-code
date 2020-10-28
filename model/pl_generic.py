@@ -14,7 +14,7 @@ import torch.nn.functional as F
 import pytorch_lightning as pl # PL ver 1.0.2
 from pytorch_lightning.metrics.classification import Accuracy, Precision, Recall, Fbeta
 
-from common_util import rectify_json, dump_json, load_df, dump_df, is_type, assert_has_all_attr, is_valid, is_type, isnt, dict_flatten, pairwise, np_at_least_nd, np_assert_identical_len_dim
+from common_util import rectify_json, load_df, dump_df, is_type, assert_has_all_attr, is_valid, is_type, isnt, dict_flatten, pairwise, np_at_least_nd, np_assert_identical_len_dim
 from model.common import PYTORCH_ACT_MAPPING, PYTORCH_LOSS_MAPPING, PYTORCH_OPT_MAPPING, PYTORCH_SCH_MAPPING
 from model.train_util import pd_to_np_tvt, get_dataloader
 from model.metrics_util import BuyAndHoldStrategy, OptimalStrategy, SimulatedReturn
@@ -128,23 +128,32 @@ class GenericModel(pl.LightningModule):
 		emb = model_fn(in_shape=(num_channels, num_win*num_win_obs), **model_params)
 		self.model = OutputBlock.wrap(emb)	# Append OB if is_valid(emb.ob_out_shapes)
 
-	def dump_benchmarks(self, fname, bench_dir):
+	def get_benchmarks(self):
 		"""
-		Convenience method to dump benchmarks from loaded data.
+		Return benchmarks calculated from loaded data.
 		"""
-		if (not exists('{bench_dir}{fname}')):
-			bench = {}
-			bench_strats = (BuyAndHoldStrategy(), OptimalStrategy())
-			for pfx, flt in zip(('train', 'val', 'test'), \
-				(self.flt_train, self.flt_val, self.flt_test)):
-				t = np.sum(flt[2], axis=(1, 2), keepdims=False)
-				t = torch.tensor(t, dtype=torch.float32, requires_grad=False)
-				for strat in bench_strats:
-					strat.update(None, None, t)
-					vals = strat.compute(pfx=pfx)
-					bench.update(vals)
-					strat.reset()
-			dump_json(rectify_json(bench), fname, bench_dir)
+		bench_dict = {}
+		bench_stats = (
+			lambda d, pfx: {
+				f'{pfx}_label_dist': pd.Series(d, dtype=int)\
+					.value_counts(normalize=True).to_dict()
+			},
+		)
+		bench_strats = (BuyAndHoldStrategy(), OptimalStrategy())
+		for pfx, flt in zip(('train', 'val', 'test'), \
+			(self.flt_train, self.flt_val, self.flt_test)):
+			l = np.sum(flt[1], axis=(1, 2), keepdims=False)
+			for stat in bench_stats:
+				bench_dict.update(stat(l, pfx))
+
+			t = np.sum(flt[2], axis=(1, 2), keepdims=False)
+			t = torch.tensor(t, dtype=torch.float32, requires_grad=False)
+			for strat in bench_strats:
+				strat.update(None, None, t)
+				vals = strat.compute(pfx=pfx)
+				bench_dict.update(vals)
+				strat.reset()
+		return rectify_json(bench_dict)
 
 	def forward(self, x):
 		"""

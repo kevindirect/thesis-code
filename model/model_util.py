@@ -15,7 +15,7 @@ import torch.nn as nn
 from torch.nn.utils import weight_norm
 from kymatio.torch import Scattering1D as pyt_wavelet_scatter_1d
 
-from common_util import is_type, is_valid, isnt, list_wrap, assert_has_all_attr, pairwise
+from common_util import is_type, is_valid, isnt, list_wrap, assert_has_all_attr, pairwise, odd_only
 from model.common import PYTORCH_ACT_MAPPING, PYTORCH_ACT1D_LIST, PYTORCH_INIT_LIST
 
 
@@ -436,7 +436,7 @@ class StackedTCN(TemporalConvNet):
 			params = {
 				'size': trial.suggest_int('size', 2**5, 2**8),
 				'depth': trial.suggest_int('depth', 2, 6),
-				'kernel_sizes': trial.suggest_int('kernel_sizes', 3, 15, step=2),
+				'kernel_sizes': odd_only(trial.suggest_int('kernel_sizes', 3, 15, step=2)),
 				'input_dropout': trial.suggest_float('input_dropout', \
 					0.0, 1.0, step=1e-6),
 				'output_dropout': trial.suggest_float('output_dropout', \

@@ -3,7 +3,7 @@ Kevin Patel
 """
 import sys
 import os
-from os.path import sep, basename, dirname
+from os.path import sep, basename, dirname, exists
 from functools import partial
 import logging
 
@@ -38,6 +38,9 @@ def optuna_run(argv):
 	fdata_name = cmd_input['xdata='] or 'h_pba'
 	ldata_name = cmd_input['ydata='] or 'ddir'
 	monitor = cmd_input['optuna-monitor='] or 'val_loss'
+	optimize_dir = {
+		'val_loss': 'minimize'
+	}.get(monitor, 'maximize')
 	data_name = f'{ldata_name}_{fdata_name}'
 	fd = None
 
@@ -55,10 +58,9 @@ def optuna_run(argv):
 	# fdata options: d_rand, d_pba, d_vol, d_buzz, d_nonbuzz, h_rand, h_pba, h_vol, h_buzz
 	if (fdata_name in ('d_rand', 'h_rand')):
 		if (fdata_k[0] == 'd'):
-			pass
+			raise NotImplementedError()
 		elif (fdata_k[0] == 'h'):
-			print(INTRADAY_LEN)
-			pass
+			raise NotImplementedError()
 	else:
 		fd = get_xg_feature_dfs(asset_name, overwrite_cache=False)
 		fdata = get_hardcoded_feature_dfs(fd, fdata_name)
@@ -106,9 +108,9 @@ def optuna_run(argv):
 	pruner = PercentilePruner(percentile=50.0, n_startup_trials=10, \
 		n_warmup_steps=min_epochs, interval_steps=10) # Top percentile of trials are kept
 	study = optuna.create_study(storage=study_db_path, load_if_exists=True,
-		sampler=sampler, pruner=pruner, direction='minimize', study_name=study_name)
+		sampler=sampler, pruner=pruner, direction=optimize_dir, study_name=study_name)
 	study.optimize(obj_fn, n_trials=n_trials, timeout=hourly_timeout*60*60,
-		n_jobs=1, gc_after_trial=False, show_progress_bar=False)
+		catch=(), n_jobs=1, gc_after_trial=False, show_progress_bar=False)
 	# TODO save/record random seed used
 
 
@@ -130,7 +132,10 @@ def objective(trial, pl_model_fn, pt_model_fn, fdata, ldata, tdata, monitor,
 	m_params = pt_model_fn.suggest_params(trial, num_classes=2, add_ob=True)
 	t_params = pl_model_fn.suggest_params(trial, num_classes=2)
 	mdl = pl_model_fn(pt_model_fn, m_params, t_params, data)
-	mdl.dump_benchmarks('benchmark.json', study_dir)
+
+	bench_fname = 'benchmark.json'
+	if (not exists('{study_dir}{bench_fname}')):
+		dump_json(mdl.get_benchmarks(), bench_fname, study_dir)
 
 	dump_json(rectify_json(m_params), 'params_m.json', trial_dir)
 	dump_json(rectify_json(t_params), 'params_t.json', trial_dir)
