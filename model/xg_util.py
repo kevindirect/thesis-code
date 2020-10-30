@@ -12,8 +12,8 @@ import logging
 import numpy as np
 import pandas as pd
 
-from common_util import JSON_SFX_LEN, NestedDefaultDict, load_json, load_df, is_type, pd_rows_key_in, pd_split_ternary_to_binary, df_add_midx_level, in_debug_mode, benchmark
-from model.common import XG_PROCESS_DIR, XG_DATA_DIR, XG_INDEX_FNAME
+from common_util import JSON_SFX_LEN, NestedDefaultDict, load_json, load_df, isnt, is_type, compose, pd_rows_key_in, pd_add_2nd_level, pd_split_ternary_to_binary, midx_intersect, pd_get_midx_level, pd_rows, df_midx_restack, df_add_midx_level, in_debug_mode, benchmark
+from model.common import XG_PROCESS_DIR, XG_DATA_DIR, XG_INDEX_FNAME, INTERVAL_YEARS
 from recon.dataset_util import gen_group
 
 
@@ -356,7 +356,7 @@ def get_xg_label_target_dfs(asset, xg_l_dir=XG_DATA_DIR +'labels' +sep, xg_t_dir
 
 
 """ ********** HARDCODED DATA GETTER FNS ********** """
-def get_hardcoded_daily_feature_dfs(fd, src):
+def get_hardcoded_daily_feature_dfs(fd, src, cat=True):
 	"""
 	Return hardcoded daily freq feature dfs to use in experiments.
 	"""
@@ -378,28 +378,71 @@ def get_hardcoded_daily_feature_dfs(fd, src):
 				feature_dfs.append(fdf)
 
 	# return pd.concat(feature_dfs).sort_index(axis=0)
-	return pd.concat(feature_dfs)
+	return pd.concat(feature_dfs) if (cat) else feature_dfs
 
-def get_hardcoded_hourly_feature_dfs(fd, src):
+def get_hardcoded_hourly_feature_dfs(fd, src, cat=True, ret='logret'):
 	"""
 	Return hardcoded hourly freq feature dfs to use in experiments.
 	"""
+	def pd_modify_midx(pd_obj, sfx=None, offset=0):
+		_sfx = '' if (isnt(sfx)) else f'_{sfx}'
+		modified = ['_'.join([str(i+offset), ser_name.split('_')[1]]) +_sfx\
+			for i, ser_name in enumerate(pd_obj.index.levels[1])]
+		pd_obj.index = pd_obj.index.set_levels(modified, level=1)
+		return pd_obj
+
 	feature_dfs = []
 
-	if (src in ('pba', 'vol', 'buzz')):
-		for axe in ('hdmx', 'hdod', 'hdpt', 'hdzn', 'hdgau', 'hduni'):
-			if (src in ('buzz',)):
-				for fdf in fd['h'][src][axe].values():
-					feature_dfs.append(df_filter_by_keywords(fdf, ('open',)))
-			else:
-				for fdf in fd['h'][src][axe].values():
-					# feature_dfs.append(df_filter_by_keywords(fdf, \
-					# ('avgPrice', 'open', 'high', 'low', 'close')))
-					feature_dfs.append(fdf)
+	if (src in ('pba', 'vol')):
+		ret_type = f'h{ret}'
+		axe = bar = 'hohlca'
+		off1 = 0
 
-	return pd.concat(feature_dfs)
+		sub_dfs = [pd_modify_midx(fd['h'][src][axe][f'{src}_{axe}'])]
+		off2 = len(sub_dfs[-1].index.levels[1])
+		for key, fdf in sorted(fd['h'][src][ret_type].items()):
+			sub_dfs.append(pd_modify_midx(fdf, sfx=ret, offset=off2))
+			off2 += len(sub_dfs[-1].index.levels[1])
+		feature_dfs.append(pd_add_2nd_level(pd.concat(sub_dfs, axis=0), \
+			keys=[f'{off1}_{src}_{axe}']))
+		off1 += 1
 
-def get_hardcoded_feature_dfs(fd, src):
+		for axe in ('hdpt', 'hdod', 'hdmx', 'hdzn'):
+			sub_dfs = [pd_modify_midx(fd['h'][src][axe][f'{src}_{bar}_{axe}'])]
+			off2 = len(sub_dfs[-1].index.levels[1])
+			for key, fdf in sorted(fd['h'][src][axe].items()):
+				if (ret_type in key):
+					midx_keys = tuple(key for key in fdf.index.levels[1] \
+						if (ret_type in key))
+					sub_dfs.append(pd_modify_midx(pd_rows_key_in(fdf, 'id1', midx_keys), \
+						sfx=ret, offset=off2))
+					off2 += len(sub_dfs[-1].index.levels[1])
+			feature_dfs.append(pd_add_2nd_level(pd.concat(sub_dfs, axis=0), \
+				keys=[f'{off1}_{src}_{axe}']))
+			off1 += 1
+
+		for axel in ('hdmx_hduni', 'hdzn_hdgau'):
+			axe = axel.split('_')[1]
+			sub_dfs = [pd_modify_midx(fd['h'][src][axe][f'{src}_{bar}_{axel}(8)'])]
+			off2 = len(sub_dfs[-1].index.levels[1])
+			for key, fdf in sorted(fd['h'][src][axe].items()):
+				if (ret_type in key):
+					midx_keys = tuple(key for key in fdf.index.levels[1] \
+						if (ret_type in key))
+					sub_dfs.append(pd_modify_midx(pd_rows_key_in(fdf, 'id1', midx_keys), \
+						sfx=ret, offset=off2))
+					off2 += len(sub_dfs[-1].index.levels[1])
+			feature_dfs.append(pd_add_2nd_level(pd.concat(sub_dfs, axis=0), \
+				keys=[f'{off1}_{src}_{axe}']))
+			off1 += 1
+
+	elif (src in ('buzz',)):
+		for fdf in fd['h'][src][axe].values():
+			feature_dfs.append(df_filter_by_keywords(fdf, ('open',)))
+
+	return pd.concat(feature_dfs, axis=0) if (cat) else feature_dfs
+
+def get_hardcoded_feature_dfs(fd, src, cat=True):
 	"""
 	Multiplex between different feature frequencies and return data.
 	"""
@@ -407,7 +450,7 @@ def get_hardcoded_feature_dfs(fd, src):
 	return {
 		'd': get_hardcoded_daily_feature_dfs,
 		'h': get_hardcoded_hourly_feature_dfs
-	}.get(src_k[0])(fd, src_k[1])
+	}.get(src_k[0])(fd, src_k[1], cat)
 
 def get_hardcoded_label_target_dfs(ld, td, src):
 	"""
@@ -460,4 +503,17 @@ def get_lt_df(paths, lt_store):
 def df_filter_by_keywords(fdf, keywords):
 	cols = [col for col in fdf.index.levels[1] if (any(keyword in col for keyword in keywords))]
 	return pd_rows_key_in(fdf, 'id1', cols)
+
+def get_common_interval_data(fdata, ldata, tdata, interval=INTERVAL_YEARS):
+	"""
+	Intersect common data over interval and return it
+	"""
+	com_idx = midx_intersect(pd_get_midx_level(fdata), pd_get_midx_level(ldata), \
+		pd_get_midx_level(tdata))
+	com_idx = com_idx[(com_idx > str(interval[0])) & (com_idx < str(interval[1]))]
+	feature_df, label_df, target_df = map(compose(partial(pd_rows, idx=com_idx), \
+		df_midx_restack), [fdata, ldata, tdata])
+	assert(all(feature_df.index.levels[0]==label_df.index.levels[0]))
+	assert(all(feature_df.index.levels[0]==target_df.index.levels[0]))
+	return feature_df, label_df, target_df
 

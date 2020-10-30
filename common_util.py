@@ -1398,6 +1398,15 @@ def pd_single_ser(pd_obj, col_idx=0, enforce_singleton=True):
 			raise ValueError('Not a series or single column df and enforce_singleton is set True')
 		return pd_obj.iloc[:, col_idx]
 
+def pd_add_2nd_level(pd_obj, keys):
+	"""
+	Create a new MultiIndex level at the second level.
+	"""
+	newdf = pd.concat((pd_obj,), axis=0, keys=keys, names=['__new__'])
+	newdf.index = newdf.index.swaplevel(i=0, j=1) \
+		.rename([f'id{i}' for i in range(len(newdf.index.names))], inplace=False)
+	return newdf
+
 def df_null_rows(df):
 	return df[df.isna().any(axis=1)]
 

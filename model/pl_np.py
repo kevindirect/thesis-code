@@ -21,7 +21,7 @@ class NPModel(GenericModel):
 	Neural Process Pytorch Lightning Wrapper.
 
 	Training Hyperparameters:
-		window_size (int): window size to use (number of observations in the last dimension of the input tensor)
+		window_size (int): number of observations in the last dimension of the input tensor
 		feat_dim (int): dimension of resulting feature tensor, if 'None' doesn't reshape
 		epochs (int): number training epochs
 		batch_size (int): batch (or batch window) size

@@ -4,7 +4,7 @@ Kevin Patel
 import sys
 import os
 from os import sep
-from os.path import exists, basename
+from os.path import basename, dirname, exists
 from functools import partial
 from multiprocessing import Pool
 from multiprocessing.pool import ThreadPool
@@ -25,9 +25,12 @@ from recon.dataset_util import prep_dataset
 
 def xgpp(argv):
 	cmd_arg_list = ['modes=', 'assets=', 'force']
-	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name=basename(__file__))
-	modes = str_to_list(cmd_input['modes=']) if (is_valid(cmd_input['modes='])) else ('run',)
-	assets = str_to_list(cmd_input['assets=']) if (is_valid(cmd_input['assets='])) else None
+	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name=basename(__file__), \
+		script_pkg=basename(dirname(__file__)))
+	modes = str_to_list(cmd_input['modes=']) if (is_valid(cmd_input['modes='])) \
+		else ('run',) # possible modes: run, viz, test
+	assets = str_to_list(cmd_input['assets=']) if (is_valid(cmd_input['assets='])) \
+		else None
 	process_all = is_valid(cmd_input['force'])
 	xgs = []
 

@@ -26,7 +26,7 @@ class GenericModel(pl.LightningModule):
 	Generic Pytorch Lightning Wrapper.
 
 	Training Hyperparameters:
-		window_size (int): window size to use (number of observations in the last dimension of the input tensor)
+		window_size (int): number of observations in the last dimension of the input tensor
 		feat_dim (int): dimension of resulting feature tensor, if 'None' doesn't reshape
 		epochs (int): max number of training epochs
 		batch_size (int): batch (or batch window) size
@@ -47,7 +47,7 @@ class GenericModel(pl.LightningModule):
 		num_workers (int>=0): DataLoader option - number cpu workers to attach
 		pin_memory (bool): DataLoader option - whether to pin memory to gpu
 	"""
-	def __init__(self, model_fn, m_params, t_params, data, \
+	def __init__(self, model_fn, m_params, t_params,
 		epoch_metric_types=('train', 'val')):
 		"""
 		Init method
@@ -56,7 +56,7 @@ class GenericModel(pl.LightningModule):
 			model_fn (function): pytorch model callback
 			m_params (dict): dictionary of model hyperparameters
 			t_params (dict): dictionary of training hyperparameters
-			data (tuple): tuple of pd.DataFrames
+			# data (tuple): tuple of pd.DataFrames
 			epoch_metric_types (tuple): which epoch types to init metric objects for
 		"""
 		super().__init__()
@@ -74,16 +74,16 @@ class GenericModel(pl.LightningModule):
 			self.loss = loss_fn(weight=self.t_params['class_weights'])
 		else:
 			logging.info('no loss function set in pytorch lightning')
-		self.__setup_data__(data)
+		# self.__setup_data__(data)
 		self.__build_model__(model_fn)
 
 		# 'micro' weights by class frequency, 'macro' weights classes equally
 		self.epoch_metrics = {
 			epoch_type: {
 				'accuracy': Accuracy(compute_on_step=False),
-				'precision': Precision(num_classes=self.m_params['label_size'], \
+				'precision': Precision(num_classes=self.m_params['label_size'],
 					average='macro', compute_on_step=False),
-				'recall': Recall(num_classes=self.m_params['label_size'], \
+				'recall': Recall(num_classes=self.m_params['label_size'],
 					average='macro', compute_on_step=False),
 				# 'f0.5': Fbeta(num_classes=self.m_params['label_size'], beta=0.5,
 				# 	average='micro', compute_on_step=False),
@@ -118,9 +118,27 @@ class GenericModel(pl.LightningModule):
 		#sch = sch_fn(opt, **self.t_params['sch']['kwargs'])
 		#return [opt], [sch]
 
+	# def __setup_data__(self, data):
+	# 	"""
+	# 	Set self.flt_{train, val, test} by converting (feature_df, label_df, target_df)
+	# 	to numpy dataframes split across train, val, and test subsets.
+
+	# 	XXX encapsulate in a pl.DataModule
+	# 	"""
+	# 	self.flt_train, self.flt_val, self.flt_test = zip(*map(pd_to_np_tvt, data))
+	# 	self.obs_shape = (self.flt_train[0].shape[1], self.t_params['window_size'], \
+	# 		self.flt_train[0].shape[-1])	# (Channels, Window, Hours or Window Obs)
+
+	# 	shapes = np.asarray(tuple(map(lambda tvt: tuple(map(np.shape, tvt)), \
+	# 		(self.flt_train, self.flt_val, self.flt_test))))
+	# 	assert all(np.array_equal(a[:, 1:], b[:, 1:]) for a, b in pairwise(shapes)), \
+	# 		'feature, label, target shapes must be identical across splits'
+	# 	assert all(len(np.unique(mat.T[0, :]))==1 for mat in shapes), \
+	# 		'first dimension (N) must be equal in each split for all (f, l, t) tensors'
+
 	def __build_model__(self, model_fn):
 		"""
-		Feature observation shape - (Channels, Window, Hours or Window Observations)
+		Feature observation shape - (Channels, Height, Width)
 		"""
 		num_channels, num_win, num_win_obs = self.obs_shape
 		model_params = {k: v for k, v in self.m_params.items() \
@@ -128,32 +146,32 @@ class GenericModel(pl.LightningModule):
 		emb = model_fn(in_shape=(num_channels, num_win*num_win_obs), **model_params)
 		self.model = OutputBlock.wrap(emb)	# Append OB if is_valid(emb.ob_out_shapes)
 
-	def get_benchmarks(self):
-		"""
-		Return benchmarks calculated from loaded data.
-		"""
-		bench_dict = {}
-		bench_stats = (
-			lambda d, pfx: {
-				f'{pfx}_label_dist': pd.Series(d, dtype=int)\
-					.value_counts(normalize=True).to_dict()
-			},
-		)
-		bench_strats = (BuyAndHoldStrategy(), OptimalStrategy())
-		for pfx, flt in zip(('train', 'val', 'test'), \
-			(self.flt_train, self.flt_val, self.flt_test)):
-			l = np.sum(flt[1], axis=(1, 2), keepdims=False)
-			for stat in bench_stats:
-				bench_dict.update(stat(l, pfx))
+	# def get_benchmarks(self):
+	# 	"""
+	# 	Return benchmarks calculated from loaded data.
+	# 	"""
+	# 	bench_dict = {}
+	# 	bench_stats = (
+	# 		lambda d, pfx: {
+	# 			f'{pfx}_label_dist': pd.Series(d, dtype=int) \
+	# 				.value_counts(normalize=True).to_dict()
+	# 		},
+	# 	)
+	# 	bench_strats = (BuyAndHoldStrategy(), OptimalStrategy())
+	# 	for pfx, flt in zip(('train', 'val', 'test'), \
+	# 		(self.flt_train, self.flt_val, self.flt_test)):
+	# 		l = np.sum(flt[1], axis=(1, 2), keepdims=False)
+	# 		for stat in bench_stats:
+	# 			bench_dict.update(stat(l, pfx))
 
-			t = np.sum(flt[2], axis=(1, 2), keepdims=False)
-			t = torch.tensor(t, dtype=torch.float32, requires_grad=False)
-			for strat in bench_strats:
-				strat.update(None, None, t)
-				vals = strat.compute(pfx=pfx)
-				bench_dict.update(vals)
-				strat.reset()
-		return rectify_json(bench_dict)
+	# 		t = np.sum(flt[2], axis=(1, 2), keepdims=False)
+	# 		t = torch.tensor(t, dtype=torch.float32, requires_grad=False)
+	# 		for strat in bench_strats:
+	# 			strat.update(None, None, t)
+	# 			vals = strat.compute(pfx=pfx)
+	# 			bench_dict.update(vals)
+	# 			strat.reset()
+	# 	return rectify_json(bench_dict)
 
 	def forward(self, x):
 		"""
@@ -305,55 +323,40 @@ class GenericModel(pl.LightningModule):
 		self.aggregate_loss_epoch_end(outputs, epoch_type)
 		self.compute_metrics_epoch_end(epoch_type)
 
-	# XXX use pl.DataModule instead of this:
-	def __setup_data__(self, data):
-		"""
-		Set self.flt_{train, val, test} by converting (feature_df, label_df, target_df) to numpy dataframes split across train, val, and test subsets.
-		"""
-		self.flt_train, self.flt_val, self.flt_test = zip(*map(pd_to_np_tvt, data))
-		self.obs_shape = (self.flt_train[0].shape[1], self.t_params['window_size'], \
-			self.flt_train[0].shape[-1])	# (Channels, Window, Hours or Window Obs)
-		shapes = np.asarray(tuple(map(lambda tvt: tuple(map(np.shape, tvt)), \
-			(self.flt_train, self.flt_val, self.flt_test))))
-		assert all(np.array_equal(a[:, 1:], b[:, 1:]) for a, b in pairwise(shapes)), \
-			'feature, label, target shapes must be identical across splits'
-		assert all(len(np.unique(mat.T[0, :]))==1 for mat in shapes), \
-			'first dimension (N) must be equal in each split for all (f, l, t) tensors'
+	# # Dataloaders:
+	# train_dataloader = lambda self: get_dataloader(
+	# 	data=self.flt_train,
+	# 	loss=self.t_params['loss'],
+	# 	window_size=self.t_params['window_size'],
+	# 	window_overlap=True,
+	# 	feat_dim=self.t_params['feat_dim'],
+	# 	batch_size=self.t_params['batch_size'],
+	# 	batch_step_size=self.t_params['batch_step_size'],
+	# 	batch_shuffle=self.t_params['train_shuffle'],
+	# 	num_workers=self.t_params['num_workers'],
+	# 	pin_memory=self.t_params['pin_memory'])
 
-	# Dataloaders:
-	train_dataloader = lambda self: get_dataloader(
-		data=self.flt_train,
-		loss=self.t_params['loss'],
-		window_size=self.t_params['window_size'],
-		window_overlap=True,
-		feat_dim=self.t_params['feat_dim'],
-		batch_size=self.t_params['batch_size'],
-		batch_step_size=self.t_params['batch_step_size'],
-		batch_shuffle=self.t_params['train_shuffle'],
-		num_workers=self.t_params['num_workers'],
-		pin_memory=self.t_params['pin_memory'])
+	# val_dataloader = lambda self: get_dataloader(
+	# 	data=self.flt_val,
+	# 	loss=self.t_params['loss'],
+	# 	window_size=self.t_params['window_size'],
+	# 	window_overlap=True,
+	# 	feat_dim=self.t_params['feat_dim'],
+	# 	batch_size=self.t_params['batch_size'],
+	# 	batch_step_size=self.t_params['batch_step_size'],
+	# 	num_workers=self.t_params['num_workers'],
+	# 	pin_memory=self.t_params['pin_memory'])
 
-	val_dataloader = lambda self: get_dataloader(
-		data=self.flt_val,
-		loss=self.t_params['loss'],
-		window_size=self.t_params['window_size'],
-		window_overlap=True,
-		feat_dim=self.t_params['feat_dim'],
-		batch_size=self.t_params['batch_size'],
-		batch_step_size=self.t_params['batch_step_size'],
-		num_workers=self.t_params['num_workers'],
-		pin_memory=self.t_params['pin_memory'])
-
-	test_dataloader = lambda self: get_dataloader(
-		data=self.flt_test,
-		loss=self.t_params['loss'],
-		window_size=self.t_params['window_size'],
-		window_overlap=True,
-		feat_dim=self.t_params['feat_dim'],
-		batch_size=self.t_params['batch_size'],
-		batch_step_size=self.t_params['batch_step_size'],
-		num_workers=self.t_params['num_workers'],
-		pin_memory=self.t_params['pin_memory'])
+	# test_dataloader = lambda self: get_dataloader(
+	# 	data=self.flt_test,
+	# 	loss=self.t_params['loss'],
+	# 	window_size=self.t_params['window_size'],
+	# 	window_overlap=True,
+	# 	feat_dim=self.t_params['feat_dim'],
+	# 	batch_size=self.t_params['batch_size'],
+	# 	batch_step_size=self.t_params['batch_step_size'],
+	# 	num_workers=self.t_params['num_workers'],
+	# 	pin_memory=self.t_params['pin_memory'])
 
 	@classmethod
 	def fix_metrics_csv(cls, fname, dir_path):

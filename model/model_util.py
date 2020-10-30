@@ -5,15 +5,13 @@ Kevin Patel
 import sys
 import os
 import logging
-from math import floor
 from collections import OrderedDict
 
 import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
-from torch.nn.utils import weight_norm
-from kymatio.torch import Scattering1D as pyt_wavelet_scatter_1d
+from kymatio.torch import Scattering1D as pt_wavelet_scatter_1d
 
 from common_util import is_type, is_valid, isnt, list_wrap, assert_has_all_attr, pairwise, odd_only
 from model.common import PYTORCH_ACT_MAPPING, PYTORCH_ACT1D_LIST, PYTORCH_INIT_LIST
@@ -21,7 +19,7 @@ from model.common import PYTORCH_ACT_MAPPING, PYTORCH_ACT1D_LIST, PYTORCH_INIT_L
 
 # ********** HELPER FUNCTIONS **********
 def assert_has_shape_attr(mod):
-	assert is_type(mod, nn.Module), 'object must be a nn.Module'
+	assert is_type(mod, nn.Module), 'object must be a torch.nn.Module'
 	assert_has_all_attr(mod, 'in_shape', 'out_shape')
 
 def log_prob_sigma(value, loc, log_scale):
@@ -84,11 +82,11 @@ def init_layer(layer, act='linear', init_method='xavier_uniform'):
 				nn.init.kaiming_normal_(layer.weight, nonlinearity='relu') # fallback
 	return layer
 
-def get_padding(conv_type, in_width, kernel_size, dilation=1, stride=1):
+def get_padding(pad_type, in_width, kernel_size, dilation=1, stride=1):
 	return {
-		'same': int((dilation*(kernel_size-1))//2),
-		'full': int(dilation*(kernel_size-1))
-	}.get(conv_type, 0)
+		'same': dilation*(kernel_size-1),
+		'full': dilation*(kernel_size-1)*2
+	}.get(pad_type, 0)
 
 def pyt_multihead_attention(W, q, k, v):
 	"""
@@ -149,7 +147,7 @@ class WaveletScatter1d(nn.Module):
 			fo_wavelets (int>=1): Number of first order wavelets per octave (2nd order is fixed to 1)
 		"""
 		super().__init__()
-		self.scatter = pyt_wavelet_scatter_1d(max_scale_power, input_shape, fo_wavelets)
+		self.scatter = pt_wavelet_scatter_1d(max_scale_power, input_shape, fo_wavelets)
 		#self.scatter.cuda()
 		meta = self.scatter.meta()
 		self.orders = [np.where(meta['order'] == i) for i in range(3)]
@@ -201,90 +199,140 @@ class OutputBlock(nn.Module):
 			model = emb
 		return model
 
-class TemporalLayer1d(nn.Module):
+class TemporalLayer2d(nn.Module):
 	"""
-	Temporal convolutional layer (1d)
+	Temporal convolutional layer (2d)
 
-	DC: Dilated Casual Convolution
-	WN: Weight Normalization
-	RU: ReLu
-	DO: Dropout
+	The network performs 2D convolutions but only over the temporal (width) dimension.
+	All kernel size, dilation, and padding size parameters only affect the temporal
+	dimension of the kernel or input.
+
+	This module inputs/outputs a tensor shaped like (N, C, H, W),
+	where:
+		* N: batch
+		* C: channel
+		* H: height
+		* W: width
+
+	For a multivate time series input the height dimension indexes the series
+	and the width dimension indexes time.
+
+	To ensure convolution over the temporal (width) dimension only,
+	the following height settings are fixed:
+		* The kernel height is always the height of the input
+		* The kernel dilation height is one (no dilation over height)
+		* The input padding height is zero (no padding height)
+               _____________    ____________    _________________    ____________    _____________
+	x -----|__padding__|----|__conv2d__|----|__weight_norm__|----|__act_fn__|----|__dropout__|-----> temporal_layer_2d(x)
+
+	This layer performs the following operations in order:
+		1. 2D Dilated Causal Convolution
+		2. Weight Normalization
+		3. ReLu / other activation
+		4. Dropout
 	"""
 	def __init__(self, in_shape, out_shape, act, kernel_size, padding_size,
-		dilation, dropout, init='xavier_uniform', chomp=False):
+		dilation, dropout, init='xavier_uniform'):
 		"""
 		Args:
-			in_shape (tuple): (in_channels, in_width) of the Conv1d layer
-			out_shape (tuple): (out_channels, out_width) of the Conv1d layer
+			in_shape (tuple): (in_channels, in_height, in_width) of the Conv2d layer
+			out_shape (tuple): (out_channels, in_height, out_width) of the Conv2d layer
 			act (str): layer activation
-			kernel_size (int): size of the kernel
-			padding_size (int): input padding size
-			dilation (int): layer dilation
+			kernel_size (int): width of the kernel (height is the height of input)
+			padding_size (int): input padding width (padding height is zero)
+			dilation (int): layer dilation width (no dilation over height dimension)
 			dropout (float): probability of an element to be zeroed or dropped,
 				uses AlphaDroput if the layer has a selu activation
-			chomp (bool): whether to add a chomp step to make the network causal,
-				if the data already ensures this (for example the labels are shifted)
-				than this is not necessary. If it is set to true, 'padding_size' is removed off the
-				right (temporally recent) end of the data.
 			init (str): layer weight initialization method
 		"""
 		super().__init__()
 		self.in_shape, self.out_shape = in_shape, out_shape
+		pad_l = padding_size//2
+		pad_r = padding_size - pad_l
+		assert self.out_shape[1] == 1, \
+			"out_height must be 1, convolution only occurs across temporal dimension"
+
 		modules = nn.ModuleList()
+		modules.append(nn.ZeroPad2d((pad_l, pad_r, 0, 0)))
 		modules.append(
 			init_layer(
-				weight_norm(nn.Conv1d(self.in_shape[0], self.out_shape[0], kernel_size,
-					stride=1, padding=padding_size, dilation=dilation, groups=1, bias=True)), # groups=1, groups=n, or groups=self.in_shape[0]
+				nn.utils.weight_norm(nn.Conv2d(self.in_shape[0], self.out_shape[0],
+					kernel_size=(self.in_shape[1], kernel_size), stride=1,
+					dilation=(1, dilation), groups=1, bias=True)),
 				act=act,
 				init_method=init
 			)
 		)
-		if (chomp):
-			modules.append(Chomp1d(padding_size))
 		modules.append(PYTORCH_ACT_MAPPING.get(act)())
-		modules.append(nn.AlphaDropout(dropout) if (act in ('selu',)) else nn.Dropout(dropout))
+		modules.append(nn.AlphaDropout(dropout) if (act in ('selu',)) \
+			else nn.Dropout(dropout))
 		self.layer = nn.Sequential(*modules)
 
 	@classmethod
+	def get_out_height(cls, in_height):
+		return 1
+
+	@classmethod
 	def get_out_width(cls, in_width, kernel_size, dilation=1, padding_size=0, stride=1):
-		return int(floor(((in_width+2*padding_size-dilation*(kernel_size-1)-1)/stride)+1))
+		return int(np.floor(
+			((in_width+padding_size-dilation*(kernel_size-1)-1)/stride)+1
+		).item(0))
 
 	def forward(self, x):
 		return self.layer(x)
 
 class ResidualBlock(nn.Module):
 	"""
-	Wrap a residual connection around a network
+	Residual Block Module
+	Wraps a residual connection around a network.
+                       ____________________
+	         ______|__net.forward(x)__|______
+	         |                              |
+	x -------|     ____________________     +-------> residual_block(x)
+	         |_____|__downsample(x)___|_____|
+
+	This module will propagate the input through the network and add the result
+	to the input. The input might need to be downsampled to facillitate the addition.
 	"""
 	def __init__(self, net, act, downsample_type='linear', init='xavier_uniform'):
 		"""
 		Args:
 			net (nn.Module): nn.Module to wrap
 			act (str): activation function
+			downsample_type (str): method of downsampling used by residual block
 			init (str): layer weight initialization method
 		"""
 		super().__init__()
 		assert_has_shape_attr(net)
+		self.in_shape = net.in_shape
 		self.net = net
 		self.out_act = PYTORCH_ACT_MAPPING.get(act)()
 		self.downsample = None
-		if (net.in_shape != net.out_shape):
+		if (self.net.in_shape != self.net.out_shape):
 			if (downsample_type == 'linear'):
-				self.downsample = init_layer(nn.Linear(net.in_shape[0], net.out_shape[0], bias=True),
-					act=act, init_method=init)
+				self.padding = lambda x: x
+				self.downsample = init_layer(nn.Linear(self.net.in_shape[0],
+					self.net.out_shape[0], bias=True), act=act, init_method=init)
 			elif (downsample_type == 'conv1d'):
-				padding_size = max(int((net.out_shape[1] - net.in_shape[1])//2), 0)
-				self.downsample = init_layer(nn.Conv1d(net.in_shape[0], net.out_shape[0],
-					1, padding=padding_size, bias=True), act=act, init_method=init)
+				raise NotImplementedError()
+			elif (downsample_type == 'conv2d'):
+				padding_size = max(self.net.out_shape[2] - self.net.in_shape[2], 0)
+				pad_l = padding_size//2
+				pad_r = padding_size - pad_l
+				self.padding = nn.ZeroPad2d((pad_l, pad_r, 0, 0))
+				self.downsample = init_layer(
+					nn.Conv2d(self.net.in_shape[0], self.net.out_shape[0],
+					kernel_size=(self.net.in_shape[1], 1), bias=True),
+					act=act, init_method=init)
 
 	def forward(self, x):
-		residual = x if (isnt(self.downsample)) else self.downsample(x)
+		residual = x if (isnt(self.downsample)) else self.downsample(self.padding(x))
 		try:
 			net_out = self.net(x)
 			return self.out_act(net_out + residual)
 		except RuntimeError as e:
 			print(e)
-			logging.error('self.net(x).shape:  {}'.format(self.net(x).shape))
+			logging.error('net(x).shape:   {}'.format(self.net(x).shape))
 			logging.error('residual.shape: {}'.format(residual.shape))
 			sys.exit(0)
 
@@ -292,25 +340,28 @@ class ResidualBlock(nn.Module):
 # ********** MODEL MODULES **********
 class TemporalConvNet(nn.Module):
 	"""
-	Temporal ConvNet
-	Builds logits of a TCN convolutional network
+	Temporal Convolutional Network
+
+	The network performs 2D convolutions but only over the temporal (width) dimension.
+	All kernel size, dilation, and padding size parameters only affect the temporal
+	dimension of the kernel or input. For more information see TemporalLayer2d.
 
 	Note: Receptive Field Size = Number TCN Blocks * Kernel Size * Last Layer Dilation Size
 	"""
 	def __init__(self, in_shape, block_channels=[[5, 5, 5]], num_blocks=1,
 		kernel_sizes=3, dropouts=0.0, global_dropout=.5, global_dilation=True,
 		block_act='elu', out_act='relu', block_init='xavier_uniform',
-		out_init='xavier_uniform', pad_type='same',
+		out_init='xavier_uniform', pad_type='same', downsample_type='conv2d',
 		ob_out_shapes=None, ob_act='linear', ob_init='xavier_uniform'):
 		"""
 		Args:
 			in_shape (tuple): shape of the network's input tensor,
-				expects a shape (in_channels, in_width)
+				expects a shape (in_channels, in_height, in_width)
 			block_channels (list * list): cnn channel sizes in each block,
 				or individual channel sizes per block in sequence
 			num_blocks (int): number of residual blocks,
 				each block consists of a tcn network and residual connection
-			kernel_sizes (int|list): list of CNN kernel sizes,
+			kernel_sizes (int|list): list of CNN kernel sizes (across width dimension only),
 				if a list its length must be either 1 or len(block_channels)
 			dropouts (float|list): dropout probability ordered by global index
 				if a single floating point value, sets dropout for first layer only
@@ -325,6 +376,7 @@ class TemporalConvNet(nn.Module):
 			block_init (str): hidden layer weight initialization method
 			out_init (str): output layer weight initialization method
 			pad_type ('same'|'full'): padding method to use
+			downsample_type (str): method of downsampling used by residual block
 			ob_out_shapes
 			ob_act
 			ob_init
@@ -355,26 +407,28 @@ class TemporalConvNet(nn.Module):
 					True: 2**i,
 					False: 2**l
 				}.get(global_dilation)
-				padding_size = get_padding(pad_type, layer_in_shape[1], kernel_size,
+				padding_size = get_padding(pad_type, layer_in_shape[2], kernel_size,
 					dilation=dilation)
-				out_width = TemporalLayer1d.get_out_width(layer_in_shape[1],
+				out_height = TemporalLayer2d.get_out_height(layer_in_shape[1])
+				out_width = TemporalLayer2d.get_out_width(layer_in_shape[2],
 					kernel_size=kernel_size, dilation=dilation, padding_size=padding_size)
-				layer_out_shape = (out_channels, out_width)
+				layer_out_shape = (out_channels, out_height, out_width)
 				dropout = global_dropout \
 					if (isnt(dropouts) or i >= len(dropouts) or isnt(dropouts[i])) \
 					else dropouts[i]
-				layer = TemporalLayer1d(in_shape=layer_in_shape, out_shape=layer_out_shape,
+				layer = TemporalLayer2d(in_shape=layer_in_shape, out_shape=layer_out_shape,
 					act=block_act, kernel_size=kernel_size, padding_size=padding_size,
 					dilation=dilation, dropout=dropout, init=block_init)
-				layers.append(('tl_{b}_{l}'.format(b=b, l=l, i=i), layer))
+				layers.append((f'tl[{layer_in_shape}->{layer_out_shape}]_{b}_{l}', layer))
 				layer_in_shape = layer_out_shape
 				i += 1
 			block_out_shape = layer_out_shape
 			net = nn.Sequential(OrderedDict(layers))
 			net.in_shape, net.out_shape = block_in_shape, block_out_shape
 			#net.in_shape, net.out_shape = layers[0][1].in_shape, layers[-1][1].out_shape
-			blocks.append(('rb_{b}'.format(b=b), ResidualBlock(net, out_act,
-				downsample_type='conv1d', init=out_init)))
+			blocks.append((f'rb[{downsample_type}]_{b}',
+				ResidualBlock(net, out_act, downsample_type=downsample_type, init=out_init)
+			))
 			block_in_shape = block_out_shape
 		self.out_shape = block_out_shape
 		self.model = nn.Sequential(OrderedDict(blocks))
@@ -389,21 +443,24 @@ class TemporalConvNet(nn.Module):
 
 class StackedTCN(TemporalConvNet):
 	"""
-	Wrapper Module for model_util.TemporalConvNet,
-	creates a fixed width, single block TCN.
+	Stacked Temporal Convolutional Network
+	Creates a TCN with fixed size output channels for each convolutional layer.
+	For more information see TemporalConvNet.
 	"""
 	def __init__(self, in_shape, size=128, depth=3, kernel_sizes=3,
 		input_dropout=0.0, output_dropout=0.0, global_dropout=.5,
 		global_dilation=True, block_act='elu', out_act='relu',
-		block_init='xavier_uniform', out_init='xavier_uniform', pad_type='full',
+		block_init='xavier_uniform', out_init='xavier_uniform',
+		pad_type='full', downsample_type='conv2d',
 		ob_out_shapes=None, ob_act='linear', ob_init='xavier_uniform'):
 		"""
 		Args:
-			in_shape (tuple): shape of the network's input tensor (C, S)
+			in_shape (tuple): shape of the network's input tensor,
+				expects a shape (in_channels, in_height, in_width)
 			size (int): network embedding size
 			depth (int): number of hidden layers to stack
-			kernel_sizes (int|list): list of CNN kernel sizes,
-				if a list its length must be either 1 or depth
+			kernel_sizes (int|list): list of CNN kernel sizes (across width dimension only),
+				if a list its length must be either 1 or len(block_channels)
 			input_dropout (float): first layer dropout
 			output_dropout (float): last layer dropout
 			global_dropout (float): default dropout probability
@@ -413,6 +470,7 @@ class StackedTCN(TemporalConvNet):
 			block_init (str): hidden layer weight initialization method
 			out_init (str): output layer weight initialization method
 			pad_type ('same'|'full'): padding method to use
+			downsample_type (str): method of downsampling used by residual block
 			ob_out_shapes
 			ob_act
 			ob_ini
@@ -423,7 +481,7 @@ class StackedTCN(TemporalConvNet):
 			kernel_sizes=kernel_sizes, dropouts=dropouts,
 			global_dropout=global_dropout, global_dilation=global_dilation,
 			block_act=block_act, out_act=out_act, block_init=block_init,
-			out_init=out_init, pad_type=pad_type,
+			out_init=out_init, pad_type=pad_type, downsample_type=downsample_type,
 			ob_out_shapes=ob_out_shapes, ob_act=ob_act, ob_init=ob_init)
 
 	@classmethod
@@ -436,7 +494,8 @@ class StackedTCN(TemporalConvNet):
 			params = {
 				'size': trial.suggest_int('size', 2**5, 2**8),
 				'depth': trial.suggest_int('depth', 2, 6),
-				'kernel_sizes': odd_only(trial.suggest_int('kernel_sizes', 3, 15, step=2)),
+				# 'kernel_sizes': trial.suggest_int('kernel_sizes', 3, 15, step=1),
+				'kernel_sizes': trial.suggest_categorical('kernel_sizes', (4, 8, 24, 40)),
 				'input_dropout': trial.suggest_float('input_dropout', \
 					0.0, 1.0, step=1e-6),
 				'output_dropout': trial.suggest_float('output_dropout', \
@@ -449,6 +508,7 @@ class StackedTCN(TemporalConvNet):
 				'block_init': trial.suggest_categorical('block_init', PYTORCH_INIT_LIST[2:]),
 				'out_init': trial.suggest_categorical('out_init', PYTORCH_INIT_LIST[2:]),
 				'pad_type': 'full',
+				'downsample_type': 'conv2d',
 				'label_size': num_classes-1,
 				'ob_out_shapes': num_classes if (add_ob) else None,
 				'ob_act': trial.suggest_categorical('ob_act', PYTORCH_ACT1D_LIST),
@@ -458,7 +518,7 @@ class StackedTCN(TemporalConvNet):
 			params = {
 				'size': 128,
 				'depth': 3,
-				'kernel_sizes': 3,
+				'kernel_sizes': 8,
 				'input_dropout': 0.0,
 				'output_dropout': 0.0,
 				'global_dropout': .5,
@@ -468,6 +528,7 @@ class StackedTCN(TemporalConvNet):
 				'block_init': 'xavier_uniform',
 				'out_init': 'xavier_uniform',
 				'pad_type': 'full',
+				'downsample_type': 'conv2d',
 				'label_size': num_classes-1,
 				'ob_out_shapes': num_classes if (add_ob) else None,
 				'ob_act': 'linear',

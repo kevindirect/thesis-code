@@ -16,9 +16,11 @@ import optuna
 from optuna.pruners import PercentilePruner, HyperbandPruner
 from optuna.integration import PyTorchLightningPruningCallback
 
-from common_util import MODEL_DIR, rectify_json, dump_json, benchmark, makedir_if_not_exists, is_type, is_valid, isnt, get_cmd_args, compose, pd_split_ternary_to_binary, midx_intersect, pd_get_midx_level, pd_rows, df_midx_restack
+from common_util import MODEL_DIR, rectify_json, dump_json, benchmark, makedir_if_not_exists, is_type, is_valid, isnt, get_cmd_args
+#, compose, pd_split_ternary_to_binary, midx_intersect, pd_get_midx_level, pd_rows, df_midx_restack
 from model.common import ASSETS, INTERVAL_YEARS, OPTUNA_DB_FNAME, OPTUNA_N_TRIALS, OPTUNA_TIMEOUT_HOURS, INTRADAY_LEN
-from model.xg_util import get_xg_feature_dfs, get_xg_label_target_dfs, get_hardcoded_feature_dfs, get_hardcoded_label_target_dfs
+# from model.xg_util import get_xg_feature_dfs, get_xg_label_target_dfs, get_hardcoded_feature_dfs, get_hardcoded_label_target_dfs
+from model.pl_xgdm import XGDataModule
 
 
 def optuna_run(argv):
@@ -41,8 +43,8 @@ def optuna_run(argv):
 	optimize_dir = {
 		'val_loss': 'minimize'
 	}.get(monitor, 'maximize')
-	data_name = f'{ldata_name}_{fdata_name}'
-	fd = None
+
+	dm = XGDataModule()
 
 	# model options: stcn, anp
 	if (model_name in ('stcn', 'StackedTCN', 'GenericModel_StackedTCN')):
@@ -54,31 +56,6 @@ def optuna_run(argv):
 		from model.np_util import AttentiveNP
 		pl_model_fn, pt_model_fn = NPModel, AttentiveNP
 	model_name = f'{pl_model_fn.__name__}_{pt_model_fn.__name__}'
-
-	# fdata options: d_rand, d_pba, d_vol, d_buzz, d_nonbuzz, h_rand, h_pba, h_vol, h_buzz
-	if (fdata_name in ('d_rand', 'h_rand')):
-		if (fdata_k[0] == 'd'):
-			raise NotImplementedError()
-		elif (fdata_k[0] == 'h'):
-			raise NotImplementedError()
-	else:
-		fd = get_xg_feature_dfs(asset_name, overwrite_cache=False)
-		fdata = get_hardcoded_feature_dfs(fd, fdata_name)
-
-	# ldata options: dcur (current period), ddir, ddir1, ddir2, dxfbdir1, dxbdir2
-	if (ldata_name == 'dcur'):
-		# Sanity check: 'Predict' the present ddir(t-1)
-		fd = fd or get_xg_feature_dfs(asset_name)
-		ldata = pd_split_ternary_to_binary(df_del_midx_level(\
-			fd['d']['pba']['ddir']['pba_hoc_hdxret_ddir'] \
-			.rename(columns={-1:'pba_hoc_hdxret_ddir'}), loc=1) \
-			.replace(to_replace=-1, value=0).astype(int))
-		tdata = pd_split_ternary_to_binary(df_del_midx_level(\
-			fd['d']['pba']['dret']['pba_hoc_hdxret_dret'] \
-			.rename(columns={-1:'pba_hoc_hdxret_dret'}), loc=1))
-	else:
-		ld, td = get_xg_label_target_dfs(asset_name, overwrite_cache=False)
-		ldata, tdata = get_hardcoded_label_target_dfs(ld, td, ldata_name)
 
 	# Set parameters of objective function to optimize:
 	study_dir = MODEL_DIR \
@@ -114,13 +91,14 @@ def optuna_run(argv):
 	# TODO save/record random seed used
 
 
-def objective(trial, pl_model_fn, pt_model_fn, fdata, ldata, tdata, monitor,
+def objective(trial, pl_model_fn, pt_model_fn, dm, monitor,
 	study_dir, max_epochs=None, min_epochs=1):
 	"""
 	Args:
 		trial
 		pl_model_fn: pytorch lightning model wrapper module constructor
 		pt_model_fn: pytorch model module constructor
+		dm (pl.DataModule): data
 		monitor: the validation metric optina checkpoints and monitors on
 		max_epochs: override traning params epoch value
 	"""
@@ -135,7 +113,7 @@ def objective(trial, pl_model_fn, pt_model_fn, fdata, ldata, tdata, monitor,
 
 	bench_fname = 'benchmark.json'
 	if (not exists('{study_dir}{bench_fname}')):
-		dump_json(mdl.get_benchmarks(), bench_fname, study_dir)
+		dump_json(dm.get_benchmarks(), bench_fname, study_dir)
 
 	dump_json(rectify_json(m_params), 'params_m.json', trial_dir)
 	dump_json(rectify_json(t_params), 'params_t.json', trial_dir)
@@ -157,24 +135,10 @@ def objective(trial, pl_model_fn, pt_model_fn, fdata, ldata, tdata, monitor,
 			auto_lr_find=False, amp_level='O1', precision=16,
 			default_root_dir=trial_dir, weights_summary=None,
 			gpus=-1 if (torch.cuda.is_available()) else None)
-	trainer.fit(mdl)
+	trainer.fit(mdl, datamodule=dm)
 	# pl_model_fn.fix_metrics_csv('metrics.csv', dir_path=trial_dir)
 
 	return trainer.callback_metrics[monitor]
-
-
-def common_interval_data(fdata, ldata, tdata, interval=INTERVAL_YEARS):
-	"""
-	Intersect common data over interval and return it
-	"""
-	com_idx = midx_intersect(pd_get_midx_level(fdata), pd_get_midx_level(ldata), \
-		pd_get_midx_level(tdata))
-	com_idx = com_idx[(com_idx > interval[0]) & (com_idx < interval[1])]
-	feature_df, label_df, target_df = map(compose(partial(pd_rows, idx=com_idx), \
-		df_midx_restack), [fdata, ldata, tdata])
-	assert(all(feature_df.index.levels[0]==label_df.index.levels[0]))
-	assert(all(feature_df.index.levels[0]==target_df.index.levels[0]))
-	return feature_df, label_df, target_df
 
 
 if __name__ == '__main__':

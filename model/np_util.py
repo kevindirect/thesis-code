@@ -16,7 +16,7 @@ import torch.nn as nn
 from common_util import is_valid, isnt, fn_default_args, odd_only
 from model.common import PYTORCH_ACT1D_LIST, PYTORCH_INIT_LIST
 from model.model_util import log_prob_sigma, init_layer, get_padding, pyt_multihead_attention, StackedTCN
-# Tensors are column-major, shaped as (batch, channel, sequence) unless otherwise specified
+# Tensors are column-major, shaped as (batch, channel, height, width) XXX unless otherwise specified
 # Inspired by:
 # * https://github.com/3springs/attentive-neural-processes/blob/master/neural_processes/models/neural_process/model.py
 # * https://github.com/soobinseo/Attentive-Neural-Process/blob/master/module.py

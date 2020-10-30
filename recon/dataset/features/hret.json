@@ -1,7 +1,5 @@
 {
 	"features": [
-		["hspread", "hspread_pba_vol"],
-		["hret", "hret_pba_vol"],
-		["hlogret", "hlogret_pba_vol"]
+		["hret", "hret_pba_vol"]
 	]
 }
