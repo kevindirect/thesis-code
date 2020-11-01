@@ -82,11 +82,11 @@ def init_layer(layer, act='linear', init_method='xavier_uniform'):
 				nn.init.kaiming_normal_(layer.weight, nonlinearity='relu') # fallback
 	return layer
 
-def get_padding(pad_type, in_width, kernel_size, dilation=1, stride=1):
+def get_padding(pad_mode, in_width, kernel_size, dilation=1, stride=1):
 	return {
 		'same': dilation*(kernel_size-1),
 		'full': dilation*(kernel_size-1)*2
-	}.get(pad_type, 0)
+	}.get(pad_mode, 0)
 
 def pyt_multihead_attention(W, q, k, v):
 	"""
@@ -175,16 +175,13 @@ class OutputBlock(nn.Module):
 		super().__init__()
 		assert_has_shape_attr(emb)
 		self.emb = emb
-		self.out = FFN(self.emb.out_shape[0], out_shapes=list_wrap(out_shapes), \
+		self.out = FFN(self.emb.out_shape, out_shapes=list_wrap(out_shapes), \
 			act=act, init=init)
 
 	def forward(self, x):
-		out_embedding = self.emb(x)
-		if (len(self.emb.out_shape) == 1):
-			output = self.out(out_embedding)
-		else:
-			output = self.out(out_embedding[:, :, -1])
-		return output
+		out_embed = self.emb(x)
+		out_score = self.out(out_embed.flatten(start_dim=1, end_dim=-1))
+		return out_score
 
 	@classmethod
 	def wrap(cls, emb):
@@ -253,7 +250,7 @@ class TemporalLayer2d(nn.Module):
 			"out_height must be 1, convolution only occurs across temporal dimension"
 
 		modules = nn.ModuleList()
-		modules.append(nn.ZeroPad2d((pad_l, pad_r, 0, 0)))
+		modules.append(nn.ReplicationPad2d((pad_l, pad_r, 0, 0))) # XXX Reflection or Circular Pad?
 		modules.append(
 			init_layer(
 				nn.utils.weight_norm(nn.Conv2d(self.in_shape[0], self.out_shape[0],
@@ -319,7 +316,7 @@ class ResidualBlock(nn.Module):
 				padding_size = max(self.net.out_shape[2] - self.net.in_shape[2], 0)
 				pad_l = padding_size//2
 				pad_r = padding_size - pad_l
-				self.padding = nn.ZeroPad2d((pad_l, pad_r, 0, 0))
+				self.padding = nn.ReplicationPad2d((pad_l, pad_r, 0, 0)) # XXX Reflection or Circular Pad?
 				self.downsample = init_layer(
 					nn.Conv2d(self.net.in_shape[0], self.net.out_shape[0],
 					kernel_size=(self.net.in_shape[1], 1), bias=True),
@@ -351,7 +348,7 @@ class TemporalConvNet(nn.Module):
 	def __init__(self, in_shape, block_channels=[[5, 5, 5]], num_blocks=1,
 		kernel_sizes=3, dropouts=0.0, global_dropout=.5, global_dilation=True,
 		block_act='elu', out_act='relu', block_init='xavier_uniform',
-		out_init='xavier_uniform', pad_type='same', downsample_type='conv2d',
+		out_init='xavier_uniform', pad_mode='same', downsample_type='conv2d',
 		ob_out_shapes=None, ob_act='linear', ob_init='xavier_uniform'):
 		"""
 		Args:
@@ -375,7 +372,7 @@ class TemporalConvNet(nn.Module):
 			out_act (str): output activation of each block
 			block_init (str): hidden layer weight initialization method
 			out_init (str): output layer weight initialization method
-			pad_type ('same'|'full'): padding method to use
+			pad_mode('same'|'full'): padding method to use
 			downsample_type (str): method of downsampling used by residual block
 			ob_out_shapes
 			ob_act
@@ -407,7 +404,7 @@ class TemporalConvNet(nn.Module):
 					True: 2**i,
 					False: 2**l
 				}.get(global_dilation)
-				padding_size = get_padding(pad_type, layer_in_shape[2], kernel_size,
+				padding_size = get_padding(pad_mode, layer_in_shape[2], kernel_size,
 					dilation=dilation)
 				out_height = TemporalLayer2d.get_out_height(layer_in_shape[1])
 				out_width = TemporalLayer2d.get_out_width(layer_in_shape[2],
@@ -451,7 +448,7 @@ class StackedTCN(TemporalConvNet):
 		input_dropout=0.0, output_dropout=0.0, global_dropout=.5,
 		global_dilation=True, block_act='elu', out_act='relu',
 		block_init='xavier_uniform', out_init='xavier_uniform',
-		pad_type='full', downsample_type='conv2d',
+		pad_mode='full', downsample_type='conv2d',
 		ob_out_shapes=None, ob_act='linear', ob_init='xavier_uniform'):
 		"""
 		Args:
@@ -469,7 +466,7 @@ class StackedTCN(TemporalConvNet):
 			out_act (str): output activation of each block
 			block_init (str): hidden layer weight initialization method
 			out_init (str): output layer weight initialization method
-			pad_type ('same'|'full'): padding method to use
+			pad_mode('same'|'full'): padding method to use
 			downsample_type (str): method of downsampling used by residual block
 			ob_out_shapes
 			ob_act
@@ -481,7 +478,7 @@ class StackedTCN(TemporalConvNet):
 			kernel_sizes=kernel_sizes, dropouts=dropouts,
 			global_dropout=global_dropout, global_dilation=global_dilation,
 			block_act=block_act, out_act=out_act, block_init=block_init,
-			out_init=out_init, pad_type=pad_type, downsample_type=downsample_type,
+			out_init=out_init, pad_mode=pad_mode, downsample_type=downsample_type,
 			ob_out_shapes=ob_out_shapes, ob_act=ob_act, ob_init=ob_init)
 
 	@classmethod
@@ -507,7 +504,7 @@ class StackedTCN(TemporalConvNet):
 				'out_act': trial.suggest_categorical('out_act', PYTORCH_ACT1D_LIST),
 				'block_init': trial.suggest_categorical('block_init', PYTORCH_INIT_LIST[2:]),
 				'out_init': trial.suggest_categorical('out_init', PYTORCH_INIT_LIST[2:]),
-				'pad_type': 'full',
+				'pad_mode': 'full',
 				'downsample_type': 'conv2d',
 				'label_size': num_classes-1,
 				'ob_out_shapes': num_classes if (add_ob) else None,
@@ -527,7 +524,7 @@ class StackedTCN(TemporalConvNet):
 				'out_act': 'relu',
 				'block_init': 'xavier_uniform',
 				'out_init': 'xavier_uniform',
-				'pad_type': 'full',
+				'pad_mode': 'full',
 				'downsample_type': 'conv2d',
 				'label_size': num_classes-1,
 				'ob_out_shapes': num_classes if (add_ob) else None,
@@ -543,9 +540,9 @@ class FFN(nn.Module):
 	def __init__(self, in_shape, out_shapes=[128, 128, 128], act='relu',
 		init='xavier_uniform'):
 		super().__init__()
-		io_shapes = [np.product(in_shape)]
-		io_shapes.extend(out_shapes)
+		io_shapes = [np.product(in_shape).item(0), *out_shapes]
 		ffn_layers = []
+
 		for l, (i, o) in enumerate(pairwise(io_shapes)):
 			ffn_layers.append((f'ff_{l}', init_layer(nn.Linear(i, o), act=act, \
 				init_method=init)))

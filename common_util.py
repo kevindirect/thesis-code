@@ -305,18 +305,18 @@ def list_compare(master, other):
 	elif (master_set.isdisjoint(other_set)):
 		return 'disjoint'
 
-def get_range_cuts(start, end, ratios_list, block_size=1):
+def get_range_cuts(start, end, ratios_list):
 	"""
 	Return a list of segment indices for cuts based on ratios over the range provided by the passed [start, end).
-	The cuts will traverse the whole range of [start, end), if the provided ratios sum to less than one
-	the last segment will contain the remainder.
+	If the ratios result in fractional boundaries, they will be rounded to the closest integer.
+	The range cuts will traverse the whole [start, end) range provided.
 	"""
 	cuts = [start]
 	size = end - start
 	seg_start = start
 
 	for seg_ratio in ratios_list[:-1]:
-		seg_end = seg_start + int(math.floor(seg_ratio*size))
+		seg_end = seg_start + int(round(seg_ratio*size))
 		cuts.append(seg_end)
 		seg_start = seg_end
 	cuts.append(end)

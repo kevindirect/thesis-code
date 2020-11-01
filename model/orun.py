@@ -17,9 +17,7 @@ from optuna.pruners import PercentilePruner, HyperbandPruner
 from optuna.integration import PyTorchLightningPruningCallback
 
 from common_util import MODEL_DIR, rectify_json, dump_json, benchmark, makedir_if_not_exists, is_type, is_valid, isnt, get_cmd_args
-#, compose, pd_split_ternary_to_binary, midx_intersect, pd_get_midx_level, pd_rows, df_midx_restack
-from model.common import ASSETS, INTERVAL_YEARS, OPTUNA_DB_FNAME, OPTUNA_N_TRIALS, OPTUNA_TIMEOUT_HOURS, INTRADAY_LEN
-# from model.xg_util import get_xg_feature_dfs, get_xg_label_target_dfs, get_hardcoded_feature_dfs, get_hardcoded_label_target_dfs
+from model.common import ASSETS, INTERVAL_YEARS, WIN_SIZE, OPTUNA_DB_FNAME, OPTUNA_N_TRIALS, OPTUNA_TIMEOUT_HOURS, INTRADAY_LEN
 from model.pl_xgdm import XGDataModule
 
 
@@ -44,7 +42,11 @@ def optuna_run(argv):
 		'val_loss': 'minimize'
 	}.get(monitor, 'maximize')
 
-	dm = XGDataModule()
+	# Init the datamodule
+	dm = XGDataModule({'window_size': WIN_SIZE}, asset_name, fdata_name, ldata_name,
+		interval=INTERVAL_YEARS, overwrite_cache=False)
+	dm.prepare_data()
+	dm.setup()
 
 	# model options: stcn, anp
 	if (model_name in ('stcn', 'StackedTCN', 'GenericModel_StackedTCN')):
@@ -59,8 +61,8 @@ def optuna_run(argv):
 
 	# Set parameters of objective function to optimize:
 	study_dir = MODEL_DIR \
-		+sep.join(['log', model_name, asset_name, data_name, monitor]) +sep
-	study_name = ','.join([model_name, asset_name, data_name, monitor])
+		+sep.join(['log', model_name, asset_name, dm.name, monitor]) +sep
+	study_name = ','.join([model_name, asset_name, dm.name, monitor])
 	study_db_path = f'sqlite:///{study_dir}{OPTUNA_DB_FNAME}'
 
 	logging.debug('cuda status: {}'.format( \
@@ -76,11 +78,14 @@ def optuna_run(argv):
 		sys.exit()
 
 	makedir_if_not_exists(study_dir)
+	bench_fname = 'benchmark.json'
+	if (not exists('{study_dir}{bench_fname}')):
+		dump_json(dm.get_benchmarks(), bench_fname, study_dir)
 	# logging.getLogger("lightning").setLevel(logging.ERROR) # Disable pl warnings
 	torch.cuda.empty_cache()
 	obj_fn = partial(objective, pl_model_fn=pl_model_fn, pt_model_fn=pt_model_fn,
-		fdata=fdata, ldata=ldata, tdata=tdata, monitor=monitor, study_dir=study_dir,
-		max_epochs=max_epochs, min_epochs=min_epochs)
+		dm=dm, monitor=monitor, study_dir=study_dir, max_epochs=max_epochs,
+		min_epochs=min_epochs)
 	sampler = optuna.samplers.TPESampler(multivariate=True)
 	pruner = PercentilePruner(percentile=50.0, n_startup_trials=10, \
 		n_warmup_steps=min_epochs, interval_steps=10) # Top percentile of trials are kept
@@ -106,14 +111,10 @@ def objective(trial, pl_model_fn, pt_model_fn, dm, monitor,
 	makedir_if_not_exists(trial_dir)
 	logging.debug(f'trial dir:   {trial_dir}')
 
-	data = common_interval_data(fdata, ldata, tdata)
 	m_params = pt_model_fn.suggest_params(trial, num_classes=2, add_ob=True)
 	t_params = pl_model_fn.suggest_params(trial, num_classes=2)
-	mdl = pl_model_fn(pt_model_fn, m_params, t_params, data)
-
-	bench_fname = 'benchmark.json'
-	if (not exists('{study_dir}{bench_fname}')):
-		dump_json(dm.get_benchmarks(), bench_fname, study_dir)
+	dm.update_params(t_params)
+	mdl = pl_model_fn(pt_model_fn, m_params, t_params, dm.fobs)
 
 	dump_json(rectify_json(m_params), 'params_m.json', trial_dir)
 	dump_json(rectify_json(t_params), 'params_t.json', trial_dir)

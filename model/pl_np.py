@@ -12,7 +12,6 @@ import pytorch_lightning as pl
 
 from common_util import is_type, is_valid, isnt
 from model.common import PYTORCH_LOSS_MAPPING
-from model.metrics_util import SimulatedReturn
 from model.pl_generic import GenericModel
 
 
@@ -40,19 +39,20 @@ class NPModel(GenericModel):
 		num_workers (int>=0): DataLoader option - number cpu workers to attach
 		pin_memory (bool): DataLoader option - whether to pin memory to gpu
 	"""
-	def __init__(self, model_fn, m_params, t_params, data, class_weights=None,
+	def __init__(self, pt_model_fn, m_params, t_params, fobs
 		epoch_metric_types=('train', 'val')):
 		"""
 		Init method
 
 		Args:
-			model_fn (function): neural process pytorch model callback
+			pt_model_fn (function): neural process pytorch model callback
 			m_params (dict): dictionary of model hyperparameters
 			t_params (dict): dictionary of training hyperparameters
-			data (tuple): tuple of pd.DataFrames
-			class_weights (dict): class weighting scheme
+			fobs (tuple): the shape of a single feature observation,
+				this is usually the model input shape
+			epoch_metric_types (tuple): which epoch types to init metric objects for
 		"""
-		super().__init__(model_fn, m_params, t_params, data, class_weights=None, \
+		super().__init__(pt_model_fn, m_params, t_params, fobs,
 			epoch_metric_types=epoch_metric_types)
 
 	@classmethod

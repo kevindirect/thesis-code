@@ -87,37 +87,37 @@ def pd_to_np_purged_kfold(pd_obj, k=5):
 
 
 # ***** Numpy Window Preprocessing *****
-# Must result in shape (number observations, channels, window size, hours/window observations) -> (n, C, W, H)
-def temporal_preproc_3d(data, window_size, apply_idx=[0], flatten=True):
+def temporal_preproc_3d(data, window_size, apply_idx=[0], same_dims=True):
 	"""
-	Reshapes a tuple of three dimensional numpy tensors.
-	Slides a window down the tensor and stacks sub-tensors to the second dimension.
+	Reshapes a tuple of 3+ dimensional numpy tensors by sliding windows and stacking to the last dimension.
+	The last two dimensions can be flattened to retain the original number of dimensions.
+	Only applies the transform to the chosen indices in the tuple.
 
-	Given a tensor (N, C, H):
-		(N, C, H) -> (N-window_size-1, C, window_size, H)
+	Changes the array shape from (N, C, H, W) to (N-window_size-1, C, H, W*window_size)
 
-	example with window_size of '2':
+	It looks something like this (window_size = 2):
 				0 | a b c
 				1 | d e f ---> 1 | a b c d e f
 				2 | g h i      2 | d e f g h i
 				3 | j k l      3 | g h i j k l
 
 	Args:
-		data (tuple): tuple of numpy data with features as first element
+		data (tuple): tuple of numpy arrays
 		window_size (int): desired size of window (history length)
-		apply_idx (iterable): indexes to apply preprocessing to, all other data will be truncated to match
-		flatten (bool): whether or not to flatten last two dimensions into one
+		apply_idx (iterable): indexes to apply preprocessing to,
+			all other data will be truncated so that they're all the same length
+		same_dims (bool): whether to flatten the last two dimensions into one,
+			setting this maintains the original number of dimensions
 
 	Returns:
 		Tuple of reshaped data
 	"""
-	np_assert_identical_len_dim(*data)
 	preproc = []
+
 	for i, d in enumerate(data):
 		if (i in apply_idx):
-			pp = np.array([np.stack(vec, axis=1) \
-				for vec in window_iter(d, n=window_size)]) # Reshape features into overlapping moving window samples
-			pp = pp.reshape(*pp.shape[:2], np.product(pp.shape[2:])) if (flatten) else pp	# Flatten last two dim (window and window_obs) into one
+			pp = np.array([np.stack(w, axis=-1) for w in window_iter(d, n=window_size)])
+			pp = pp.reshape(*pp.shape[:-2], np.product(pp.shape[-2:])) if (same_dims) else pp
 		else:
 			pp = d[window_size-1:] # Realign by dropping observations prior to the first step
 		preproc.append(pp)
@@ -126,27 +126,32 @@ def temporal_preproc_3d(data, window_size, apply_idx=[0], flatten=True):
 
 def stride_preproc_3d(data, window_size):
 	"""
-	Reshape by striding through data by window_size,
-	like a moving window with non-overlapping windows.
+	Reshape with non-overlapping windows.
+	Slices a multi dimensional array at the first dimension using a window size
+	and stacks them horizontally so that each slice becomes one row/observation.
 
-	Given a tensor (N, C, H):
-		(N, C, H) -> (N//window_size, C, window_size, H)
+	Changes the array shape from (N, C, H, W) to (N//window_size, C, H, W*window_size)
+
+	It looks something like this (window_size = 2):
+				0 | a b c
+				1 | d e f ---> 1 | a b c d e f
+				2 | g h i
+				3 | j k l      2 | g h i j k l
 
 	Args:
-		data (tuple): tuple of numpy data
+		data (tuple): tuple of numpy arrays
 		window_size (int): desired size of window size and stride
 
 	Returns:
 		Tuple of reshaped data
 	"""
-	np_assert_identical_len_dim(*data)
 	preproc = []
+
 	for i, d in enumerate(data):
 		sub_arr = [np.swapaxes(d[i:i+window_size], 0, 1) \
 			for i in range(0, len(d), window_size)]
 		trunc_arr = sub_arr[:-1] if (sub_arr[0].shape != sub_arr[-1].shape) else sub_arr
 		preproc.append(np.stack(trunc_arr, axis=0))
-	np_assert_identical_len_dim(*preproc)
 
 	#preproc[0] = preproc[0].reshape(*preproc[0].shape[:2], np.product(preproc[0].shape[2:])) # Flatten last two dim of features
 	return tuple(preproc)
@@ -167,7 +172,12 @@ def window_shifted(data, loss, window_size, window_overlap=True, feat_dim=None):
 		length 3 tuple of numpy arrays, features are the first element
 		if a length 1 data tuple is passed in, returns a triplicate tuple as the result
 	"""
-	win_shifted = temporal_preproc_3d(data, window_size=window_size, apply_idx=[0]) if (window_overlap) else stride_preproc_3d(data, window_size=window_size)
+	if (window_overlap):
+		win_shifted = temporal_preproc_3d(data, window_size=window_size, \
+			apply_idx=[0], same_dims=True)
+	else:
+		win_shifted = stride_preproc_3d(data, window_size=window_size)
+
 	if (len(win_shifted) == 1):
 		x = win_shifted[0]
 		if (feat_dim == 1):
@@ -300,128 +310,4 @@ def get_dataloader(data, loss, window_size, window_overlap=True, \
 		loss=loss, batch_size=batch_size, shuffle=shuffle,
 		batch_step_size=batch_step_size, batch_shuffle=batch_shuffle,
 		num_workers=num_workers, pin_memory=pin_memory)
-
-##
-# def batch_output(params, model, loss_fn, feat_batch, lab_batch):
-# 	"""
-# 	Run batch on model, return output batch and loss.
-
-# 	Args:
-# 		params (dict): model parameters dictionary
-# 		model (nn.module): torch model
-# 		loss_fn: torch loss function
-# 		feat_batch: feature batch
-# 		lab_batch: label/target batch
-
-# 	Returns:
-# 		output batch and loss
-# 	"""
-# 	output_batch = model(feat_batch)
-# 	loss = loss_fn(output_batch, lab_batch)
-# 	return output_batch, loss
-
-# def batch_metrics(params, output_batch, lab_batch, metrics_fn):
-# 	"""
-# 	Make predictions from output batch and run over metrics.
-
-# 	Args:
-# 		params (dict): model parameters dictionary
-# 		output_batch (): torch model batch outputs
-# 		lab_batch (): label/target batch
-# 		metrics_fns (dict): dictionary of metric functions
-# 		optimizer
-# 		ret_train_pred
-
-# 	Returns:
-
-# 	"""
-# 	max_batch, pred_batch = torch.max(outputs_batch, dim=1) # Convert network outputs into predictions
-# 	lab_batch_cpu = lab_batch.cpu()
-# 	pred_batch_cpu = pred_batch.cpu()
-# 	metrics = {name: fn(lab_batch_cpu, pred_batch_cpu) for name, fn in metrics_fns.items()}
-
-
-# def model_step(loss, opt):
-# 	opt.zero_grad()
-# 	loss.backward()
-# 	opt.step()
-# 	if (not ret_train_pred):
-# 		return loss.item(), len(feat_batch), metrics
-
-# 	# logging.debug('batch loss:   {}'.format(loss.item()))
-# 	return loss.item(), len(feat_batch), metrics, (max_batch.exp(), pred_batch.float())
-
-
-# def fit_model(self, params, logdir, metrics_fns, model, device, train_data, val_data=None):
-# 	"""
-# 	Fit the model to training data and return results on the validation data.
-# 	"""
-# 	try:
-# 		history = {
-# 			'loss': [],
-# 			'val_loss': []
-# 		}
-# 		for name in metrics_fns.keys():
-# 			history[name] = []
-# 			history['val_{}'.format(name)] = []
-
-# 		loss_fn, opt = self.make_loss_fn(params).to(device), self.make_optimizer(params, model.parameters())
-# 		writer = self.tbx(params, logdir) if (logdir is not None) else None
-# 		model.zero_grad()
-# 		opt.zero_grad()
-
-# 		logging.debug('w[-2:][-2:]: {}'.format(list(model.parameters())[-2:][-2:]))
-
-# 		for epoch in range(params['epochs']):
-# 			epoch_str = str(epoch).zfill(3)
-# 			model.train()
-# 			losses, nums, metrics = zip(*[batch_loss(params, model, loss_fn, Xb, yb, optimizer=opt) for Xb, yb in batchify(params, self.preproc(params, train_data), device, shuffle=True)])
-# 			# for Xb, yb in self.batchify(params, self.preproc(params, train_data), device, shuffle=True):
-# 			# 	losses, nums, metrics = self.batch_loss(params, model, loss_fn, Xb, yb, optimizer=opt)
-# 			loss = np_inner(losses, nums)
-# 			soa = {name[0]: tuple(d[name[0]] for d in metrics) for name in zip(*metrics)}
-# 			metric = {name: np_inner(vals, nums) for name, vals in soa.items()}
-
-# 			logging.debug('{} train loss: {}'.format(epoch_str, loss))
-# 			history['loss'].append(loss)
-# 			for name, val in metric.items():
-# 				history[name].append(val)
-
-# 			if (writer is not None):
-# 				writer.add_scalar('data/train/loss', loss, epoch)
-# 				writer.add_scalars('data/train/metric', metric, epoch)
-
-# 			logging.debug('{} w[-2:][-2:]: {}'.format(epoch_str, list(model.parameters())[-2:][-2:]))
-
-# 			model.eval()
-# 			with torch.no_grad():
-# 				Xe, ye = get0(*batchify(params, self.preproc(params, val_data), device, override_batch_size=val_data[-1].size, shuffle=False))
-# 				loss, num, metric, pred = batch_loss(params, model, loss_fn, Xe, ye)
-
-# 			logging.debug('{} val loss: {}'.format(epoch_str, loss))
-# 			history['val_loss'].append(loss)
-# 			for name, val in metric.items():
-# 				history['val_{}'.format(name)].append(val)
-
-# 			if (writer is not None):
-# 				writer.add_scalar('data/val/loss', loss, epoch)
-# 				writer.add_scalars('data/val/metric', metric, epoch)
-
-# 			logging.debug('{} w[-2:][-2:]: {}'.format(epoch_str, list(model.parameters())[-2:][-2:]))
-
-# 		if (writer is not None):
-# 			writer.export_scalars_to_json(logdir +'results.json')
-# 			writer.close()
-
-# 		results = {
-# 			'history': history,
-# 			'mean': {name: np.mean(vals) for name, vals in history.items()},
-# 			'last': {name: vals[-1] for name, vals in history.items()}
-# 		}
-
-# 	except Exception as e:
-# 		logging.exception('Error during model fitting: {}'.format(str(e)))
-# 		raise e
-
-# 	return results
 

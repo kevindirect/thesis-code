@@ -3,7 +3,6 @@ Kevin Patel
 """
 import sys
 import os
-from os.path import exists
 import logging
 from inspect import getfullargspec
 
@@ -11,13 +10,12 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.nn.functional as F
-import pytorch_lightning as pl # PL ver 1.0.2
+import pytorch_lightning as pl # PL ver 1.0.4
 from pytorch_lightning.metrics.classification import Accuracy, Precision, Recall, Fbeta
 
-from common_util import rectify_json, load_df, dump_df, is_type, assert_has_all_attr, is_valid, is_type, isnt, dict_flatten, pairwise, np_at_least_nd, np_assert_identical_len_dim
-from model.common import PYTORCH_ACT_MAPPING, PYTORCH_LOSS_MAPPING, PYTORCH_OPT_MAPPING, PYTORCH_SCH_MAPPING
-from model.train_util import pd_to_np_tvt, get_dataloader
-from model.metrics_util import BuyAndHoldStrategy, OptimalStrategy, SimulatedReturn
+from common_util import load_df, dump_df, is_valid, isnt
+from model.common import WIN_SIZE, PYTORCH_ACT_MAPPING, PYTORCH_LOSS_MAPPING, PYTORCH_OPT_MAPPING, PYTORCH_SCH_MAPPING
+from model.metrics_util import SimulatedReturn
 from model.model_util import OutputBlock
 
 
@@ -47,36 +45,44 @@ class GenericModel(pl.LightningModule):
 		num_workers (int>=0): DataLoader option - number cpu workers to attach
 		pin_memory (bool): DataLoader option - whether to pin memory to gpu
 	"""
-	def __init__(self, model_fn, m_params, t_params,
+	def __init__(self, pt_model_fn, m_params, t_params, fobs,
 		epoch_metric_types=('train', 'val')):
 		"""
 		Init method
 
 		Args:
-			model_fn (function): pytorch model callback
+			pt_model_fn (function): pytorch model callback
 			m_params (dict): dictionary of model hyperparameters
 			t_params (dict): dictionary of training hyperparameters
-			# data (tuple): tuple of pd.DataFrames
+			fobs (tuple): the shape of a single feature observation,
+				this is usually the model input shape
 			epoch_metric_types (tuple): which epoch types to init metric objects for
 		"""
 		super().__init__()
-		self.name = f'{self._get_name()}_{model_fn.__name__}'
+		self.name = f'{self._get_name()}_{pt_model_fn.__name__}'
 		self.m_params, self.t_params = m_params, t_params
-		# # PL will track/checkpoint parameters saved in hparams instance variable:
-		# self.hparams = dict_flatten({**self.m_params, **self.t_params})
-		# # Lists/tuples must be stored as flat torch tensors to be tracked by PL:
-		# for k, v in filter(lambda i: is_type(i[1], np.ndarray, list, tuple), \
-		# 	self.hparams.items()):
-		# 	self.hparams[k] = torch.tensor(v, device='cpu', requires_grad=False) \
-		# 		.flatten()
-		# self.hparams['lr'] = self.t_params['opt']['kwargs']['lr']
+		self.__init_loss_fn__()
+		self.__init_model__(pt_model_fn, fobs)
+		self.__init_loggers__(epoch_metric_types)
+
+	def __init_loss_fn__(self):
 		if (is_valid(loss_fn := PYTORCH_LOSS_MAPPING.get(self.t_params['loss'], None))):
 			self.loss = loss_fn(weight=self.t_params['class_weights'])
 		else:
 			logging.info('no loss function set in pytorch lightning')
-		# self.__setup_data__(data)
-		self.__build_model__(model_fn)
 
+	def __init_model__(self, pt_model_fn, fobs):
+		"""
+		Args:
+			pt_model_fn (torch.nn.Module): pytorch model constructor
+			fobs (tuple): the shape of a single feature observation,
+				this is usually the model input shape
+		"""
+		model_params = {k: v for k, v in self.m_params.items() \
+			if (k in getfullargspec(pt_model_fn).args)}
+		self.model = OutputBlock.wrap(pt_model_fn(in_shape=fobs, **model_params))
+
+	def __init_loggers__(self, epoch_metric_types):
 		# 'micro' weights by class frequency, 'macro' weights classes equally
 		self.epoch_metrics = {
 			epoch_type: {
@@ -103,9 +109,6 @@ class GenericModel(pl.LightningModule):
 			for epoch_type in epoch_metric_types
 		}
 
-		# the summary will show input/output for each layer if example input is set:
-		# self.example_input_array = torch.rand(5, 20)
-
 	def configure_optimizers(self):
 		"""
 		Construct and return optimizers
@@ -118,124 +121,11 @@ class GenericModel(pl.LightningModule):
 		#sch = sch_fn(opt, **self.t_params['sch']['kwargs'])
 		#return [opt], [sch]
 
-	# def __setup_data__(self, data):
-	# 	"""
-	# 	Set self.flt_{train, val, test} by converting (feature_df, label_df, target_df)
-	# 	to numpy dataframes split across train, val, and test subsets.
-
-	# 	XXX encapsulate in a pl.DataModule
-	# 	"""
-	# 	self.flt_train, self.flt_val, self.flt_test = zip(*map(pd_to_np_tvt, data))
-	# 	self.obs_shape = (self.flt_train[0].shape[1], self.t_params['window_size'], \
-	# 		self.flt_train[0].shape[-1])	# (Channels, Window, Hours or Window Obs)
-
-	# 	shapes = np.asarray(tuple(map(lambda tvt: tuple(map(np.shape, tvt)), \
-	# 		(self.flt_train, self.flt_val, self.flt_test))))
-	# 	assert all(np.array_equal(a[:, 1:], b[:, 1:]) for a, b in pairwise(shapes)), \
-	# 		'feature, label, target shapes must be identical across splits'
-	# 	assert all(len(np.unique(mat.T[0, :]))==1 for mat in shapes), \
-	# 		'first dimension (N) must be equal in each split for all (f, l, t) tensors'
-
-	def __build_model__(self, model_fn):
-		"""
-		Feature observation shape - (Channels, Height, Width)
-		"""
-		num_channels, num_win, num_win_obs = self.obs_shape
-		model_params = {k: v for k, v in self.m_params.items() \
-			if (k in getfullargspec(model_fn).args)}
-		emb = model_fn(in_shape=(num_channels, num_win*num_win_obs), **model_params)
-		self.model = OutputBlock.wrap(emb)	# Append OB if is_valid(emb.ob_out_shapes)
-
-	# def get_benchmarks(self):
-	# 	"""
-	# 	Return benchmarks calculated from loaded data.
-	# 	"""
-	# 	bench_dict = {}
-	# 	bench_stats = (
-	# 		lambda d, pfx: {
-	# 			f'{pfx}_label_dist': pd.Series(d, dtype=int) \
-	# 				.value_counts(normalize=True).to_dict()
-	# 		},
-	# 	)
-	# 	bench_strats = (BuyAndHoldStrategy(), OptimalStrategy())
-	# 	for pfx, flt in zip(('train', 'val', 'test'), \
-	# 		(self.flt_train, self.flt_val, self.flt_test)):
-	# 		l = np.sum(flt[1], axis=(1, 2), keepdims=False)
-	# 		for stat in bench_stats:
-	# 			bench_dict.update(stat(l, pfx))
-
-	# 		t = np.sum(flt[2], axis=(1, 2), keepdims=False)
-	# 		t = torch.tensor(t, dtype=torch.float32, requires_grad=False)
-	# 		for strat in bench_strats:
-	# 			strat.update(None, None, t)
-	# 			vals = strat.compute(pfx=pfx)
-	# 			bench_dict.update(vals)
-	# 			strat.reset()
-	# 	return rectify_json(bench_dict)
-
 	def forward(self, x):
 		"""
 		Run input through the model.
 		"""
 		return self.model(x)
-
-	@classmethod
-	def suggest_params(cls, trial=None, num_classes=2):
-		"""
-		suggest training hyperparameters from an optuna trial object
-		or return fixed default hyperparameters
-
-		Pytorch recommends not using num_workers > 0 to return CUDA tensors
-		because of the subtleties of CUDA multiprocessing, instead pin the
-		memory to the GPU for fast data transfer:
-		https://pytorch.org/docs/stable/data.html#single-and-multi-process-data-loading
-		"""
-		if (is_valid(trial)):
-			class_weights = torch.zeros(num_classes, dtype=torch.float32, \
-				device='cpu', requires_grad=False)
-			for i in range(num_classes):
-				class_weights[i] = trial.suggest_float(f'class_weights[{i}]', \
-					1e-6, 1.0, step=1e-6)
-			class_weights.div_(class_weights.sum()) # Vector class weights must sum to 1
-
-			params = {
-				'window_size': trial.suggest_int('window_size', 3, 30),
-				'feat_dim': None,
-				'train_shuffle': False,
-				'epochs': trial.suggest_int('epochs', 200, 700, step=10),
-				'batch_size': trial.suggest_int('batch_size', 64, 512, step=8),
-				'batch_step_size': None,
-				'loss': 'ce',
-				'class_weights': class_weights,
-				'opt': {
-					'name': 'adam',
-					'kwargs': {
-						'lr': trial.suggest_float('lr', 1e-6, 1e-1, log=True)
-					}
-				},
-				'num_workers': 0,
-				'pin_memory': True
-			}
-		else:
-			params = {
-				'window_size': 20,
-				'feat_dim': None,
-				'train_shuffle': False,
-				'epochs': 200,
-				'batch_size': 128,
-				'batch_step_size': None,
-				'loss': 'ce',
-				'class_weights': None,
-				'opt': {
-					'name': 'adam',
-					'kwargs': {
-						'lr': 1e-3
-					}
-				},
-				'num_workers': 0,
-				'pin_memory': True
-			}
-		return params
 
 	def forward_step(self, batch, batch_idx, epoch_type='train'):
 		"""
@@ -323,41 +213,6 @@ class GenericModel(pl.LightningModule):
 		self.aggregate_loss_epoch_end(outputs, epoch_type)
 		self.compute_metrics_epoch_end(epoch_type)
 
-	# # Dataloaders:
-	# train_dataloader = lambda self: get_dataloader(
-	# 	data=self.flt_train,
-	# 	loss=self.t_params['loss'],
-	# 	window_size=self.t_params['window_size'],
-	# 	window_overlap=True,
-	# 	feat_dim=self.t_params['feat_dim'],
-	# 	batch_size=self.t_params['batch_size'],
-	# 	batch_step_size=self.t_params['batch_step_size'],
-	# 	batch_shuffle=self.t_params['train_shuffle'],
-	# 	num_workers=self.t_params['num_workers'],
-	# 	pin_memory=self.t_params['pin_memory'])
-
-	# val_dataloader = lambda self: get_dataloader(
-	# 	data=self.flt_val,
-	# 	loss=self.t_params['loss'],
-	# 	window_size=self.t_params['window_size'],
-	# 	window_overlap=True,
-	# 	feat_dim=self.t_params['feat_dim'],
-	# 	batch_size=self.t_params['batch_size'],
-	# 	batch_step_size=self.t_params['batch_step_size'],
-	# 	num_workers=self.t_params['num_workers'],
-	# 	pin_memory=self.t_params['pin_memory'])
-
-	# test_dataloader = lambda self: get_dataloader(
-	# 	data=self.flt_test,
-	# 	loss=self.t_params['loss'],
-	# 	window_size=self.t_params['window_size'],
-	# 	window_overlap=True,
-	# 	feat_dim=self.t_params['feat_dim'],
-	# 	batch_size=self.t_params['batch_size'],
-	# 	batch_step_size=self.t_params['batch_step_size'],
-	# 	num_workers=self.t_params['num_workers'],
-	# 	pin_memory=self.t_params['pin_memory'])
-
 	@classmethod
 	def fix_metrics_csv(cls, fname, dir_path):
 		"""
@@ -368,4 +223,62 @@ class GenericModel(pl.LightningModule):
 		csv_df = csv_df.groupby('epoch').ffill().dropna(how='any')
 		dump_df(csv_df, f'fix_{fname}', dir_path=dir_path, data_format='csv')
 		logging.debug(f'fixed {fname}')
+
+	@classmethod
+	def suggest_params(cls, trial=None, num_classes=2):
+		"""
+		suggest training hyperparameters from an optuna trial object
+		or return fixed default hyperparameters
+
+		Pytorch recommends not using num_workers > 0 to return CUDA tensors
+		because of the subtleties of CUDA multiprocessing, instead pin the
+		memory to the GPU for fast data transfer:
+		https://pytorch.org/docs/stable/data.html#single-and-multi-process-data-loading
+		"""
+		if (is_valid(trial)):
+			class_weights = torch.zeros(num_classes, dtype=torch.float32, \
+				device='cpu', requires_grad=False)
+			for i in range(num_classes):
+				class_weights[i] = trial.suggest_float(f'class_weights[{i}]', \
+					1e-6, 1.0, step=1e-6)
+			class_weights.div_(class_weights.sum()) # Vector class weights must sum to 1
+
+			params = {
+				'window_size': trial.suggest_int('window_size', 3, 30),
+				'feat_dim': None,
+				'train_shuffle': False,
+				'epochs': trial.suggest_int('epochs', 200, 700, step=10),
+				'batch_size': trial.suggest_int('batch_size', 64, 512, step=8),
+				'batch_step_size': None,
+				'loss': 'ce',
+				'class_weights': class_weights,
+				'opt': {
+					'name': 'adam',
+					'kwargs': {
+						'lr': trial.suggest_float('lr', 1e-6, 1e-1, log=True)
+					}
+				},
+				'num_workers': 0,
+				'pin_memory': True
+			}
+		else:
+			params = {
+				'window_size': WIN_SIZE,
+				'feat_dim': None,
+				'train_shuffle': False,
+				'epochs': 200,
+				'batch_size': 128,
+				'batch_step_size': None,
+				'loss': 'ce',
+				'class_weights': None,
+				'opt': {
+					'name': 'adam',
+					'kwargs': {
+						'lr': 1e-6
+					}
+				},
+				'num_workers': 0,
+				'pin_memory': True
+			}
+		return params
 

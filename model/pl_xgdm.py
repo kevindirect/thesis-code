@@ -1,4 +1,5 @@
 """
+Kevin Patel
 """
 import sys
 import os
@@ -6,7 +7,7 @@ import logging
 
 import pandas as pd
 import numpy as np
-import torch.nn as nn
+import torch
 import pytorch_lightning as pl
 
 from common_util import MODEL_DIR, pd_split_ternary_to_binary, rectify_json, pairwise
@@ -14,6 +15,7 @@ from model.common import ASSETS, INTRADAY_LEN, INTERVAL_YEARS
 from model.xg_util import get_xg_feature_dfs, get_xg_label_target_dfs, get_hardcoded_feature_dfs, get_hardcoded_label_target_dfs, get_common_interval_data
 from model.train_util import pd_to_np_tvt, get_dataloader
 from model.metrics_util import BuyAndHoldStrategy, OptimalStrategy
+
 
 class XGDataModule(pl.LightningDataModule):
 	"""
@@ -87,21 +89,28 @@ class XGDataModule(pl.LightningDataModule):
 		self.data = get_common_interval_data(fdata, ldata, tdata,
 			interval=self.interval)
 
-	def setup(self):
+	def setup(self, t_params=None):
 		"""
 		Split the data into {train, val, test} splits and conert to numpy arrays.
-		TODO I can do work done by get_dataloader here (call window_shifted)
 		"""
+		t_params = t_params or self.t_params
 		self.train, self.val, self.test = zip(*map(pd_to_np_tvt, self.data))
-		# self.obs_shape = (self.train[0].shape[1], self.t_params['window_size'], \
-		# 	self.train[0].shape[-1])	# (Channels, Window, Hours or Window Obs)
+		self.fobs = list(self.train[0].shape[1:])
+		self.fobs[-1] = self.fobs[-1] * t_params['window_size']
+		self.fobs = tuple(self.fobs)
 
-		shapes = np.asarray(tuple(map(lambda tvt: tuple(map(np.shape, tvt)), \
-			(self.train, self.val, self.test))))
-		assert all(np.array_equal(a[:, 1:], b[:, 1:]) for a, b in pairwise(shapes)), \
-			'feature, label, target shapes must be identical across splits'
-		assert all(len(np.unique(mat.T[0, :]))==1 for mat in shapes), \
-			'first dimension (N) must be equal in each split for all (f, l, t) tensors'
+		for split in (self.train, self.val, self.test):
+			assert all(len(d)==len(split[0]) for d in split), \
+				"length of data within each split must be identical"
+
+		for train, val, test in zip(self.train, self.val, self.test):
+			assert train.shape[1:] == val.shape[1:] == test.shape[1:], \
+				"shape of f, l, t data must be identical across splits"
+
+	def update_params(self, new):
+		if (self.t_params['window_size'] != new['window_size']):
+			self.setup(new)
+		self.t_params = new
 
 	train_dataloader = lambda self: get_dataloader(
 		data=self.train,
@@ -150,7 +159,7 @@ class XGDataModule(pl.LightningDataModule):
 		)
 		bench_strats = (BuyAndHoldStrategy(), OptimalStrategy())
 		for pfx, flt in zip(('train', 'val', 'test'), \
-			(self.flt_train, self.flt_val, self.flt_test)):
+			(self.train, self.val, self.test)):
 			l = np.sum(flt[1], axis=(1, 2), keepdims=False)
 			for stat in bench_stats:
 				bench_dict.update(stat(l, pfx))

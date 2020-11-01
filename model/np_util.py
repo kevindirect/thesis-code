@@ -471,21 +471,21 @@ class AttentiveNP(nn.Module):
 						'size': 128, 'depth': 3, 'kernel_sizes': 3,
 						'input_dropout': 0.0, 'output_dropout': 0.0, 'global_dropout': .5,
 						'global_dilation': True, 'block_act': 'elu', 'out_act': 'relu',
-						'block_init': 'xavier_uniform', 'out_init': 'xavier_uniform', 'pad_type': 'full'
+						'block_init': 'xavier_uniform', 'out_init': 'xavier_uniform', 'pad_mode': 'full'
 					},
 					'tt_name': 'tcn',
 					'tt_params': {
 						'size': 128, 'depth': 3, 'kernel_sizes': 3,
 						'input_dropout': 0.0, 'output_dropout': 0.0, 'global_dropout': .5,
 						'global_dilation': True, 'block_act': 'elu', 'out_act': 'relu',
-						'block_init': 'xavier_uniform', 'out_init': 'xavier_uniform', 'pad_type': 'full'
+						'block_init': 'xavier_uniform', 'out_init': 'xavier_uniform', 'pad_mode': 'full'
 					},
 					'ct_name': 'tcn',
 					'ct_params': {
 						'size': 128, 'depth': 3, 'kernel_sizes': 3,
 						'input_dropout': 0.0, 'output_dropout': 0.0, 'global_dropout': .5,
 						'global_dilation': True, 'block_act': 'elu', 'out_act': 'relu',
-						'block_init': 'xavier_uniform', 'out_init': 'xavier_uniform', 'pad_type': 'full'
+						'block_init': 'xavier_uniform', 'out_init': 'xavier_uniform', 'pad_mode': 'full'
 					},
 					'embed_size': 128,
 					'sa_depth': 2, 'sa_heads': 8, 'sa_dropout': 0.8,
@@ -497,7 +497,7 @@ class AttentiveNP(nn.Module):
 						'size': 128, 'depth': 3, 'kernel_sizes': 3,
 						'input_dropout': 0.0, 'output_dropout': 0.0, 'global_dropout': .5,
 						'global_dilation': True, 'block_act': 'elu', 'out_act': 'relu',
-						'block_init': 'xavier_uniform', 'out_init': 'xavier_uniform', 'pad_type': 'full'
+						'block_init': 'xavier_uniform', 'out_init': 'xavier_uniform', 'pad_mode': 'full'
 					},
 					'embed_size': 128,
 					'latent_size': 256,
@@ -511,14 +511,14 @@ class AttentiveNP(nn.Module):
 						'size': 128, 'depth': 3, 'kernel_sizes': 3,
 						'input_dropout': 0.0, 'output_dropout': 0.0, 'global_dropout': .5,
 						'global_dilation': True, 'block_act': 'elu', 'out_act': 'relu',
-						'block_init': 'xavier_uniform', 'out_init': 'xavier_uniform', 'pad_type': 'full'
+						'block_init': 'xavier_uniform', 'out_init': 'xavier_uniform', 'pad_mode': 'full'
 					},
 					'de_name': 'tcn',
 					'de_params': {
 						'size': 128, 'depth': 3, 'kernel_sizes': 3,
 						'input_dropout': 0.0, 'output_dropout': 0.0, 'global_dropout': .5,
 						'global_dilation': True, 'block_act': 'elu', 'out_act': 'relu',
-						'block_init': 'xavier_uniform', 'out_init': 'xavier_uniform', 'pad_type': 'full'
+						'block_init': 'xavier_uniform', 'out_init': 'xavier_uniform', 'pad_mode': 'full'
 					},
 					'embed_size': 128,
 					'dist_type': 'normal',
@@ -536,21 +536,21 @@ class AttentiveNP(nn.Module):
 						'size': 128, 'depth': 3, 'kernel_sizes': 3,
 						'input_dropout': 0.0, 'output_dropout': 0.0, 'global_dropout': .5,
 						'global_dilation': True, 'block_act': 'elu', 'out_act': 'relu',
-						'block_init': 'xavier_uniform', 'out_init': 'xavier_uniform', 'pad_type': 'full'
+						'block_init': 'xavier_uniform', 'out_init': 'xavier_uniform', 'pad_mode': 'full'
 					},
 					'tt_name': 'tcn',
 					'tt_params': {
 						'size': 128, 'depth': 3, 'kernel_sizes': 3,
 						'input_dropout': 0.0, 'output_dropout': 0.0, 'global_dropout': .5,
 						'global_dilation': True, 'block_act': 'elu', 'out_act': 'relu',
-						'block_init': 'xavier_uniform', 'out_init': 'xavier_uniform', 'pad_type': 'full'
+						'block_init': 'xavier_uniform', 'out_init': 'xavier_uniform', 'pad_mode': 'full'
 					},
 					'ct_name': 'tcn',
 					'ct_params': {
 						'size': 128, 'depth': 3, 'kernel_sizes': 3,
 						'input_dropout': 0.0, 'output_dropout': 0.0, 'global_dropout': .5,
 						'global_dilation': True, 'block_act': 'elu', 'out_act': 'relu',
-						'block_init': 'xavier_uniform', 'out_init': 'xavier_uniform', 'pad_type': 'full'
+						'block_init': 'xavier_uniform', 'out_init': 'xavier_uniform', 'pad_mode': 'full'
 					},
 					'embed_size': 128,
 					'sa_depth': 2, 'sa_heads': 8, 'sa_dropout': 0.8,
@@ -562,7 +562,7 @@ class AttentiveNP(nn.Module):
 						'size': 128, 'depth': 3, 'kernel_sizes': 3,
 						'input_dropout': 0.0, 'output_dropout': 0.0, 'global_dropout': .5,
 						'global_dilation': True, 'block_act': 'elu', 'out_act': 'relu',
-						'block_init': 'xavier_uniform', 'out_init': 'xavier_uniform', 'pad_type': 'full'
+						'block_init': 'xavier_uniform', 'out_init': 'xavier_uniform', 'pad_mode': 'full'
 					},
 					'embed_size': 128,
 					'latent_size': 256,
@@ -576,14 +576,14 @@ class AttentiveNP(nn.Module):
 						'size': 128, 'depth': 3, 'kernel_sizes': 3,
 						'input_dropout': 0.0, 'output_dropout': 0.0, 'global_dropout': .5,
 						'global_dilation': True, 'block_act': 'elu', 'out_act': 'relu',
-						'block_init': 'xavier_uniform', 'out_init': 'xavier_uniform', 'pad_type': 'full'
+						'block_init': 'xavier_uniform', 'out_init': 'xavier_uniform', 'pad_mode': 'full'
 					},
 					'de_name': 'tcn',
 					'de_params': {
 						'size': 128, 'depth': 3, 'kernel_sizes': 3,
 						'input_dropout': 0.0, 'output_dropout': 0.0, 'global_dropout': .5,
 						'global_dilation': True, 'block_act': 'elu', 'out_act': 'relu',
-						'block_init': 'xavier_uniform', 'out_init': 'xavier_uniform', 'pad_type': 'full'
+						'block_init': 'xavier_uniform', 'out_init': 'xavier_uniform', 'pad_mode': 'full'
 					},
 					'embed_size': 128,
 					'dist_type': 'bernoulli',
