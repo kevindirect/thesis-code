@@ -64,10 +64,14 @@ class GenericModel(pl.LightningModule):
 		self.__init_loss_fn__()
 		self.__init_model__(pt_model_fn, fobs)
 		self.__init_loggers__(epoch_metric_types)
+		self.example_input_array = torch.rand(10, *fobs, dtype=torch.float32) * 100
 
 	def __init_loss_fn__(self):
 		if (is_valid(loss_fn := PYTORCH_LOSS_MAPPING.get(self.t_params['loss'], None))):
-			self.loss = loss_fn(weight=self.t_params['class_weights'])
+			if (is_valid(self.t_params['class_weights'])):
+				self.loss = loss_fn(weight=self.t_params['class_weights'])
+			else:
+				self.loss = loss_fn()
 		else:
 			logging.info('no loss function set in pytorch lightning')
 
@@ -114,8 +118,7 @@ class GenericModel(pl.LightningModule):
 		Construct and return optimizers
 		"""
 		opt_fn = PYTORCH_OPT_MAPPING.get(self.t_params['opt']['name'])
-		#opt = opt_fn(self.parameters(), **self.t_params['opt']['kwargs'])
-		opt = opt_fn(self.parameters(), lr=self.t_params['opt']['kwargs']['lr'])
+		opt = opt_fn(self.parameters(), **self.t_params['opt']['kwargs'])
 		return opt
 		#sch_fn = PYTORCH_SCH_MAPPING.get(self.t_params['sch']['name'])
 		#sch = sch_fn(opt, **self.t_params['sch']['kwargs'])
@@ -133,20 +136,17 @@ class GenericModel(pl.LightningModule):
 		"""
 		x, y, z = batch
 		y_hat_raw = self.forward(x)
-		step_loss = self.loss(y_hat_raw, y)
 		if (self.t_params['loss'] in ('ce',)):
-			y_hat = F.softmax(y_hat_raw, dim=1)
-			if (self.m_params['label_size'] == 1):
-				y_hat = y_hat[:, 1]
+			y_hat = F.softmax(y_hat_raw, dim=-1)
 		else:
 			y_hat = y_hat_raw
 
 		for met in self.epoch_metrics[epoch_type].values():
-			met.update(y_hat.cpu(), y.cpu())
+			met.update(y_hat.cpu().argmax(dim=-1), y.cpu())
 		for ret in self.epoch_returns[epoch_type].values():
-			ret.update(y_hat.cpu(), y.cpu(), z.cpu())
+			ret.update(y_hat.cpu(), y.cpu(), z.cpu()) 	# Conf score
 
-		return {'loss': step_loss}
+		return {'loss': self.loss(y_hat_raw, y)}
 
 	def aggregate_loss_epoch_end(self, outputs, epoch_type='train'):
 		"""
@@ -154,8 +154,7 @@ class GenericModel(pl.LightningModule):
 		"""
 		step_losses = [d['loss'].cpu() for d in outputs]
 		epoch_loss = torch.mean(torch.stack(step_losses), dim=0)
-		# epoch_loss = step_losses[0] if (len(step_losses)==1 and step_losses[0].dim()==0) \
-		# 	else torch.mean(torch.stack(step_losses), dim=0)
+
 		self.log('epoch', self.trainer.current_epoch, prog_bar=False, \
 			logger=True, on_step=False, on_epoch=True)
 		self.log(f'{epoch_type}_loss', epoch_loss, prog_bar=False, \
@@ -240,14 +239,14 @@ class GenericModel(pl.LightningModule):
 				device='cpu', requires_grad=False)
 			for i in range(num_classes):
 				class_weights[i] = trial.suggest_float(f'class_weights[{i}]', \
-					1e-6, 1.0, step=1e-6)
+					0.40, 0.60, step=.01) #1e-6, 1.0, step=1e-6)
 			class_weights.div_(class_weights.sum()) # Vector class weights must sum to 1
 
 			params = {
-				'window_size': trial.suggest_int('window_size', 3, 30),
+				'window_size': WIN_SIZE, #trial.suggest_int('window_size', 3, 30),
 				'feat_dim': None,
-				'train_shuffle': False,
-				'epochs': trial.suggest_int('epochs', 200, 700, step=10),
+				'train_shuffle': True,
+				'epochs': 200, #trial.suggest_int('epochs', 200, 700, step=10),
 				'batch_size': trial.suggest_int('batch_size', 64, 512, step=8),
 				'batch_step_size': None,
 				'loss': 'ce',
@@ -265,7 +264,7 @@ class GenericModel(pl.LightningModule):
 			params = {
 				'window_size': WIN_SIZE,
 				'feat_dim': None,
-				'train_shuffle': False,
+				'train_shuffle': True,
 				'epochs': 200,
 				'batch_size': 128,
 				'batch_step_size': None,

@@ -50,8 +50,8 @@ VAL_RATIO, TEST_RATIO = .2, .2
 
 # PyTorch
 PYTORCH_MODELS_DIR = MODEL_DIR +'model_p' +sep
-PYTORCH_ACT1D_LIST = ('relu', 'lrelu', 'elu', 'celu', 'gelu', 'prelu', \
-	'selu', 'sig', 'tanh', 'splus', 'smax', 'logsmax')
+PYTORCH_ACT1D_LIST = ('lrelu', 'celu', 'prelu', 'selu', \
+	'relu', 'elu', 'gelu', 'sig', 'tanh', 'splus', 'smax', 'logsmax')
 PYTORCH_ACT_MAPPING = {
 	'relu': nn.ReLU,
 	'lrelu': nn.LeakyReLU,
@@ -63,8 +63,8 @@ PYTORCH_ACT_MAPPING = {
 	'sig': nn.Sigmoid,
 	'tanh': nn.Tanh,
 	'splus': nn.Softplus,
-	'smax': partial(nn.Softmax, dim=0),
-	'logsmax': partial(nn.LogSoftmax, dim=0),
+	'smax': partial(nn.Softmax, dim=-1),
+	'logsmax': partial(nn.LogSoftmax, dim=-1),
 	'smax2d': nn.Softmax2d
 }
 PYTORCH_INIT_LIST = ('zeros', 'ones', 'normal', 'orthogonal', \

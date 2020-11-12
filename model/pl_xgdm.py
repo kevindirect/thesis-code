@@ -10,9 +10,9 @@ import numpy as np
 import torch
 import pytorch_lightning as pl
 
-from common_util import MODEL_DIR, pd_split_ternary_to_binary, rectify_json, pairwise
+from common_util import MODEL_DIR, pd_split_ternary_to_binary, rectify_json, pairwise, df_del_midx_level
 from model.common import ASSETS, INTRADAY_LEN, INTERVAL_YEARS
-from model.xg_util import get_xg_feature_dfs, get_xg_label_target_dfs, get_hardcoded_feature_dfs, get_hardcoded_label_target_dfs, get_common_interval_data
+from model.xg_util import get_xg_feature_dfs, get_xg_label_target_dfs, get_hardcoded_feature_dfs, get_hardcoded_label_target_dfs, dfs_get_common_interval_data
 from model.train_util import pd_to_np_tvt, get_dataloader
 from model.metrics_util import BuyAndHoldStrategy, OptimalStrategy
 
@@ -43,17 +43,18 @@ class XGDataModule(pl.LightningDataModule):
 		overwrite_cache (bool): overwrite the cache when loading xg data from disk
 	"""
 
-	def __init__(self, t_params, asset_name, fdata_name, ldata_name,
+	def __init__(self, t_params, asset_name, fdata_name, ldata_name, fret=None,
 		interval=INTERVAL_YEARS, overwrite_cache=False):
 		super().__init__()
 		self.t_params = t_params
 		self.asset_name = asset_name
 		self.fdata_name = fdata_name
 		self.ldata_name = ldata_name
+		self.fret = fret
 		self.interval = interval
 		self.overwrite_cache = overwrite_cache
 		self.name = (f'{self.interval[0]}_{self.interval[1]}'
-			f'_{self.ldata_name}_{self.fdata_name}')
+			f'_{self.ldata_name}_{self.fdata_name}').replace(',', '_')
 
 	def prepare_data(self):
 		"""
@@ -69,7 +70,9 @@ class XGDataModule(pl.LightningDataModule):
 		else:
 			fd = get_xg_feature_dfs(self.asset_name,
 				overwrite_cache=self.overwrite_cache)
-			fdata = get_hardcoded_feature_dfs(fd, self.fdata_name)
+			fds = [get_hardcoded_feature_dfs(fd, fdata_name, cat=True, ret=self.fret)
+				for fdata_name in self.fdata_name.split(',')]
+			fdata = pd.concat(dfs_get_common_interval_data(fds), axis=0)
 
 		if (self.ldata_name == 'dcur'):
 			# Sanity check: 'Predict' the present ddir(t-1)
@@ -86,7 +89,7 @@ class XGDataModule(pl.LightningDataModule):
 				overwrite_cache=self.overwrite_cache)
 			ldata, tdata = get_hardcoded_label_target_dfs(ld, td, self.ldata_name)
 
-		self.data = get_common_interval_data(fdata, ldata, tdata,
+		self.data = dfs_get_common_interval_data((fdata, ldata, tdata),
 			interval=self.interval)
 
 	def setup(self, t_params=None):
@@ -109,7 +112,7 @@ class XGDataModule(pl.LightningDataModule):
 
 	def update_params(self, new):
 		if (self.t_params['window_size'] != new['window_size']):
-			self.setup(new)
+			self.setup(t_params=new)
 		self.t_params = new
 
 	train_dataloader = lambda self: get_dataloader(

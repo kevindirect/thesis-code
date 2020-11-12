@@ -61,7 +61,7 @@ def optuna_run(argv):
 
 	# Set parameters of objective function to optimize:
 	study_dir = MODEL_DIR \
-		+sep.join(['log', model_name, asset_name, dm.name, monitor]) +sep
+		+sep.join(['olog', model_name, asset_name, dm.name, monitor]) +sep
 	study_name = ','.join([model_name, asset_name, dm.name, monitor])
 	study_db_path = f'sqlite:///{study_dir}{OPTUNA_DB_FNAME}'
 
@@ -84,8 +84,8 @@ def optuna_run(argv):
 	# logging.getLogger("lightning").setLevel(logging.ERROR) # Disable pl warnings
 	torch.cuda.empty_cache()
 	obj_fn = partial(objective, pl_model_fn=pl_model_fn, pt_model_fn=pt_model_fn,
-		dm=dm, monitor=monitor, study_dir=study_dir, max_epochs=max_epochs,
-		min_epochs=min_epochs)
+		dm=dm, monitor=monitor, direction=optimize_dir, study_dir=study_dir,
+		max_epochs=max_epochs, min_epochs=min_epochs)
 	sampler = optuna.samplers.TPESampler(multivariate=True)
 	pruner = PercentilePruner(percentile=50.0, n_startup_trials=10, \
 		n_warmup_steps=min_epochs, interval_steps=10) # Top percentile of trials are kept
@@ -96,7 +96,7 @@ def optuna_run(argv):
 	# TODO save/record random seed used
 
 
-def objective(trial, pl_model_fn, pt_model_fn, dm, monitor,
+def objective(trial, pl_model_fn, pt_model_fn, dm, monitor, direction,
 	study_dir, max_epochs=None, min_epochs=1):
 	"""
 	Args:
@@ -126,7 +126,7 @@ def objective(trial, pl_model_fn, pt_model_fn, dm, monitor,
 	tb_log = pl.loggers.tensorboard.TensorBoardLogger(trial_dir, name='', \
 		version='', log_graph=False)
 	checkpoint_callback = pl.callbacks.ModelCheckpoint(f'{trial_dir}chk{sep}', \
-		monitor=monitor, mode='min')
+		monitor=monitor, mode=direction[:3])
 	es_callback = PyTorchLightningPruningCallback(trial, monitor=monitor) # hook for optuna pruner
 
 	trainer = pl.Trainer(max_epochs=max_epochs or t_params['epochs'],

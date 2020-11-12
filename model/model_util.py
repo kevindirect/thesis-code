@@ -180,7 +180,7 @@ class OutputBlock(nn.Module):
 
 	def forward(self, x):
 		out_embed = self.emb(x)
-		out_score = self.out(out_embed.flatten(start_dim=1, end_dim=-1))
+		out_score = self.out(out_embed)
 		return out_score
 
 	@classmethod
@@ -270,7 +270,8 @@ class TemporalLayer2d(nn.Module):
 		return 1
 
 	@classmethod
-	def get_out_width(cls, in_width, kernel_size, dilation=1, padding_size=0, stride=1):
+	def get_out_width(cls, in_width, kernel_size, dilation=1, padding_size=0, \
+		stride=1):
 		return int(np.floor(
 			((in_width+padding_size-dilation*(kernel_size-1)-1)/stride)+1
 		).item(0))
@@ -291,7 +292,8 @@ class ResidualBlock(nn.Module):
 	This module will propagate the input through the network and add the result
 	to the input. The input might need to be downsampled to facillitate the addition.
 	"""
-	def __init__(self, net, act, downsample_type='linear', init='xavier_uniform'):
+	def __init__(self, net, act, downsample_type='linear', init='xavier_uniform', \
+		use_residual=True):
 		"""
 		Args:
 			net (nn.Module): nn.Module to wrap
@@ -302,36 +304,43 @@ class ResidualBlock(nn.Module):
 		super().__init__()
 		assert_has_shape_attr(net)
 		self.in_shape = net.in_shape
+		self.out_shape = net.out_shape
 		self.net = net
-		self.out_act = PYTORCH_ACT_MAPPING.get(act)()
-		self.downsample = None
-		if (self.net.in_shape != self.net.out_shape):
-			if (downsample_type == 'linear'):
-				self.padding = lambda x: x
-				self.downsample = init_layer(nn.Linear(self.net.in_shape[0],
-					self.net.out_shape[0], bias=True), act=act, init_method=init)
-			elif (downsample_type == 'conv1d'):
-				raise NotImplementedError()
-			elif (downsample_type == 'conv2d'):
-				padding_size = max(self.net.out_shape[2] - self.net.in_shape[2], 0)
-				pad_l = padding_size//2
-				pad_r = padding_size - pad_l
-				self.padding = nn.ReplicationPad2d((pad_l, pad_r, 0, 0)) # XXX Reflection or Circular Pad?
-				self.downsample = init_layer(
-					nn.Conv2d(self.net.in_shape[0], self.net.out_shape[0],
-					kernel_size=(self.net.in_shape[1], 1), bias=True),
-					act=act, init_method=init)
+		self.use_residual = use_residual
+		if (self.use_residual):
+			self.out_act = PYTORCH_ACT_MAPPING.get(act)()
+			self.downsample = None
+			if (self.net.in_shape != self.net.out_shape):
+				if (downsample_type == 'linear'):
+					self.padding = lambda x: x
+					self.downsample = init_layer(nn.Linear(self.net.in_shape[0],
+						self.net.out_shape[0], bias=True), act=act, init_method=init)
+				elif (downsample_type == 'conv1d'):
+					raise NotImplementedError()
+				elif (downsample_type == 'conv2d'):
+					padding_size = max(self.net.out_shape[2] - self.net.in_shape[2], 0)
+					pad_l = padding_size//2
+					pad_r = padding_size - pad_l
+					self.padding = nn.ZeroPad2d((pad_l, pad_r, 0, 0)) # XXX Reflection or Circular Pad?
+					self.downsample = init_layer(
+						nn.Conv2d(self.net.in_shape[0], self.net.out_shape[0],
+						kernel_size=(self.net.in_shape[1], 1), bias=True),
+						act=act, init_method=init)
 
 	def forward(self, x):
-		residual = x if (isnt(self.downsample)) else self.downsample(self.padding(x))
-		try:
-			net_out = self.net(x)
-			return self.out_act(net_out + residual)
-		except RuntimeError as e:
-			print(e)
-			logging.error('net(x).shape:   {}'.format(self.net(x).shape))
-			logging.error('residual.shape: {}'.format(residual.shape))
-			sys.exit(0)
+		net_out = self.net(x)
+
+		if (self.use_residual):
+			residual = x if (isnt(self.downsample)) else self.downsample(self.padding(x))
+			try:
+				return self.out_act(net_out + residual)
+			except RuntimeError as e:
+				print(e)
+				logging.error('net(x).shape:   {}'.format(self.net(x).shape))
+				logging.error('residual.shape: {}'.format(residual.shape))
+				sys.exit(0)
+		else:
+			return net_out
 
 
 # ********** MODEL MODULES **********
@@ -489,10 +498,11 @@ class StackedTCN(TemporalConvNet):
 		"""
 		if (is_valid(trial)):
 			params = {
-				'size': trial.suggest_int('size', 2**5, 2**8),
-				'depth': trial.suggest_int('depth', 2, 6),
+				'size': trial.suggest_int('size', 2**5, 2**8, step=8),
+				'depth': trial.suggest_int('depth', 1, 5),
 				# 'kernel_sizes': trial.suggest_int('kernel_sizes', 3, 15, step=1),
-				'kernel_sizes': trial.suggest_categorical('kernel_sizes', (4, 8, 24, 40)),
+				'kernel_sizes': trial.suggest_categorical('kernel_sizes', \
+					(4, 8, 16, 24)),
 				'input_dropout': trial.suggest_float('input_dropout', \
 					0.0, 1.0, step=1e-6),
 				'output_dropout': trial.suggest_float('output_dropout', \
@@ -500,16 +510,23 @@ class StackedTCN(TemporalConvNet):
 				'global_dropout': trial.suggest_float('global_dropout', \
 					0.0, 1.0, step=1e-6),
 				'global_dilation': True,
-				'block_act': trial.suggest_categorical('block_act', PYTORCH_ACT1D_LIST),
-				'out_act': trial.suggest_categorical('out_act', PYTORCH_ACT1D_LIST),
-				'block_init': trial.suggest_categorical('block_init', PYTORCH_INIT_LIST[2:]),
-				'out_init': trial.suggest_categorical('out_init', PYTORCH_INIT_LIST[2:]),
-				'pad_mode': 'full',
+				'block_act': trial.suggest_categorical('block_act', \
+					PYTORCH_ACT1D_LIST[4:]),
+				'out_act': trial.suggest_categorical('out_act', \
+					PYTORCH_ACT1D_LIST[4:]),
+				'block_init': trial.suggest_categorical('block_init', \
+					PYTORCH_INIT_LIST[2:]),
+				'out_init': trial.suggest_categorical('out_init', \
+					PYTORCH_INIT_LIST[2:]),
+				'pad_mode': trial.suggest_categorical('pad_mode', \
+					('same', 'full')),
 				'downsample_type': 'conv2d',
 				'label_size': num_classes-1,
 				'ob_out_shapes': num_classes if (add_ob) else None,
-				'ob_act': trial.suggest_categorical('ob_act', PYTORCH_ACT1D_LIST),
-				'ob_init': trial.suggest_categorical('ob_init', PYTORCH_INIT_LIST[2:])
+				'ob_act': trial.suggest_categorical('ob_act', \
+					PYTORCH_ACT1D_LIST[4:-1]),
+				'ob_init': trial.suggest_categorical('ob_init', \
+					PYTORCH_INIT_LIST[2:])
 			}
 		else:
 			params = {
@@ -541,7 +558,7 @@ class FFN(nn.Module):
 		init='xavier_uniform'):
 		super().__init__()
 		io_shapes = [np.product(in_shape).item(0), *out_shapes]
-		ffn_layers = []
+		ffn_layers = [('flatten', nn.Flatten(start_dim=1, end_dim=-1))]
 
 		for l, (i, o) in enumerate(pairwise(io_shapes)):
 			ffn_layers.append((f'ff_{l}', init_layer(nn.Linear(i, o), act=act, \
@@ -553,6 +570,33 @@ class FFN(nn.Module):
 
 	def forward(self, x):
 		return self.model(x)
+
+	@classmethod
+	def suggest_params(cls, trial=None, num_classes=2, add_ob=False):
+		"""
+		suggest model hyperparameters from an optuna trial object
+		or return fixed default hyperparameters
+		"""
+		if (is_valid(trial)):
+			size = trial.suggest_int('size', 2**5, 2**8, step=8),
+			depth = trial.suggest_int('depth', 1, 5)
+
+			params = {
+				'out_shapes': [size] * depth,
+				'block_act': trial.suggest_categorical('block_act', \
+					PYTORCH_ACT1D_LIST[4:]),
+				'block_init': trial.suggest_categorical('block_init', \
+					PYTORCH_INIT_LIST[2:]),
+				'label_size': num_classes-1,
+			}
+		else:
+			params = {
+				'out_shapes': [32, 32, 32],
+				'block_act': 'relu',
+				'block_init': 'xavier_uniform',
+				'label_size': num_classes-1,
+			}
+		return params
 
 class MultichannelFFN(nn.Module):
 	"""

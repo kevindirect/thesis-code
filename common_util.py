@@ -2315,8 +2315,7 @@ def pyt_at_least_nd(pyt, dim=3, axis=-1):
 """ ********** GRAPHVIZ UTILS ********** """
 def dict2dag(d, remap=None, list_max=None, **kwargs):
 	"""
-	Interpret a JSON style dictionary as a graphviz directed acyclic graph and return it.
-	By JSON style we mean that the only values in the dict are nested dicts, lists, or python primitives.
+	Represent a JSON serializable dictionary as a graphviz directed acyclic graph.
 
 	Args:
 		d (dictionary): dictionary to translate into a graphviz Digraph

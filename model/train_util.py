@@ -44,7 +44,7 @@ def pd_get_np_tvt(pd_obj, as_midx=True, train_ratio=.6):
 		train_np, val_np, test_np = train_pd.values, val_pd.values, test_pd.values
 	return train_np, val_np, test_np
 
-def pd_to_np_tvt(pd_obj, train_ratio=.6):
+def pd_to_np_tvt(pd_obj, train_ratio=7/11):
 	"""
 	Return the train, val, test numpy splits of a pandas object as a tuple of numpy tensors.
 	Works with MultiIndex DataFrames.
@@ -197,11 +197,11 @@ def window_shifted(data, loss, window_size, window_overlap=True, feat_dim=None):
 		if (loss in ('clf', 'bce', 'bcel', 'ce', 'nll')):
 			y_new = np.sum(y, axis=(1, 2), keepdims=False)		# Sum label matrices to scalar values
 			if (y.shape[1] > 1):
-				y_new += y.shape[1]				# Shift to range [0, C-1]
+				y_new += y.shape[1]		# Shift to range [0, C-1]
 			if (loss in ('bce', 'bcel') and len(y_new.shape)==1):
 				y_new = np.expand_dims(y_new, axis=-1)
 			y = y_new
-			z = np.sum(z, axis=(1, 2), keepdims=False)
+			z = np.squeeze(z)
 
 		return (x, y, z)
 
@@ -261,7 +261,7 @@ def batchify(data, loss, batch_size, shuffle=False, batch_step_size=None,
 	Returns:
 		torch.DataLoader
 	"""
-	f = torch.tensor(data[0], dtype=torch.float32, requires_grad=True)
+	f = torch.tensor(data[0], dtype=torch.float32, requires_grad=False)
 	if (loss in ('reg', 'bce', 'bcel', 'mae', 'mse')):
 		l = torch.tensor(data[1], dtype=torch.float32, requires_grad=False)
 	elif (loss in ('clf', 'ce', 'nll')):
