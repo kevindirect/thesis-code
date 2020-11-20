@@ -9,13 +9,11 @@ from collections import Mapping
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 import scipy
 import scipy.stats
-# import pygraphviz as pgv
-from graphviz import Digraph
 
-from common_util import search_df, get_subset, benchmark
-from data.data_api import DataAPI
+from common_util import benchmark
 from recon.common import dum
 
 
@@ -52,6 +50,52 @@ def plot_heatmap(df):
 	ax.set_xticklabels(names)
 	ax.set_yticklabels(names)
 	plt.show()
+
+
+def df_as_heatmap(df, figsize=(10,10), cmap='cividis', aspect='auto'):
+	"""
+	Plot a pd.DataFrame as heatmap with matplotlib.
+	"""
+	fig, ax = plt.subplots(figsize=figsize)
+	divider = make_axes_locatable(ax)
+	cax = divider.append_axes('right', size='5%', pad=0.10)
+
+	im = ax.imshow(df, cmap=cmap, aspect=aspect)
+	fig.colorbar(im, cax=cax, orientation='vertical')
+
+	ax.set_xticks(range(len(df.columns)))
+	ax.set_yticks(range(len(df.index)))
+	ax.set_xticklabels(df.columns)
+	ax.set_yticklabels(df.index)
+	return fig
+
+
+def dfs_as_heatmaps(dfs, row_labels=None, col_labels=None, bars_for_all=False,
+	sharex=False, sharey=True, figsize=(20,10), cmap='cividis', aspect='auto'):
+	"""
+	Given a 2D iterable of pd.DataFrames (rows, columns), creates plots a 2D grid of heatmaps with matplotlib.
+	"""
+	rows, cols = len(dfs), len(dfs[0])
+	fig, axes = plt.subplots(nrows=rows, ncols=cols, sharex=sharex, sharey=sharey, squeeze=False, figsize=figsize)
+
+	for row in range(rows):
+		for col in range(cols):
+			df = dfs[row][col]
+			ax = axes[row][col]
+			im = ax.imshow(df, cmap=cmap, aspect=aspect)
+			ax.set_xticks(range(len(df.columns)))
+			ax.set_yticks(range(len(df.index)))
+			ax.set_xticklabels(df.columns)
+			ax.set_yticklabels(df.index)
+			if (row_labels and col == 0):
+				ax.set_ylabel(row_labels[row], rotation=0, size='large')
+			if (col_labels and row == 0):
+				ax.set_title(col_labels[col])
+			if (bars_for_all or col == cols-1):
+				divider = make_axes_locatable(ax)
+				cax = divider.append_axes('right', size='5%', pad=.2 if (bars_for_all) else .5)
+				fig.colorbar(im, cax=cax, orientation='vertical')
+	return fig
 
 
 #write plot_split_hists function
@@ -258,7 +302,7 @@ def plot_df(df, title='plot', xlabel='xlab', ylabel='ylab'):
 	plt.ylabel(ylabel)
 	[plt.plot(df.index, df.loc[:, col_name], '^', label=str(col_name)) for col_name in df.columns]
 	plt.legend(loc='upper left')
-	plt.show()
+	return plt
 
 
 def plot_day_df(df, date=None):

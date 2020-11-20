@@ -394,33 +394,38 @@ def get_hardcoded_hourly_feature_dfs(fd, fsrc, cat=True, ret='logret'):
 	"""
 	Return hardcoded hourly freq feature dfs to use in experiments.
 	"""
-	def pd_modify_midx(pd_obj, sfx=None, offset=0):
+	def pd_modify_midx(pd_obj, nidx=(1,2), sfx=None, offset=0):
 		_sfx = '' if (isnt(sfx)) else f'_{sfx}'
-		modified = ['_'.join([str(i+offset), ser_name.split('_')[1]]) +_sfx\
+		modified = ['_'.join([str(i+offset),
+			*ser_name.split('_')[nidx[0]:nidx[1]]]) +_sfx \
 			for i, ser_name in enumerate(pd_obj.index.levels[1])]
 		pd_obj.index = pd_obj.index.set_levels(modified, level=1)
 		return pd_obj
 
 	def get_axe_data(fd, src, axe, bar, ret, off1=0):
 		axel = axe.split('_')
-		fkey = {
-			axe == bar and len(axel) == 1: f'{src}_{axe}',
-			axe != bar and len(axel) == 1: f'{src}_{bar}_{axe}',
-			axe != bar and len(axel) == 2: f'{src}_{bar}_{axe}(8)'
-		}.get(True)
-		axe = axel[-1]
-		sub_dfs = [pd_modify_midx(fd['h'][src][axe][fkey])]
+		axen = axel[-1]
+		if (src in ('buzz',)):
+			sub_dfs = [pd_modify_midx(df_filter_by_keywords(fdf, ('open',)), \
+				nidx=(0, 4)) for fdf in fd['h'][src][axen].values()]
+		else:
+			fkey = {
+				axe == bar and len(axel) == 1: f'{src}_{axe}',
+				axe != bar and len(axel) == 1: f'{src}_{bar}_{axe}',
+				axe != bar and len(axel) == 2: f'{src}_{bar}_{axe}(8)'
+			}.get(True)
+			sub_dfs = [pd_modify_midx(fd['h'][src][axen][fkey])]
 
 		if (is_valid(ret)):
 			ret_type = f'h{ret}'
 			off2 = len(sub_dfs[-1].index.levels[1])
 
-			if (axe == bar):
+			if (axen == bar):
 				for key, fdf in sorted(fd['h'][src][ret_type].items()):
 					sub_dfs.append(pd_modify_midx(fdf, sfx=ret, offset=off2))
 					off2 += len(sub_dfs[-1].index.levels[1])
 			else:
-				for key, fdf in sorted(fd['h'][src][axe].items()):
+				for key, fdf in sorted(fd['h'][src][axen].items()):
 					if (ret_type in key):
 						midx_keys = tuple(key for key in fdf.index.levels[1] \
 							if (ret_type in key))
@@ -428,17 +433,14 @@ def get_hardcoded_hourly_feature_dfs(fd, fsrc, cat=True, ret='logret'):
 							sfx=ret, offset=off2))
 						off2 += len(sub_dfs[-1].index.levels[1])
 
-		return pd_add_2nd_level(pd.concat(sub_dfs, axis=0), \
-			keys=[f'{off1}_{src}_{axe}'])
+		return pd_add_2nd_level(pd.concat(sub_dfs, axis=0).astype('float32'), \
+			keys=[f'{off1}_{src}_{axen}'])
 
-	if (fsrc[0] in ('pba', 'vol')):
-		axes = [HOURLY_AXECODE_MAPPING.get(a) for a in list(fsrc[1])]
-		feature_dfs = [get_axe_data(fd, fsrc[0], axe, 'hohlca', ret, off1=i) \
-			for i, axe in enumerate(axes)]
-	elif (fsrc[0] in ('buzz',)):
-		# XXX out of date
-		for fdf in fd['h'][src][axe].values():
-			feature_dfs.append(df_filter_by_keywords(fdf, ('open',)))
+	src = fsrc[0]
+	axes = [HOURLY_AXECODE_MAPPING.get(a) for a in list(fsrc[1])]
+
+	feature_dfs = [get_axe_data(fd, src, axe, 'hohlca',
+		None if (src in ('buzz',)) else ret, off1=i) for i, axe in enumerate(axes)]
 
 	return pd.concat(feature_dfs, axis=0) if (cat) else feature_dfs
 

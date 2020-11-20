@@ -77,11 +77,11 @@ class XGDataModule(pl.LightningDataModule):
 		if (self.ldata_name == 'dcur'):
 			# Sanity check: 'Predict' the present ddir(t-1)
 			fd = fd or get_xg_feature_dfs(self.asset_name)
-			ldata = pd_split_ternary_to_binary(df_del_midx_level(\
+			ldata = pd_split_ternary_to_binary(df_del_midx_level( \
 				fd['d']['pba']['ddir']['pba_hoc_hdxret_ddir'] \
 				.rename(columns={-1:'pba_hoc_hdxret_ddir'}), loc=1) \
 				.replace(to_replace=-1, value=0).astype(int))
-			tdata = pd_split_ternary_to_binary(df_del_midx_level(\
+			tdata = pd_split_ternary_to_binary(df_del_midx_level( \
 				fd['d']['pba']['dret']['pba_hoc_hdxret_dret'] \
 				.rename(columns={-1:'pba_hoc_hdxret_dret'}), loc=1))
 		else:

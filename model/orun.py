@@ -125,13 +125,16 @@ def objective(trial, pl_model_fn, pt_model_fn, dm, monitor, direction,
 	csv_log = pl.loggers.csv_logs.CSVLogger(trial_dir, name='', version='')
 	tb_log = pl.loggers.tensorboard.TensorBoardLogger(trial_dir, name='', \
 		version='', log_graph=False)
-	checkpoint_callback = pl.callbacks.ModelCheckpoint(f'{trial_dir}chk{sep}', \
+	chk_callback = pl.callbacks.ModelCheckpoint(f'{trial_dir}chk{sep}', \
 		monitor=monitor, mode=direction[:3])
-	es_callback = PyTorchLightningPruningCallback(trial, monitor=monitor) # hook for optuna pruner
+	es_callback = PyTorchLightningPruningCallback(trial, \
+		monitor=monitor) # hook for optuna pruner
+	ver_callbacks = (BatchNormVerificationCallback(), \
+		BatchGradientVerificationCallback())
 
 	trainer = pl.Trainer(max_epochs=max_epochs or t_params['epochs'],
-			min_epochs=min_epochs, logger=[csv_log, tb_log], callbacks=[es_callback],
-			checkpoint_callback=checkpoint_callback,
+			min_epochs=min_epochs, logger=[csv_log, tb_log],
+			callbacks=[chk_callback, es_callback, *ver_callbacks],
 			limit_val_batches=1.0, gradient_clip_val=0., #track_grad_norm=2,
 			auto_lr_find=False, amp_level='O1', precision=16,
 			default_root_dir=trial_dir, weights_summary=None,
