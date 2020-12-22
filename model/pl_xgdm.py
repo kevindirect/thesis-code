@@ -5,8 +5,8 @@ import sys
 import os
 import logging
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 import torch
 import pytorch_lightning as pl
 
@@ -70,8 +70,9 @@ class XGDataModule(pl.LightningDataModule):
 		else:
 			fd = get_xg_feature_dfs(self.asset_name,
 				overwrite_cache=self.overwrite_cache)
-			fds = [get_hardcoded_feature_dfs(fd, fdata_name, cat=True, ret=self.fret)
-				for fdata_name in self.fdata_name.split(',')]
+			fds = [get_hardcoded_feature_dfs(fd, fdata_name, cat=True,
+				ret=self.fret, pfx=i)
+				for i, fdata_name in enumerate(self.fdata_name.split(','))]
 			fdata = pd.concat(dfs_get_common_interval_data(fds), axis=0)
 
 		if (self.ldata_name == 'dcur'):

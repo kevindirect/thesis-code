@@ -12,6 +12,8 @@ import pandas as pd
 # from matplotlib import pyplot as plt
 import torch
 import pytorch_lightning as pl
+from verification.batch_norm import BatchNormVerificationCallback
+from verification.batch_gradient import BatchGradientVerificationCallback
 import optuna
 from optuna.pruners import PercentilePruner, HyperbandPruner
 from optuna.integration import PyTorchLightningPruningCallback
@@ -35,7 +37,7 @@ def optuna_run(argv):
 		else OPTUNA_TIMEOUT_HOURS
 	model_name = cmd_input['model='] or 'stcn'
 	asset_name = cmd_input['assets='] or ASSETS[0]
-	fdata_name = cmd_input['xdata='] or 'h_pba'
+	fdata_name = cmd_input['xdata='] or 'h_pba_mzo,h_vol_mzo'
 	ldata_name = cmd_input['ydata='] or 'ddir'
 	monitor = cmd_input['optuna-monitor='] or 'val_loss'
 	optimize_dir = {

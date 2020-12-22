@@ -356,7 +356,7 @@ def get_xg_label_target_dfs(asset, xg_l_dir=XG_DATA_DIR +'labels' +sep, xg_t_dir
 
 
 """ ********** HARDCODED DATA GETTER FNS ********** """
-def get_hardcoded_daily_feature_dfs(fd, src, cat=True, ret=None):
+def get_hardcoded_daily_feature_dfs(fd, src, cat=True, ret=None, pfx=0):
 	"""
 	Return hardcoded daily freq feature dfs to use in experiments.
 	"""
@@ -390,7 +390,7 @@ HOURLY_AXECODE_MAPPING = {
 	'g': 'hdzn_hdgau'
 }
 
-def get_hardcoded_hourly_feature_dfs(fd, fsrc, cat=True, ret='logret'):
+def get_hardcoded_hourly_feature_dfs(fd, fsrc, cat=True, ret='logret', pfx=0):
 	"""
 	Return hardcoded hourly freq feature dfs to use in experiments.
 	"""
@@ -414,7 +414,12 @@ def get_hardcoded_hourly_feature_dfs(fd, fsrc, cat=True, ret='logret'):
 				axe != bar and len(axel) == 1: f'{src}_{bar}_{axe}',
 				axe != bar and len(axel) == 2: f'{src}_{bar}_{axe}(8)'
 			}.get(True)
-			sub_dfs = [pd_modify_midx(fd['h'][src][axen][fkey])]
+			sub_df = fd['h'][src][axen][fkey]
+			if (axen in ('hdmx', 'hdzn')):
+				col_order = [f'{src}_{col}_{src}_{bar}_{axen}' \
+					for col in ('open', 'high', 'low', 'close', 'avgPrice')]
+				sub_df = sub_df.reindex(col_order, axis=0, level='id1')
+			sub_dfs = [pd_modify_midx(sub_df)]
 
 		if (is_valid(ret)):
 			ret_type = f'h{ret}'
@@ -440,11 +445,12 @@ def get_hardcoded_hourly_feature_dfs(fd, fsrc, cat=True, ret='logret'):
 	axes = [HOURLY_AXECODE_MAPPING.get(a) for a in list(fsrc[1])]
 
 	feature_dfs = [get_axe_data(fd, src, axe, 'hohlca',
-		None if (src in ('buzz',)) else ret, off1=i) for i, axe in enumerate(axes)]
+		None if (src in ('buzz',)) else ret, off1=f'{pfx}{i}')
+		for i, axe in enumerate(axes)]
 
 	return pd.concat(feature_dfs, axis=0) if (cat) else feature_dfs
 
-def get_hardcoded_feature_dfs(fd, src, cat=True, ret=None):
+def get_hardcoded_feature_dfs(fd, src, cat=True, ret=None, pfx=0):
 	"""
 	Multiplex between different feature frequencies and return data.
 	"""
@@ -452,7 +458,7 @@ def get_hardcoded_feature_dfs(fd, src, cat=True, ret=None):
 	return {
 		'd': get_hardcoded_daily_feature_dfs,
 		'h': get_hardcoded_hourly_feature_dfs
-	}.get(src_k[0])(fd, src_k[1:], cat=cat, ret=ret)
+	}.get(src_k[0])(fd, src_k[1:], cat=cat, ret=ret, pfx=pfx)
 
 def get_hardcoded_label_target_dfs(ld, td, src):
 	"""
