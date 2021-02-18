@@ -76,13 +76,13 @@ def optuna_run(argv):
 	logging.debug(f'study dir:   {study_dir}')
 	logging.debug(f'study db:    {study_db_path}')
 
-	if (dry_run):
-		sys.exit()
-
 	makedir_if_not_exists(study_dir)
 	bench_fname = 'benchmark.json'
 	if (not exists('{study_dir}{bench_fname}')):
 		dump_json(dm.get_benchmarks(), bench_fname, study_dir)
+	if (dry_run):
+		sys.exit()
+
 	# logging.getLogger("lightning").setLevel(logging.ERROR) # Disable pl warnings
 	torch.cuda.empty_cache()
 	obj_fn = partial(objective, pl_model_fn=pl_model_fn, pt_model_fn=pt_model_fn,

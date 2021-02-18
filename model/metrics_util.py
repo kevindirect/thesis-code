@@ -10,8 +10,26 @@ import pandas as pd
 import torch
 from pytorch_lightning.metrics import Metric
 
-from common_util import MODEL_DIR, isnt
+from common_util import MODEL_DIR, isnt, pt_diff1d
 from model.common import PYTORCH_LOSS_MAPPING
+
+
+# ********** PYTORCH LIGHTNING RETURN UTILS **********
+def get_cumulative_return(asset_returns, compounded=False):
+	if (compounded):
+		cum_returns = (asset_returns + 1.0).cumprod(dim=0) - 1.0
+	else:
+		cum_returns = asset_returns.cumsum(dim=0)
+	return cum_returns
+
+def get_sharpe_ratio(cum_returns, annualized=True):
+	ret = pt_diff1d(cum_returns)
+	ret_std = ret.std()
+	ret_std = ret_std if (ret_std != 0) else 1
+	sr = ret.mean() / ret_std
+	if (annualized):
+		sr *= np.sqrt(252).item(0)
+	return sr
 
 
 # ********** PYTORCH LIGHTNING RETURN BENCHMARKS **********
@@ -22,10 +40,13 @@ class BuyAndHoldStrategy(Metric):
 	this will be buy and hold with no overnight risk (buy at open, sell at close daily).
 	All bets are sized $1 per trade. Assumes zero transaction cost.
 	"""
-	def __init__(self, compute_on_step=False, dist_sync_on_step=False, process_group=None):
+	def __init__(self, compounded=False, compute_on_step=False, dist_sync_on_step=False, process_group=None):
 		super().__init__(compute_on_step=compute_on_step, \
 			dist_sync_on_step=dist_sync_on_step, process_group=process_group)
 		self.name = 'bs'
+		self.compounded = compounded
+		if (self.compounded):
+			self.name += 'c'
 		self.add_state('returns', default=[], dist_reduce_fx='cat')
 
 	def update(self, pred, actual, actual_ret):
@@ -33,13 +54,13 @@ class BuyAndHoldStrategy(Metric):
 
 	def compute(self, pfx=''):
 		returns = torch.cat(self.returns, dim=0)
-		returns_cumsum = returns.cumsum(dim=0)
+		cr = get_cumulative_return(returns, compounded=self.compounded)
 
 		return {
-			f'{pfx}_{self.name}': returns_cumsum[-1],
-			f'{pfx}_{self.name}_sharpe': returns.mean()/returns.std(),
-			f'{pfx}_{self.name}_min': returns_cumsum.min(),
-			f'{pfx}_{self.name}_max': returns_cumsum.max(),
+			f'{pfx}_{self.name}': cr[-1],
+			f'{pfx}_{self.name}_sharpe': get_sharpe_ratio(cr),
+			f'{pfx}_{self.name}_min': cr.min(),
+			f'{pfx}_{self.name}_max': cr.max()
 		}
 
 
@@ -50,10 +71,13 @@ class OptimalStrategy(Metric):
 	the maximum bet size ($1) in every trade - sum(abs(returns))
 	All bets are sized $1 per trade. Assumes zero transaction cost.
 	"""
-	def __init__(self, compute_on_step=False, dist_sync_on_step=False, process_group=None):
+	def __init__(self, compounded=False, compute_on_step=False, dist_sync_on_step=False, process_group=None):
 		super().__init__(compute_on_step=compute_on_step, \
 			dist_sync_on_step=dist_sync_on_step, process_group=process_group)
 		self.name = 'os'
+		self.compounded = compounded
+		if (self.compounded):
+			self.name += 'c'
 		self.add_state('returns', default=[], dist_reduce_fx='cat')
 
 	def update(self, pred, actual, actual_ret):
@@ -61,9 +85,11 @@ class OptimalStrategy(Metric):
 
 	def compute(self, pfx=''):
 		returns = torch.cat(self.returns, dim=0)
+		cr = get_cumulative_return(returns, compounded=self.compounded)
+
 		return {
-			f'{pfx}_{self.name}': returns.sum(),
-			f'{pfx}_{self.name}_sharpe': returns.mean()/returns.std(),
+			f'{pfx}_{self.name}': cr[-1],
+			f'{pfx}_{self.name}_sharpe': get_sharpe_ratio(cr)
 		}
 
 
@@ -71,10 +97,12 @@ class OptimalStrategy(Metric):
 class SimulatedReturn(Metric):
 	"""
 	Simulated Return Pytorch Lightning Metric.
-	Maximum bet size of $1 per trade. Assumes zero transaction cost.
+	Starting maximum bet size of $1 per trade. Assumes zero transaction cost.
 
 	Uses confidence score based betsizing if use_conf is True, this allows
-	the betsize to be less than $1.
+	the betsize to be less than the max.
+	If compounded is true returns are compounded, otherwise the max size of each
+	return is $1.
 	If use_conf and use_kelly are True, uses even kelly criterion based betsizing.
 
 	The update method updates the class state (hit_dir, reward, and betsize).
@@ -88,7 +116,7 @@ class SimulatedReturn(Metric):
 		* maximum of cumulative return
 		* sharpe ratio over period
 	"""
-	def __init__(self, use_conf=True, use_kelly=False,
+	def __init__(self, use_conf=True, use_kelly=False, compounded=False,
 		compute_on_step=False, dist_sync_on_step=False, process_group=None):
 		"""
 		use_conf (bool): whether to use confidence score for betsizing
@@ -101,11 +129,14 @@ class SimulatedReturn(Metric):
 			assert use_conf, 'must set use_conf to use kelly'
 		self.use_conf = use_conf
 		self.use_kelly = use_kelly
+		self.compounded = compounded
 		self.name = {
 			not self.use_conf: 'br',			# simple binary return
 			self.use_conf and not self.use_kelly: 'cr',	# conf betsize return
 			self.use_kelly: 'kr'				# kelly betsize return
 		}.get(True)
+		if (self.compounded):
+			self.name += 'c'
 		self.add_state('pred_dir', default=[], dist_reduce_fx='cat')
 		self.add_state('actual_ret', default=[], dist_reduce_fx='cat')
 		if (self.use_conf):
@@ -148,12 +179,12 @@ class SimulatedReturn(Metric):
 		actual_rets = torch.cat(self.actual_ret, dim=0)
 		betsizes = torch.cat(self.betsize, dim=0) if (self.use_conf) else self.betsize
 		returns = pred_dirs * actual_rets * betsizes
-		returns_cumsum = returns.cumsum(dim=0)
+		cr = get_cumulative_return(returns, compounded=self.compounded)
 
 		return {
-			f'{pfx}_{self.name}': returns_cumsum[-1],
-			f'{pfx}_{self.name}_sharpe': returns.mean()/(returns.std()+eps),
-			f'{pfx}_{self.name}_min': returns_cumsum.min(),
-			f'{pfx}_{self.name}_max': returns_cumsum.max(),
+			f'{pfx}_{self.name}': cr[-1],
+			f'{pfx}_{self.name}_sharpe': get_sharpe_ratio(cr),
+			f'{pfx}_{self.name}_min': cr.min(),
+			f'{pfx}_{self.name}_max': cr.max()
 		}
 

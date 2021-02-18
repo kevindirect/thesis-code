@@ -6,6 +6,7 @@ import sys
 import os
 import logging
 from collections import OrderedDict
+from functools import partial
 
 import numpy as np
 import pandas as pd
@@ -88,11 +89,17 @@ def get_padding(pad_mode, in_width, kernel_size, dilation=1, stride=1):
 		'full': dilation*(kernel_size-1)*2
 	}.get(pad_mode, 0)
 
-def pyt_multihead_attention(W, q, k, v):
+def pt_multihead_attention(W, q, k, v):
 	"""
 	Applies Pytorch Multiheaded Attention using existing MultiheadAttention object,
 	assumes q, k, v tensors are shaped (batch, channels, sequence)
 	Modified from: KurochkinAlexey/Recurrent-neural-processes
+	
+	Attention(Q, K, V) = softmax(QK'/sqrt(d_k)) V
+
+	MH(Q, K, V) = Concat[head1; head2; ...; headn] Wo
+
+		where head[i] = Attention(Q Wq[i], K Wk[i], V Wv[i])
 
 	Args:
 		W (torch.nn.modules.activation.MultiheadAttention): pytorch Multihead attention object
@@ -106,7 +113,7 @@ def pyt_multihead_attention(W, q, k, v):
 	q = q.permute(2, 0, 1)
 	k = k.permute(2, 0, 1)
 	v = v.permute(2, 0, 1)
-	o = W(q, k, v)[0]
+	o = W(q, k, v)[0]	# MHA forward pass
 	return o.permute(1, 2, 0).contiguous()
 
 
@@ -156,6 +163,17 @@ class WaveletScatter1d(nn.Module):
 		Sx = self.scatter(x)
 		coefficients = tuple(Sx[order] for order in self.orders)
 		return coefficients
+
+class Apply(nn.Module):
+	"""
+	Module wrapper to apply a function to the input.
+	"""
+	def __init__(self, fn):
+		super().__init__()
+		self.fn = fn
+
+	def forward(self, x):
+		return self.fn(x)
 
 
 # ********** BLOCK MODULES **********
@@ -443,7 +461,6 @@ class TemporalConvNet(nn.Module):
 		self.ob_out_shapes = ob_out_shapes	# If this is None, no OutputBlock is added
 		self.ob_act, self.ob_init = ob_act, ob_init
 
-
 	def forward(self, x):
 		return self.model(x)
 
@@ -498,36 +515,61 @@ class StackedTCN(TemporalConvNet):
 		"""
 		if (is_valid(trial)):
 			params = {
-				'size': trial.suggest_int('size', 2**5, 2**8, step=8),
-				'depth': trial.suggest_int('depth', 1, 5),
-				# 'kernel_sizes': trial.suggest_int('kernel_sizes', 3, 15, step=1),
+				'size': trial.suggest_int('size', 1, 32),
+				'depth': trial.suggest_int('depth', 2, 5),
 				'kernel_sizes': trial.suggest_categorical('kernel_sizes', \
-					(4, 8, 16, 24)),
+					(7, 9, 15, 17, 23, 25, 31, 33, 39, 41, 47, 49)),
+					# (3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 33)),
+				# 'kernel_sizes': trial.suggest_int('kernel_sizes', 3, 33, step=2),
 				'input_dropout': trial.suggest_float('input_dropout', \
-					0.0, 1.0, step=1e-6),
+					0.0, 1.0, step=1e-2),
 				'output_dropout': trial.suggest_float('output_dropout', \
-					0.0, 1.0, step=1e-6),
+					0.0, 1.0, step=1e-2),
 				'global_dropout': trial.suggest_float('global_dropout', \
-					0.0, 1.0, step=1e-6),
+					0.0, 1.0, step=1e-2),
 				'global_dilation': True,
-				'block_act': trial.suggest_categorical('block_act', \
-					PYTORCH_ACT1D_LIST[4:]),
-				'out_act': trial.suggest_categorical('out_act', \
-					PYTORCH_ACT1D_LIST[4:]),
-				'block_init': trial.suggest_categorical('block_init', \
-					PYTORCH_INIT_LIST[2:]),
-				'out_init': trial.suggest_categorical('out_init', \
-					PYTORCH_INIT_LIST[2:]),
-				'pad_mode': trial.suggest_categorical('pad_mode', \
-					('same', 'full')),
+				'block_act': 'relu', 
+				'out_act': 'relu',
+				'block_init': 'kaiming_uniform',
+				'out_init': 'kaiming_uniform',
+				'pad_mode': 'full',
 				'downsample_type': 'conv2d',
 				'label_size': num_classes-1,
 				'ob_out_shapes': num_classes if (add_ob) else None,
-				'ob_act': trial.suggest_categorical('ob_act', \
-					PYTORCH_ACT1D_LIST[4:-1]),
-				'ob_init': trial.suggest_categorical('ob_init', \
-					PYTORCH_INIT_LIST[2:])
+				'ob_act': 'relu',
+				'ob_init': 'kaiming_uniform' # 'xavier_uniform'
 			}
+			# params = {
+			# 	'size': trial.suggest_int('size', 2**5, 2**8, step=8),
+			# 	'depth': trial.suggest_int('depth', 1, 5),
+			# 	# 'kernel_sizes': trial.suggest_int('kernel_sizes', 3, 15, step=1),
+			# 	'kernel_sizes': trial.suggest_categorical('kernel_sizes', \
+			# 		(4, 8, 16, 24)),
+			# 	'input_dropout': trial.suggest_float('input_dropout', \
+			# 		0.0, 1.0, step=1e-6),
+			# 	'output_dropout': trial.suggest_float('output_dropout', \
+			# 		0.0, 1.0, step=1e-6),
+			# 	'global_dropout': trial.suggest_float('global_dropout', \
+			# 		0.0, 1.0, step=1e-6),
+			# 	'global_dilation': True,
+			# 	'block_act': trial.suggest_categorical('block_act', \
+			# 		PYTORCH_ACT1D_LIST[4:]),
+			# 	'out_act': trial.suggest_categorical('out_act', \
+			# 		PYTORCH_ACT1D_LIST[4:]),
+			# 	'block_init': trial.suggest_categorical('block_init', \
+			# 		PYTORCH_INIT_LIST[2:]),
+			# 	'out_init': trial.suggest_categorical('out_init', \
+			# 		PYTORCH_INIT_LIST[2:]),
+			# 	'pad_mode': trial.suggest_categorical('pad_mode', \
+			# 		('same', 'full')),
+			# 	'downsample_type': 'conv2d',
+			# 	'label_size': num_classes-1,
+			# 	'ob_out_shapes': num_classes if (add_ob) else None,
+			# 	'ob_act': trial.suggest_categorical('ob_act', \
+			# 		PYTORCH_ACT1D_LIST[4:-1]),
+			# 	'ob_init': trial.suggest_categorical('ob_init', \
+			# 		PYTORCH_INIT_LIST[2:])
+			# }
 		else:
 			params = {
 				'size': 128,
@@ -549,6 +591,81 @@ class StackedTCN(TemporalConvNet):
 				'ob_init': 'xavier_uniform'
 			}
 		return params
+
+class TransposedTCN(nn.Module):
+	"""
+	Single block 2D TCN where dims (by default the first two) are transposed between convolutions.
+	"""
+	def __init__(self, in_shape, channels=[3, 1], kernel_sizes=3,
+		input_dropout=0.0, output_dropout=0.0, global_dropout=0.0,
+		use_dilation=True, block_act='relu', out_act='relu',
+		block_init='kaiming_uniform', out_init='kaiming_uniform',
+		pad_mode='full', tdims=(2, 1), use_residual=True, downsample_type='conv2d',
+		ob_out_shapes=None, ob_act='linear', ob_init='xavier_uniform'):
+		"""
+		Args:
+			in_shape (tuple): shape of the network's input tensor,
+				expects a shape (in_channels, in_height, in_width)
+			channels (list): cnn channel sizes
+			kernel_sizes (int|list): list of CNN kernel sizes (across width dimension only),
+				if a list its length must be either 1 or len(channels)
+			input_dropout (float): first layer dropout
+			output_dropout (float): last layer dropout
+			global_dropout (float): default dropout probability
+			use_dilation (bool): whether to use dilation
+			block_act (str): activation function of each layer in each block
+			out_act (str): output activation of each block
+			block_init (str): hidden layer weight initialization method
+			out_init (str): output layer weight initialization method
+			pad_mode ('same'|'full'): padding method to use
+			tdims (tuple): dimensions to transpose (batch index included) 
+			use_residual(): 
+			downsample_type (str): method of downsampling used by residual block
+			ob_out_shapes
+			ob_act
+			ob_ini
+		"""
+		super().__init__()
+		self.in_shape = layer_in_shape = in_shape
+		dropouts = [global_dropout] * len(channels)
+		dropouts[0], dropouts[-1] = input_dropout, output_dropout
+		kernel_sizes = list_wrap(kernel_sizes)
+		layers = []
+
+		for l, out_channels in enumerate(channels):
+			dilation = 2**l if (use_dilation) else 1
+			kernel_size = kernel_sizes[l%len(kernel_sizes)]
+			dropout = dropouts[l%len(dropouts)]
+			padding_size = get_padding(pad_mode, layer_in_shape[2], kernel_size,
+				dilation=dilation)
+			out_height = TemporalLayer2d.get_out_height(layer_in_shape[1])
+			out_width = TemporalLayer2d.get_out_width(layer_in_shape[2],
+				kernel_size=kernel_size, dilation=dilation, padding_size=padding_size)
+
+			# TCN layer
+			layer_out_shape = (out_channels, out_height, out_width)
+			layer = TemporalLayer2d(in_shape=layer_in_shape, out_shape=layer_out_shape,
+				act=block_act, kernel_size=kernel_size, padding_size=padding_size,
+				dilation=dilation, dropout=dropout, init=block_init)
+			layers.append((f'tl[{layer_in_shape}->{layer_out_shape}]_0_{l}', layer))
+
+			if (l < len(channels)-1):
+				# Transpose before next TCN layer
+				trp = Apply(partial(torch.transpose, dim0=tdims[0], dim1=tdims[1]))
+				layer_in_shape = (layer_out_shape[1], layer_out_shape[0], layer_out_shape[2])
+				layers.append((f'transpose{tdims}[{layer_out_shape}->{layer_in_shape}]', trp))
+
+		net = nn.Sequential(OrderedDict(layers))
+		self.out_shape = layer_out_shape
+		net.in_shape, net.out_shape = self.in_shape, self.out_shape
+		self.model = ResidualBlock(net, out_act, downsample_type=downsample_type, init=out_init, use_residual=use_residual)
+
+		# GenericModel uses these params to to append an OutputBlock to the model
+		self.ob_out_shapes = ob_out_shapes	# If this is None, no OutputBlock is added
+		self.ob_act, self.ob_init = ob_act, ob_init
+
+	def forward(self, x):
+		return self.model(x)
 
 class FFN(nn.Module):
 	"""

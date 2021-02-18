@@ -11,7 +11,7 @@ import torch
 import pytorch_lightning as pl
 
 from common_util import is_type, is_valid, isnt
-from model.common import PYTORCH_LOSS_MAPPING
+from model.common import WIN_SIZE, PYTORCH_LOSS_MAPPING
 from model.pl_generic import GenericModel
 
 
@@ -39,7 +39,7 @@ class NPModel(GenericModel):
 		num_workers (int>=0): DataLoader option - number cpu workers to attach
 		pin_memory (bool): DataLoader option - whether to pin memory to gpu
 	"""
-	def __init__(self, pt_model_fn, m_params, t_params, fobs
+	def __init__(self, pt_model_fn, m_params, t_params, fobs,
 		epoch_metric_types=('train', 'val')):
 		"""
 		Init method
@@ -55,6 +55,52 @@ class NPModel(GenericModel):
 		super().__init__(pt_model_fn, m_params, t_params, fobs,
 			epoch_metric_types=epoch_metric_types)
 
+	def get_context_target(self, batch, train_mode=False):
+		x, y, z = batch
+		ctx, tgt = self.t_params['context_size'], self.t_params['context_size'] 
+
+		if (train_mode):
+			if (self.t_params['train_sample_context']):
+				# XXX causes error with cross attention modules
+				ctx = np.random.randint(low=1, high=self.t_params['batch_size']-1, \
+					size=None, dtype=int)
+				tgt = ctx
+
+			if (self.t_params['train_context_in_target']):
+				tgt = 0
+
+		# batch_len = len(x)
+		# print(f'context: {ctx}, target: {batch_len-tgt}, len: {batch_len}')
+
+		return x[:ctx], y[:ctx], z[:ctx], x[tgt:], y[tgt:], z[tgt:],
+
+	def forward(self, context_x, context_y, target_x, target_y=None):
+		"""
+		Run input through the neural process.
+		"""
+		return self.model(context_x, context_y, target_x, target_y=target_y)
+
+	def forward_step(self, batch, batch_idx, epoch_type='train'):
+		"""
+		Run forward pass, update step metrics, and return step loss.
+		"""
+		train_mode = epoch_type == 'train'
+		xc, yc, zc, xt, yt, zt = self.get_context_target(batch, train_mode=train_mode)
+		yt_hat_raw, losses = self.forward(xc, yc, xt, target_y=yt if (train_mode) else None)
+
+		# TODO calculate val/test loss here if desired
+		yt_hat = yt_hat_raw
+		# print(f'yt_hat: {yt_hat}')
+		# print(f'yt: {yt}')
+		# sys.exit()
+
+		for met in self.epoch_metrics[epoch_type].values():
+			met.update(yt_hat.cpu().argmax(dim=-1), yt.cpu())	# XXX
+		for ret in self.epoch_returns[epoch_type].values():
+			ret.update(yt_hat.cpu(), yt.cpu(), zt.cpu())		# XXX Conf score
+
+		return {'loss': losses and losses['loss']} 
+
 	@classmethod
 	def suggest_params(cls, trial=None, num_classes=2):
 		"""
@@ -63,62 +109,62 @@ class NPModel(GenericModel):
 		XXX - call super class method to sample most of the tparams
 		"""
 		if (is_valid(trial)):
-			raise Error('look at batch_step_size')
+			class_weights = torch.zeros(num_classes, dtype=torch.float32, \
+				device='cpu', requires_grad=False)
+			if (num_classes == 2):
+				class_weights[0] = trial.suggest_float(f'class_weights[0]', 0.40, 0.60, step=.01)
+				class_weights[1] = 1.0 - class_weights[0]
+			else:
+				for i in range(num_classes):
+					class_weights[i] = trial.suggest_float(f'class_weights[{i}]', \
+						0.40, 0.60, step=.01) #1e-6, 1.0, step=1e-6)
+				class_weights.div_(class_weights.sum()) # Vector class weights must sum to 1
+
+			batch_size = trial.suggest_int('batch_size', 128, 512, step=128)
+
 			params = {
-				'window_size': trial.suggest_int('window_size', 3, 120),
+				'window_size': WIN_SIZE,
 				'feat_dim': None,
 				'train_shuffle': False,
 				'epochs': trial.suggest_int('epochs', 200, 700, step=10),
-				'batch_size': trial.suggest_int('batch_size', 64, 512, step=8),
-				'batch_step_size': trial.suggest_int('batch_step_size', 1, 64),
+				'batch_size': batch_size,
+				'batch_step_size': batch_size // 4,
+				'context_size': batch_size // 2,
+				'train_context_in_target': False,
+				'train_sample_context': True,
 				'loss': 'clf',
-				'class_weights': None,
+				'class_weights': class_weights,
 				'opt': {
 					'name': 'adam',
 					'kwargs': {
-						'lr': trial.suggest_float('lr', 1e-6, 1e-1, log=True)
+						'lr': trial.suggest_float('lr', 1e-6, 1e-3, log=True)
 					}
 				},
 				'num_workers': 0,
 				'pin_memory': True
 			}
 		else:
+			batch_size = 256
 			params = {
-				'window_size': 20,
+				'window_size': WIN_SIZE,
 				'feat_dim': None,
-				'train_shuffle': False,    
-				'epochs': 200,
-				'batch_size': 128,
-				'batch_step_size': 64,
+				'train_shuffle': False,
+				'epochs': 400,
+				'batch_size': batch_size,
+				'batch_step_size': batch_size // 4,
+				'context_size': batch_size // 2,
+				'train_context_in_target': False,
+				'train_sample_context': True,
 				'loss': 'clf',
 				'class_weights': None,
 				'opt': {
 					'name': 'adam',
 					'kwargs': {
-						'lr': 1e-3
+						'lr': 1e-6
 					}
 				},
 				'num_workers': 0,
 				'pin_memory': True
 			}
 		return params
-
-	def forward(self, context_x, context_y, target_x, target_y=None, \
-		train_mode=False):
-		"""
-		Run input through the neural process.
-		"""
-		return self.model(context_x, context_y, target_x, target_y, \
-			train_mode=train_mode)
-
-	def forward_step(self, batch, batch_idx, epoch_type='train'):
-		raise NotImplementedError()
-
-	# def forward_metrics_step(self, batch, batch_idx, calc_pfx=''):
-	# 	x, y, z = batch
-	# 	ctx = self.t_params['batch_size'] // 2 # split batch into context/target
-	# 	y_hat, losses = self.forward(x[:ctx], y[:ctx], x[ctx:], y[ctx:], \
-	# 		train_mode=calc_pfx=='train')
-	# 	return self.calculate_metrics_step(losses, y_hat, y[ctx:], z[ctx:], \
-	# 		calc_pfx=calc_pfx)
 

@@ -64,7 +64,7 @@ class GenericModel(pl.LightningModule):
 		self.__init_loss_fn__()
 		self.__init_model__(pt_model_fn, fobs)
 		self.__init_loggers__(epoch_metric_types)
-		self.example_input_array = torch.rand(10, *fobs, dtype=torch.float32) * 100
+		#self.example_input_array = torch.rand(10, *fobs, dtype=torch.float32) * 100
 
 	def __init_loss_fn__(self):
 		if (is_valid(loss_fn := PYTORCH_LOSS_MAPPING.get(self.t_params['loss'], None))):
@@ -84,7 +84,10 @@ class GenericModel(pl.LightningModule):
 		"""
 		model_params = {k: v for k, v in self.m_params.items() \
 			if (k in getfullargspec(pt_model_fn).args)}
-		self.model = OutputBlock.wrap(pt_model_fn(in_shape=fobs, **model_params))
+
+		self.model = pt_model_fn(in_shape=fobs, **model_params)
+		if (is_valid(self.m_params.get('ob_out_shapes', None))):
+			self.model = OutputBlock.wrap(self.model)
 
 	def __init_loggers__(self, epoch_metric_types):
 		# 'micro' weights by class frequency, 'macro' weights classes equally
@@ -106,9 +109,12 @@ class GenericModel(pl.LightningModule):
 		}
 		self.epoch_returns = {
 			epoch_type: {
-				'br': SimulatedReturn(use_conf=False),
-				'cr': SimulatedReturn(use_conf=True, use_kelly=False),
-				'kr': SimulatedReturn(use_conf=True, use_kelly=True),
+				'br': SimulatedReturn(use_conf=False, compounded=False),
+				'brc': SimulatedReturn(use_conf=False, compounded=True),
+				'cr': SimulatedReturn(use_conf=True, use_kelly=False, compounded=False),
+				'crc': SimulatedReturn(use_conf=True, use_kelly=False, compounded=True),
+				'kr': SimulatedReturn(use_conf=True, use_kelly=True, compounded=False),
+				'krc': SimulatedReturn(use_conf=True, use_kelly=True, compounded=True),
 			}
 			for epoch_type in epoch_metric_types
 		}
@@ -152,13 +158,15 @@ class GenericModel(pl.LightningModule):
 		"""
 		Aggregate step losses into epoch loss and log it.
 		"""
-		step_losses = [d['loss'].cpu() for d in outputs]
-		epoch_loss = torch.mean(torch.stack(step_losses), dim=0)
+		step_losses = [d['loss'] and d['loss'].cpu() for d in outputs]
+		epoch_loss = None
+		if (all(step_losses)):
+			epoch_loss = torch.mean(torch.stack(step_losses), dim=0)
 
-		self.log('epoch', self.trainer.current_epoch, prog_bar=False, \
-			logger=True, on_step=False, on_epoch=True)
-		self.log(f'{epoch_type}_loss', epoch_loss, prog_bar=False, \
-			logger=True, on_step=False, on_epoch=True)
+			self.log('epoch', self.trainer.current_epoch, prog_bar=False, \
+				logger=True, on_step=False, on_epoch=True)
+			self.log(f'{epoch_type}_loss', epoch_loss, prog_bar=False, \
+				logger=True, on_step=False, on_epoch=True)
 
 	def compute_metrics_epoch_end(self, epoch_type='train'):
 		"""
@@ -237,24 +245,28 @@ class GenericModel(pl.LightningModule):
 		if (is_valid(trial)):
 			class_weights = torch.zeros(num_classes, dtype=torch.float32, \
 				device='cpu', requires_grad=False)
-			for i in range(num_classes):
-				class_weights[i] = trial.suggest_float(f'class_weights[{i}]', \
-					0.40, 0.60, step=.01) #1e-6, 1.0, step=1e-6)
-			class_weights.div_(class_weights.sum()) # Vector class weights must sum to 1
+			if (num_classes == 2):
+				class_weights[0] = trial.suggest_float(f'class_weights[0]', 0.40, 0.60, step=.01)
+				class_weights[1] = 1.0 - class_weights[0]
+			else:
+				for i in range(num_classes):
+					class_weights[i] = trial.suggest_float(f'class_weights[{i}]', \
+						0.40, 0.60, step=.01) #1e-6, 1.0, step=1e-6)
+				class_weights.div_(class_weights.sum()) # Vector class weights must sum to 1
 
 			params = {
 				'window_size': WIN_SIZE, #trial.suggest_int('window_size', 3, 30),
 				'feat_dim': None,
-				'train_shuffle': True,
-				'epochs': 200, #trial.suggest_int('epochs', 200, 700, step=10),
-				'batch_size': trial.suggest_int('batch_size', 64, 512, step=8),
+				'train_shuffle': False,
+				'epochs': trial.suggest_int('epochs', 200, 600, step=100),
+				'batch_size': trial.suggest_int('batch_size', 128, 512, step=128),
 				'batch_step_size': None,
 				'loss': 'ce',
 				'class_weights': class_weights,
 				'opt': {
 					'name': 'adam',
 					'kwargs': {
-						'lr': trial.suggest_float('lr', 1e-6, 1e-1, log=True)
+						'lr': trial.suggest_float('lr', 1e-6, 1e-2, log=True)
 					}
 				},
 				'num_workers': 0,
@@ -264,7 +276,7 @@ class GenericModel(pl.LightningModule):
 			params = {
 				'window_size': WIN_SIZE,
 				'feat_dim': None,
-				'train_shuffle': True,
+				'train_shuffle': False,
 				'epochs': 200,
 				'batch_size': 128,
 				'batch_step_size': None,

@@ -161,7 +161,8 @@ class XGDataModule(pl.LightningDataModule):
 					.value_counts(normalize=True).to_dict()
 			},
 		)
-		bench_strats = (BuyAndHoldStrategy(), OptimalStrategy())
+		bench_strats = (BuyAndHoldStrategy(compounded=False), BuyAndHoldStrategy(compounded=True),
+			OptimalStrategy(compounded=False), OptimalStrategy(compounded=True))
 		for pfx, flt in zip(('train', 'val', 'test'), \
 			(self.train, self.val, self.test)):
 			l = np.sum(flt[1], axis=(1, 2), keepdims=False)

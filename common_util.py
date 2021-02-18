@@ -2279,6 +2279,23 @@ def df_sk_mw_transform(df, trf, num_cols, win_size):
 """ ********** PYTORCH GENERAL UTILS ********** """
 pyt_round_float = lambda pyt, n=6: (pyt * 10**n).round().div(10**n)
 
+def pt_diff1d(pyt):
+	"""
+	Difference a 1d pytorch tensor.
+	"""
+	pyt_shift = pyt.detach().roll(1)
+	pyt_shift[0] = 0
+	return pyt - pyt_shift
+
+def pt_init_random_seed(seed):
+	"""
+	From: https://pytorch.org/docs/stable/notes/randomness.html
+	"""
+	np.random.seed(seed)
+	torch.random.manual_seed(seed)
+	torch.backends.cudnn.deterministic = True
+	torch.backends.cudnn.benchmark = False
+
 def pyt_reverse_dim_order(pyt):
 	"""
 	Reverse the order of the dimensions of the passed tensor.
