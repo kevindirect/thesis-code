@@ -10,8 +10,8 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.nn.functional as F
-import pytorch_lightning as pl # PL ver 1.0.4
-from pytorch_lightning.metrics.classification import Accuracy, Precision, Recall, Fbeta
+import pytorch_lightning as pl # PL ver 1.2.3
+from torchmetrics import Accuracy, Precision, Recall, FBeta
 
 from common_util import load_df, dump_df, is_valid, isnt
 from model.common import WIN_SIZE, PYTORCH_ACT_MAPPING, PYTORCH_LOSS_MAPPING, PYTORCH_OPT_MAPPING, PYTORCH_SCH_MAPPING
@@ -98,11 +98,11 @@ class GenericModel(pl.LightningModule):
 					average='macro', compute_on_step=False),
 				'recall': Recall(num_classes=self.m_params['label_size'],
 					average='macro', compute_on_step=False),
-				# 'f0.5': Fbeta(num_classes=self.m_params['label_size'], beta=0.5,
+				# 'f0.5': FBeta(num_classes=self.m_params['label_size'], beta=0.5,
 				# 	average='micro', compute_on_step=False),
-				'f1.0': Fbeta(num_classes=self.m_params['label_size'], beta=1.0,
+				'f1.0': FBeta(num_classes=self.m_params['label_size'], beta=1.0,
 					average='micro', compute_on_step=False),
-				# 'f2.0': Fbeta(num_classes=self.m_params['label_size'], beta=2.0,
+				# 'f2.0': FBeta(num_classes=self.m_params['label_size'], beta=2.0,
 				# 	average='micro', compute_on_step=False),
 			}
 			for epoch_type in epoch_metric_types

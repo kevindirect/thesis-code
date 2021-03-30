@@ -8,7 +8,7 @@ import logging
 import numpy as np
 import pandas as pd
 import torch
-from pytorch_lightning.metrics import Metric
+from torchmetrics import Metric
 
 from common_util import MODEL_DIR, isnt, pt_diff1d
 from model.common import PYTORCH_LOSS_MAPPING

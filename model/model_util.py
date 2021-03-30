@@ -108,13 +108,13 @@ def pt_multihead_attention(W, q, k, v):
 		v (torch.tensor): value tensor, shaped like (Batch, Channels, Sequence)
 
 	Returns:
-		torch.tensor shaped like (Batch, Channels, Sequence)
+		torch.tensor shaped like (Batch, Channels, Sequence) and attention weights
 	"""
 	q = q.permute(2, 0, 1)
 	k = k.permute(2, 0, 1)
 	v = v.permute(2, 0, 1)
-	o = W(q, k, v)[0]	# MHA forward pass
-	return o.permute(1, 2, 0).contiguous()
+	o, w = W(q, k, v)	# MHA forward pass
+	return o.permute(1, 2, 0).contiguous(), w
 
 
 # ********** HELPER MODULES **********
@@ -676,6 +676,7 @@ class FFN(nn.Module):
 		super().__init__()
 		io_shapes = [np.product(in_shape).item(0), *out_shapes]
 		ffn_layers = [('flatten', nn.Flatten(start_dim=1, end_dim=-1))]
+		self.in_shape, self.out_shape = in_shape, (io_shapes[-1],)
 
 		for l, (i, o) in enumerate(pairwise(io_shapes)):
 			ffn_layers.append((f'ff_{l}', init_layer(nn.Linear(i, o), act=act, \
@@ -700,17 +701,17 @@ class FFN(nn.Module):
 
 			params = {
 				'out_shapes': [size] * depth,
-				'block_act': trial.suggest_categorical('block_act', \
+				'act': trial.suggest_categorical('block_act', \
 					PYTORCH_ACT1D_LIST[4:]),
-				'block_init': trial.suggest_categorical('block_init', \
+				'init': trial.suggest_categorical('block_init', \
 					PYTORCH_INIT_LIST[2:]),
 				'label_size': num_classes-1,
 			}
 		else:
 			params = {
 				'out_shapes': [32, 32, 32],
-				'block_act': 'relu',
-				'block_init': 'xavier_uniform',
+				'act': 'relu',
+				'init': 'xavier_uniform',
 				'label_size': num_classes-1,
 			}
 		return params
@@ -766,4 +767,11 @@ class AE(nn.Module):
 
 	def forward(self, x):
 		return self.model(x)
+
+
+MODEL_MAPPING = {
+	'ffn': FFN,
+	'stcn': StackedTCN,
+	'ttcn': TransposedTCN
+}
 

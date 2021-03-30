@@ -90,12 +90,18 @@ class NPModel(GenericModel):
 
 		# TODO calculate val/test loss here if desired
 		yt_hat = yt_hat_raw
-		# print(f'yt_hat: {yt_hat}')
-		# print(f'yt: {yt}')
+		# print(yt_hat.cpu())
+		# print(yt_hat.dtype)
+		# print(yt_hat)
+		# print(yt_hat.cpu().argmax(dim=-1).dtype)
+		# print(yt_hat.argmax(dim=-1))
+		# # print(f'yt_hat: {yt_hat}')
+		# # print(f'yt: {yt}')
 		# sys.exit()
 
 		for met in self.epoch_metrics[epoch_type].values():
-			met.update(yt_hat.cpu().argmax(dim=-1), yt.cpu())	# XXX
+			# met.update(yt_hat.cpu().argmax(dim=-1), yt.cpu())
+			met.update(yt_hat.cpu(), yt.cpu())	# XXX
 		for ret in self.epoch_returns[epoch_type].values():
 			ret.update(yt_hat.cpu(), yt.cpu(), zt.cpu())		# XXX Conf score
 
