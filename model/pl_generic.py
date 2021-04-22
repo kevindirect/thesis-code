@@ -11,10 +11,10 @@ import pandas as pd
 import torch
 import torch.nn.functional as F
 import pytorch_lightning as pl # PL ver 1.2.3
-from torchmetrics import Accuracy, Precision, Recall, FBeta
+import torchmetrics as tm
 
 from common_util import load_df, dump_df, is_valid, isnt
-from model.common import WIN_SIZE, PYTORCH_ACT_MAPPING, PYTORCH_LOSS_MAPPING, PYTORCH_OPT_MAPPING, PYTORCH_SCH_MAPPING
+from model.common import WIN_SIZE, PYTORCH_ACT_MAPPING, PYTORCH_LOSS_MAPPING, PYTORCH_LOSS_REG, PYTORCH_LOSS_CLF, PYTORCH_OPT_MAPPING, PYTORCH_SCH_MAPPING
 from model.metrics_util import SimulatedReturn
 from model.model_util import OutputBlock
 
@@ -89,35 +89,62 @@ class GenericModel(pl.LightningModule):
 		if (is_valid(self.m_params.get('ob_out_shapes', None))):
 			self.model = OutputBlock.wrap(self.model)
 
+		if (self.t_params['loss'] in PYTORCH_LOSS_CLF):
+			self.model_type = 'clf'
+		elif (self.t_params['loss'] in PYTORCH_LOSS_REG):
+			self.model_type = 'reg'
+
 	def __init_loggers__(self, epoch_metric_types):
-		# 'micro' weights by class frequency, 'macro' weights classes equally
-		self.epoch_metrics = {
-			epoch_type: {
-				'accuracy': Accuracy(compute_on_step=False),
-				'precision': Precision(num_classes=self.m_params['label_size'],
-					average='macro', compute_on_step=False),
-				'recall': Recall(num_classes=self.m_params['label_size'],
-					average='macro', compute_on_step=False),
-				# 'f0.5': FBeta(num_classes=self.m_params['label_size'], beta=0.5,
-				# 	average='micro', compute_on_step=False),
-				'f1.0': FBeta(num_classes=self.m_params['label_size'], beta=1.0,
-					average='micro', compute_on_step=False),
-				# 'f2.0': FBeta(num_classes=self.m_params['label_size'], beta=2.0,
-				# 	average='micro', compute_on_step=False),
+		"""
+		'micro' weights by class frequency, 'macro' weights classes equally
+		"""
+		if (self.model_type == 'clf'):
+			self.epoch_metrics = {
+				epoch_type: {
+					'accuracy': tm.Accuracy(compute_on_step=False),
+					'precision': tm.Precision(num_classes=self.m_params['label_size'],
+						average='macro', compute_on_step=False),
+					'recall': tm.Recall(num_classes=self.m_params['label_size'],
+						average='macro', compute_on_step=False),
+					# 'f0.5': tm.FBeta(num_classes=self.m_params['label_size'], beta=0.5,
+					# 	average='micro', compute_on_step=False),
+					'f1.0': tm.FBeta(num_classes=self.m_params['label_size'], beta=1.0,
+						average='micro', compute_on_step=False),
+					# 'f2.0': tm.FBeta(num_classes=self.m_params['label_size'], beta=2.0,
+					# 	average='micro', compute_on_step=False),
+				}
+				for epoch_type in epoch_metric_types
 			}
-			for epoch_type in epoch_metric_types
-		}
-		self.epoch_returns = {
-			epoch_type: {
-				'br': SimulatedReturn(use_conf=False, compounded=False),
-				'brc': SimulatedReturn(use_conf=False, compounded=True),
-				'cr': SimulatedReturn(use_conf=True, use_kelly=False, compounded=False),
-				'crc': SimulatedReturn(use_conf=True, use_kelly=False, compounded=True),
-				'kr': SimulatedReturn(use_conf=True, use_kelly=True, compounded=False),
-				'krc': SimulatedReturn(use_conf=True, use_kelly=True, compounded=True),
+			self.epoch_returns = {
+				epoch_type: {
+					'br': SimulatedReturn(use_conf=False, compounded=False, pred_type=self.model_type),
+					'brc': SimulatedReturn(use_conf=False, compounded=True, pred_type=self.model_type),
+					'cr': SimulatedReturn(use_conf=True, use_kelly=False, compounded=False, pred_type=self.model_type),
+					'crc': SimulatedReturn(use_conf=True, use_kelly=False, compounded=True, pred_type=self.model_type),
+					'kr': SimulatedReturn(use_conf=True, use_kelly=True, compounded=False, pred_type=self.model_type),
+					'krc': SimulatedReturn(use_conf=True, use_kelly=True, compounded=True, pred_type=self.model_type),
+				}
+				for epoch_type in epoch_metric_types
 			}
-			for epoch_type in epoch_metric_types
-		}
+		elif (self.model_type == 'reg'):
+			self.epoch_metrics = {
+				epoch_type: {
+					'mae': tm.MeanAbsoluteError(compute_on_step=False),
+					'mse': tm.MeanSquaredError(compute_on_step=False),
+				}
+				for epoch_type in epoch_metric_types
+			}
+			self.epoch_returns = {
+				epoch_type: {
+					'br': SimulatedReturn(use_conf=False, compounded=False, pred_type=self.model_type),
+					'brc': SimulatedReturn(use_conf=False, compounded=True, pred_type=self.model_type),
+					# 'cr': SimulatedReturn(use_conf=True, use_kelly=False, compounded=False, pred_type=self.model_type),
+					# 'crc': SimulatedReturn(use_conf=True, use_kelly=False, compounded=True, pred_type=self.model_type),
+					# 'kr': SimulatedReturn(use_conf=True, use_kelly=True, compounded=False, pred_type=self.model_type),
+					# 'krc': SimulatedReturn(use_conf=True, use_kelly=True, compounded=True, pred_type=self.model_type),
+				}
+				for epoch_type in epoch_metric_types
+			}
 
 	def configure_optimizers(self):
 		"""
@@ -141,18 +168,55 @@ class GenericModel(pl.LightningModule):
 		Run forward pass, update step metrics, and return step loss.
 		"""
 		x, y, z = batch
-		y_hat_raw = self.forward(x)
-		if (self.t_params['loss'] in ('ce',)):
-			y_hat = F.softmax(y_hat_raw, dim=-1)
-		else:
-			y_hat = y_hat_raw
+		pred_raw = self.forward(x)
+		try:
+			pred_raw = self.forward(x)
+		except Exception as err:
+			print("Error! pl_generic.py > GenericModel > forward_step() > forward()\n",
+				sys.exc_info()[0], err)
+			print('x.shape:', x.shape)
+			print('y.shape:', y.shape)
+			print('z.shape:', z.shape)
+			raise err
 
-		for met in self.epoch_metrics[epoch_type].values():
-			met.update(y_hat.cpu().argmax(dim=-1), y.cpu())
-		for ret in self.epoch_returns[epoch_type].values():
-			ret.update(y_hat.cpu(), y.cpu(), z.cpu()) 	# Conf score
+		if (self.model_type == 'clf'):
+			actual = y
+			if (self.t_params['loss'] in ('ce',)):
+				pred_loss = F.softmax(pred_raw, dim=-1)
+				pred = pred_loss.argmax(dim=-1)
+				pred_conf = pred_loss.max()
+				pred_dir = pred.detach().clone()
+				pred_dir[pred_dir==0] = -1
+				pred_ret = pred_dir * pred_conf
+			else:
+				raise NotImplementedError()
+		elif (self.model_type == 'reg'):
+			actual = z
+			pred_loss = pred_raw.squeeze()
+			pred_ret = pred = pred_loss.clone().detach()
 
-		return {'loss': self.loss(y_hat_raw, y)}
+		try:
+			for met in self.epoch_metrics[epoch_type].values():
+				met.update(pred.cpu(), actual.cpu())
+		except Exception as err:
+			print("Error! pl_generic.py > GenericModel > forward_step() > met.update()\n",
+				sys.exc_info()[0], err)
+			print('pred.shape:', pred.shape)
+			print('actual.shape:', actual.shape)
+			raise err
+
+		if (is_valid(self.epoch_returns)):
+			try:
+				for ret in self.epoch_returns[epoch_type].values():
+					ret.update(pred_ret.cpu(), z.cpu())
+			except Exception as err:
+				print("Error! pl_generic.py > GenericModel > forward_step() > ret.update()\n",
+					sys.exc_info()[0], err)
+				print('pred_ret.shape:', pred_ret.shape)
+				print('z.shape:', z.shape)
+				raise err
+
+		return {'loss': self.loss(pred_loss, actual)}
 
 	def aggregate_loss_epoch_end(self, outputs, epoch_type='train'):
 		"""
@@ -176,10 +240,12 @@ class GenericModel(pl.LightningModule):
 			self.log(f'{epoch_type}_{name}', met.compute(), prog_bar=False, \
 				logger=True, on_step=False, on_epoch=True)
 			met.reset()
-		for name, ret in self.epoch_returns[epoch_type].items():
-			self.log_dict(ret.compute(pfx=epoch_type), prog_bar=False, \
-				logger=True, on_step=False, on_epoch=True)
-			ret.reset()
+
+		if (is_valid(self.epoch_returns)):
+			for name, ret in self.epoch_returns[epoch_type].items():
+				self.log_dict(ret.compute(pfx=epoch_type), prog_bar=False, \
+					logger=True, on_step=False, on_epoch=True)
+				ret.reset()
 
 	def training_step(self, batch, batch_idx, epoch_type='train'):
 		"""

@@ -214,6 +214,49 @@ class OutputBlock(nn.Module):
 			model = emb
 		return model
 
+class MHA(nn.Module):
+	"""
+	Multihead Attention module (pytorch implementation)
+
+	This module inputs/outputs a tensor shaped like (N, C, E),
+	where:
+		* N: batch
+		* C: channel
+		* E: embedding
+	"""
+	def __init__(self, in_shape, heads=1, dropout=0.0, depth=1):
+		"""
+		Args:
+			in_shape (tuple): (C, E)
+			heads (int>0): num attention heads
+			dropout (float>=0): dropout
+			depth (int>0): network depth
+		"""
+		super().__init__()
+		self.in_shape, self.out_shape = in_shape, in_shape
+		self.attention_fn = pt_multihead_attention
+		self.W = nn.ModuleList([nn.MultiheadAttention(
+			in_shape[0], heads, dropout=dropout, bias=True, add_bias_kv=False,
+			add_zero_attn=False, kdim=None, vdim=None) for _ in range(depth)])
+
+	def forward(self, q, k=None, v=None):
+		if (isnt(k)):
+			k = q
+		if (isnt(v)):
+			v = q
+		try:
+			for W in self.W:
+				q, weights = self.attention_fn(W, q, k, v)
+		except Exception as err:
+			print("Error! model_util.py > MHA > forward()\n",
+				sys.exc_info()[0], err)
+			print('q.shape:', q.shape)
+			print('k.shape:', k.shape)
+			print('v.shape:', v.shape)
+			print('weights:', weights)
+			raise err
+		return q
+
 class TemporalLayer2d(nn.Module):
 	"""
 	Temporal convolutional layer (2d)
@@ -326,7 +369,7 @@ class ResidualBlock(nn.Module):
 		self.net = net
 		self.use_residual = use_residual
 		if (self.use_residual):
-			self.out_act = PYTORCH_ACT_MAPPING.get(act)()
+			self.out_act = PYTORCH_ACT_MAPPING.get(act, lambda: None)()
 			self.downsample = None
 			if (self.net.in_shape != self.net.out_shape):
 				if (downsample_type == 'linear'):
@@ -351,7 +394,10 @@ class ResidualBlock(nn.Module):
 		if (self.use_residual):
 			residual = x if (isnt(self.downsample)) else self.downsample(self.padding(x))
 			try:
-				return self.out_act(net_out + residual)
+				res = net_out + residual
+				if (is_valid(self.out_act)):
+					res = self.out_act(res)
+				return res
 			except RuntimeError as e:
 				print(e)
 				logging.error('net(x).shape:   {}'.format(self.net(x).shape))
@@ -672,7 +718,7 @@ class FFN(nn.Module):
 	MLP Feedforward Network
 	"""
 	def __init__(self, in_shape, out_shapes=[128, 128, 128], act='relu',
-		init='xavier_uniform'):
+		act_output=True, init='xavier_uniform'):
 		super().__init__()
 		io_shapes = [np.product(in_shape).item(0), *out_shapes]
 		ffn_layers = [('flatten', nn.Flatten(start_dim=1, end_dim=-1))]
@@ -681,7 +727,7 @@ class FFN(nn.Module):
 		for l, (i, o) in enumerate(pairwise(io_shapes)):
 			ffn_layers.append((f'ff_{l}', init_layer(nn.Linear(i, o), act=act, \
 				init_method=init)))
-			if (act not in ('linear', None)):
+			if (act not in ('linear', None) and (l < len(out_shapes)-1 or act_output)):
 				ffn_layers.append((f'af_{l}', PYTORCH_ACT_MAPPING.get(act)()))
 
 		self.model = nn.Sequential(OrderedDict(ffn_layers))
@@ -703,6 +749,7 @@ class FFN(nn.Module):
 				'out_shapes': [size] * depth,
 				'act': trial.suggest_categorical('block_act', \
 					PYTORCH_ACT1D_LIST[4:]),
+				'act_output': True,
 				'init': trial.suggest_categorical('block_init', \
 					PYTORCH_INIT_LIST[2:]),
 				'label_size': num_classes-1,
@@ -711,6 +758,7 @@ class FFN(nn.Module):
 			params = {
 				'out_shapes': [32, 32, 32],
 				'act': 'relu',
+				'act_output': True,
 				'init': 'xavier_uniform',
 				'label_size': num_classes-1,
 			}
@@ -771,6 +819,7 @@ class AE(nn.Module):
 
 MODEL_MAPPING = {
 	'ffn': FFN,
+	'mha': MHA,
 	'stcn': StackedTCN,
 	'ttcn': TransposedTCN
 }

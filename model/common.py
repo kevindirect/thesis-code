@@ -86,6 +86,8 @@ PYTORCH_LOSS_MAPPING = {
 	'mse': nn.MSELoss,
 	'sl1': nn.SmoothL1Loss
 }
+PYTORCH_LOSS_CLF = ('clf', 'bce', 'bcel', 'sm', 'ce', 'nll', 'ml','mls')
+PYTORCH_LOSS_REG = ('reg', 'mae', 'mse', 'sl1')
 PYTORCH_OPT_MAPPING = {
 	'rmsp': optim.RMSprop,
 	'adam': optim.Adam

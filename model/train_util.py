@@ -17,7 +17,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from common_util import MODEL_DIR, identity_fn, is_type, is_ser, is_valid, isnt, np_inner, get0, midx_split, pd_rows, pd_midx_to_arr, df_midx_restack, pd_to_np
 from common_util import np_assert_identical_len_dim, window_iter, np_truncate_split_1d, np_truncate_vstack_2d
-from model.common import PYTORCH_MODELS_DIR, TEST_RATIO, VAL_RATIO
+from model.common import PYTORCH_MODELS_DIR, PYTORCH_LOSS_CLF, PYTORCH_LOSS_REG, TEST_RATIO, VAL_RATIO
 
 
 # ***** Conversion to Numpy *****
@@ -179,31 +179,40 @@ def window_shifted(data, loss, window_size, window_overlap=True, feat_dim=None):
 		win_shifted = stride_preproc_3d(data, window_size=window_size)
 
 	if (len(win_shifted) == 1):
-		x = win_shifted[0]
+		f = win_shifted[0]
 		if (feat_dim == 1):
-			x = x.reshape(np.product(x.shape))
+			f = f.reshape(np.product(f.shape))
 		elif (feat_dim == 2):
-			x = x.reshape(x.shape[0], np.product(x.shape[1:]))
-		return (x, x, x)
+			f = f.reshape(f.shape[0], np.product(f.shape[1:]))
+		return (f, f, f)
 
 	elif (len(win_shifted) == 3):
-		x, y, z = win_shifted
+		f, l, t = win_shifted
 
 		if (feat_dim == 1):
-			x = x.reshape(np.product(x.shape))
+			f = f.reshape(np.product(f.shape))
 		elif (feat_dim == 2):
-			x = x.reshape(x.shape[0], np.product(x.shape[1:]))
+			f = f.reshape(f.shape[0], np.product(f.shape[1:]))
 
-		if (loss in ('clf', 'bce', 'bcel', 'ce', 'nll')):
-			y_new = np.sum(y, axis=(1, 2), keepdims=False)		# Sum label matrices to scalar values
-			if (y.shape[1] > 1):
-				y_new += y.shape[1]		# Shift to range [0, C-1]
-			if (loss in ('bce', 'bcel') and len(y_new.shape)==1):
-				y_new = np.expand_dims(y_new, axis=-1)
-			y = y_new
-			z = np.squeeze(z)
+		if (l.shape[-1] == 2):
+			l_new = np.sum(l, axis=(1, 2), keepdims=False)		# Sum label matrices to scalar values
+			if (l.shape[1] > 1):
+				l_new += l.shape[1]		# Shift to range [0, C-1]
+			if (loss in ('bce', 'bcel') and len(l_new.shape)==1):
+				l_new = np.expand_dims(l_new, axis=-1)
+			l = l_new
+		else:
+			raise NotImplementedError("code to process label with given shape not written")
 
-		return (x, y, z)
+		if (t.shape[-1] == 2):
+			t_new = t[t!=0.0]
+			assert len(t_new)==len(t), "target with zeros removed not equal to original"
+			t = t_new
+		else:
+			raise NotImplementedError("code to process target with given shape not written")
+
+
+		return (f, l, t)
 
 
 # ***** Final Processing / Batchification *****
@@ -262,10 +271,7 @@ def batchify(data, loss, batch_size, shuffle=False, batch_step_size=None,
 		torch.DataLoader
 	"""
 	f = torch.tensor(data[0], dtype=torch.float32, requires_grad=False)
-	if (loss in ('reg', 'bce', 'bcel', 'mae', 'mse')):
-		l = torch.tensor(data[1], dtype=torch.float32, requires_grad=False)
-	elif (loss in ('clf', 'ce', 'nll')):
-		l = torch.tensor(data[1], dtype=torch.int64, requires_grad=False).squeeze()
+	l = torch.tensor(data[1], dtype=torch.int64, requires_grad=False)
 	t = torch.tensor(data[2], dtype=torch.float32, requires_grad=False)
 	ds = TensorDataset(f, l, t)
 	if (isnt(batch_step_size)):

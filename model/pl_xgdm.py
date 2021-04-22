@@ -10,7 +10,7 @@ import pandas as pd
 import torch
 import pytorch_lightning as pl
 
-from common_util import MODEL_DIR, pd_split_ternary_to_binary, rectify_json, pairwise, df_del_midx_level
+from common_util import MODEL_DIR, pd_split_ternary_to_binary, rectify_json, pairwise, df_del_midx_level, df_randlike
 from model.common import ASSETS, INTRADAY_LEN, INTERVAL_YEARS
 from model.xg_util import get_xg_feature_dfs, get_xg_label_target_dfs, get_hardcoded_feature_dfs, get_hardcoded_label_target_dfs, dfs_get_common_interval_data
 from model.train_util import pd_to_np_tvt, get_dataloader
@@ -61,15 +61,13 @@ class XGDataModule(pl.LightningDataModule):
 		Read xg data from disk, choose the desired dataframes, restructure them,
 		and index/intersect the desired time series interval
 		"""
-		if (self.fdata_name in ('d_rand', 'h_rand')):
-			fd = None
-			if (fdata_k[0] == 'd'):
-				raise NotImplementedError()
-			elif (fdata_k[0] == 'h'):
-				raise NotImplementedError()
+		fd = get_xg_feature_dfs(self.asset_name, overwrite_cache=self.overwrite_cache)
+
+		if (self.fdata_name.startswith('h_rand')):
+			rl = get_hardcoded_feature_dfs(fd, 'h_pba_h', cat=True,
+				ret=None, pfx='0')
+			fdata = df_randlike(rl, cols=INTRADAY_LEN)
 		else:
-			fd = get_xg_feature_dfs(self.asset_name,
-				overwrite_cache=self.overwrite_cache)
 			fds = [get_hardcoded_feature_dfs(fd, fdata_name, cat=True,
 				ret=self.fret, pfx=i)
 				for i, fdata_name in enumerate(self.fdata_name.split(','))]
@@ -77,7 +75,6 @@ class XGDataModule(pl.LightningDataModule):
 
 		if (self.ldata_name == 'dcur'):
 			# Sanity check: 'Predict' the present ddir(t-1)
-			fd = fd or get_xg_feature_dfs(self.asset_name)
 			ldata = pd_split_ternary_to_binary(df_del_midx_level( \
 				fd['d']['pba']['ddir']['pba_hoc_hdxret_ddir'] \
 				.rename(columns={-1:'pba_hoc_hdxret_ddir'}), loc=1) \
@@ -95,7 +92,7 @@ class XGDataModule(pl.LightningDataModule):
 
 	def setup(self, t_params=None):
 		"""
-		Split the data into {train, val, test} splits and conert to numpy arrays.
+		Split the data into {train, val, test} splits and convert to numpy arrays.
 		"""
 		t_params = t_params or self.t_params
 		self.train, self.val, self.test = zip(*map(pd_to_np_tvt, self.data))
@@ -169,8 +166,9 @@ class XGDataModule(pl.LightningDataModule):
 			for stat in bench_stats:
 				bench_dict.update(stat(l, pfx))
 
-			t = np.sum(flt[2], axis=(1, 2), keepdims=False)
-			t = torch.tensor(t, dtype=torch.float32, requires_grad=False)
+			# t = np.sum(flt[2], axis=(1, 2), keepdims=False)
+			t = flt[2]
+			t = torch.tensor(t[t!=0], dtype=torch.float32, requires_grad=False)
 			for strat in bench_strats:
 				strat.update(None, None, t)
 				vals = strat.compute(pfx=pfx)

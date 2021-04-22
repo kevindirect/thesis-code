@@ -1178,6 +1178,12 @@ right_join = lambda a, b, l=EMPTY_STR, r=EMPTY_STR, s=True, **kwargs: a.join(b, 
 inner_join = lambda a, b, l=EMPTY_STR, r=EMPTY_STR, s=True, **kwargs: a.join(b, how='inner', lsuffix=l, rsuffix=r, sort=s, **kwargs)
 outer_join = lambda a, b, l=EMPTY_STR, r=EMPTY_STR, s=True, **kwargs: a.join(b, how='outer', lsuffix=l, rsuffix=r, sort=s, **kwargs)
 
+def df_randlike(df, cols=10):
+	"""
+	Return random pandas dataframe indexed identically to passed df.
+	"""
+	return pd.DataFrame(np.random.rand(len(df), cols), index=df.index)
+
 def df_lazy_gba(df, grouper, apply_fn, **kwargs):
 	"""
 	Lazily define a split-apply-combine procedure using Dask.delayed and return the delayed object.

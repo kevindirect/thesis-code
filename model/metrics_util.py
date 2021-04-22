@@ -116,12 +116,13 @@ class SimulatedReturn(Metric):
 		* maximum of cumulative return
 		* sharpe ratio over period
 	"""
-	def __init__(self, use_conf=True, use_kelly=False, compounded=False,
+	def __init__(self, use_conf=True, use_kelly=False, compounded=False, pred_type='reg',
 		compute_on_step=False, dist_sync_on_step=False, process_group=None):
 		"""
 		use_conf (bool): whether to use confidence score for betsizing
 		use_kelly (bool): whether to use kelly criterion for betsizing
 		threshold (float): threshold to determine prediction direction
+		pred_type ('clf'|'reg'):
 		"""
 		super().__init__(compute_on_step=compute_on_step, \
 			dist_sync_on_step=dist_sync_on_step, process_group=process_group)
@@ -137,6 +138,7 @@ class SimulatedReturn(Metric):
 		}.get(True)
 		if (self.compounded):
 			self.name += 'c'
+		self.pred_type = pred_type
 		self.add_state('pred_dir', default=[], dist_reduce_fx='cat')
 		self.add_state('actual_ret', default=[], dist_reduce_fx='cat')
 		if (self.use_conf):
@@ -144,7 +146,7 @@ class SimulatedReturn(Metric):
 		else:
 			self.betsize = 1
 
-	def update(self, pred, actual_dir, actual_ret):
+	def update(self, pred, actual_ret):
 		"""
 		Update simulated return state taking into account use_conf and use_kelly flags.
 		Each call to update appends the new state tensors to the lists of current state
@@ -152,22 +154,32 @@ class SimulatedReturn(Metric):
 
 		Args:
 			pred: predictions matrix
-			actual_dir: direction vector in interval [0, 1]
 			actual_ret: returns matrix
 
 		Returns:
 			None
 		"""
-		pred_conf, pred_dir = pred.max(dim=-1)
-		pred_dir[pred_dir==0] = -1
-		aret = torch.gather(actual_ret, dim=-1, index=actual_dir.unsqueeze(-1)).squeeze()
-		self.pred_dir.append(pred_dir)
-		self.actual_ret.append(aret)
+		# TODO include uncertainty estimate in simulated trading return
 
-		if (self.use_conf):
-			if (self.use_kelly):
-				pred_conf = torch.clamp(2 * pred_conf - 1, min=0.0, max=1.0) # even money kelly
-			self.betsize.append(pred_conf)
+		if (self.pred_type == 'clf'): # expects prediction in [-1, 1]
+			pred_conf, pred_dir = torch.abs(pred), torch.sign(pred)
+			self.pred_dir.append(pred_dir)
+			self.actual_ret.append(actual_ret)
+
+			if (self.use_conf):
+				if (self.use_kelly):
+					pred_conf = torch.clamp(2 * pred_conf - 1, min=0.0, max=1.0) # even money kelly
+				self.betsize.append(pred_conf)
+		elif (self.pred_type == 'reg'): # expects a floating point return prediction
+			pred_dir = torch.sign(pred)
+			self.pred_dir.append(pred_dir)
+			self.actual_ret.append(actual_ret)
+			pred_conf = 1 # XXX keep it simple for now
+
+			if (self.use_conf):
+				if (self.use_kelly):
+					pred_conf = torch.clamp(2 * pred_conf - 1, min=0.0, max=1.0) # even money kelly
+				self.betsize.append(pred_conf)
 
 	def compute(self, pfx='', eps=10**-6):
 		"""

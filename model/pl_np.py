@@ -9,10 +9,12 @@ import numpy as np
 import pandas as pd
 import torch
 import pytorch_lightning as pl
+import torchmetrics as tm
 
 from common_util import is_type, is_valid, isnt
 from model.common import WIN_SIZE, PYTORCH_LOSS_MAPPING
 from model.pl_generic import GenericModel
+from model.metrics_util import SimulatedReturn
 
 
 class NPModel(GenericModel):
@@ -56,6 +58,10 @@ class NPModel(GenericModel):
 			epoch_metric_types=epoch_metric_types)
 
 	def get_context_target(self, batch, train_mode=False):
+		"""
+		Return context and target points.
+		If in regressor mode, y and z are identical.
+		"""
 		x, y, z = batch
 		ctx, tgt = self.t_params['context_size'], self.t_params['context_size'] 
 
@@ -74,11 +80,11 @@ class NPModel(GenericModel):
 
 		return x[:ctx], y[:ctx], z[:ctx], x[tgt:], y[tgt:], z[tgt:],
 
-	def forward(self, context_x, context_y, target_x, target_y=None):
+	def forward(self, context_x, context_a, target_x, target_a=None):
 		"""
 		Run input through the neural process.
 		"""
-		return self.model(context_x, context_y, target_x, target_y=target_y)
+		return self.model(context_x, context_a, target_x, target_y=target_a)
 
 	def forward_step(self, batch, batch_idx, epoch_type='train'):
 		"""
@@ -86,24 +92,69 @@ class NPModel(GenericModel):
 		"""
 		train_mode = epoch_type == 'train'
 		xc, yc, zc, xt, yt, zt = self.get_context_target(batch, train_mode=train_mode)
-		yt_hat_raw, losses = self.forward(xc, yc, xt, target_y=yt if (train_mode) else None)
+		if (self.model_type == 'clf'):
+			actual_c, actual_t = yc, yt
+		elif (self.model_type == 'reg'):
+			actual_c, actual_t = zc, zt
 
-		# TODO calculate val/test loss here if desired
-		yt_hat = yt_hat_raw
-		# print(yt_hat.cpu())
-		# print(yt_hat.dtype)
-		# print(yt_hat)
-		# print(yt_hat.cpu().argmax(dim=-1).dtype)
-		# print(yt_hat.argmax(dim=-1))
-		# # print(f'yt_hat: {yt_hat}')
+		try:
+			pred_raw, pred_raw_unc, losses = self.forward(xc, actual_c, xt, \
+				target_a=actual_t if (train_mode) else None)
+		except Exception as err:
+			print("Error! pl_np.py > NPModel > forward_step() > forward()\n",
+				sys.exc_info()[0], err)
+			raise err
+
+		pred = pred_raw.detach().clone().squeeze()
+		pred_unc = pred_raw_unc.detach().clone().squeeze()
+
+		if (self.model_type == 'clf'):
+			pred = pred.clamp(0.0, 1.0)
+			pred_ret = (pred - .5) * 2
+		else:
+			pred_ret = pred
+
+		# XXX calculate val/test loss here if desired
+		# print(pred.cpu())
+		# print(pred.dtype)
+		# print(pred)
+		# print(pred.cpu().argmax(dim=-1).dtype)
+		# print(pred.argmax(dim=-1))
+		# # print(f'pred: {pred}')
 		# # print(f'yt: {yt}')
+		if (not train_mode):
+			# print('val pred')
+			# print(pred[:10])
+			# print(pred_unc[:10])
+			pass
+		else:
+			# print('train pred')
+			# print(pred[:10])
+			# print(pred_unc[:10])
+			pass
+		#print(torch.linalg.norm(pred_unc))
 		# sys.exit()
 
-		for met in self.epoch_metrics[epoch_type].values():
-			# met.update(yt_hat.cpu().argmax(dim=-1), yt.cpu())
-			met.update(yt_hat.cpu(), yt.cpu())	# XXX
-		for ret in self.epoch_returns[epoch_type].values():
-			ret.update(yt_hat.cpu(), yt.cpu(), zt.cpu())		# XXX Conf score
+		try:
+			for met in self.epoch_metrics[epoch_type].values():
+				met.update(pred.cpu(), actual_t.cpu())
+		except Exception as err:
+			print("Error! pl_np.py > NPModel > forward_step() > met.update()\n",
+				sys.exc_info()[0], err)
+			print('pred.shape:', pred.shape)
+			print('actual_t.shape:', actual_t.shape)
+			raise err
+
+		if (is_valid(self.epoch_returns)):
+			try:
+				for ret in self.epoch_returns[epoch_type].values():
+					ret.update(pred_ret.cpu(), zt.cpu())
+			except Exception as err:
+				print("Error! pl_np.py > NPModel > forward_step() > ret.update()\n",
+					sys.exc_info()[0], err)
+				print('pred_ret.shape:', pred_ret.shape)
+				print('zt.shape:', zt.shape)
+				raise err
 
 		return {'loss': losses and losses['loss']} 
 
