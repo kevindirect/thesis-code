@@ -42,7 +42,7 @@ def init_layer(layer, act='linear', init_method='xavier_uniform'):
 		Return recommended gain for activation function.
 		"""
 		try:
-			gain = nn.init.calculate_gain(act)
+			gain = nn.init.calculate_gain(act or 'linear')
 		except ValueError as ve:
 			if (act.endswith('elu')):
 				gain = nn.init.calculate_gain('relu')
@@ -182,19 +182,17 @@ class OutputBlock(nn.Module):
 	Appends a feedforward layer or block to the end of an arbitrary embedding network.
 	Used for Classification or Regression depending on the loss function used.
 	"""
-	def __init__(self, emb, out_shapes, act='linear', init='xavier_uniform'):
+	def __init__(self, emb, out_shapes, **ffn_kwargs):
 		"""
 		Args:
 			emb (nn.Module): embedding network to add output layer to
 			out_shapes (int|list): output shape of the output block layer(s)
-			act (str): activation function
-			init (str): layer weight init method
 		"""
 		super().__init__()
 		assert_has_shape_attr(emb)
 		self.emb = emb
 		self.out = FFN(self.emb.out_shape, out_shapes=list_wrap(out_shapes), \
-			act=act, init=init)
+			**ffn_kwargs)
 
 	def forward(self, x):
 		out_embed = self.emb(x)
@@ -208,8 +206,8 @@ class OutputBlock(nn.Module):
 		if ob_out_shapes is not None and return original model otherwise
 		"""
 		if (hasattr(emb, 'ob_out_shapes') and is_valid(emb.ob_out_shapes)):
-			model = OutputBlock(emb, out_shapes=emb.ob_out_shapes, act=emb.ob_act,
-				init=emb.ob_init)
+			ob_params = emb.ob_params or {}
+			model = OutputBlock(emb, out_shapes=emb.ob_out_shapes, **ob_params)
 		else:
 			model = emb
 		return model
@@ -321,7 +319,8 @@ class TemporalLayer2d(nn.Module):
 				init_method=init
 			)
 		)
-		modules.append(PYTORCH_ACT_MAPPING.get(act)())
+		if (is_valid(act_fn := PYTORCH_ACT_MAPPING.get(act, None))):
+			modules.append(act_fn())
 		modules.append(nn.AlphaDropout(dropout) if (act in ('selu',)) \
 			else nn.Dropout(dropout))
 		self.layer = nn.Sequential(*modules)
@@ -422,7 +421,7 @@ class TemporalConvNet(nn.Module):
 		kernel_sizes=3, dropouts=0.0, global_dropout=.5, global_dilation=True,
 		block_act='elu', out_act='relu', block_init='xavier_uniform',
 		out_init='xavier_uniform', pad_mode='same', downsample_type='conv2d',
-		ob_out_shapes=None, ob_act='linear', ob_init='xavier_uniform'):
+		ob_out_shapes=None, ob_params=None):
 		"""
 		Args:
 			in_shape (tuple): shape of the network's input tensor,
@@ -448,8 +447,7 @@ class TemporalConvNet(nn.Module):
 			pad_mode('same'|'full'): padding method to use
 			downsample_type (str): method of downsampling used by residual block
 			ob_out_shapes
-			ob_act
-			ob_init
+			ob_params
 			"""
 		super().__init__()
 		self.in_shape = block_in_shape = in_shape
@@ -505,7 +503,7 @@ class TemporalConvNet(nn.Module):
 
 		# GenericModel uses these params to to append an OutputBlock to the model
 		self.ob_out_shapes = ob_out_shapes	# If this is None, no OutputBlock is added
-		self.ob_act, self.ob_init = ob_act, ob_init
+		self.ob_params = ob_params
 
 	def forward(self, x):
 		return self.model(x)
@@ -521,7 +519,7 @@ class StackedTCN(TemporalConvNet):
 		global_dilation=True, block_act='elu', out_act='relu',
 		block_init='xavier_uniform', out_init='xavier_uniform',
 		pad_mode='full', downsample_type='conv2d',
-		ob_out_shapes=None, ob_act='linear', ob_init='xavier_uniform'):
+		ob_out_shapes=None, ob_params=None):
 		"""
 		Args:
 			in_shape (tuple): shape of the network's input tensor,
@@ -541,8 +539,7 @@ class StackedTCN(TemporalConvNet):
 			pad_mode('same'|'full'): padding method to use
 			downsample_type (str): method of downsampling used by residual block
 			ob_out_shapes
-			ob_act
-			ob_ini
+			ob_params
 		"""
 		dropouts = [None] * depth
 		dropouts[0], dropouts[-1] = input_dropout, output_dropout
@@ -551,7 +548,7 @@ class StackedTCN(TemporalConvNet):
 			global_dropout=global_dropout, global_dilation=global_dilation,
 			block_act=block_act, out_act=out_act, block_init=block_init,
 			out_init=out_init, pad_mode=pad_mode, downsample_type=downsample_type,
-			ob_out_shapes=ob_out_shapes, ob_act=ob_act, ob_init=ob_init)
+			ob_out_shapes=ob_out_shapes, ob_params=ob_params)
 
 	@classmethod
 	def suggest_params(cls, trial=None, num_classes=2, add_ob=False):
@@ -582,8 +579,7 @@ class StackedTCN(TemporalConvNet):
 				'downsample_type': 'conv2d',
 				'label_size': num_classes-1,
 				'ob_out_shapes': num_classes if (add_ob) else None,
-				'ob_act': 'relu',
-				'ob_init': 'kaiming_uniform' # 'xavier_uniform'
+				'ob_params': None,
 			}
 			# params = {
 			# 	'size': trial.suggest_int('size', 2**5, 2**8, step=8),
@@ -611,10 +607,7 @@ class StackedTCN(TemporalConvNet):
 			# 	'downsample_type': 'conv2d',
 			# 	'label_size': num_classes-1,
 			# 	'ob_out_shapes': num_classes if (add_ob) else None,
-			# 	'ob_act': trial.suggest_categorical('ob_act', \
-			# 		PYTORCH_ACT1D_LIST[4:-1]),
-			# 	'ob_init': trial.suggest_categorical('ob_init', \
-			# 		PYTORCH_INIT_LIST[2:])
+			# 	'ob_params':
 			# }
 		else:
 			params = {
@@ -633,8 +626,7 @@ class StackedTCN(TemporalConvNet):
 				'downsample_type': 'conv2d',
 				'label_size': num_classes-1,
 				'ob_out_shapes': num_classes if (add_ob) else None,
-				'ob_act': 'linear',
-				'ob_init': 'xavier_uniform'
+				'ob_params': None
 			}
 		return params
 
@@ -647,7 +639,7 @@ class TransposedTCN(nn.Module):
 		use_dilation=True, block_act='relu', out_act='relu',
 		block_init='kaiming_uniform', out_init='kaiming_uniform',
 		pad_mode='full', tdims=(2, 1), use_residual=True, downsample_type='conv2d',
-		ob_out_shapes=None, ob_act='linear', ob_init='xavier_uniform'):
+		ob_out_shapes=None, ob_params=None):
 		"""
 		Args:
 			in_shape (tuple): shape of the network's input tensor,
@@ -668,8 +660,7 @@ class TransposedTCN(nn.Module):
 			use_residual(): 
 			downsample_type (str): method of downsampling used by residual block
 			ob_out_shapes
-			ob_act
-			ob_ini
+			ob_params
 		"""
 		super().__init__()
 		self.in_shape = layer_in_shape = in_shape
@@ -708,7 +699,7 @@ class TransposedTCN(nn.Module):
 
 		# GenericModel uses these params to to append an OutputBlock to the model
 		self.ob_out_shapes = ob_out_shapes	# If this is None, no OutputBlock is added
-		self.ob_act, self.ob_init = ob_act, ob_init
+		self.ob_params = ob_params
 
 	def forward(self, x):
 		return self.model(x)

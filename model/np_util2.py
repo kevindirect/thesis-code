@@ -96,9 +96,9 @@ class DetEncoder(nn.Module):
 		except Exception as err:
 			print("Error! np_util2.py > DetEncoder > __init__()\n",
 				sys.exc_info()[0], err)
-			print('rt_in_shape:', rt_in_shape)
-			print('rt_name:', rt_name)
-			print('rt_params:', rt_params)
+			print(f'{rt_in_shape=}')
+			print(f'{rt_name=}')
+			print(f'{rt_params=}')
 			raise err
 
 		xa_in_shape = self.rep_transform.out_shape if (is_valid(rt_name)) \
@@ -109,9 +109,9 @@ class DetEncoder(nn.Module):
 		except Exception as err:
 			print("Error! np_util2.py > DetEncoder > __init__()\n",
 				sys.exc_info()[0], err)
-			print('xa_in_shape:', xa_in_shape)
-			print('xa_name:', xa_name)
-			print('xa_params:', xa_params)
+			print(f'{xa_in_shape=}')
+			print(f'{xa_name=}')
+			print(f'{xa_params=}')
 			raise err
 
 		self.class_agg = class_agg
@@ -199,9 +199,9 @@ class LatEncoder(nn.Module):
 		except Exception as err:
 			print("Error! np_util2.py > LatEncoder > __init__()\n",
 				sys.exc_info()[0], err)
-			print('rt_in_shape:', rt_in_shape)
-			print('rt_name:', rt_name)
-			print('rt_params:', rt_params)
+			print(f'{rt_in_shape=}')
+			print(f'{rt_name=}')
+			print(f'{rt_params=}')
 			raise err
 
 		self.dist_type = dist_type
@@ -262,7 +262,7 @@ class Decoder(nn.Module):
 		* mean and logsig layers are linear layers
 		* decoder output is flattened to be able to send to mean and logsig layers
 	"""
-	def __init__(self, in_shape, label_size, use_det_path, use_lat_path,
+	def __init__(self, in_shape, out_size, use_det_path, use_lat_path,
 		det_encoder, lat_encoder,
 		de_name='ttcn', de_params=None,
 		dist_type='beta', min_std=.01, use_lvar=False):
@@ -270,7 +270,6 @@ class Decoder(nn.Module):
 		Args:
 			in_shape (tuple): shape of the network's input tensor,
 				expects a shape (in_channels, in_height, in_width)
-			label_size (int>0): size of the label vector
 			det_encoder (): deterministic encoder
 			lat_encoder (): latent encoder
 			de_name (str): decoder name
@@ -282,7 +281,7 @@ class Decoder(nn.Module):
 		"""
 		super().__init__()
 		self.in_shape = in_shape
-		self.label_size = label_size
+		self.out_shape = (out_size,)
 		self.min_std, self.use_lvar = min_std, use_lvar
 		self.de_name = de_name
 		if (isnt(de_params)):
@@ -316,18 +315,17 @@ class Decoder(nn.Module):
 			'dist_type must be a valid output distribution type'
 
 		decoder_size = reduce(mul, self.decoder.out_shape)
-		self.alpha = nn.Linear(decoder_size, self.label_size) # primary out_dist parameter
+		self.alpha = nn.Linear(decoder_size, out_size) # primary out_dist parameter
 		if (self.dist_type in ('bernoulli', 'categorical')):
 			self.beta = None
 			self.clamp = nn.Sigmoid()
 		elif (self.dist_type in ('beta',)):
-			self.beta = nn.Linear(decoder_size, self.label_size)
+			self.beta = nn.Linear(decoder_size, out_size)
 			self.clamp = partial(torch.clamp, min=0.0, max=1.0) #nn.Softplus()
 		elif (self.dist_type.endswith('normal')):
-			self.beta = nn.Linear(decoder_size, self.label_size)
-			self.clamp = partial(torch.clamp, min=0.0, max=1.0) if (self.use_lvar) else nn.Softplus()
-
-		self.out_shape = (self.label_size,)
+			self.beta = nn.Linear(decoder_size, out_size)
+			self.clamp = partial(torch.clamp, min=0.0, max=1.0) if (self.use_lvar) \
+				else nn.Softplus()
 
 	def forward(self, det_rep, lat_rep, target_h):
 		"""
@@ -386,7 +384,7 @@ class AttentiveNP(nn.Module):
 	"""
 	Attentive Neural Process Module
 	"""
-	def __init__(self, in_shape, label_size=1, ft_name='stcn', ft_params=None,
+	def __init__(self, in_shape, out_size=None, label_size=1, ft_name='stcn', ft_params=None,
 		use_det_path=True, use_lat_path=True,
 		det_encoder_params=None, lat_encoder_params=None, decoder_params=None,
 		sample_latent=True, use_lvar=False, context_in_target=False):
@@ -398,13 +396,13 @@ class AttentiveNP(nn.Module):
 			det_encoder_params (dict): deterministic encoder hyperparameters
 			lat_encoder_params (dict): latent encoder hyperparameters
 			decoder_params (dict): decoder hyperparameters
-			sample_latent (bool): whether to sample latent dist or use EV
 			use_lvar (bool):
 			context_in_target (bool):
 		"""
 		super().__init__()
 		self.in_shape = in_shape
 		self.label_size = label_size
+		self.sample_latent = sample_latent
 		self.use_lvar, self.context_in_target = use_lvar, context_in_target
 		if (isnt(ft_params)):
 			ft_params = {}
@@ -420,7 +418,8 @@ class AttentiveNP(nn.Module):
 		self.feat_transform = self.feat_transform and \
 			self.feat_transform(self.in_shape, **ft_params)
 		embed_size = self.feat_transform.out_shape[0]
-		enc_in_shape = self.feat_transform.out_shape if (is_valid(self.feat_transform)) else in_shape
+		enc_in_shape = self.feat_transform.out_shape \
+			if (is_valid(self.feat_transform)) else self.in_shape
 		dec_in_shape = list(enc_in_shape)
 
 		self.det_encoder, self.lat_encoder = None, None
@@ -428,30 +427,17 @@ class AttentiveNP(nn.Module):
 			self.lat_encoder = LatEncoder(enc_in_shape, label_size, **lat_encoder_params)
 			dec_in_shape[0] += self.lat_encoder.out_shape[0]
 		if (use_det_path):
-			self.det_encoder = DetEncoder(enc_in_shape, label_size, embed_size, \
+			self.det_encoder = DetEncoder(enc_in_shape, label_size, embed_size,
 				**det_encoder_params)
 			dec_in_shape[0] += self.det_encoder.out_shape[0]
 		dec_in_shape = tuple(dec_in_shape)
 
-		self.decoder = Decoder(dec_in_shape, label_size, use_det_path, use_lat_path, self.det_encoder,
-			self.lat_encoder, **decoder_params)
-		self.sample_latent = sample_latent
-		self.bce = nn.BCEWithLogitsLoss()
-		self.mae = nn.L1Loss()
-		self.mse = nn.MSELoss()
+		self.decoder = Decoder(dec_in_shape, out_size or label_size,
+			use_det_path, use_lat_path, self.det_encoder, self.lat_encoder,
+			**decoder_params)
 		self.out_shape = self.decoder.out_shape
 
 	def forward(self, context_x, context_y, target_x, target_y=None):
-		"""
-		Convenience method to propagate context and targets through networks,
-		and sample the output distribution.
-		"""
-		prior, posterior, out = self.forward_net(context_x, context_y, target_x, \
-			target_y=target_y)
-		pred_y, pred_unc, losses = self.sample(prior, posterior, out, target_y=target_y)
-		return pred_y, pred_unc, losses
-
-	def forward_net(self, context_x, context_y, target_x, target_y=None):
 		"""
 		Propagate context and target through neural process network.
 
@@ -463,130 +449,34 @@ class AttentiveNP(nn.Module):
 			train_mode (bool): whether the model is in training or not.
 				If in training, the model will use the (target_x,target_y)
 				conditioned posterior as the global latent.
+
+		Returns:
+			prior, posterior, and output distribution objects
 		"""
 		if (self.feat_transform):
 			context_h = self.feat_transform(context_x)
 			target_h = self.feat_transform(target_x)
 		else:
 			context_h, target_h = context_x, target_x
+		det_rep, lat_rep, prior_dist, post_dist = None, None, None, None
+
+		if (is_valid(self.det_encoder)):
+			det_rep = self.det_encoder(context_h, context_y, target_h)
 
 		if (is_valid(self.lat_encoder)):
 			prior_dist, prior_beta = self.lat_encoder(context_h, context_y)
 
 			if (is_valid(target_y)):
 				# At training time:
-				posterior_dist, posterior_beta = self.lat_encoder(target_h, target_y)
-				lat_rep = posterior_dist.rsample() if (self.sample_latent) \
-					else posterior_dist.mean
-				# if (train_mode):
-				# 	lat_rep = posterior_dist.rsample() if (self.sample_latent) \
-				# 		else posterior_dist.mean
-				# else:
-				# 	lat_rep = prior_dist.rsample() if (self.sample_latent) \
-				# 		else prior_dist.mean
+				post_dist, post_beta = self.lat_encoder(target_h, target_y)
+				lat_rep = post_dist.rsample() if (self.sample_latent) else post_dist.mean
 			else:
 				# At test/inference time:
-				posterior_dist, posterior_beta = None, None
+				post_dist, post_beta = None, None
 				lat_rep = prior_dist.rsample() if (self.sample_latent) else prior_dist.mean
-		else:
-			lat_rep, prior_dist, posterior_dist = None, None, None
 
-		det_rep = self.det_encoder and self.det_encoder(context_h, context_y, target_h)
 		out_dist = self.decoder(det_rep, lat_rep, target_h)
-		return prior_dist, posterior_dist, out_dist
-
-	def sample(self, prior_dist, posterior_dist, out_dist, target_y=None, \
-		cast_precision=16):
-		"""
-		Sample neural proces output distribution to return prediction,
-		calculate and return loss if a target label was passed in.
-
-		Args:
-			prior_dist ():
-			posterior_dist ():
-			out_dist ():
-			target_y (torch.tensor):
-			cast_precision (16|32|64):
-		"""
-		# At training time sample the output distribution, at test time use EV
-		pred_y = out_dist.rsample() if (is_valid(target_y) and out_dist.has_rsample) \
-			else out_dist.mean
-		# pred_y = out_dist.rsample() if (out_dist.has_rsample) else out_dist.mean
-		# pred_y = out_dist.mean
-		# XXX We can sample out_dist more than once - more stability?
-		pred_unc = out_dist.stddev
-		losses = None
-
-		if (is_valid(target_y)):
-			# At training time:
-			if (self.use_lvar):
-				pass # custom log prob and kl div here
-			else:
-				label_y = target_y
-				if (type(out_dist).__name__ in ('Bernoulli', 'Beta', 'Normal', 'LogNormal')):
-					ftype = {
-						16: torch.float16,
-						32: torch.float32,
-						64: torch.float64
-					}.get(cast_precision, 16)
-					label_y = label_y.to(ftype)
-					if (type(out_dist).__name__ in ('Beta',)):
-						eps = 1e-3
-						label_y = label_y.clamp(min=eps, max=1-eps)
-				# XXX clamp clf
-
-				# print('target_y', label_y)
-				# print('pred_y', pred_y)
-				# # print('out_dist.mean', out_dist.mean)
-				# # print('out_dist.log_prob(label_y)', out_dist.log_prob(label_y))
-				# # for i in [-1.0, 0.0, 0.25, 0.5, 0.75, 1.0]:
-				# # 	print(str(i))
-				# # 	print(out_dist.log_prob(torch.tensor([i], device='cuda')))
-				# print('log pd:', out_dist.log_prob(label_y))
-				# print('pd:', out_dist.log_prob(label_y).exp())
-
-				# Here we get the likelihood of getting the ground truth in our
-				# learned output distribution:
-				logpd = out_dist.log_prob(label_y).mean(-1).unsqueeze(-1)
-				# print('logpd')
-				# print('mean:', out_dist.mean)
-				# print(out_dist.log_prob(label_y))
-				# print(out_dist.log_prob(label_y).mean(-1))
-
-				# print('prob')
-				# print(out_dist.log_prob(label_y).exp())
-				# print(out_dist.log_prob(label_y).exp().mean(-1))
-				# print(pred_y.squeeze())
-
-				# The KL divergence of the prior dist (conditioned on context) and
-				# the posterior dist (conditioned on target during training).
-				# KL is to make sure prior and posterior aren't too different.
-				if (is_valid(prior_dist) and is_valid(posterior_dist)):
-					kldiv = torch.distributions.kl_divergence(posterior_dist, prior_dist) \
-						.mean(-1).unsqueeze(-1)
-					loss = (kldiv - logpd).mean()
-				else:
-					kldiv = None
-					logpd = logpd.mean()
-					loss = -logpd
-
-				# use kl beta factor (disentangled representation)?
-				if (self.context_in_target):
-					pass
-			# Weight loss nearer to prediction time?
-			# weight = (torch.arange(nll.shape[1]) + 1).float().to(dev)[None, :]
-			# lossprob_weighted = nll / torch.sqrt(weight)  # We want to  weight nearer stuff more
-			losses = {
-				'loss': loss,
-				'logpd': logpd,
-				'kldiv': kldiv,
-				# 'bce': self.bce(out_dist.mean.squeeze(), label_y.squeeze()).mean(),
-				# 'mae': self.mae(out_dist.mean.squeeze(), label_y.squeeze()).mean(),
-				# 'mse': self.mse(out_dist.mean.squeeze(), label_y.squeeze()).mean()
-				# 'lossprob_weighted': lossprob_weighted.mean()
-			}
-
-		return pred_y, pred_unc, losses
+		return prior_dist, post_dist, out_dist
 
 	@classmethod
 	def suggest_params(cls, trial=None, num_classes=2):

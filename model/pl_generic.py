@@ -14,7 +14,7 @@ import pytorch_lightning as pl # PL ver 1.2.3
 import torchmetrics as tm
 
 from common_util import load_df, dump_df, is_valid, isnt
-from model.common import WIN_SIZE, PYTORCH_ACT_MAPPING, PYTORCH_LOSS_MAPPING, PYTORCH_LOSS_REG, PYTORCH_LOSS_CLF, PYTORCH_OPT_MAPPING, PYTORCH_SCH_MAPPING
+from model.common import WIN_SIZE, PYTORCH_ACT_MAPPING, PYTORCH_LOSS_MAPPING, PYTORCH_OPT_MAPPING, PYTORCH_SCH_MAPPING
 from model.metrics_util import SimulatedReturn
 from model.model_util import OutputBlock
 
@@ -33,8 +33,6 @@ class GenericModel(pl.LightningModule):
 			otherwise WindowBatchSampler is used as batch_sampler
 		train_shuffle (bool): whether or not to shuffle the order of the training batches
 		loss (str): name of the loss function to use,
-			'clf' (classsifer) and 'reg' (regressor) are 'dummy losses' that only affect how
-			the labels/targets are preprocessed (look at model.train_util.py)
 		class_weights (list): loss function class weights of size C (optional)
 		opt (dict): pytorch optimizer settings
 			name (str): name of optimizer to use
@@ -87,30 +85,33 @@ class GenericModel(pl.LightningModule):
 
 		self.model = pt_model_fn(in_shape=fobs, **model_params)
 		if (is_valid(self.m_params.get('ob_out_shapes', None))):
+			if (isnt(self.m_params.get('ob_params', None))):
+				logging.info('using default output block params')
 			self.model = OutputBlock.wrap(self.model)
 
-		if (self.t_params['loss'] in PYTORCH_LOSS_CLF):
-			self.model_type = 'clf'
-		elif (self.t_params['loss'] in PYTORCH_LOSS_REG):
-			self.model_type = 'reg'
+		self.model_type = self.t_params['loss'].split('-')[0]
 
 	def __init_loggers__(self, epoch_metric_types):
 		"""
 		'micro' weights by class frequency, 'macro' weights classes equally
 		"""
 		if (self.model_type == 'clf'):
+			if (self.t_params['loss'] in ('clf-ce',)):
+				num_classes = self.m_params['label_size'] + 1
+			else:
+				num_classes = self.m_params['label_size']
 			self.epoch_metrics = {
 				epoch_type: {
 					'accuracy': tm.Accuracy(compute_on_step=False),
-					'precision': tm.Precision(num_classes=self.m_params['label_size'],
+					'precision': tm.Precision(num_classes=num_classes,
 						average='macro', compute_on_step=False),
-					'recall': tm.Recall(num_classes=self.m_params['label_size'],
+					'recall': tm.Recall(num_classes=num_classes,
 						average='macro', compute_on_step=False),
-					# 'f0.5': tm.FBeta(num_classes=self.m_params['label_size'], beta=0.5,
+					# 'f0.5': tm.FBeta(num_classes=num_classes, beta=0.5,
 					# 	average='micro', compute_on_step=False),
-					'f1.0': tm.FBeta(num_classes=self.m_params['label_size'], beta=1.0,
+					'f1.0': tm.FBeta(num_classes=num_classes, beta=1.0,
 						average='micro', compute_on_step=False),
-					# 'f2.0': tm.FBeta(num_classes=self.m_params['label_size'], beta=2.0,
+					# 'f2.0': tm.FBeta(num_classes=num_classes, beta=2.0,
 					# 	average='micro', compute_on_step=False),
 				}
 				for epoch_type in epoch_metric_types
@@ -159,32 +160,33 @@ class GenericModel(pl.LightningModule):
 
 	def forward(self, x):
 		"""
-		Run input through the model.
+		Run input through model and return output.
+		Use at inference time only.
 		"""
-		return self.model(x)
+		raise NotImplementedError()
 
 	def forward_step(self, batch, batch_idx, epoch_type='train'):
 		"""
-		Run forward pass, update step metrics, and return step loss.
+		Run forward pass, calculate step loss, and calculate step metrics.
 		"""
 		x, y, z = batch
-		pred_raw = self.forward(x)
 		try:
-			pred_raw = self.forward(x)
+			pred_raw = self.model(x)
 		except Exception as err:
-			print("Error! pl_generic.py > GenericModel > forward_step() > forward()\n",
+			print("Error! pl_generic.py > GenericModel > forward_step() > model()\n",
 				sys.exc_info()[0], err)
-			print('x.shape:', x.shape)
-			print('y.shape:', y.shape)
-			print('z.shape:', z.shape)
+			print(f'{x.shape=}')
+			print(f'{y.shape=}')
+			print(f'{z.shape=}')
 			raise err
 
+		# Reshape model outputs for later loss, metrics calculations:
 		if (self.model_type == 'clf'):
 			actual = y
-			if (self.t_params['loss'] in ('ce',)):
+			if (self.t_params['loss'] in ('clf-ce',)):
 				pred_loss = F.softmax(pred_raw, dim=-1)
-				pred = pred_loss.argmax(dim=-1)
-				pred_conf = pred_loss.max()
+				pred_conf, pred = pred_loss.detach().clone() \
+					.max(dim=-1, keepdim=False)
 				pred_dir = pred.detach().clone()
 				pred_dir[pred_dir==0] = -1
 				pred_ret = pred_dir * pred_conf
@@ -193,30 +195,42 @@ class GenericModel(pl.LightningModule):
 		elif (self.model_type == 'reg'):
 			actual = z
 			pred_loss = pred_raw.squeeze()
-			pred_ret = pred = pred_loss.clone().detach()
+			pred_ret = pred = pred_loss.detach().clone()
 
 		try:
-			for met in self.epoch_metrics[epoch_type].values():
-				met.update(pred.cpu(), actual.cpu())
+			model_loss = self.loss(pred_loss, actual)
 		except Exception as err:
-			print("Error! pl_generic.py > GenericModel > forward_step() > met.update()\n",
+			print("Error! pl_generic.py > GenericModel > forward_step() > loss()\n",
 				sys.exc_info()[0], err)
-			print('pred.shape:', pred.shape)
-			print('actual.shape:', actual.shape)
+			print(f'{self.loss=}')
+			print(f'{pred_loss.shape=}')
+			print(f'{actual.shape=}')
 			raise err
 
-		if (is_valid(self.epoch_returns)):
+		for met in self.epoch_metrics[epoch_type].values():
 			try:
-				for ret in self.epoch_returns[epoch_type].values():
-					ret.update(pred_ret.cpu(), z.cpu())
+				met.update(pred.cpu(), actual.cpu())
 			except Exception as err:
-				print("Error! pl_generic.py > GenericModel > forward_step() > ret.update()\n",
+				print("Error! pl_generic.py > GenericModel > forward_step() > met.update()\n",
 					sys.exc_info()[0], err)
-				print('pred_ret.shape:', pred_ret.shape)
-				print('z.shape:', z.shape)
+				print(f'{met=}')
+				print(f'{pred.shape=}')
+				print(f'{actual.shape=}')
 				raise err
 
-		return {'loss': self.loss(pred_loss, actual)}
+		if (is_valid(self.epoch_returns)):
+			for ret in self.epoch_returns[epoch_type].values():
+				try:
+					ret.update(pred_ret.cpu(), z.cpu())
+				except Exception as err:
+					print("Error! pl_generic.py > GenericModel > forward_step() > ret.update()\n",
+						sys.exc_info()[0], err)
+					print(f'{ret=}')
+					print(f'{pred_ret.shape=}')
+					print(f'{z.shape=}')
+					raise err
+
+		return {'loss': model_loss}
 
 	def aggregate_loss_epoch_end(self, outputs, epoch_type='train'):
 		"""

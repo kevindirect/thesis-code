@@ -8,6 +8,8 @@ import logging
 import numpy as np
 import pandas as pd
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
 import pytorch_lightning as pl
 import torchmetrics as tm
 
@@ -57,6 +59,16 @@ class NPModel(GenericModel):
 		super().__init__(pt_model_fn, m_params, t_params, fobs,
 			epoch_metric_types=epoch_metric_types)
 
+	def __init_loss_fn__(self):
+		if (is_valid(loss_fn := PYTORCH_LOSS_MAPPING.get(self.t_params['loss'], None))):
+			if (is_valid(self.t_params['class_weights'])):
+				self.loss = loss_fn(reduction='none', \
+					weight=self.t_params['class_weights'])
+			else:
+				self.loss = loss_fn(reduction='none')
+		else:
+			logging.info('no loss function set in pytorch lightning')
+
 	def get_context_target(self, batch, train_mode=False):
 		"""
 		Return context and target points.
@@ -82,13 +94,14 @@ class NPModel(GenericModel):
 
 	def forward(self, context_x, context_a, target_x, target_a=None):
 		"""
-		Run input through the neural process.
+		Run input through model and return output.
+		Use at inference time only.
 		"""
-		return self.model(context_x, context_a, target_x, target_y=target_a)
+		raise NotImplementedError()
 
 	def forward_step(self, batch, batch_idx, epoch_type='train'):
 		"""
-		Run forward pass, update step metrics, and return step loss.
+		Run forward pass, calculate step loss, and calculate step metrics.
 		"""
 		train_mode = epoch_type == 'train'
 		xc, yc, zc, xt, yt, zt = self.get_context_target(batch, train_mode=train_mode)
@@ -98,65 +111,104 @@ class NPModel(GenericModel):
 			actual_c, actual_t = zc, zt
 
 		try:
-			pred_raw, pred_raw_unc, losses = self.forward(xc, actual_c, xt, \
-				target_a=actual_t if (train_mode) else None)
+			prior_dist, post_dist, out_dist = self.model(xc, actual_c, xt, \
+				target_y=actual_t if (train_mode) else None)
 		except Exception as err:
-			print("Error! pl_np.py > NPModel > forward_step() > forward()\n",
+			print("Error! pl_np.py > NPModel > forward_step() > model()\n",
 				sys.exc_info()[0], err)
+			print(f'{train_mode=}')
+			print(f'{xc.shape=}')
+			print(f'{xt.shape=}')
+			print(f'{actual_c.shape=}')
+			print(f'{actual_t.shape=}')
+			print(f'{zc.shape=}')
+			print(f'{zt.shape=}')
 			raise err
 
-		pred = pred_raw.detach().clone().squeeze()
-		pred_unc = pred_raw_unc.detach().clone().squeeze()
+		if (self.t_params['sample_out'] and train_mode and out_dist.has_rsample):
+			pred_t_raw = out_dist.rsample()
+		else:
+			pred_t_raw = out_dist.mean
+		pred_t_raw = pred_t_raw.squeeze()
+		pred_t_unc_raw = out_dist.stddev.squeeze()
+		#print(torch.linalg.norm(pred_t_unc))
 
+		# Reshape model outputs for later loss, metrics calculations:
 		if (self.model_type == 'clf'):
-			pred = pred.clamp(0.0, 1.0)
-			pred_ret = (pred - .5) * 2
-		else:
-			pred_ret = pred
+			if (self.t_params['loss'] in ('clf-dnll',)):
+				pred_t_loss = out_dist
+				pred_t = pred_t_raw.detach().clone().clamp(0.0, 1.0)
+				pred_t_ret = (pred_t - .5) * 2
+			elif (self.t_params['loss'] in ('clf-ce',)):
+				pred_t_loss = F.softmax(pred_t_raw, dim=-1)
+				pred_t_conf, pred_t = pred_t_loss.detach().clone() \
+					.max(dim=-1, keepdim=False)
+				pred_t_dir = pred_t.detach().clone()
+				pred_t_dir[pred_t_dir==0] = -1
+				pred_t_ret = pred_t_dir * pred_t_conf
+			else:
+				pred_t_loss = pred_t_raw
+				raise NotImplementedError()
+		elif (self.model_type == 'reg'):
+			if (self.t_params['loss'] in ('reg-dnll',)):
+				pred_t_loss = out_dist
+			elif (self.t_params['loss'] in ('reg-mae', 'reg-mse')):
+				pred_t_loss = pred_t_raw
+			pred_t_ret = pred_t = pred_t_raw.detach().clone()
 
-		# XXX calculate val/test loss here if desired
-		# print(pred.cpu())
-		# print(pred.dtype)
-		# print(pred)
-		# print(pred.cpu().argmax(dim=-1).dtype)
-		# print(pred.argmax(dim=-1))
-		# # print(f'pred: {pred}')
-		# # print(f'yt: {yt}')
-		if (not train_mode):
-			# print('val pred')
-			# print(pred[:10])
-			# print(pred_unc[:10])
-			pass
-		else:
-			# print('train pred')
-			# print(pred[:10])
-			# print(pred_unc[:10])
-			pass
-		#print(torch.linalg.norm(pred_unc))
-		# sys.exit()
+		elbo_loss = None
+		if (train_mode):
+			if (is_valid(prior_dist) and is_valid(post_dist)):
+				kldiv = torch.distributions.kl_divergence(post_dist, prior_dist) \
+					.mean(dim=-1, keepdim=True)
+			else:
+				kldiv = 0
 
-		try:
-			for met in self.epoch_metrics[epoch_type].values():
-				met.update(pred.cpu(), actual_t.cpu())
-		except Exception as err:
-			print("Error! pl_np.py > NPModel > forward_step() > met.update()\n",
-				sys.exc_info()[0], err)
-			print('pred.shape:', pred.shape)
-			print('actual_t.shape:', actual_t.shape)
-			raise err
-
-		if (is_valid(self.epoch_returns)):
 			try:
-				for ret in self.epoch_returns[epoch_type].values():
-					ret.update(pred_ret.cpu(), zt.cpu())
+				model_loss = self.loss(pred_t_loss, actual_t)
 			except Exception as err:
-				print("Error! pl_np.py > NPModel > forward_step() > ret.update()\n",
+				print("Error! pl_np.py > NPModel > forward_step() > loss()\n",
 					sys.exc_info()[0], err)
-				print('pred_ret.shape:', pred_ret.shape)
-				print('zt.shape:', zt.shape)
+				print(f'{self.loss=}')
+				print(f'{pred_t_loss.shape=}')
+				print(f'{actual_t.shape=}')
+				raise err
+			# print('self.loss:', self.loss)
+			# print('pred_t_loss.shape:', pred_t_loss.shape)
+			# print('pred_t_loss:', pred_t_loss)
+			# print('actual_t.shape:', actual_t.shape)
+			# print('actual_t:', actual_t)
+			# print('kldiv.shape:', kldiv.shape)
+			# print('kldiv:', kldiv)
+			# print('model_loss.shape:', model_loss.shape)
+			# print('model_loss:', model_loss)
+			# sys.exit()
+			elbo_loss = (kldiv + model_loss).mean()
+
+		for met in self.epoch_metrics[epoch_type].values():
+			try:
+				met.update(pred_t.cpu(), actual_t.cpu())
+			except Exception as err:
+				print("Error! pl_np.py > NPModel > forward_step() > met.update()\n",
+					sys.exc_info()[0], err)
+				print(f'{met=}')
+				print(f'{pred_t.shape=}')
+				print(f'{actual_t.shape=}')
 				raise err
 
-		return {'loss': losses and losses['loss']} 
+		if (is_valid(self.epoch_returns)):
+			for ret in self.epoch_returns[epoch_type].values():
+				try:
+					ret.update(pred_t_ret.cpu(), zt.cpu())
+				except Exception as err:
+					print("Error! pl_np.py > NPModel > forward_step() > ret.update()\n",
+						sys.exc_info()[0], err)
+					print(f'{ret=}')
+					print(f'{pred_t_ret.shape=}')
+					print(f'{zt.shape=}')
+					raise err
+
+		return {'loss': elbo_loss}
 
 	@classmethod
 	def suggest_params(cls, trial=None, num_classes=2):

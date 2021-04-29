@@ -49,6 +49,41 @@ VAL_RATIO, TEST_RATIO = .2, .2
 # ERROR_CODE = 999999
 
 # PyTorch
+class DistributionNLLLoss(nn.modules.loss._Loss):
+	"""
+	Negative Log Likelihood of getting a value from a distribution.
+	"""
+	__constants__ = ['reduction']
+
+	def __init__(self, size_average=None, reduce=None, reduction: str = 'none',
+		embed_reduction: str = 'mean') -> None:
+		super().__init__(size_average, reduce, reduction)
+		self.embed_reduction = embed_reduction
+
+	def forward(self, pred_dist, target) -> torch.Tensor:
+		# if (type(out_dist).__name__ in ('Bernoulli', 'Beta', 'Normal', 'LogNormal')):
+		# 	ftype = {
+		# 		16: torch.float16,
+		# 		32: torch.float32,
+		# 		64: torch.float64
+		# 	}.get(cast_precision, 16)
+		# 	label_y = label_y.to(ftype)
+		# 	if (type(out_dist).__name__ in ('Beta',)):
+		# 		eps = 1e-3
+		# 		label_y = label_y.clamp(min=eps, max=1-eps)
+		nll = -pred_dist.log_prob(target)
+
+		# Weight loss nearer to prediction time?
+		# weight = (torch.arange(nll.shape[1]) + 1).float().to(dev)[None, :]
+		# lossprob_weighted = nll / torch.sqrt(weight)  # We want to weight nearer stuff more
+		if (self.embed_reduction == 'mean'):
+			nll = nll.mean(dim=1, keepdim=True)
+
+		if (self.reduction == 'mean'):
+			nll = nll.mean(dim=0)
+
+		return nll
+
 PYTORCH_MODELS_DIR = MODEL_DIR +'model_p' +sep
 PYTORCH_ACT1D_LIST = ('lrelu', 'celu', 'prelu', 'selu', \
 	'relu', 'elu', 'gelu', 'sig', 'tanh', 'splus', 'smax', 'logsmax')
@@ -71,23 +106,23 @@ PYTORCH_INIT_LIST = ('zeros', 'ones', 'normal', 'orthogonal', \
 	'xavier_uniform', 'xavier_normal', 'kaiming_uniform', 'kaiming_normal')
 PYTORCH_LOSS_MAPPING = {
 	# Binary
-	'bce': nn.BCELoss,
-	'bcel': nn.BCEWithLogitsLoss,
-	'sm': nn.SoftMarginLoss,
+	'clf-bce': nn.BCELoss,
+	'clf-bcel': nn.BCEWithLogitsLoss,
+	'clf-sm': nn.SoftMarginLoss,
 
 	# Categorical
-	'ce': nn.CrossEntropyLoss,
-	'nll': nn.NLLLoss,
-	'ml': nn.MultiLabelMarginLoss,
-	'mls': nn.MultiLabelSoftMarginLoss,
+	'clf-ce': nn.CrossEntropyLoss,
+	'clf-nll': nn.NLLLoss,
+	'clf-ml': nn.MultiLabelMarginLoss,
+	'clf-mls': nn.MultiLabelSoftMarginLoss,
+	'clf-dnll': DistributionNLLLoss,
 
 	# Regression
-	'mae': nn.L1Loss,
-	'mse': nn.MSELoss,
-	'sl1': nn.SmoothL1Loss
+	'reg-mae': nn.L1Loss,
+	'reg-mse': nn.MSELoss,
+	'reg-sl1': nn.SmoothL1Loss,
+	'reg-dnll': DistributionNLLLoss,
 }
-PYTORCH_LOSS_CLF = ('clf', 'bce', 'bcel', 'sm', 'ce', 'nll', 'ml','mls')
-PYTORCH_LOSS_REG = ('reg', 'mae', 'mse', 'sl1')
 PYTORCH_OPT_MAPPING = {
 	'rmsp': optim.RMSprop,
 	'adam': optim.Adam
