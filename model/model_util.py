@@ -110,6 +110,7 @@ def pt_multihead_attention(W, q, k, v):
 	Returns:
 		torch.tensor shaped like (Batch, Channels, Sequence) and attention weights
 	"""
+	raise DeprecationWarning('use MHA module instead')
 	q = q.permute(2, 0, 1)
 	k = k.permute(2, 0, 1)
 	v = v.permute(2, 0, 1)
@@ -175,6 +176,26 @@ class Apply(nn.Module):
 	def forward(self, x):
 		return self.fn(x)
 
+class SwapLinear(nn.Module):
+	"""
+	Linear layer applied chosen dimension
+	"""
+	def __init__(self, in_features, out_features, bias=True, dim=-1):
+		super().__init__()
+		self.lin = nn.Linear(in_features, out_features, bias=True)
+		self.dim = dim
+
+	def forward(self, x):
+		return self.lin(x.transpose(self.dim, -1)).transpose(self.dim, -1)
+
+class TransposeModule(nn.Module):
+	def __init__(self, dim0, dim1):
+		super().__init__()
+		self.dim0, self.dim1 = dim0, dim1
+
+	def forward(self, x):
+		return x.transpose(self.dim0, self.dim1)
+
 
 # ********** BLOCK MODULES **********
 class OutputBlock(nn.Module):
@@ -214,46 +235,129 @@ class OutputBlock(nn.Module):
 
 class MHA(nn.Module):
 	"""
-	Multihead Attention module (pytorch implementation)
+	Stacked Multihead Attention module (uses torch.nn.MultiheadAttention)
 
-	This module inputs/outputs a tensor shaped like (N, C, E),
+	This module inputs/outputs a tensor shaped like (N, C, S),
 	where:
 		* N: batch
-		* C: channel
-		* E: embedding
+		* C: channel/embedding
+		* S: sequence
 	"""
-	def __init__(self, in_shape, heads=1, dropout=0.0, depth=1):
+	def __init__(self, in_shape, heads=1, dropout=0.0, depth=1, kdim=None, vdim=None):
 		"""
 		Args:
-			in_shape (tuple): (C, E)
+			in_shape (tuple): (C, S)
 			heads (int>0): num attention heads
 			dropout (float>=0): dropout
 			depth (int>0): network depth
 		"""
 		super().__init__()
 		self.in_shape, self.out_shape = in_shape, in_shape
-		self.attention_fn = pt_multihead_attention
-		self.W = nn.ModuleList([nn.MultiheadAttention(
+		self.mhas = nn.ModuleList([nn.MultiheadAttention(
 			in_shape[0], heads, dropout=dropout, bias=True, add_bias_kv=False,
-			add_zero_attn=False, kdim=None, vdim=None) for _ in range(depth)])
+			add_zero_attn=False, kdim=kdim, vdim=vdim) for _ in range(depth)])
+
+	def forward(self, q, k=None, v=None, key_padding_mask=None, attn_mask=None):
+		"""
+		Applies Pytorch Multiheaded Attention using existing MultiheadAttention object,
+		assumes q, k, v tensors are shaped (batch, channels, sequence)
+		Modified from: KurochkinAlexey/Recurrent-neural-processes
+
+		Attention(Q, K, V) = softmax(QK'/sqrt(d_k)) V
+
+		MH(Q, K, V) = Concat[head1; head2; ...; headn] Wo
+
+			where head[i] = Attention(Q Wq[i], K Wk[i], V Wv[i])
+
+		Args:
+			mha (torch.nn.modules.activation.MultiheadAttention): pytorch Multihead attention object
+			q (torch.tensor): query tensor, shaped like (Batch, Channels, Sequence)
+			k (torch.tensor): key tensor, shaped like (Batch, Channels, Sequence)
+			v (torch.tensor): value tensor, shaped like (Batch, Channels, Sequence)
+
+		Returns:
+			torch.tensor shaped like (Batch, Channels, Sequence)
+		"""
+		k = k if (is_valid(k)) else q
+		v = v if (is_valid(v)) else q
+		q = q.permute(2, 0, 1)
+		k = k.permute(2, 0, 1)
+		v = v.permute(2, 0, 1)
+		for i, mha in enumerate(self.mhas):
+			try:
+				q, weights = mha(q, k, v, key_padding_mask=key_padding_mask,
+					need_weights=True, attn_mask=attn_mask)
+			except Exception as err:
+				print("Error! model_util.py > MHA > forward() > mha()\n",
+					sys.exc_info()[0], err)
+				print(f'{i=}')
+				print(f'{q.shape=}')
+				print(f'{k.shape=}')
+				print(f'{v.shape=}')
+				if (is_valid(key_padding_mask)):
+					print(f'{key_padding_mask.shape=}')
+				if (is_valid(attn_mask)):
+					print(f'{attn_mask.shape=}')
+				if (i > 0):
+					print(f'weights[{i-1=}]: {weights}')
+				raise err
+		return q.permute(1, 2, 0).contiguous()
+
+class LaplaceAttention(nn.Module):
+	"""
+	Laplace Exponential Attention module
+
+	This module inputs/outputs a tensor shaped like (N, C, S),
+	where:
+		* N: batch
+		* C: channel/embedding
+		* S: sequence
+
+	act(sum_i(-l1(k - q) / scale))
+	Adapted from: https://github.com/deepmind/neural-processes/blob/master/attentive_neural_process.ipynb
+	"""
+	def __init__(self, in_shape, scale=2, act='smax'):
+		"""
+		Args:
+			in_shape (tuple): (C, S)
+			scale (float): L1 distance scale
+		"""
+		super().__init__()
+		self.in_shape, self.out_shape = in_shape, in_shape
+		self.scale = scale
+		self.out_act = PYTORCH_ACT_MAPPING.get(act, lambda: None)()
 
 	def forward(self, q, k=None, v=None):
 		if (isnt(k)):
-			k = q
-		if (isnt(v)):
-			v = q
+			# self attention -> use reversed sequence queries as keys
+			k = torch.flip(q, (-1, -2))
+		k = k.unsqueeze(1)				# [n, C, S] -> [n, 1, C, S]
+		v = v if (is_valid(v)) else q			# [n, C, S_v]
+		q = q.unsqueeze(2)				# [n, C, S] -> [n, C, 1, S]
 		try:
-			for W in self.W:
-				q, weights = self.attention_fn(W, q, k, v)
+			weights = - (torch.abs(k - q)/self.scale)	# - scaled L1 -> [n, C, C, S]
+			weights = weights.sum(dim=-1)			# [n, C, C, S] -> [n, C, C]
+			if (is_valid(self.out_act)):
+				weights = self.out_act(weights)
 		except Exception as err:
-			print("Error! model_util.py > MHA > forward()\n",
+			print("Error! model_util.py > LaplaceAttention > forward() > ...\n",
 				sys.exc_info()[0], err)
-			print('q.shape:', q.shape)
-			print('k.shape:', k.shape)
-			print('v.shape:', v.shape)
-			print('weights:', weights)
+			print(f'{q.shape=}')
+			print(f'{k.shape=}')
+			print(f'{v.shape=}')
 			raise err
-		return q
+
+		try:
+			rep = torch.einsum('ncd,nds->ncs', weights, v)	# reweight values -> [n, C, S_v]
+		except Exception as err:
+			print("Error! model_util.py > LaplaceAttention > forward() > torch.einsum()\n",
+				sys.exc_info()[0], err)
+			print(f'{weights.shape=}')
+			print(f'{q.shape=}')
+			print(f'{k.shape=}')
+			print(f'{v.shape=}')
+			raise err
+		return rep
 
 class TemporalLayer2d(nn.Module):
 	"""
@@ -288,7 +392,7 @@ class TemporalLayer2d(nn.Module):
 		4. Dropout
 	"""
 	def __init__(self, in_shape, out_shape, act, kernel_size, padding_size,
-		dilation, dropout, init='xavier_uniform'):
+		dilation, dropout, dropout_type='2d', init='xavier_uniform'):
 		"""
 		Args:
 			in_shape (tuple): (in_channels, in_height, in_width) of the Conv2d layer
@@ -321,8 +425,14 @@ class TemporalLayer2d(nn.Module):
 		)
 		if (is_valid(act_fn := PYTORCH_ACT_MAPPING.get(act, None))):
 			modules.append(act_fn())
-		modules.append(nn.AlphaDropout(dropout) if (act in ('selu',)) \
-			else nn.Dropout(dropout))
+		if (is_valid(dropout)):
+			if (dropout_type == '2d'):
+				drop = nn.Dropout2d(dropout)
+			elif (act in ('selu',)):
+				drop = nn.AlphaDropout(dropout)
+			else:
+				drop = nn.Dropout(dropout)
+			modules.append(drop)
 		self.layer = nn.Sequential(*modules)
 
 	@classmethod
@@ -418,7 +528,7 @@ class TemporalConvNet(nn.Module):
 	Note: Receptive Field Size = Number TCN Blocks * Kernel Size * Last Layer Dilation Size
 	"""
 	def __init__(self, in_shape, block_channels=[[5, 5, 5]], num_blocks=1,
-		kernel_sizes=3, dropouts=0.0, global_dropout=.5, global_dilation=True,
+		kernel_sizes=3, dropouts=0.0, dropout_type='2d', dilation_factor=2, global_dilation=True,
 		block_act='elu', out_act='relu', block_init='xavier_uniform',
 		out_init='xavier_uniform', pad_mode='same', downsample_type='conv2d',
 		ob_out_shapes=None, ob_params=None):
@@ -434,11 +544,7 @@ class TemporalConvNet(nn.Module):
 				if a list its length must be either 1 or len(block_channels)
 			dropouts (float|list): dropout probability ordered by global index
 				if a single floating point value, sets dropout for first layer only
-				if None, uses global_dropout everywhere
-				if the list size doesn't match the network layer count,
-					uses global_dropout for all layers past the list size.
-				if a particular element is None, uses global_dropout at that index
-			global_dropout (float): default dropout probability
+				if a particular element is None, disables dropout at that index
 			global_dilation (bool): whether to use global or block indexed dilation
 			block_act (str): activation function of each layer in each block
 			out_act (str): output activation of each block
@@ -461,6 +567,8 @@ class TemporalConvNet(nn.Module):
 			'number of block shapes must equally subdivide number of blocks'
 		assert len(kernel_sizes) == len(block_channels), \
 			'number of kernels must be the same as the number of block channels'
+		assert is_type(dilation_factor, int) and dilation_factor > 0, \
+			'dilation_factor must be a positive integer'
 
 		for b in range(num_blocks):
 			# XXX - param for residual connection from in_shape to all nodes?
@@ -472,8 +580,8 @@ class TemporalConvNet(nn.Module):
 
 			for l, out_channels in enumerate(block_channel_list):
 				dilation = {
-					True: 2**i,
-					False: 2**l
+					True: dilation_factor**i,
+					False: dilation_factor**l
 				}.get(global_dilation)
 				padding_size = get_padding(pad_mode, layer_in_shape[2], kernel_size,
 					dilation=dilation)
@@ -481,12 +589,10 @@ class TemporalConvNet(nn.Module):
 				out_width = TemporalLayer2d.get_out_width(layer_in_shape[2],
 					kernel_size=kernel_size, dilation=dilation, padding_size=padding_size)
 				layer_out_shape = (out_channels, out_height, out_width)
-				dropout = global_dropout \
-					if (isnt(dropouts) or i >= len(dropouts) or isnt(dropouts[i])) \
-					else dropouts[i]
 				layer = TemporalLayer2d(in_shape=layer_in_shape, out_shape=layer_out_shape,
 					act=block_act, kernel_size=kernel_size, padding_size=padding_size,
-					dilation=dilation, dropout=dropout, init=block_init)
+					dilation=dilation, dropout=dropouts[i],
+					dropout_type=dropout_type, init=block_init)
 				layers.append((f'tl[{layer_in_shape}->{layer_out_shape}]_{b}_{l}', layer))
 				layer_in_shape = layer_out_shape
 				i += 1
@@ -515,8 +621,8 @@ class StackedTCN(TemporalConvNet):
 	For more information see TemporalConvNet.
 	"""
 	def __init__(self, in_shape, size=128, depth=3, kernel_sizes=3,
-		input_dropout=0.0, output_dropout=0.0, global_dropout=.5,
-		global_dilation=True, block_act='elu', out_act='relu',
+		input_dropout=None, output_dropout=None, global_dropout=None, dropout_type='2d',
+		dilation_factor=2, global_dilation=True, block_act='elu', out_act='relu',
 		block_init='xavier_uniform', out_init='xavier_uniform',
 		pad_mode='full', downsample_type='conv2d',
 		ob_out_shapes=None, ob_params=None):
@@ -541,14 +647,14 @@ class StackedTCN(TemporalConvNet):
 			ob_out_shapes
 			ob_params
 		"""
-		dropouts = [None] * depth
+		dropouts = [global_dropout] * depth
 		dropouts[0], dropouts[-1] = input_dropout, output_dropout
 		super().__init__(in_shape, block_channels=[[size] * depth], num_blocks=1,
-			kernel_sizes=kernel_sizes, dropouts=dropouts,
-			global_dropout=global_dropout, global_dilation=global_dilation,
-			block_act=block_act, out_act=out_act, block_init=block_init,
-			out_init=out_init, pad_mode=pad_mode, downsample_type=downsample_type,
-			ob_out_shapes=ob_out_shapes, ob_params=ob_params)
+			kernel_sizes=kernel_sizes, dropouts=dropouts, dropout_type=dropout_type,
+			dilation_factor=dilation_factor,
+			global_dilation=global_dilation, block_act=block_act, out_act=out_act,
+			block_init=block_init, out_init=out_init, pad_mode=pad_mode,
+			downsample_type=downsample_type, ob_out_shapes=ob_out_shapes, ob_params=ob_params)
 
 	@classmethod
 	def suggest_params(cls, trial=None, num_classes=2, add_ob=False):
@@ -635,7 +741,7 @@ class TransposedTCN(nn.Module):
 	Single block 2D TCN where dims (by default the first two) are transposed between convolutions.
 	"""
 	def __init__(self, in_shape, channels=[3, 1], kernel_sizes=3,
-		input_dropout=0.0, output_dropout=0.0, global_dropout=0.0,
+		input_dropout=None, output_dropout=None, global_dropout=None,
 		use_dilation=True, block_act='relu', out_act='relu',
 		block_init='kaiming_uniform', out_init='kaiming_uniform',
 		pad_mode='full', tdims=(2, 1), use_residual=True, downsample_type='conv2d',
@@ -708,18 +814,31 @@ class FFN(nn.Module):
 	"""
 	MLP Feedforward Network
 	"""
-	def __init__(self, in_shape, out_shapes=[128, 128, 128], act='relu',
-		act_output=True, init='xavier_uniform'):
+	def __init__(self, in_shape, out_shapes=[128, 128, 128], flatten=True,
+		input_dropout=None, output_dropout=None, global_dropout=None,
+		act='relu', act_output=True, init='xavier_uniform'):
 		super().__init__()
-		io_shapes = [np.product(in_shape).item(0), *out_shapes]
-		ffn_layers = [('flatten', nn.Flatten(start_dim=1, end_dim=-1))]
-		self.in_shape, self.out_shape = in_shape, (io_shapes[-1],)
+		self.in_shape = in_shape
+		if (flatten):
+			ffn_layers = [('flatten', nn.Flatten(start_dim=1, end_dim=-1))]
+			# io_shapes = [np.product(in_shape[1:]).item(0), *out_shapes]
+			io_shapes = [np.product(in_shape).item(0), *out_shapes]
+			self.out_shape = (io_shapes[-1],)
+		else:
+			ffn_layers = []
+			io_shapes = [in_shape[-1], *out_shapes]
+			self.out_shape = (*in_shape[:-1], io_shapes[-1],)
+
+		dropouts = [global_dropout] * len(out_shapes)
+		dropouts[0], dropouts[-1] = input_dropout, output_dropout
 
 		for l, (i, o) in enumerate(pairwise(io_shapes)):
 			ffn_layers.append((f'ff_{l}', init_layer(nn.Linear(i, o), act=act, \
 				init_method=init)))
 			if (act not in ('linear', None) and (l < len(out_shapes)-1 or act_output)):
 				ffn_layers.append((f'af_{l}', PYTORCH_ACT_MAPPING.get(act)()))
+			if (is_valid(do := dropouts[l])):
+				ffn_layers.append((f'do_{l}', nn.Dropout(do)))
 
 		self.model = nn.Sequential(OrderedDict(ffn_layers))
 
@@ -754,25 +873,6 @@ class FFN(nn.Module):
 				'label_size': num_classes-1,
 			}
 		return params
-
-class MultichannelFFN(nn.Module):
-	"""
-	Multi channel MLP Feedforward Network
-	Creates a FFN over independent channels (analagous to torch.nn.conv1d)
-	"""
-	def __init__(self, in_shape, out_shapes=[128, 128, 128], act='relu',
-		init='xavier_uniform'):
-		"""
-		Args:
-			in_shape (tuple): shape of the network's input tensor, expects a shape (in_channels, in_width)
-		"""
-		super().__init__()
-		raise NotImplementedError()
-		self.model = [FFN(in_shape[1], out_shapes=out_shapes) for i in range(in_shape[0])]
-
-	def forward(self, x):
-		# TODO - iterate across channels and apply model[i] to each and concatenate output
-		return self.model(x)
 
 class AE(nn.Module):
 	"""
@@ -811,7 +911,25 @@ class AE(nn.Module):
 MODEL_MAPPING = {
 	'ffn': FFN,
 	'mha': MHA,
+	'la': LaplaceAttention,
 	'stcn': StackedTCN,
 	'ttcn': TransposedTCN
+}
+
+NORM_MAPPING = {
+	'gn': lambda in_shape, num_groups, **params: \
+		nn.GroupNorm(num_groups=num_groups, num_channels=in_shape[0], **params),
+	'in1d': lambda in_shape, **params: \
+		nn.InstanceNorm1d(num_features=in_shape[0], **params),
+	'in2d': lambda in_shape, **params: \
+		nn.InstanceNorm2d(num_features=in_shape[0], **params),
+	'in3d': lambda in_shape, **params: \
+		nn.InstanceNorm3d(num_features=in_shape[0], **params),
+	'bn1d': lambda in_shape, **params: \
+		nn.BatchNorm1d(num_features=in_shape[0], **params),
+	'bn2d': lambda in_shape, **params: \
+		nn.BatchNorm2d(num_features=in_shape[0], **params),
+	'bn3d': lambda in_shape, **params: \
+		nn.BatchNorm3d(num_features=in_shape[0], **params),
 }
 

@@ -227,26 +227,41 @@ class WindowBatchSampler(torch.utils.data.Sampler):
 		batch_size (int>=1): batch window size
 		batch_step_size (int>=1): step size (distance between adjacent batches)
 		batch_shuffle (bool): whether to shuffle the batch order
+		method: how to deal with remainder
 	"""
 
 	def __init__(self, data_source, batch_size=128, batch_step_size=1, \
-		batch_shuffle=False):
+		method='trunc', batch_shuffle=False,):
 		super().__init__(data_source)
 		self.data_source = data_source
 		self.batch_size = batch_size
 		self.batch_step_size = batch_step_size
 		self.batch_shuffle = batch_shuffle
+		self.method = method
 
 	def __iter__(self):
-		iterable = more_itertools.windowed(
-			range(len(self.data_source)), n=self.batch_size, step=self.batch_step_size,
-				fillvalue=-1)	# fillvalue of -1 ffills the last minibatch
+		if (self.method == 'ffill'):
+			iterable = more_itertools.windowed(range(len(self.data_source)), \
+					n=self.batch_size, step=self.batch_step_size, fillvalue=-1)
+		elif (self.method == 'nfill'):
+			iterable = more_itertools.windowed(range(len(self.data_source)), \
+				n=self.batch_size, step=self.batch_step_size, fillvalue=None)
+		elif (self.method == 'trunc'):
+			trunc_end = ((len(self)-1)*self.batch_step_size) + self.batch_size
+			iterable = more_itertools.windowed(range(trunc_end), \
+				n=self.batch_size, step=self.batch_step_size, fillvalue=None)
+
 		if (self.batch_shuffle):
 			raise NotImplementedError("Need to add ability to shuffle batches")
+
 		return iterable
 
 	def __len__(self):
-		return math.ceil((len(self.data_source)-self.batch_size)/self.batch_step_size) + 1
+		num_steps = (len(self.data_source) - self.batch_size) / self.batch_step_size
+		if (self.method in ('ffill', 'nfill')):
+			return math.ceil(num_steps) + 1
+		elif (self.method == 'trunc'):
+			return math.floor(num_steps) + 1
 
 def batchify(data, loss, batch_size, shuffle=False, batch_step_size=None,
 	batch_shuffle=False, num_workers=0, pin_memory=False):
@@ -280,7 +295,8 @@ def batchify(data, loss, batch_size, shuffle=False, batch_step_size=None,
 			num_workers=num_workers, pin_memory=pin_memory)
 	else:
 		batch_sampler = WindowBatchSampler(ds, batch_size=batch_size, \
-			batch_step_size=batch_step_size, batch_shuffle=batch_shuffle)
+			batch_step_size=batch_step_size, method='trunc', \
+			batch_shuffle=batch_shuffle)
 		dl = DataLoader(ds, batch_sampler=batch_sampler, num_workers=num_workers,
 			pin_memory=pin_memory)
 	return dl

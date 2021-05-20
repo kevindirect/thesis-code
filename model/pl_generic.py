@@ -104,26 +104,13 @@ class GenericModel(pl.LightningModule):
 				epoch_type: {
 					'accuracy': tm.Accuracy(compute_on_step=False),
 					'precision': tm.Precision(num_classes=num_classes,
-						average='macro', compute_on_step=False),
+						average='micro', compute_on_step=False),
 					'recall': tm.Recall(num_classes=num_classes,
-						average='macro', compute_on_step=False),
-					# 'f0.5': tm.FBeta(num_classes=num_classes, beta=0.5,
-					# 	average='micro', compute_on_step=False),
+						average='micro', compute_on_step=False),
 					'f1.0': tm.FBeta(num_classes=num_classes, beta=1.0,
 						average='micro', compute_on_step=False),
-					# 'f2.0': tm.FBeta(num_classes=num_classes, beta=2.0,
+					# 'f0.5': tm.FBeta(num_classes=num_classes, beta=0.5,
 					# 	average='micro', compute_on_step=False),
-				}
-				for epoch_type in epoch_metric_types
-			}
-			self.epoch_returns = {
-				epoch_type: {
-					'br': SimulatedReturn(use_conf=False, compounded=False, pred_type=self.model_type),
-					'brc': SimulatedReturn(use_conf=False, compounded=True, pred_type=self.model_type),
-					'cr': SimulatedReturn(use_conf=True, use_kelly=False, compounded=False, pred_type=self.model_type),
-					'crc': SimulatedReturn(use_conf=True, use_kelly=False, compounded=True, pred_type=self.model_type),
-					'kr': SimulatedReturn(use_conf=True, use_kelly=True, compounded=False, pred_type=self.model_type),
-					'krc': SimulatedReturn(use_conf=True, use_kelly=True, compounded=True, pred_type=self.model_type),
 				}
 				for epoch_type in epoch_metric_types
 			}
@@ -135,17 +122,30 @@ class GenericModel(pl.LightningModule):
 				}
 				for epoch_type in epoch_metric_types
 			}
-			self.epoch_returns = {
-				epoch_type: {
-					'br': SimulatedReturn(use_conf=False, compounded=False, pred_type=self.model_type),
-					'brc': SimulatedReturn(use_conf=False, compounded=True, pred_type=self.model_type),
-					# 'cr': SimulatedReturn(use_conf=True, use_kelly=False, compounded=False, pred_type=self.model_type),
-					# 'crc': SimulatedReturn(use_conf=True, use_kelly=False, compounded=True, pred_type=self.model_type),
-					# 'kr': SimulatedReturn(use_conf=True, use_kelly=True, compounded=False, pred_type=self.model_type),
-					# 'krc': SimulatedReturn(use_conf=True, use_kelly=True, compounded=True, pred_type=self.model_type),
-				}
-				for epoch_type in epoch_metric_types
-			}
+
+		self.epoch_returns = {}
+		for epoch_type in epoch_metric_types:
+			epoch_ret = {}
+			br = SimulatedReturn(use_conf=False, compounded=False, pred_type=self.model_type)
+			epoch_ret[br.name] = br
+
+			for thresh in [None, .050, .125, .250, .500, .750]:
+				cr = SimulatedReturn(use_conf=True, use_kelly=False, compounded=False, \
+					pred_type=self.model_type, dir_thresh=thresh, conf_thresh=thresh)
+				kr = SimulatedReturn(use_conf=True, use_kelly=True, compounded=False, \
+					pred_type=self.model_type, dir_thresh=thresh, conf_thresh=thresh)
+				epoch_ret[cr.name] = cr
+				epoch_ret[kr.name] = kr
+
+			# for thresh in [.500,]:
+			# 	cr = SimulatedReturn(use_conf=True, use_kelly=False, compounded=False, \
+			# 		pred_type=self.model_type, dir_thresh=thresh)
+			# 	kr = SimulatedReturn(use_conf=True, use_kelly=True, compounded=False, \
+			# 		pred_type=self.model_type, dir_thresh=thresh)
+			# 	epoch_ret[cr.name] = cr
+			# 	epoch_ret[kr.name] = kr
+
+			self.epoch_returns[epoch_type] = epoch_ret
 
 	def configure_optimizers(self):
 		"""
@@ -160,14 +160,24 @@ class GenericModel(pl.LightningModule):
 
 	def forward(self, x):
 		"""
-		Run input through model and return output.
-		Use at inference time only.
-		"""
-		raise NotImplementedError()
+		Run input through model and return output. Used at inference time only.
 
-	def forward_step(self, batch, batch_idx, epoch_type='train'):
+		Use pl.Trainer.predict to get predictions based on input data.
+		Use pl.Trainer.{validate, test} to evalute the model over validation/test sets.
 		"""
-		Run forward pass, calculate step loss, and calculate step metrics.
+		try:
+			return self.model(x)
+		except Exception as err:
+			print("Error! pl_generic.py > GenericModel > forward() > model()\n",
+				sys.exc_info()[0], err)
+			print(f'{x.shape=}')
+			print(f'{y.shape=}')
+			print(f'{z.shape=}')
+			raise err
+
+	def forward_step(self, batch, batch_idx, epoch_type):
+		"""
+		Run forward pass, calculate step loss, and calculate step metrics. Used for training.
 		"""
 		x, y, z = batch
 		try:
@@ -184,12 +194,12 @@ class GenericModel(pl.LightningModule):
 		if (self.model_type == 'clf'):
 			actual = y
 			if (self.t_params['loss'] in ('clf-ce',)):
-				pred_loss = F.softmax(pred_raw, dim=-1)
-				pred_conf, pred = pred_loss.detach().clone() \
-					.max(dim=-1, keepdim=False)
-				pred_dir = pred.detach().clone()
-				pred_dir[pred_dir==0] = -1
-				pred_ret = pred_dir * pred_conf
+				pred_t_loss = pred_t_raw
+				pred_t_smax = F.softmax(pred_t_raw.detach().clone(), dim=-1)
+				pred_t_conf, pred_t = pred_t_smax.max(dim=-1, keepdim=False)
+				pred_t_dir = pred_t.detach().clone()
+				pred_t_dir[pred_t_dir==0] = -1
+				pred_t_ret = pred_t_dir * pred_t_conf
 			else:
 				raise NotImplementedError()
 		elif (self.model_type == 'reg'):
@@ -232,9 +242,9 @@ class GenericModel(pl.LightningModule):
 
 		return {'loss': model_loss}
 
-	def aggregate_loss_epoch_end(self, outputs, epoch_type='train'):
+	def aggregate_log_epoch_loss(self, outputs, epoch_type):
 		"""
-		Aggregate step losses into epoch loss and log it.
+		Aggregate step losses and log them.
 		"""
 		step_losses = [d['loss'] and d['loss'].cpu() for d in outputs]
 		epoch_loss = None
@@ -246,20 +256,35 @@ class GenericModel(pl.LightningModule):
 			self.log(f'{epoch_type}_loss', epoch_loss, prog_bar=False, \
 				logger=True, on_step=False, on_epoch=True)
 
-	def compute_metrics_epoch_end(self, epoch_type='train'):
+	def compute_log_epoch_metrics(self, epoch_type):
 		"""
-		Compute, log, and reset metrics at the end of an epoch.
+		Compute and log the running metrics.
 		"""
 		for name, met in self.epoch_metrics[epoch_type].items():
 			self.log(f'{epoch_type}_{name}', met.compute(), prog_bar=False, \
 				logger=True, on_step=False, on_epoch=True)
-			met.reset()
 
 		if (is_valid(self.epoch_returns)):
 			for name, ret in self.epoch_returns[epoch_type].items():
 				self.log_dict(ret.compute(pfx=epoch_type), prog_bar=False, \
 					logger=True, on_step=False, on_epoch=True)
+
+	def reset_metrics(self, epoch_type):
+		"""
+		Reset/Clear the running metrics.
+		"""
+		for name, met in self.epoch_metrics[epoch_type].items():
+			met.reset()
+
+		if (is_valid(self.epoch_returns)):
+			for name, ret in self.epoch_returns[epoch_type].items():
 				ret.reset()
+
+	def on_train_epoch_start(self, epoch_type='train'):
+		"""
+		Clear training metrics for new epoch.
+		"""
+		self.reset_metrics(epoch_type)
 
 	def training_step(self, batch, batch_idx, epoch_type='train'):
 		"""
@@ -269,10 +294,16 @@ class GenericModel(pl.LightningModule):
 
 	def training_epoch_end(self, outputs, epoch_type='train'):
 		"""
-		Aggregate training step losses and step metrics and log them all.
+		Aggregate training step losses and metrics and log them all.
 		"""
-		self.aggregate_loss_epoch_end(outputs, epoch_type)
-		self.compute_metrics_epoch_end(epoch_type)
+		self.aggregate_log_epoch_loss(outputs, epoch_type)
+		self.compute_log_epoch_metrics(epoch_type)
+
+	def on_validation_epoch_start(self, epoch_type='val'):
+		"""
+		Clear validation metrics for new epoch.
+		"""
+		self.reset_metrics(epoch_type)
 
 	def validation_step(self, batch, batch_idx, epoch_type='val'):
 		"""
@@ -282,10 +313,16 @@ class GenericModel(pl.LightningModule):
 
 	def validation_epoch_end(self, outputs, epoch_type='val'):
 		"""
-		Aggregate validation step losses and step metrics and log them all.
+		Aggregate validation step losses and metrics and log them all.
 		"""
-		self.aggregate_loss_epoch_end(outputs, epoch_type)
-		self.compute_metrics_epoch_end(epoch_type)
+		self.aggregate_log_epoch_loss(outputs, epoch_type)
+		self.compute_log_epoch_metrics(epoch_type)
+
+	def on_test_epoch_start(self, epoch_type='test'):
+		"""
+		Clear test metrics for new epoch.
+		"""
+		self.reset_metrics(epoch_type)
 
 	def test_step(self, batch, batch_idx, epoch_type='test'):
 		"""
@@ -295,10 +332,10 @@ class GenericModel(pl.LightningModule):
 
 	def test_epoch_end(self, outputs, epoch_type='test'):
 		"""
-		Aggregate test step losses and step metrics and log them all.
+		Aggregate test step losses and metrics and log_epoch them all.
 		"""
-		self.aggregate_loss_epoch_end(outputs, epoch_type)
-		self.compute_metrics_epoch_end(epoch_type)
+		self.aggregate_log_epoch_loss(outputs, epoch_type)
+		self.compute_log_epoch_metrics(epoch_type)
 
 	@classmethod
 	def fix_metrics_csv(cls, fname, dir_path):

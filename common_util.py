@@ -719,7 +719,7 @@ def group_iter(iterable, n=2, fill_value=None):
 def window_iter(iterable, n=2):
 	"""
 	Returns a sliding window (of width n) over data from the iterable
-		s -> (s0,s1,...s[n-1]), (s1,s2,...,sn), ...
+		s -> (s[0],s[1],...s[n-1]), (s[1],s[2],...,s[n]), ...
 	"""
 	it = iter(iterable)
 	result = tuple(islice(it, n))
@@ -728,6 +728,16 @@ def window_iter(iterable, n=2):
 	for elem in it:
 		result = result[1:] + (elem,)
 		yield result
+
+def trunc_step_window_iter(iterable, n=2, step=1):
+	"""
+	Returns a truncated sliding window over data from the iterable
+		s -> (s[0],s[1],...s[n-1]), (s[step],s[step+1],...,s[step+n-1]), ...
+	"""
+	n_steps = ((len(iterable)-n)//step)+1
+	for i in range(n_steps):
+		start = i*step
+		yield iterable[start:start+n]
 
 def col_iter(two_d_list):
 	"""
@@ -2301,6 +2311,67 @@ def pt_init_random_seed(seed):
 	torch.random.manual_seed(seed)
 	torch.backends.cudnn.deterministic = True
 	torch.backends.cudnn.benchmark = False
+
+def pt_random_choice(pt_obj, n=None, replacement=False):
+	"""
+	Randomly choose elements of the tensor at dim=0.
+	If n is None, randomly shuffles the tensor.
+	"""
+	n = n or len(pt_obj)
+	if (replacement):
+		rand_idx = torch.randint(len(pt_obj), (n,))
+	else:
+		rand_idx = torch.randperm(len(pt_obj))[:n]
+	return pt_obj[rand_idx]
+
+def pt_resample_values(pt_obj, n='max', shuffle=True):
+	"""
+	Resample pt_obj to uniformly represent all types of values -
+	should only be used with finite valued tensors.
+
+	Args:
+		pt_obj:
+		n (int>0|max|min|avg):
+		shuffle:
+
+	Returns:
+		indices of the resampled tensor.
+	"""
+	val, val_cnt = pt_obj.unique(sorted=True, return_inverse=False, return_counts=True)
+	pt_obj_idx = torch.arange(len(pt_obj))
+
+	if (is_type(n, str)):
+		n = {
+			'max': val_cnt.max(),
+			'min': val_cnt.min(),
+			'avg': val_cnt.float().mean().int(),
+		}.get(n)
+	elif (not is_type(n, int)):
+		raise NotImplementedError()
+
+	resample_idxs = []
+	for i, v in enumerate(val):
+		new_idx = pt_obj_idx[pt_obj==v]
+		if (val_cnt[i] > n):
+			new_idx = pt_random_choice(new_idx, n=n, \
+				replacement=False)
+		elif (val_cnt[i] < n):
+			new_idx = pt_random_choice(new_idx, n=n, \
+				replacement=True)
+		resample_idxs.append(new_idx)
+	resample_idx = torch.cat(resample_idxs)
+
+	if (shuffle):
+		resample_idx = pt_random_choice(resample_idx, replacement=False)
+
+	# assert(len(resample_idx) == len(val)*n)
+	# res, res_cnt = pt_obj[resample_idx].unique(sorted=True, \
+	# 	return_inverse=False, return_counts=True)
+	# assert (res==val).all()
+	# assert (res_cnt==n).all()
+	# sys.exit()
+
+	return resample_idx
 
 def pyt_reverse_dim_order(pyt):
 	"""

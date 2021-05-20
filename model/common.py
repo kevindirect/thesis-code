@@ -55,10 +55,8 @@ class DistributionNLLLoss(nn.modules.loss._Loss):
 	"""
 	__constants__ = ['reduction']
 
-	def __init__(self, size_average=None, reduce=None, reduction: str = 'none',
-		embed_reduction: str = 'mean') -> None:
+	def __init__(self, size_average=None, reduce=None, reduction: str = 'none') -> None:
 		super().__init__(size_average, reduce, reduction)
-		self.embed_reduction = embed_reduction
 
 	def forward(self, pred_dist, target) -> torch.Tensor:
 		# if (type(out_dist).__name__ in ('Bernoulli', 'Beta', 'Normal', 'LogNormal')):
@@ -76,9 +74,6 @@ class DistributionNLLLoss(nn.modules.loss._Loss):
 		# Weight loss nearer to prediction time?
 		# weight = (torch.arange(nll.shape[1]) + 1).float().to(dev)[None, :]
 		# lossprob_weighted = nll / torch.sqrt(weight)  # We want to weight nearer stuff more
-		if (self.embed_reduction == 'mean'):
-			nll = nll.mean(dim=1, keepdim=True)
-
 		if (self.reduction == 'mean'):
 			nll = nll.mean(dim=0)
 

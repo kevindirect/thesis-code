@@ -170,9 +170,31 @@ class XGDataModule(pl.LightningDataModule):
 			t = flt[2]
 			t = torch.tensor(t[t!=0], dtype=torch.float32, requires_grad=False)
 			for strat in bench_strats:
-				strat.update(None, None, t)
+				strat.update(t)
 				vals = strat.compute(pfx=pfx)
 				bench_dict.update(vals)
 				strat.reset()
 		return rectify_json(bench_dict)
+
+	def get_benchmark_strats(self):
+		"""
+		Return benchmarks objects.
+		"""
+		bench_strats = {pfx: {} for pfx in ('train', 'val', 'test')}
+
+		for pfx, flt in zip(('train', 'val', 'test'), \
+			(self.train, self.val, self.test)):
+			strats = (
+				BuyAndHoldStrategy(compounded=False),
+				BuyAndHoldStrategy(compounded=True),
+				OptimalStrategy(compounded=False),
+				OptimalStrategy(compounded=True)
+			)
+			# t = np.sum(flt[2], axis=(1, 2), keepdims=False)
+			t = flt[2]
+			t = torch.tensor(t[t!=0], dtype=torch.float32, requires_grad=False)
+			for strat in strats:
+				strat.update(t)
+				bench_strats[pfx][strat.name] = strat
+		return bench_strats
 
