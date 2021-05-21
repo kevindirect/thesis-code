@@ -243,7 +243,7 @@ class MHA(nn.Module):
 		* C: channel/embedding
 		* S: sequence
 	"""
-	def __init__(self, in_shape, heads=1, dropout=0.0, depth=1, kdim=None, vdim=None):
+	def __init__(self, in_shape, num_heads=1, dropout=0.0, depth=1, kdim=None, vdim=None):
 		"""
 		Args:
 			in_shape (tuple): (C, S)
@@ -253,8 +253,9 @@ class MHA(nn.Module):
 		"""
 		super().__init__()
 		self.in_shape, self.out_shape = in_shape, in_shape
+		self.num_heads = num_heads
 		self.mhas = nn.ModuleList([nn.MultiheadAttention(
-			in_shape[0], heads, dropout=dropout, bias=True, add_bias_kv=False,
+			in_shape[0], self.num_heads, dropout=dropout, bias=True, add_bias_kv=False,
 			add_zero_attn=False, kdim=kdim, vdim=vdim) for _ in range(depth)])
 
 	def forward(self, q, k=None, v=None, key_padding_mask=None, attn_mask=None):

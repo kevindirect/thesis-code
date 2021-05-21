@@ -16,7 +16,7 @@ import torch.nn as nn
 
 from common_util import is_valid, isnt
 from model.common import PYTORCH_ACT1D_LIST, PYTORCH_INIT_LIST
-from model.model_util import log_prob_sigma, init_layer, get_padding, pt_multihead_attention, SwapLinear, TransposeModule, MODEL_MAPPING, NORM_MAPPING
+from model.model_util import log_prob_sigma, init_layer, get_padding, pt_multihead_attention, MODEL_MAPPING
 # Tensors are column-major, shaped as (batch, channel, height, width) unless otherwise specified
 # The in_shape and out_shape attributes of modules don't include the batch size
 # Inspired by:
@@ -26,7 +26,7 @@ from model.model_util import log_prob_sigma, init_layer, get_padding, pt_multihe
 
 
 # ********** HELPER FUNCTIONS **********
-def pt_cat_xy(x, y, size=1, dim=2):
+def pt_concat_xy(x, y, size=1, dim=2):
 	assert(x.shape[0] == y.shape[0])
 	xpd_y = y.reshape(y.shape[0], 1, 1, 1).float()
 
@@ -39,21 +39,15 @@ def pt_cat_xy(x, y, size=1, dim=2):
 
 	return torch.cat([x, xpd_y], dim=dim)
 
-def get_xy_cat_dim(rt_name):
-	"""
-	Return dimension to cat x and y tensors (includes batch size)
-	"""
+def get_xy_concat_dim(rt_name):
 	return {
 		'stcn': 2,
 		'ffn': 3
 	}.get(rt_name, 3)
 
-def get_rt_in_shape(in_shape, label_size, cat_dim):
-	"""
-	Note: input and output shape variables do not start with a batch size
-	"""
+def get_rt_in_shape(in_shape, label_size, cc_dim):
 	rt_in_shape = list(in_shape)
-	rt_in_shape[cat_dim-1] += label_size # cat_dim-1 to account for no batch size
+	rt_in_shape[cc_dim-1] += label_size
 	rt_in_shape.remove(1)
 	return tuple(rt_in_shape)
 
@@ -98,8 +92,8 @@ class DetEncoder(nn.Module):
 		if (isnt(xa_params)):
 			xa_params = {}
 
-		self.cat_dim = get_xy_cat_dim(rt_name)
-		rt_in_shape = get_rt_in_shape(self.in_shape, self.label_size, self.cat_dim)
+		self.cc_dim = get_xy_concat_dim(rt_name)
+		rt_in_shape = get_rt_in_shape(self.in_shape, self.label_size, self.cc_dim)
 		self.rep_transform = MODEL_MAPPING.get(rt_name, None)
 		try:
 			self.rep_transform = self.rep_transform and \
@@ -160,7 +154,7 @@ class DetEncoder(nn.Module):
 		* Include Positional Encoding?
 		"""
 		queries, keys = target_h.squeeze(), self.key_padding(context_h.squeeze())
-		reps = pt_cat_xy(context_h, context_y, self.label_size, dim=self.cat_dim) \
+		reps = pt_concat_xy(context_h, context_y, self.label_size, dim=self.cc_dim) \
 			.squeeze()
 		values = self.rep_transform(reps) if (self.rep_transform) else reps
 
@@ -170,6 +164,7 @@ class DetEncoder(nn.Module):
 		key_padding_mask[:, -1] = True # True -> ignored
 
 		if (self.class_agg):
+			# TODO must work for multihead case
 			classes = context_y.unique(sorted=True, return_inverse=False)
 			cla_reps = []
 			for i, cla in enumerate(classes):
@@ -177,12 +172,8 @@ class DetEncoder(nn.Module):
 				attn_mask = values.new_zeros((values.shape[0], queries.shape[-1], values.shape[-1]), \
 					dtype=torch.bool)
 				attn_mask[context_y != cla, :, :] = True # True -> ignored
-				num_heads = self.cross_aggregation[i].num_heads
-				attn_mask = attn_mask.repeat_interleave(num_heads, dim=0) # repeat each batch example for each head
-
 				cla_rep = self.cross_aggregation[i](queries, keys, values, \
 					key_padding_mask=key_padding_mask, attn_mask=attn_mask)
-
 				if (self.class_agg_method == 'add'):
 					cla_rep[torch.isnan(cla_rep)] = 0.0
 				elif (self.class_agg_method == 'cat'):
@@ -206,10 +197,10 @@ class LatEncoder(nn.Module):
 
 	1. Transform (Xc, yc) -> enc
 	2. Run self attention on enc
-	3. Use aggregate representation of enc to parameterize a distribution (latent variable)
+	3. Use aggregate representation (over sequence dim) of enc to parameterize a distribution (latent variable)
 	* using linear layers for map_layer, alpha, and beta modules
 	"""
-	def __init__(self, in_shape, label_size, latent_size=256, cat_before_rt=True, class_agg=False,
+	def __init__(self, in_shape, label_size, latent_size=256, class_agg=False,
 		rt_name='mha', rt_params=None, dist_type='normal',
 		min_std=.01, use_lvar=False):
 		"""
@@ -228,13 +219,13 @@ class LatEncoder(nn.Module):
 		self.in_shape = in_shape
 		self.label_size = label_size
 		self.min_std, self.use_lvar = min_std, use_lvar
-		self.cat_before_rt = cat_before_rt
 		self.class_agg = class_agg
+		self.cat_before_transform = False
 		if (isnt(rt_params)):
 			rt_params = {}
 
-		self.cat_dim = get_xy_cat_dim(rt_name)
-		rt_in_shape = get_rt_in_shape(self.in_shape, self.label_size, self.cat_dim)
+		self.cc_dim = get_xy_concat_dim(rt_name)
+		rt_in_shape = get_rt_in_shape(self.in_shape, self.label_size, self.cc_dim)
 		self.rep_transform = MODEL_MAPPING.get(rt_name, None)
 		try:
 			self.rep_transform = self.rep_transform and \
@@ -256,59 +247,39 @@ class LatEncoder(nn.Module):
 		assert is_valid(self.dist_fn), \
 			'dist_type must be a valid latent distribution type'
 
-		self.out_chan = self.rep_transform.out_shape[0] if (is_valid(rt_name)) \
+		self.agg_dim = 2
+		self.embed_size = self.rep_transform.out_shape[0] if (is_valid(rt_name)) \
 			else rt_in_shape[0]
-		self.out_chan = (self.label_size+1) * self.out_chan if (self.class_agg) \
-			else self.out_chan
-		self.embed_size = self.rep_transform.out_shape[-1] if (is_valid(rt_name)) \
-			else rt_in_shape[-1]
-		self.latent_size = latent_size if (is_valid(latent_size)) \
-			else self.in_shape[-2] * self.in_shape[-1]
-		self.map_size = (self.embed_size + self.latent_size) // 2
-		self.map_layer = nn.Linear(self.embed_size, self.map_size)
-		self.alpha = nn.Linear(self.map_size, self.latent_size)	# latent param 1
-		self.beta = nn.Linear(self.map_size, self.latent_size)	# latent param 2
+		print(self.embed_size)
+		self.latent_size = latent_size
+		self.map_layer = nn.Linear(self.embed_size, self.embed_size)	# attn -> latent
+		self.alpha = nn.Linear(self.embed_size, self.latent_size)	# latent param 1
+		self.beta = nn.Linear(self.embed_size, self.latent_size)	# latent param 2
 
 		self.sig = None
 		if (self.dist_type.endswith('normal')):
 			self.sig = nn.Sigmoid()
 			# self.sig = nn.LogSigmoid() if (self.use_lvar) else nn.Sigmoid() XXX
-		self.out_shape = (self.out_chan, self.latent_size)
+		self.out_shape = (self.latent_size,)
 
 	def forward(self, h, y):
 		"""
 		ANP Latent Convolutional Encoder forward Pass
 
-		h is shaped (n, channels, height, width)
+		h is shaped (n, channels, seq)
 		y is shaped (n, )
 		"""
-		if (self.cat_before_rt):
-			enc = pt_cat_xy(h, y, self.label_size, dim=self.cat_dim).squeeze()
+		if (self.cat_before_transform):
+			enc = pt_concat_xy(h, y, self.label_size, dim=self.cc_dim).squeeze()
 			enc = self.rep_transform(enc) if (self.rep_transform) else enc
 		else:
-			enc = self.rep_transform(h.squeeze()).unsqueeze(self.cat_dim-1) \
+			enc = self.rep_transform(h.squeeze()).unsqueeze(self.cc_dim-1) \
 				if (self.rep_transform) else h
-			enc = pt_cat_xy(enc, y, self.label_size, dim=self.cat_dim).squeeze()
+			enc = pt_concat_xy(enc, y, self.label_size, dim=self.cc_dim).squeeze()
 
-		# mean representation of encoded batch:
-		if (self.class_agg):
-			classes = y.unique(sorted=True, return_inverse=False)
-			cla_enc_means = []
-			for i, cla in enumerate(classes):
-				cla_enc = enc[y == cla]
-				cla_enc_mean = cla_enc.mean(dim=0)
-				cla_enc_means.append(cla_enc_mean)
-			enc_mean = torch.cat(cla_enc_means, dim=0)
-			# print(f'{enc_mean.shape=}')
-			# print(f'{enc_mean=}')
-			enc_param = torch.relu(self.map_layer(enc_mean))
-			# print(f'{enc_param.shape=}')
-			# print(f'{enc_param=}')
-			lat_dist_alpha, lat_dist_beta = self.alpha(enc_param), self.beta(enc_param)
-		else:
-			enc_mean = enc.mean(dim=0)
-			enc_param = torch.relu(self.map_layer(enc_mean))
-			lat_dist_alpha, lat_dist_beta = self.alpha(enc_param), self.beta(enc_param)
+		# TODO add self.class_agg functionality
+		sa_mean = torch.relu(self.map_layer(enc.mean(dim=self.agg_dim)))
+		lat_dist_alpha, lat_dist_beta = self.alpha(sa_mean), self.beta(sa_mean)
 
 		if (self.dist_type.endswith('normal')):
 			if (self.use_lvar):
@@ -335,7 +306,8 @@ class Decoder(nn.Module):
 		* decoder output is flattened to be able to send to mean and logsig layers
 	"""
 	def __init__(self, in_shape, out_size, use_det_path, use_lat_path,
-		det_encoder, lat_encoder, de_name='ffn', de_params=None,
+		det_encoder, lat_encoder,
+		de_name='ttcn', de_params=None,
 		dist_type='beta', min_std=.01, use_lvar=False):
 		"""
 		Args:
@@ -352,7 +324,7 @@ class Decoder(nn.Module):
 		"""
 		super().__init__()
 		self.in_shape = in_shape
-		self.out_size = out_size
+		self.out_shape = (out_size,)
 		self.min_std, self.use_lvar = min_std, use_lvar
 		self.de_name = de_name
 		if (isnt(de_params)):
@@ -367,39 +339,12 @@ class Decoder(nn.Module):
 			de_chan = de_chan+1 if (use_det_path) else de_chan
 			de_chan = de_chan+1 if (use_lat_path) else de_chan
 			de_height = self.in_shape[0]
-			de_width = self.in_shape[-1]
+			de_width = self.in_shape[2]
 			de_in_shape = (de_chan, de_height, de_width)
 			self.decoder = MODEL_MAPPING[de_name](de_in_shape, **de_params)
 		elif (de_name == 'ffn'):
-			de_chan = self.in_shape[0]
-			de_width = self.in_shape[-1]
-			if (de_params['flatten']):
-				de_params['out_shapes'].append(self.out_size)
-				self.decoder = MODEL_MAPPING[de_name]((de_chan, de_width), **de_params)
-			else:
-				de_seq_params = {**de_params}
-				de_chan_params = {**de_params}
-				de_seq_out_shapes = [de_width]*len(de_params['out_shapes']) + [1]
-				de_chan_out_shapes = [de_chan]*len(de_params['out_shapes']) + [self.out_size]
-				# de_seq_params['out_shapes'].append(1)
-				de_seq_params['out_shapes'] = de_seq_out_shapes
-				de_chan_params['out_shapes'] = de_chan_out_shapes
-				de_seq = MODEL_MAPPING[de_name]((de_chan, de_width), **de_seq_params)
-				de_chan = MODEL_MAPPING[de_name]((1, de_chan), **de_chan_params)
-				tm1 = TransposeModule(1, -1)
-				self.decoder = nn.Sequential(de_seq, tm1, de_chan)
-
-		if (self.de_name == 'ttcn'):
-			# Multichannel 2d conv -> single channel 2d conv
-			# rep = torch.stack(decoder_inputs, dim=2)
-			# rep = torch.cat(decoder_inputs, dim=1)#.unsqueeze(1)
-			self.cat_dim = 1
-		elif (self.de_name == 'stcn'):
-			# Single channel 2D conv
-			# rep = torch.cat(decoder_inputs, dim=1)#.unsqueeze(1)
-			self.cat_dim = 1
-		elif (self.de_name == 'ffn'):
-			self.cat_dim = 1 # XXX cat over C(1) or S(2)??
+			de_in_shape = (self.in_shape[0], self.in_shape[2]) # (height, width) dims
+			self.decoder = MODEL_MAPPING[de_name](de_in_shape, **de_params)
 
 		self.dist_type = dist_type
 		self.dist_fn = {
@@ -407,33 +352,23 @@ class Decoder(nn.Module):
 			'categorical': torch.distributions.Categorical,
 			'beta': torch.distributions.Beta,
 			'normal': torch.distributions.Normal,
-			'mvnormal': torch.distributions.MultivariateNormal,
 			'lognormal': torch.distributions.LogNormal
 		}.get(self.dist_type, None)
 		assert is_valid(self.dist_fn), \
 			'dist_type must be a valid output distribution type'
 
-		# dec_size = reduce(mul, self.decoder.out_shape)
-		# dec_chan, dec_size = self.decoder.out_shape[0], self.decoder.out_shape[-1]
-		self.alpha = nn.Linear(self.out_size, self.out_size) # primary out_dist parameter
+		decoder_size = reduce(mul, self.decoder.out_shape)
+		self.alpha = nn.Linear(decoder_size, out_size) # primary out_dist parameter
 		if (self.dist_type in ('bernoulli', 'categorical')):
 			self.beta = None
 			self.clamp = nn.Sigmoid()
-			self.out_shape = (self.out_size,)
 		elif (self.dist_type in ('beta',)):
-			self.beta = nn.Linear(self.out_size, self.out_size)
+			self.beta = nn.Linear(decoder_size, out_size)
 			self.clamp = partial(torch.clamp, min=0.0, max=1.0) #nn.Softplus()
-			self.out_shape = (self.out_size,)
-		elif (self.dist_type in ('normal', 'lognormal')):
-			self.beta = nn.Linear(self.out_size, self.out_size)
+		elif (self.dist_type.endswith('normal')):
+			self.beta = nn.Linear(decoder_size, out_size)
 			self.clamp = partial(torch.clamp, min=0.0, max=1.0) if (self.use_lvar) \
 				else nn.Softplus()
-			self.out_shape = (self.out_size,)
-		elif (self.dist_type in ('mvnormal',)):
-			self.beta = nn.Linear(self.out_size, self.out_size**2)
-			self.clamp = partial(torch.clamp, min=0.0, max=1.0) if (self.use_lvar) \
-				else nn.Softplus()
-			self.out_shape = (self.out_size,)
 
 	def forward(self, det_rep, lat_rep, target_h):
 		"""
@@ -444,37 +379,36 @@ class Decoder(nn.Module):
 		"""
 		decoder_inputs = [target_h.squeeze()]
 		if (is_valid(lat_rep)):
-			noop = [1] * lat_rep.ndim
-			lat_rep = lat_rep.unsqueeze(0).repeat(target_h.shape[0], *noop)
+			lat_rep = lat_rep.unsqueeze(2).expand(-1, -1, target_h.shape[-1]) #XXX
 			decoder_inputs.append(lat_rep)
 		if (is_valid(det_rep)):
 			decoder_inputs.append(det_rep)
 
-		try:
-			rep = torch.cat(decoder_inputs, dim=self.cat_dim)
-		except Exception as err:
-			print("Error! np_util2.py > Decoder > forward() > torch.cat()\n",
-				sys.exc_info()[0], err)
-			print(f'{self.cat_dim=}')
-			for i in range(len(decoder_inputs)):
-				print(f'{decoder_inputs[i].shape=}')
-
+		if (self.de_name == 'ttcn'):
+			# Multichannel 2d conv -> single channel 2d conv
+			# rep = torch.stack(decoder_inputs, dim=2)
+			rep = torch.cat(decoder_inputs, dim=1)#.unsqueeze(1)
+		elif (self.de_name == 'stcn'):
+			# Single channel 2D conv
+			rep = torch.cat(decoder_inputs, dim=1)#.unsqueeze(1)
+		elif (self.de_name == 'ffn'):
+			rep = torch.cat(decoder_inputs, dim=1)
 		decoded = self.decoder(rep)
-		out_dist_alpha = self.alpha(decoded)
+
+		# For now we're flattening the decoder output embedding
+		# out_dist_alpha = self.clamp(self.alpha(torch.flatten(decoded, start_dim=1, end_dim=-1))) # clf
+		out_dist_alpha = self.alpha(torch.flatten(decoded, start_dim=1, end_dim=-1)) # reg
 
 		if (self.dist_type in ('bernoulli', 'categorical')):
-			out_dist_alpha = self.clamp(out_dist_alpha.squeeze())
 			out_dist = self.dist_fn(probs=out_dist_alpha)
 		elif (self.dist_type in ('beta',)):
-			out_dist_beta = self.beta(decoded)
-			out_dist_alpha = self.clamp(out_dist_alpha.squeeze())
-			out_dist_beta = self.clamp(out_dist_beta.squeeze())
+			out_dist_beta = self.clamp(self.beta(torch.flatten(decoded, start_dim=1, end_dim=-1)))
 			out_dist = self.dist_fn(out_dist_alpha, out_dist_beta)
 			# print('a/b')
 			# print(out_dist_alpha.squeeze())
 			# print(out_dist_beta.squeeze())
-		elif (self.dist_type in ('normal', 'lognormal')):
-			out_dist_beta = self.beta(decoded)
+		elif (self.dist_type.endswith('normal')):
+			out_dist_beta = self.clamp(self.beta(torch.flatten(decoded, start_dim=1, end_dim=-1)))
 			if (self.use_lvar):
 				out_dist_beta = torch.clamp(out_dist_beta, math.log(self.min_std), \
 					-math.log(self.min_std))
@@ -483,22 +417,9 @@ class Decoder(nn.Module):
 				out_dist_sigma = self.min_std + (1 - self.min_std) \
 					* self.clamp(out_dist_beta)
 			out_dist_beta = out_dist_sigma # Bounded or clamped variance
-			out_dist = self.dist_fn(out_dist_alpha.squeeze(), out_dist_beta.squeeze())
-		elif (self.dist_type in ('mvnormal',)):
-			out_dist_beta = self.beta(decoded) \
-				.reshape(decoded.shape[0], -1, self.out_size, self.out_size)
-			if (self.use_lvar):
-				out_dist_beta = torch.clamp(out_dist_beta, math.log(self.min_std), \
-					-math.log(self.min_std))
-				out_dist_sigma = torch.exp(out_dist_beta)
-			else:
-				out_dist_sigma = self.min_std + (1 - self.min_std) \
-					* self.clamp(out_dist_beta)
-			# lower triangle of covariance matrix:
-			out_dist_beta = torch.tril(out_dist_sigma)
-			out_dist = self.dist_fn(out_dist_alpha, scale_tril=out_dist_beta)
+			out_dist = self.dist_fn(out_dist_alpha, out_dist_beta)
 
-		return out_dist
+		return out_dist 
 
 
 # ********** MODEL MODULES **********
@@ -506,10 +427,10 @@ class AttentiveNP(nn.Module):
 	"""
 	Attentive Neural Process Module
 	"""
-	def __init__(self, in_shape, out_size=None, label_size=1, in_name='bn2d', in_params=None,
-		ft_name='stcn', ft_params=None, use_det_path=True, use_lat_path=True,
+	def __init__(self, in_shape, out_size=None, label_size=1, ft_name='stcn', ft_params=None,
+		use_det_path=True, use_lat_path=True,
 		det_encoder_params=None, lat_encoder_params=None, decoder_params=None,
-		sample_latent_post=True, sample_latent_prior=False, use_lvar=False):
+		sample_latent=True, use_lvar=False):
 		"""
 		Args:
 			in_shape (tuple): shape of the network's input tensor,
@@ -523,8 +444,7 @@ class AttentiveNP(nn.Module):
 		super().__init__()
 		self.in_shape = in_shape
 		self.label_size = label_size
-		self.sample_latent_post = sample_latent_post
-		self.sample_latent_prior = sample_latent_prior
+		self.sample_latent = sample_latent
 		self.use_lvar = use_lvar
 		if (isnt(ft_params)):
 			ft_params = {}
@@ -534,10 +454,6 @@ class AttentiveNP(nn.Module):
 			lat_encoder_params = {}
 		if (isnt(decoder_params)):
 			decoder_params = {}
-
-		self.input_norm = NORM_MAPPING.get(in_name, None)
-		self.input_norm = self.input_norm and \
-			self.input_norm(self.in_shape, **in_params)
 
 		# Sequence transform (TCN, RNN, etc)
 		self.feat_transform = MODEL_MAPPING.get(ft_name, None)
@@ -550,24 +466,17 @@ class AttentiveNP(nn.Module):
 
 		self.det_encoder, self.lat_encoder = None, None
 		if (use_lat_path):
-			self.lat_encoder = LatEncoder(enc_in_shape, label_size,
-				**lat_encoder_params)
+			self.lat_encoder = LatEncoder(enc_in_shape, label_size, **lat_encoder_params)
 			dec_in_shape[0] += self.lat_encoder.out_shape[0]
-			print(f'{self.lat_encoder.in_shape=}')
-			print(f'{self.lat_encoder.out_shape=}')
 		if (use_det_path):
 			self.det_encoder = DetEncoder(enc_in_shape, label_size, embed_size,
 				**det_encoder_params)
 			dec_in_shape[0] += self.det_encoder.out_shape[0]
-			print(f'{self.det_encoder.in_shape=}')
-			print(f'{self.det_encoder.out_shape=}')
 		dec_in_shape = tuple(dec_in_shape)
 
 		self.decoder = Decoder(dec_in_shape, out_size or label_size,
 			use_det_path, use_lat_path, self.det_encoder, self.lat_encoder,
 			**decoder_params)
-		print(f'{self.decoder.in_shape=}')
-		print(f'{self.decoder.out_shape=}')
 		self.out_shape = self.decoder.out_shape
 
 	def forward(self, context_x, context_y, target_x, target_y=None):
@@ -579,20 +488,19 @@ class AttentiveNP(nn.Module):
 			context_y (torch.tensor):
 			target_x (torch.tensor):
 			target_y (torch.tensor):
+			train_mode (bool): whether the model is in training or not.
+				If in training, the model will use the (target_x,target_y)
+				conditioned posterior as the global latent.
 
 		Returns:
 			prior, posterior, and output distribution objects
 		"""
-		if (self.input_norm):
-			context_x = self.input_norm(context_x)
-			target_x = self.input_norm(target_x)
-
 		if (self.feat_transform):
 			context_h = self.feat_transform(context_x)
 			target_h = self.feat_transform(target_x)
 		else:
 			context_h, target_h = context_x, target_x
-		det_rep = lat_rep = prior_dist = post_dist = None
+		det_rep, lat_rep, prior_dist, post_dist = None, None, None, None
 
 		if (is_valid(self.det_encoder)):
 			det_rep = self.det_encoder(context_h, context_y, target_h)
@@ -603,13 +511,11 @@ class AttentiveNP(nn.Module):
 			if (is_valid(target_y)):
 				# At training time:
 				post_dist, post_beta = self.lat_encoder(target_h, target_y)
-				lat_rep = post_dist.rsample() if (self.sample_latent_post) \
-					else post_dist.mean
+				lat_rep = post_dist.rsample() if (self.sample_latent) else post_dist.mean
 			else:
-				# At eval/test/inference time:
+				# At test/inference time:
 				post_dist, post_beta = None, None
-				lat_rep = prior_dist.rsample() if (self.sample_latent_prior) \
-					else prior_dist.mean
+				lat_rep = prior_dist.rsample() if (self.sample_latent) else prior_dist.mean
 
 		out_dist = self.decoder(det_rep, lat_rep, target_h)
 		return prior_dist, post_dist, out_dist
