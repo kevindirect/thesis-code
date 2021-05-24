@@ -44,7 +44,8 @@ INTRADAY_LEN = 8
 ASSETS = ('sp_500', 'russell_2000', 'nasdaq_100', 'dow_jones')
 INTERVAL_YEARS = (2007, 2018)
 WIN_SIZE = 10
-VAL_RATIO, TEST_RATIO = .2, .2
+TRAIN_RATIO = .5
+# VAL_RATIO, TEST_RATIO = .2, .2
 # HOPT_WORKER_BIN = 'hyperopt-mongo-worker'
 # ERROR_CODE = 999999
 

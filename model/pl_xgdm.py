@@ -10,10 +10,10 @@ import pandas as pd
 import torch
 import pytorch_lightning as pl
 
-from common_util import MODEL_DIR, pd_split_ternary_to_binary, rectify_json, pairwise, df_del_midx_level, df_randlike
+from common_util import MODEL_DIR, DT_FMT_YMD, pd_split_ternary_to_binary, rectify_json, pairwise, df_del_midx_level, df_randlike, is_valid
 from model.common import ASSETS, INTRADAY_LEN, INTERVAL_YEARS
 from model.xg_util import get_xg_feature_dfs, get_xg_label_target_dfs, get_hardcoded_feature_dfs, get_hardcoded_label_target_dfs, dfs_get_common_interval_data
-from model.train_util import pd_to_np_tvt, get_dataloader
+from model.train_util import pd_to_np_tvt, pd_tvt_idx_split, get_dataloader
 from model.metrics_util import BuyAndHoldStrategy, OptimalStrategy
 
 
@@ -90,15 +90,13 @@ class XGDataModule(pl.LightningDataModule):
 		self.data = dfs_get_common_interval_data((fdata, ldata, tdata),
 			interval=self.interval)
 
-	def setup(self, t_params=None):
+	def setup(self):
 		"""
 		Split the data into {train, val, test} splits and convert to numpy arrays.
 		"""
-		t_params = t_params or self.t_params
 		self.train, self.val, self.test = zip(*map(pd_to_np_tvt, self.data))
-		self.fobs = list(self.train[0].shape[1:])
-		self.fobs[-1] = self.fobs[-1] * t_params['window_size']
-		self.fobs = tuple(self.fobs)
+		self.train_idx, self.val_idx, self.test_idx = pd_tvt_idx_split(self.data[1])
+		self.fobs = self.get_fobs()
 
 		for split in (self.train, self.val, self.test):
 			assert all(len(d)==len(split[0]) for d in split), \
@@ -108,10 +106,17 @@ class XGDataModule(pl.LightningDataModule):
 			assert train.shape[1:] == val.shape[1:] == test.shape[1:], \
 				"shape of f, l, t data must be identical across splits"
 
+	def get_fobs(self):
+		fobs = list(self.train[0].shape[1:])
+		fobs[-1] = fobs[-1] * self.t_params['window_size']
+		fobs = tuple(fobs)
+		return fobs
+
 	def update_params(self, new):
-		if (self.t_params['window_size'] != new['window_size']):
-			self.setup(t_params=new)
+		old_window_size = self.t_params['window_size']
 		self.t_params = new
+		if (self.t_params['window_size'] != old_window_size):
+			self.fobs = self.get_fobs()
 
 	train_dataloader = lambda self: get_dataloader(
 		data=self.train,
@@ -147,7 +152,7 @@ class XGDataModule(pl.LightningDataModule):
 		num_workers=self.t_params['num_workers'],
 		pin_memory=self.t_params['pin_memory'])
 
-	def get_benchmarks(self):
+	def get_benchmarks(self, train_len=None, val_len=None, test_len=None):
 		"""
 		Return benchmarks calculated from loaded data as a JSON serializable dict.
 		"""
@@ -158,17 +163,34 @@ class XGDataModule(pl.LightningDataModule):
 					.value_counts(normalize=True).to_dict()
 			},
 		)
-		bench_strats = (BuyAndHoldStrategy(compounded=False), BuyAndHoldStrategy(compounded=True),
-			OptimalStrategy(compounded=False), OptimalStrategy(compounded=True))
-		for pfx, flt in zip(('train', 'val', 'test'), \
-			(self.train, self.val, self.test)):
+		bench_strats = (
+			BuyAndHoldStrategy(compounded=False),
+			# BuyAndHoldStrategy(compounded=True),
+			OptimalStrategy(compounded=False),
+			# OptimalStrategy(compounded=True)
+		)
+
+		for pfx, flt, flt_idx, split_len in zip( \
+			('train', 'val', 'test'), \
+			(self.train, self.val, self.test), \
+			(self.train_idx, self.val_idx, self.test_idx), \
+			(train_len, val_len, test_len)):
 			l = np.sum(flt[1], axis=(1, 2), keepdims=False)
+			t = flt[2]
+			i = flt_idx.droplevel(1)
+			if (is_valid(split_len)):
+				l = l[:split_len]
+				t = t[:split_len]
+				i = i[:split_len]
+			t = torch.tensor(t[t!=0], dtype=torch.float32, requires_grad=False)
+			# t = np.sum(flt[2], axis=(1, 2), keepdims=False)
+
+			bench_dict[f'{pfx}_date_range_start'] = i[0].strftime(DT_FMT_YMD)
+			bench_dict[f'{pfx}_date_range_end'] = i[-1].strftime(DT_FMT_YMD)
+			bench_dict[f'{pfx}_date_range_len'] = len(i)
 			for stat in bench_stats:
 				bench_dict.update(stat(l, pfx))
 
-			# t = np.sum(flt[2], axis=(1, 2), keepdims=False)
-			t = flt[2]
-			t = torch.tensor(t[t!=0], dtype=torch.float32, requires_grad=False)
 			for strat in bench_strats:
 				strat.update(t)
 				vals = strat.compute(pfx=pfx)
@@ -176,25 +198,33 @@ class XGDataModule(pl.LightningDataModule):
 				strat.reset()
 		return rectify_json(bench_dict)
 
-	def get_benchmark_strats(self):
+	def get_benchmark_strats(self, train_len=None, val_len=None, test_len=None):
 		"""
 		Return benchmarks objects.
 		"""
 		bench_strats = {pfx: {} for pfx in ('train', 'val', 'test')}
 
-		for pfx, flt in zip(('train', 'val', 'test'), \
-			(self.train, self.val, self.test)):
+		for pfx, flt, flt_idx, split_len in zip( \
+			('train', 'val', 'test'), \
+			(self.train, self.val, self.test), \
+			(self.train_idx, self.val_idx, self.test_idx), \
+			(train_len, val_len, test_len)):
 			strats = (
 				BuyAndHoldStrategy(compounded=False),
-				BuyAndHoldStrategy(compounded=True),
+				# BuyAndHoldStrategy(compounded=True),
 				OptimalStrategy(compounded=False),
-				OptimalStrategy(compounded=True)
+				# OptimalStrategy(compounded=True)
 			)
 			# t = np.sum(flt[2], axis=(1, 2), keepdims=False)
 			t = flt[2]
+			i = flt_idx.droplevel(1)
+			if (is_valid(split_len)):
+				t = t[:split_len]
+				i = i[:split_len]
 			t = torch.tensor(t[t!=0], dtype=torch.float32, requires_grad=False)
 			for strat in strats:
 				strat.update(t)
 				bench_strats[pfx][strat.name] = strat
+			bench_strats[pfx]['index'] = i
 		return bench_strats
 

@@ -104,11 +104,11 @@ class GenericModel(pl.LightningModule):
 				epoch_type: {
 					'accuracy': tm.Accuracy(compute_on_step=False),
 					'precision': tm.Precision(num_classes=num_classes,
-						average='micro', compute_on_step=False),
+						average='macro', compute_on_step=False),
 					'recall': tm.Recall(num_classes=num_classes,
-						average='micro', compute_on_step=False),
+						average='macro', compute_on_step=False),
 					'f1.0': tm.FBeta(num_classes=num_classes, beta=1.0,
-						average='micro', compute_on_step=False),
+						average='macro', compute_on_step=False),
 					# 'f0.5': tm.FBeta(num_classes=num_classes, beta=0.5,
 					# 	average='micro', compute_on_step=False),
 				}
@@ -129,7 +129,7 @@ class GenericModel(pl.LightningModule):
 			br = SimulatedReturn(use_conf=False, compounded=False, pred_type=self.model_type)
 			epoch_ret[br.name] = br
 
-			for thresh in [None, .050, .125, .250, .500, .750]:
+			for thresh in [None,]: #, .050, .125, .250, .500, .750]:
 				cr = SimulatedReturn(use_conf=True, use_kelly=False, compounded=False, \
 					pred_type=self.model_type, dir_thresh=thresh, conf_thresh=thresh)
 				kr = SimulatedReturn(use_conf=True, use_kelly=True, compounded=False, \

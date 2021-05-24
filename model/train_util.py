@@ -17,11 +17,11 @@ from torch.utils.tensorboard import SummaryWriter
 
 from common_util import MODEL_DIR, identity_fn, is_type, is_ser, is_valid, isnt, np_inner, get0, midx_split, pd_rows, pd_midx_to_arr, df_midx_restack, pd_to_np
 from common_util import np_assert_identical_len_dim, window_iter, np_truncate_split_1d, np_truncate_vstack_2d
-from model.common import PYTORCH_MODELS_DIR, TEST_RATIO, VAL_RATIO
+from model.common import PYTORCH_MODELS_DIR, TRAIN_RATIO
 
 
 # ***** Conversion to Numpy *****
-def pd_get_np_tvt(pd_obj, as_midx=True, train_ratio=.6):
+def pd_get_np_tvt(pd_obj, as_midx=True, train_ratio=TRAIN_RATIO):
 	"""
 	Return the train, val, test numpy splits of a pandas object
 
@@ -44,7 +44,11 @@ def pd_get_np_tvt(pd_obj, as_midx=True, train_ratio=.6):
 		train_np, val_np, test_np = train_pd.values, val_pd.values, test_pd.values
 	return train_np, val_np, test_np
 
-def pd_to_np_tvt(pd_obj, train_ratio=7/11):
+def pd_tvt_idx_split(pd_obj, train_ratio=TRAIN_RATIO):
+	tv_ratio = (1-train_ratio)/2
+	return midx_split(pd_obj.index, train_ratio, tv_ratio, tv_ratio)
+
+def pd_to_np_tvt(pd_obj, train_ratio=TRAIN_RATIO):
 	"""
 	Return the train, val, test numpy splits of a pandas object as a tuple of numpy tensors.
 	Works with MultiIndex DataFrames.
@@ -56,9 +60,8 @@ def pd_to_np_tvt(pd_obj, train_ratio=7/11):
 	Returns:
 		(train, val, test) data as a tuple of numpy tensors
 	"""
-	tv_ratio = (1-train_ratio)/2
-	train_idx, val_idx, test_idx = midx_split(pd_obj.index, train_ratio, tv_ratio, tv_ratio)
-	train_df, val_df, test_df = map(partial(pd_rows, pd_obj), (train_idx, val_idx, test_idx))
+	train_df, val_df, test_df = map(partial(pd_rows, pd_obj), \
+		pd_tvt_idx_split(pd_obj, train_ratio=train_ratio))
 	if (is_type(pd_obj.index, pd.MultiIndex)):
 		train_df, val_df, test_df = map(df_midx_restack, (train_df, val_df, test_df))
 	return tuple(map(pd_to_np, (train_df, val_df, test_df)))

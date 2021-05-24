@@ -152,6 +152,7 @@ class NPModel(GenericModel):
 			aim_c, aim_t = yc, yt
 		elif (self.model_type == 'reg'):
 			aim_c, aim_t = zc, zt
+		beta_out = self.m_params['decoder_params']['dist_type'] == 'beta'
 
 		try:
 			prior_dist, post_dist, out_dist = self.model(xc, aim_c, xt, \
@@ -185,7 +186,11 @@ class NPModel(GenericModel):
 		if (self.model_type == 'clf'):
 			if (self.t_params['loss'] in ('clf-dnll',)):
 				pred_t_loss = out_dist
-				pred_t = pred_t_raw.detach().clone().clamp(0.0, 1.0)
+				pred_t = pred_t_raw.detach().clone()
+				if (beta_out):
+					pred_t = F.sigmoid(pred_t)
+				else:
+					pred_t = pred_t.clamp(0.0, 1.0)
 				pred_t_ret = (pred_t - .5) * 2
 			elif (self.t_params['loss'] in ('clf-ce',)):
 				pred_t_loss = pred_t_raw
@@ -314,70 +319,63 @@ class NPModel(GenericModel):
 
 		return {'loss': np_loss}
 
+	def get_precision(self):
+		"""
+		Workaround for pytorch Dirichlet/Beta not supporting half precision.
+		"""
+		precision = 16
+		if (self.t_params['sample_out'] and self.m_params['decoder_params']['dist_type'] == 'beta'):
+			precision = 32
+		elif (self.m_params['use_lat_path'] and \
+			(self.m_params['sample_latent_post'] or self.m_params['sample_latent_prior']) \
+			and self.m_params['lat_encoder_params']['dist_type'] == 'beta'):
+			precision = 32
+		return precision
+
 	@classmethod
-	def suggest_params(cls, trial=None, num_classes=2):
+	def suggest_params(cls, trial=None, loss_type='clf-ce'):
 		"""
 		suggest training hyperparameters from an optuna trial object
 		or return fixed default hyperparameters
 		XXX - call super class method to sample most of the tparams
 		"""
 		if (is_valid(trial)):
-			class_weights = torch.zeros(num_classes, dtype=torch.float32, \
-				device='cpu', requires_grad=False)
-			if (num_classes == 2):
-				class_weights[0] = trial.suggest_float(f'class_weights[0]', 0.40, 0.60, step=.01)
-				class_weights[1] = 1.0 - class_weights[0]
-			else:
-				for i in range(num_classes):
-					class_weights[i] = trial.suggest_float(f'class_weights[{i}]', \
-						0.40, 0.60, step=.01) #1e-6, 1.0, step=1e-6)
-				class_weights.div_(class_weights.sum()) # Vector class weights must sum to 1
-
-			batch_size = trial.suggest_int('batch_size', 128, 512, step=128)
-
-			params = {
-				'window_size': WIN_SIZE,
-				'feat_dim': None,
-				'train_shuffle': False,
-				'epochs': trial.suggest_int('epochs', 200, 700, step=10),
-				'batch_size': batch_size,
-				'batch_step_size': batch_size // 4,
-				'context_size': batch_size // 2,
-				'train_target_overlap': None,
-				'train_sample_context_size': True,
-				'loss': 'clf',
-				'class_weights': class_weights,
-				'opt': {
-					'name': 'adam',
-					'kwargs': {
-						'lr': trial.suggest_float('lr', 1e-6, 1e-3, log=True)
-					}
-				},
-				'num_workers': 0,
-				'pin_memory': True
-			}
+			batch_size = trial.suggest_int('batch_size', 64, 128, step=64)
+			window_size = trial.suggest_int('window_size', 5*2, 5*4, step=5*2)
+			lr = trial.suggest_float('lr', 1e-6, 1e-3, log=True)
+			train_target_overlap = trial.suggest_categorical('train_target_overlap', \
+				(None, batch_size//8, batch_size//4))
+			sample_out = trial.suggest_categorical('sample_out', (False, True))
 		else:
-			batch_size = 256
-			params = {
-				'window_size': WIN_SIZE,
-				'feat_dim': None,
-				'train_shuffle': False,
-				'epochs': 400,
-				'batch_size': batch_size,
-				'batch_step_size': batch_size // 4,
-				'context_size': batch_size // 2,
-				'train_target_overlap': None,
-				'train_sample_context_size': True,
-				'loss': 'clf',
-				'class_weights': None,
-				'opt': {
-					'name': 'adam',
-					'kwargs': {
-						'lr': 1e-6
-					}
-				},
-				'num_workers': 0,
-				'pin_memory': True
-			}
+			batch_size = 64*2
+			window_size = WIN_SIZE
+			lr = 1e-4
+			train_target_overlap = batch_size//8
+			sample_out = False
+
+		epochs = 150
+		model_type = loss_type.split('-')[0]
+		batch_step_size = batch_size//2
+
+		params =  {
+			'window_size': 5*4,
+			'feat_dim': None,
+			'train_shuffle': False,
+			'epochs': epochs,
+			'batch_size': batch_size,
+			'batch_step_size': batch_step_size,
+			'train_resample': batch_size, # max, min, avg, or n
+			'train_target_overlap': train_target_overlap,
+			'train_sample_context_size': False,
+			'context_size': batch_step_size,
+			'target_size': batch_step_size,
+			'loss': loss_type,
+			'class_weights': None,
+			'sample_out': model_type == 'clf' and sample_out,
+			'opt': {'name': 'adam', 'kwargs': {'lr': lr}},
+			'num_workers': 0,
+			'pin_memory': True
+		}
+
 		return params
 

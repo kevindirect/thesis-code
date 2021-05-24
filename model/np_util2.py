@@ -179,6 +179,7 @@ class DetEncoder(nn.Module):
 				attn_mask[context_y != cla, :, :] = True # True -> ignored
 				num_heads = self.cross_aggregation[i].num_heads
 				attn_mask = attn_mask.repeat_interleave(num_heads, dim=0) # repeat each batch example for each head
+				# attn_mask = attn_mask.repeat(num_heads, 1, 1)
 
 				cla_rep = self.cross_aggregation[i](queries, keys, values, \
 					key_padding_mask=key_padding_mask, attn_mask=attn_mask)
@@ -273,6 +274,8 @@ class LatEncoder(nn.Module):
 		if (self.dist_type.endswith('normal')):
 			self.sig = nn.Sigmoid()
 			# self.sig = nn.LogSigmoid() if (self.use_lvar) else nn.Sigmoid() XXX
+		elif (self.dist_type in ('beta',)):
+			self.sig = nn.Sigmoid()
 		self.out_shape = (self.out_chan, self.latent_size)
 
 	def forward(self, h, y):
@@ -323,6 +326,9 @@ class LatEncoder(nn.Module):
 					self.sig(lat_dist_beta)
 					# self.sig(lat_dist_beta * 0.5) XXX
 			lat_dist_beta = lat_dist_sigma
+		elif (self.dist_type in ('beta',)):
+			lat_dist_alpha = self.sig(lat_dist_alpha)
+			lat_dist_beta = self.sig(lat_dist_beta)
 
 		lat_dist = self.dist_fn(lat_dist_alpha, lat_dist_beta)
 		return lat_dist, lat_dist_beta
@@ -422,7 +428,7 @@ class Decoder(nn.Module):
 			self.out_shape = (self.out_size,)
 		elif (self.dist_type in ('beta',)):
 			self.beta = nn.Linear(self.out_size, self.out_size)
-			self.clamp = partial(torch.clamp, min=0.0, max=1.0) #nn.Softplus()
+			self.clamp = nn.Sigmoid()
 			self.out_shape = (self.out_size,)
 		elif (self.dist_type in ('normal', 'lognormal')):
 			self.beta = nn.Linear(self.out_size, self.out_size)
@@ -470,9 +476,6 @@ class Decoder(nn.Module):
 			out_dist_alpha = self.clamp(out_dist_alpha.squeeze())
 			out_dist_beta = self.clamp(out_dist_beta.squeeze())
 			out_dist = self.dist_fn(out_dist_alpha, out_dist_beta)
-			# print('a/b')
-			# print(out_dist_alpha.squeeze())
-			# print(out_dist_beta.squeeze())
 		elif (self.dist_type in ('normal', 'lognormal')):
 			out_dist_beta = self.beta(decoded)
 			if (self.use_lvar):
@@ -552,6 +555,10 @@ class AttentiveNP(nn.Module):
 		if (use_lat_path):
 			self.lat_encoder = LatEncoder(enc_in_shape, label_size,
 				**lat_encoder_params)
+			if (self.lat_encoder.out_shape[-1] != dec_in_shape[-1]):
+				self.lat_downsample = nn.Linear(self.lat_encoder.out_shape[-1], dec_in_shape[-1])
+			else:
+				self.lat_downsample = None
 			dec_in_shape[0] += self.lat_encoder.out_shape[0]
 			print(f'{self.lat_encoder.in_shape=}')
 			print(f'{self.lat_encoder.out_shape=}')
@@ -611,34 +618,123 @@ class AttentiveNP(nn.Module):
 				lat_rep = prior_dist.rsample() if (self.sample_latent_prior) \
 					else prior_dist.mean
 
+			if (is_valid(self.lat_downsample)):
+				lat_rep = self.lat_downsample(lat_rep)
+
+
 		out_dist = self.decoder(det_rep, lat_rep, target_h)
 		return prior_dist, post_dist, out_dist
 
 	@classmethod
-	def suggest_params(cls, trial=None, num_classes=2):
+	def suggest_params(cls, trial=None, num_classes=2, num_channels=1, loss_type='clf-ce'):
 		"""
 		suggest model hyperparameters from an optuna trial object
 		or return fixed default hyperparameters
 		"""
-		params_xa_mha = {
-			'heads': 1,
-			'dropout': 0.0,
-			'depth': 1,
-		}
+		if (is_valid(trial)):
+			id_high, gd_high, od_high = 0.4, 0.8, 0.8
+			in_name = trial.suggest_categorical('in_name', ('bn2d', 'gn', None))
 
-		params_ffn = {
-			'out_shapes': [32, 32, 32],
-			'act': 'relu',
-			'init': 'xavier_uniform',
-		}
+			stcn_ft_size = num_channels * (mult := trial.suggest_int('stcn_ft_mult', 1, 10))
+			stcn_ft_depth = trial.suggest_int('stcn_ft_depth', 2, 3)
+			stcn_ft_kernel_sizes = trial.suggest_int('stcn_ft_kernel_sizes', 4, 16, step=4)
+			stcn_ft_dilation_factor = 2**trial.suggest_int('stcn_ft_dilation_power', 1, 3)
+			stcn_ft_dropout_type = trial.suggest_categorical('stcn_ft_dropout_type', (None, '2d'))
+			stcn_ft_input_dropout = trial.suggest_float('stcn_ft_input_dropout', 0.0, id_high, step=1e-2)
+			stcn_ft_global_dropout = trial.suggest_float('stcn_ft_global_dropout', 0.0, gd_high, step=1e-2)
+			stcn_ft_output_dropout = trial.suggest_float('stcn_ft_output_dropout', 0.0, od_high, step=1e-2)
 
-		params_stcn = {
-			'size': 6,
-			'depth': 4,
-			'kernel_sizes': 15,
-			'input_dropout': 0.0,
-			'output_dropout': 0.0,
-			'global_dropout': 0.0,
+			use_det_path = trial.suggest_categorical('use_det_path', (True, False))
+			use_lat_path = True
+
+			if (use_det_path or use_lat_path):
+				mha_rt_num_heads = trial.suggest_categorical('mha_rt_num_heads', (1, mult, num_channels, stcn_ft_size))
+				mha_rt_dropout = trial.suggest_float('mha_rt_dropout', 0.0, gd_high, step=1e-2)
+				mha_rt_depth = trial.suggest_int('mha_rt_depth', 1, 2)
+
+				if (use_det_path):
+					mha_xa_num_heads = trial.suggest_categorical('mha_xa_num_heads', (1, mult, num_channels, stcn_ft_size))
+					mha_xa_dropout = trial.suggest_float('mha_xa_dropout', 0.0, gd_high, step=1e-2)
+					mha_xa_depth = trial.suggest_int('mha_xa_depth', 1, 2)
+					det_encoder_class_agg = trial.suggest_categorical('det_encoder_class_agg', (True, False))
+
+				if (use_lat_path):
+					lat_encoder_latent_size = trial.suggest_categorical('lat_encoder_latent_size', (None, 16, 1024))
+					lat_encoder_cat_before_rt = trial.suggest_categorical('lat_encoder_cat_before_rt', (True, False))
+					lat_encoder_class_agg = trial.suggest_categorical('lat_encoder_class_agg', (True, False))
+					lat_encoder_dist_type = trial.suggest_categorical('lat_encoder_dist_type', ('normal', 'beta'))
+
+			ffn_de_base = trial.suggest_int('ffn_de_base', 8, 16, step=8)
+			ffn_de_depth = trial.suggest_int('ffn_de_depth', 2, 4)
+			ffn_de_input_dropout = trial.suggest_float('ffn_de_input_dropout', 0.0, id_high, step=1e-2)
+			ffn_de_global_dropout = trial.suggest_float('ffn_de_global_dropout', 0.0, gd_high, step=1e-2)
+			ffn_de_output_dropout = trial.suggest_float('ffn_de_output_dropout', 0.0, od_high, step=1e-2)
+			decoder_dist_type = trial.suggest_categorical('decoder_dist_type', ('normal', 'beta'))
+			sample_latent_post = trial.suggest_categorical('sample_latent_post', (True, False))
+			sample_latent_prior = trial.suggest_categorical('sample_latent_prior', (True, False))
+		else:
+			id, gd, od = 0.1, 0.3, 0.3
+			in_name = 'bn2d'
+
+			stcn_ft_size = num_channels * (mult := 3)
+			stcn_ft_depth = 2
+			stcn_ft_kernel_sizes = 8
+			stcn_ft_dilation_factor = 2**2
+			stcn_ft_dropout_type = '2d'
+			stcn_ft_input_dropout = id
+			stcn_ft_global_dropout = gd
+			stcn_ft_output_dropout = od
+			use_det_path = False
+			use_lat_path = True
+
+			if (use_det_path or use_lat_path):
+				mha_rt_num_heads = mult
+				mha_rt_dropout = gd
+				mha_rt_depth = 1
+
+				if (use_det_path):
+					mha_xa_num_heads = mult
+					mha_xa_dropout = gd
+					mha_xa_depth = 2
+					det_encoder_class_agg = True
+
+				if (use_lat_path):
+					lat_encoder_latent_size = None
+					lat_encoder_cat_before_rt = False
+					lat_encoder_class_agg = True
+					lat_encoder_dist_type = 'beta'
+
+			ffn_de_base = 16
+			ffn_de_depth = 2
+			ffn_de_input_dropout = id
+			ffn_de_global_dropout = gd
+			ffn_de_output_dropout = od
+			decoder_dist_type = 'beta'
+			sample_latent_post = False
+			sample_latent_prior = False
+
+		params_in = None
+		if (in_name == 'gn'):
+			params_in = {
+				'num_groups': num_channels,
+				'affine': False
+			}
+		elif (in_name == 'bn2d'):
+			params_in = {
+				'momentum': 0.1,
+				'affine': False, 
+				'track_running_stats': False
+			}
+
+		params_stcn_ft = {
+			'size': stcn_ft_size,
+			'depth': stcn_ft_depth,
+			'kernel_sizes': stcn_ft_kernel_sizes,
+			'input_dropout':  stcn_ft_input_dropout,
+			'global_dropout': stcn_ft_global_dropout,
+			'output_dropout': stcn_ft_output_dropout,
+			'dropout_type': stcn_ft_dropout_type,
+			'dilation_factor': stcn_ft_dilation_factor,
 			'global_dilation': True,
 			'block_act': 'relu',
 			'out_act': 'relu',
@@ -647,47 +743,64 @@ class AttentiveNP(nn.Module):
 			'pad_mode': 'full'
 		}
 
-		params_ttcn = {
-			'channels': [3, 1],
-			'kernel_sizes': 15,
-			'input_dropout': 0.0,
-			'output_dropout': 0.0,
-			'global_dropout': 0.0,
-			'use_dilation': True,
-			'block_act': 'relu',
-			'out_act': 'relu',
-			'block_init': 'kaiming_uniform',
-			'out_init': 'kaiming_uniform',
-			'pad_mode': 'full',
-			'tdims': (2, 1),
-			'use_residual': True,
-			'downsample_type': 'conv2d'
+		params_det_encoder, params_lat_encoder = None, None
+		if (use_det_path or use_lat_path):
+			params_mha_rt = {
+				'num_heads': mha_rt_num_heads,
+				'dropout': mha_rt_dropout,
+				'depth': mha_rt_depth,
+			}
+
+			if (use_det_path):
+				params_mha_xa = {
+					'num_heads': mha_xa_num_heads,
+					'dropout': mha_xa_dropout,
+					'depth': mha_xa_depth,
+				}
+				params_det_encoder = {
+					'class_agg': det_encoder_class_agg,
+					'xa_name': 'mha', 'xa_params': params_mha_xa,
+					'rt_name': 'mha', 'rt_params': params_mha_rt
+				}
+
+			if (use_lat_path):
+				params_lat_encoder = {
+					'latent_size': lat_encoder_latent_size,
+					'cat_before_rt': lat_encoder_cat_before_rt,
+					'class_agg': lat_encoder_class_agg,
+					'rt_name': 'mha', 'rt_params': params_mha_rt,
+					'dist_type': lat_encoder_dist_type, 'min_std': .01, 'use_lvar': False
+				}
+
+		params_ffn_de = {
+			'out_shapes': [ffn_de_base**(ffn_de_depth-i) for i in range(ffn_de_depth)],
+			'flatten': True,
+			'input_dropout':  ffn_de_input_dropout,
+			'global_dropout': ffn_de_global_dropout,
+			'output_dropout': ffn_de_output_dropout,
+			'act': 'relu',
+			'act_output': False,
+			'init': 'xavier_uniform',
+		}
+		params_decoder = {
+			'de_name': 'ffn', 'de_params': params_ffn_de,
+			'dist_type': decoder_dist_type, 'min_std': .01, 'use_lvar': False
 		}
 
-		if (is_valid(trial)):
-			pass
-		else:
-			params = {
-				'ft_name': 'stcn', 'ft_params': params_stcn,
-				'det_encoder_params': {
-					'rt_name': 'ffn', 'rt_params': params_ffn,
-					'xa_name': 'mha', 'xa_params': params_xa_mha,
-				},
-				'lat_encoder_params': {
-					'latent_size': 256,
-					'rt_name': 'ffn', 'rt_params': params_ffn,
-					'dist_type': 'normal', 'min_std': .01, 'use_lvar': False
-				},
-				'decoder_params': {
-					'de_name': 'ttcn', 'de_params': params_ttcn,
-					'dist_type': 'normal', 'min_std': .01, 'use_lvar': False
-				},
-				'use_det_path': True,
-				'use_lat_path': True,
-				'sample_latent': True,
-				'use_lvar': False,
-				'label_size': num_classes-1
-			}
+		params = {
+			'in_name': in_name, 'in_params': params_in,
+			'ft_name': 'stcn', 'ft_params': params_stcn_ft,
+			'det_encoder_params': params_det_encoder,
+			'lat_encoder_params': params_lat_encoder,
+			'decoder_params': params_decoder,
+			'use_det_path': use_det_path,
+			'use_lat_path': use_lat_path,
+			'sample_latent_post': sample_latent_post,
+			'sample_latent_prior': sample_latent_prior,
+			'use_lvar': False,
+			'label_size': num_classes-1 if (is_valid(num_classes)) else 1,
+			'out_size': num_classes if (loss_type in ('clf-ce',)) else 1
+		}
 
 		return params
 
