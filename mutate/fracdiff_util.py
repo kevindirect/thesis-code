@@ -10,7 +10,6 @@ import numpy as np
 import pandas as pd
 from statsmodels.tsa.stattools import adfuller
 import matplotlib.pyplot as plt
-from numba import jit, vectorize
 from dask import delayed
 
 from common_util import isnt, is_df, is_ser, search_df, get_subset

@@ -87,7 +87,7 @@ def get_price(argv):
 		target_dir = RAW_DIR
 		target_dir += 'price' +sep if asset in price_path else ''
 		target_dir += 'vol' +sep if asset in vol_path else ''
-		dump_df(asset_df, asset, dir_path=target_dir)
+		# dump_df(asset_df, asset, dir_path=target_dir)
 		dump_df(asset_df, asset, dir_path=target_dir, data_format='csv')
 		print()
 

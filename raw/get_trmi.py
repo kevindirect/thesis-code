@@ -74,7 +74,8 @@ def get_trmi(argv):
 				asset_df = asset_df.drop(join_cols, axis=1)
 				asset_df = asset_df.set_index('id', drop=True).sort_index()
 				asset += '_test' if (is_test) else ''
-				dump_df(asset_df, asset, dir_path=target_dir)
+				# dump_df(asset_df, asset, dir_path=target_dir)
+				dump_df(asset_df, asset, dir_path=target_dir, data_format='csv')
 				print('done')
 			print()
 

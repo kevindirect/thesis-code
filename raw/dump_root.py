@@ -28,15 +28,18 @@ def dump_root(argv):
 
 	for equity, file_list in joins.items():
 		logging.info(equity)
-		price = load_df(file_list['price'], dir_path=str(RAW_DIR +'price' +sep))
-		vol = load_df(file_list['vol'], dir_path=str(RAW_DIR +'vol' +sep))
+		price = load_df(file_list['price'], dir_path=str(RAW_DIR +'price' +sep), \
+			data_format='csv')
+		vol = load_df(file_list['vol'], dir_path=str(RAW_DIR +'vol' +sep), \
+			data_format='csv')
 		joined = outer_join(price, vol)
 		logging.info('joined market data...')
 
 		for trmi_ver, trmi_ver_groups in file_list['trmi'].items():
 			for trmi_cat, trmi_list in trmi_ver_groups.items():
 				trmi_list_path = RAW_DIR +'trmi' +sep +trmi_ver +sep +trmi_cat +sep
-				sents = [load_df(sent, dir_path=trmi_list_path) for sent in trmi_list]
+				sents = [load_df(sent, dir_path=trmi_list_path, data_format='csv') \
+					for sent in trmi_list]
 				joined = fill_ver(reduce(outer_join, [joined] + sents))
 		logging.info('joined all data...')
 
