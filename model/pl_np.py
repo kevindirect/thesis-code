@@ -345,7 +345,7 @@ class NPModel(GenericModel):
 			window_size = 5*4
 			# lr = trial.suggest_float('lr', 1e-6, 1e-3, log=True)
 			lr = 1e-4
-			train_target_overlap = trial.suggest_categorical('train_target_overlap', (0, int(batch_size//8), int(batch_size//4)))
+			train_target_overlap = trial.suggest_categorical('train_target_overlap', (0, 8, 16))
 			sample_out = trial.suggest_categorical('sample_out', (False, True))
 		else:
 			batch_size = 64*2
