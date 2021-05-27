@@ -340,7 +340,7 @@ class NPModel(GenericModel):
 		XXX - call super class method to sample most of the tparams
 		"""
 		if (is_valid(trial)):
-			batch_size = trial.suggest_int('batch_size', 64, 128, step=64)
+			batch_size = trial.suggest_categorical('batch_size', (64, 128, 256))
 			# window_size = trial.suggest_int('window_size', 5*2, 5*4, step=5*2)
 			window_size = 5*4
 			# lr = trial.suggest_float('lr', 1e-6, 1e-3, log=True)

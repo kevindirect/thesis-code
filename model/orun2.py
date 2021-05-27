@@ -135,10 +135,11 @@ def objective(trial, pl_model_fn, pt_model_fn, dm, monitor, direction,
 	es_callback = PyTorchLightningPruningCallback(trial, monitor=monitor)
 	# ver_callbacks = (BatchNormVerificationCallback(), \
 	# 	BatchGradientVerificationCallback())
+	ver_callbacks = ()
 
 	max_epochs = t_params['epochs']
 	trainer = pl.Trainer(max_epochs=max_epochs, min_epochs=max_epochs//5, logger=[csv_log, tb_log],
-				callbacks=[chk_callback, *es_callbacks, *ver_callbacks],
+				callbacks=[chk_callback, es_callback, *ver_callbacks],
 				limit_val_batches=1.0, gradient_clip_val=0, gradient_clip_algorithm='norm',
 				stochastic_weight_avg=False, auto_lr_find=False, #track_grad_norm=2,
 				amp_level='O1', precision=mdl.get_precision(),
