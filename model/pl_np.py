@@ -340,12 +340,12 @@ class NPModel(GenericModel):
 		XXX - call super class method to sample most of the tparams
 		"""
 		if (is_valid(trial)):
-			batch_size = trial.suggest_categorical('batch_size', (64, 128, 256))
+			batch_size = trial.suggest_int('batch_size', 64, 256, step=64)
 			# window_size = trial.suggest_int('window_size', 5*2, 5*4, step=5*2)
 			window_size = 5*4
 			# lr = trial.suggest_float('lr', 1e-6, 1e-3, log=True)
 			lr = 1e-4
-			train_target_overlap = trial.suggest_categorical('train_target_overlap', (0, 8, 16))
+			train_target_overlap = trial.suggest_int('train_target_overlap', 0, 16, step=8)
 			sample_out = trial.suggest_categorical('sample_out', (False, True))
 		else:
 			batch_size = 64*2
