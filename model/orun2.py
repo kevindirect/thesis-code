@@ -18,7 +18,7 @@ import optuna
 from optuna.pruners import PercentilePruner, HyperbandPruner
 from optuna.integration import PyTorchLightningPruningCallback
 
-from common_util import MODEL_DIR, rectify_json, dump_json, benchmark, makedir_if_not_exists, is_type, is_valid, isnt, get_cmd_args
+from common_util import MODEL_DIR, load_df, rectify_json, dump_json, benchmark, makedir_if_not_exists, is_type, is_valid, isnt, get_cmd_args
 from model.common import ASSETS, INTERVAL_YEARS, WIN_SIZE, OPTUNA_DB_FNAME, OPTUNA_N_TRIALS, OPTUNA_TIMEOUT_HOURS, INTRADAY_LEN
 from model.pl_xgdm import XGDataModule
 
@@ -93,8 +93,6 @@ def optuna_run(argv):
 	obj_fn = partial(objective, pl_model_fn=pl_model_fn, pt_model_fn=pt_model_fn,
 		dm=dm, monitor=monitor, direction=optimize_dir, study_dir=study_dir)
 	sampler = optuna.samplers.TPESampler(multivariate=True)
-	# pruner = PercentilePruner(percentile=50.0, n_startup_trials=10, \
-	# 	n_warmup_steps=min_epochs, interval_steps=10) # Top percentile of trials are kept
 	pruner = HyperbandPruner(min_resource=1, max_resource='auto', \
 		reduction_factor=3, bootstrap_count=0)
 	study = optuna.create_study(storage=study_db_path, load_if_exists=True,
@@ -126,8 +124,8 @@ def objective(trial, pl_model_fn, pt_model_fn, dm, monitor, direction,
 	dump_json(rectify_json(m_params), 'params_m.json', trial_dir)
 	dump_json(rectify_json(t_params), 'params_t.json', trial_dir)
 	logging.debug(f'gpu mem (mb): {torch.cuda.max_memory_allocated()}')
-	logging.debug(f'{m_params=}')
-	logging.debug(f'{t_params=}')
+	logging.info(f'{m_params=}')
+	logging.info(f'{t_params=}')
 
 	csv_log = pl.loggers.csv_logs.CSVLogger(trial_dir, name='', version='')
 	tb_log = pl.loggers.tensorboard.TensorBoardLogger(trial_dir, name='', \
@@ -139,13 +137,24 @@ def objective(trial, pl_model_fn, pt_model_fn, dm, monitor, direction,
 	# 	BatchGradientVerificationCallback())
 
 	max_epochs = t_params['epochs']
-	trainer = pl.Trainer(max_epochs=max_epochs, min_epochs=max_epochs//5,
-			logger=[csv_log, tb_log], callbacks=[chk_callback, es_callback],
-			limit_val_batches=1.0, gradient_clip_val=gradient_clip_val,
-			auto_lr_find=False, amp_level='O1', precision=mdl.get_precision(),
-			default_root_dir=trial_dir, weights_summary=None,
-			gpus=-1 if (torch.cuda.is_available()) else None)
-	trainer.fit(mdl, datamodule=dm)
+	trainer = pl.Trainer(max_epochs=max_epochs, min_epochs=max_epochs//5, logger=[csv_log, tb_log],
+				callbacks=[chk_callback, *es_callbacks, *ver_callbacks],
+				limit_val_batches=1.0, gradient_clip_val=0, gradient_clip_algorithm='norm',
+				stochastic_weight_avg=False, auto_lr_find=False, #track_grad_norm=2,
+				amp_level='O1', precision=mdl.get_precision(),
+				default_root_dir=trial_dir, weights_summary=None,
+				gpus=-1 if (torch.cuda.is_available()) else None)
+
+	try:
+		trainer.fit(mdl, datamodule=dm)
+	except Exception as err:
+		print("Error! orun2.py > objective() > trainer.fit()\n",
+			sys.exc_info()[0], err)
+		print(f'{dm.fobs=}')
+		print(f'{m_params=}')
+		print(f'{t_params=}')
+		raise err
+
 	# pl_model_fn.fix_metrics_csv('metrics.csv', dir_path=trial_dir)
 
 	monitor_ser = load_df('metrics.csv', trial_dir, data_format='csv') \

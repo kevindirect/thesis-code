@@ -208,6 +208,8 @@ def window_shifted(data, loss, window_size, window_overlap=True, feat_dim=None):
 			raise NotImplementedError("code to process label with given shape not written")
 
 		if (t.shape[-1] == 2):
+			if (len(t[(t==0.).all(axis=-1)]) != 0):
+				t[(t==0.).all(axis=-1)] = np.array([-1e-12, 0])
 			t_new = t[t!=0.0]
 			assert len(t_new)==len(t), "target with zeros removed not equal to original"
 			t = t_new

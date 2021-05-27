@@ -90,7 +90,7 @@ class NPModel(GenericModel):
 
 			tto = self.t_params['train_target_overlap']
 			tend = None
-			if (is_type(tto := self.t_params['train_target_overlap'], int)):
+			if (is_type(tto := self.t_params['train_target_overlap'], int) and tto!=0):
 				tgt += tto
 				if (tto > 0):
 					tend = -tto
@@ -341,10 +341,11 @@ class NPModel(GenericModel):
 		"""
 		if (is_valid(trial)):
 			batch_size = trial.suggest_int('batch_size', 64, 128, step=64)
-			window_size = trial.suggest_int('window_size', 5*2, 5*4, step=5*2)
-			lr = trial.suggest_float('lr', 1e-6, 1e-3, log=True)
-			train_target_overlap = trial.suggest_categorical('train_target_overlap', \
-				(None, batch_size//8, batch_size//4))
+			# window_size = trial.suggest_int('window_size', 5*2, 5*4, step=5*2)
+			window_size = 5*4
+			# lr = trial.suggest_float('lr', 1e-6, 1e-3, log=True)
+			lr = 1e-4
+			train_target_overlap = trial.suggest_categorical('train_target_overlap', (0, int(batch_size//8), int(batch_size//4)))
 			sample_out = trial.suggest_categorical('sample_out', (False, True))
 		else:
 			batch_size = 64*2
@@ -353,7 +354,7 @@ class NPModel(GenericModel):
 			train_target_overlap = batch_size//8
 			sample_out = False
 
-		epochs = 150
+		epochs = 100
 		model_type = loss_type.split('-')[0]
 		batch_step_size = batch_size//2
 

@@ -23,11 +23,12 @@ def optuna_view(argv):
 	asset_name = cmd_input['assets='] or ASSETS[0]
 	fdata_name = cmd_input['xdata='] or 'h_pba_h'
 	ldata_name = cmd_input['ydata='] or 'ddir'
-	monitor = cmd_input['optuna-monitor='] or 'val_loss'
+	default_monitor = 'val_f1.0' if (model_type == 'clf') else 'val_mae'
+	monitor = cmd_input['optuna-monitor='] or default_monitor
 	optimize_min = {
 		'val_loss': True
 	}.get(monitor, False)
-	interval = INTERVAL_YEARS
+	interval = (1996, 2018)
 	data_name = (f'{interval[0]}_{interval[1]}'
 		f'_{ldata_name}_{fdata_name}').replace(',', '_')
 

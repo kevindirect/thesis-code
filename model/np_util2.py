@@ -560,21 +560,21 @@ class AttentiveNP(nn.Module):
 			else:
 				self.lat_downsample = None
 			dec_in_shape[0] += self.lat_encoder.out_shape[0]
-			print(f'{self.lat_encoder.in_shape=}')
-			print(f'{self.lat_encoder.out_shape=}')
+			# print(f'{self.lat_encoder.in_shape=}')
+			# print(f'{self.lat_encoder.out_shape=}')
 		if (use_det_path):
 			self.det_encoder = DetEncoder(enc_in_shape, label_size, embed_size,
 				**det_encoder_params)
 			dec_in_shape[0] += self.det_encoder.out_shape[0]
-			print(f'{self.det_encoder.in_shape=}')
-			print(f'{self.det_encoder.out_shape=}')
+			# print(f'{self.det_encoder.in_shape=}')
+			# print(f'{self.det_encoder.out_shape=}')
 		dec_in_shape = tuple(dec_in_shape)
 
 		self.decoder = Decoder(dec_in_shape, out_size or label_size,
 			use_det_path, use_lat_path, self.det_encoder, self.lat_encoder,
 			**decoder_params)
-		print(f'{self.decoder.in_shape=}')
-		print(f'{self.decoder.out_shape=}')
+		# print(f'{self.decoder.in_shape=}')
+		# print(f'{self.decoder.out_shape=}')
 		self.out_shape = self.decoder.out_shape
 
 	def forward(self, context_x, context_y, target_x, target_y=None):
@@ -632,25 +632,31 @@ class AttentiveNP(nn.Module):
 		or return fixed default hyperparameters
 		"""
 		if (is_valid(trial)):
-			id_high, gd_high, od_high = 0.4, 0.8, 0.8
-			in_name = trial.suggest_categorical('in_name', ('bn2d', 'gn', None))
+			id_high, gd_high, od_high = 0.4, 0.6, 0.6
+			# in_name = trial.suggest_categorical('in_name', ('bn2d', 'gn', 'none'))
+			in_name = 'bn2d'
 
-			stcn_ft_size = num_channels * (mult := trial.suggest_int('stcn_ft_mult', 1, 10))
-			stcn_ft_depth = trial.suggest_int('stcn_ft_depth', 2, 3)
-			stcn_ft_kernel_sizes = trial.suggest_int('stcn_ft_kernel_sizes', 4, 16, step=4)
+			# stcn_ft_size = num_channels * (mult := trial.suggest_int('stcn_ft_mult', 1, 10))
+			stcn_ft_size = num_channels * (mult := 10)
+			# stcn_ft_depth = trial.suggest_int('stcn_ft_depth', 2, 3)
+			stcn_ft_depth = 3
+			stcn_ft_kernel_sizes = trial.suggest_int('stcn_ft_kernel_sizes', 7, 9)
 			stcn_ft_dilation_factor = 2**trial.suggest_int('stcn_ft_dilation_power', 1, 3)
-			stcn_ft_dropout_type = trial.suggest_categorical('stcn_ft_dropout_type', (None, '2d'))
+			# stcn_ft_dropout_type = trial.suggest_categorical('stcn_ft_dropout_type', ('1d', '2d'))
+			stcn_ft_dropout_type = '2d'
 			stcn_ft_input_dropout = trial.suggest_float('stcn_ft_input_dropout', 0.0, id_high, step=1e-2)
 			stcn_ft_global_dropout = trial.suggest_float('stcn_ft_global_dropout', 0.0, gd_high, step=1e-2)
 			stcn_ft_output_dropout = trial.suggest_float('stcn_ft_output_dropout', 0.0, od_high, step=1e-2)
 
-			use_det_path = trial.suggest_categorical('use_det_path', (True, False))
+			# use_det_path = trial.suggest_categorical('use_det_path', (True, False))
+			use_det_path = False
 			use_lat_path = True
 
 			if (use_det_path or use_lat_path):
 				mha_rt_num_heads = trial.suggest_categorical('mha_rt_num_heads', (1, mult, num_channels, stcn_ft_size))
 				mha_rt_dropout = trial.suggest_float('mha_rt_dropout', 0.0, gd_high, step=1e-2)
-				mha_rt_depth = trial.suggest_int('mha_rt_depth', 1, 2)
+				# mha_rt_depth = trial.suggest_int('mha_rt_depth', 1, 2)
+				mha_rt_depth = 1
 
 				if (use_det_path):
 					mha_xa_num_heads = trial.suggest_categorical('mha_xa_num_heads', (1, mult, num_channels, stcn_ft_size))
@@ -659,27 +665,31 @@ class AttentiveNP(nn.Module):
 					det_encoder_class_agg = trial.suggest_categorical('det_encoder_class_agg', (True, False))
 
 				if (use_lat_path):
-					lat_encoder_latent_size = trial.suggest_categorical('lat_encoder_latent_size', (None, 16, 1024))
+					lat_encoder_latent_size = trial.suggest_categorical('lat_encoder_latent_size', ('none', 16, 1024))
+					lat_encoder_latent_size = None if (lat_encoder_latent_size == 'none') else lat_encoder_latent_size
 					lat_encoder_cat_before_rt = trial.suggest_categorical('lat_encoder_cat_before_rt', (True, False))
 					lat_encoder_class_agg = trial.suggest_categorical('lat_encoder_class_agg', (True, False))
 					lat_encoder_dist_type = trial.suggest_categorical('lat_encoder_dist_type', ('normal', 'beta'))
 
-			ffn_de_base = trial.suggest_int('ffn_de_base', 8, 16, step=8)
-			ffn_de_depth = trial.suggest_int('ffn_de_depth', 2, 4)
+			# ffn_de_base = trial.suggest_int('ffn_de_base', 8, 16, step=8)
+			ffn_de_base = 32
+			# ffn_de_depth = trial.suggest_int('ffn_de_depth', 2, 3)
+			ffn_de_depth = 2
 			ffn_de_input_dropout = trial.suggest_float('ffn_de_input_dropout', 0.0, id_high, step=1e-2)
 			ffn_de_global_dropout = trial.suggest_float('ffn_de_global_dropout', 0.0, gd_high, step=1e-2)
 			ffn_de_output_dropout = trial.suggest_float('ffn_de_output_dropout', 0.0, od_high, step=1e-2)
-			decoder_dist_type = trial.suggest_categorical('decoder_dist_type', ('normal', 'beta'))
+			# decoder_dist_type = trial.suggest_categorical('decoder_dist_type', ('normal', 'beta'))
+			decoder_dist_type = 'beta'
 			sample_latent_post = trial.suggest_categorical('sample_latent_post', (True, False))
 			sample_latent_prior = trial.suggest_categorical('sample_latent_prior', (True, False))
 		else:
 			id, gd, od = 0.1, 0.3, 0.3
 			in_name = 'bn2d'
 
-			stcn_ft_size = num_channels * (mult := 3)
+			stcn_ft_size = num_channels * (mult := 10)
 			stcn_ft_depth = 2
 			stcn_ft_kernel_sizes = 8
-			stcn_ft_dilation_factor = 2**2
+			stcn_ft_dilation_factor = 2**3
 			stcn_ft_dropout_type = '2d'
 			stcn_ft_input_dropout = id
 			stcn_ft_global_dropout = gd
