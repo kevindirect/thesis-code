@@ -639,13 +639,16 @@ class AttentiveNP(nn.Module):
 			# stcn_ft_size = num_channels * (mult := trial.suggest_int('stcn_ft_mult', 1, 10))
 			stcn_ft_size = num_channels * (mult := 10)
 			# stcn_ft_depth = trial.suggest_int('stcn_ft_depth', 2, 3)
-			stcn_ft_depth = 3
+			stcn_ft_depth = 2
 			stcn_ft_kernel_sizes = trial.suggest_int('stcn_ft_kernel_sizes', 7, 9)
 			stcn_ft_dilation_factor = 2**trial.suggest_int('stcn_ft_dilation_power', 1, 3)
 			# stcn_ft_dropout_type = trial.suggest_categorical('stcn_ft_dropout_type', ('1d', '2d'))
 			stcn_ft_dropout_type = '2d'
 			stcn_ft_input_dropout = trial.suggest_float('stcn_ft_input_dropout', 0.0, id_high, step=1e-2)
-			stcn_ft_global_dropout = trial.suggest_float('stcn_ft_global_dropout', 0.0, gd_high, step=1e-2)
+			if (stcn_ft_depth > 2):
+				stcn_ft_global_dropout = trial.suggest_float('stcn_ft_global_dropout', 0.0, gd_high, step=1e-2)
+			else:
+				stcn_ft_global_dropout = 0
 			stcn_ft_output_dropout = trial.suggest_float('stcn_ft_output_dropout', 0.0, od_high, step=1e-2)
 
 			# use_det_path = trial.suggest_categorical('use_det_path', (True, False))
