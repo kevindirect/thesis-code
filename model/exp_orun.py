@@ -141,7 +141,6 @@ def exp_optuna_run(argv):
 					dm=dm, m_params=m_params, t_params=t_params, splits=splits)
 				study.optimize(get_obj, n_trials=n_trials, timeout=hourly_timeout*60*60,
 					catch=(), n_jobs=1, gc_after_trial=False, show_progress_bar=False)
-				sys.exit() # TODO
 
 		torch.cuda.empty_cache()
 
