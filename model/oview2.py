@@ -11,26 +11,20 @@ import pandas as pd
 import optuna
 
 from common_util import MODEL_DIR, dump_df, benchmark, get_cmd_args
-from model.common import ASSETS, INTERVAL_YEARS, OPTUNA_DB_FNAME, OPTUNA_CSV_FNAME
+from model.common import ASSETS_STR, INTERVAL_YEARS, OPTUNA_DB_FNAME, OPTUNA_CSV_FNAME
 
 
 def optuna_view(argv):
-	cmd_arg_list = ['dump-csv', 'model=', 'assets=', 'xdata=', 'ydata=', 'optuna-monitor=']
+	cmd_arg_list = ['dump-csv', 'model=', 'assets=', 'xdata=', 'ydata=', 'optuna-monitor=',
+		'type=']
 	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name=basename(__file__), \
 		script_pkg=basename(dirname(__file__)))
 	dump_csv = cmd_input['dump-csv']
 	model_name = cmd_input['model='] or 'anp'
-	asset_name = cmd_input['assets='] or ASSETS[0]
+	asset_names = cmd_input['assets='] or ASSETS_STR
 	fdata_name = cmd_input['xdata='] or 'h_pba_h'
 	ldata_name = cmd_input['ydata='] or 'ddir'
-	default_monitor = 'val_f1.0' if (model_type == 'clf') else 'val_mae'
-	monitor = cmd_input['optuna-monitor='] or default_monitor
-	optimize_min = {
-		'val_loss': True
-	}.get(monitor, False)
-	interval = (1996, 2018)
-	data_name = (f'{interval[0]}_{interval[1]}'
-		f'_{ldata_name}_{fdata_name}').replace(',', '_')
+	loss_type = cmd_input['type='] or 'clf-ce'
 
 	# model options: stcn, anp
 	if (model_name in ('stcn', 'StackedTCN', 'GenericModel_StackedTCN')):
@@ -43,22 +37,34 @@ def optuna_view(argv):
 		pl_model_fn, pt_model_fn = NPModel, AttentiveNP
 	model_name = f'{pl_model_fn.__name__}_{pt_model_fn.__name__}'
 
-	study_dir = MODEL_DIR \
-		+sep.join(['olog', model_name, asset_name, data_name, monitor]) +sep
-	study_name = ','.join([model_name, asset_name, data_name, monitor])
-	study_db_path = f'sqlite:///{study_dir}{OPTUNA_DB_FNAME}'
+	model_type = loss_type.split('-')[0]
+	default_monitor = 'val_f1.0' if (model_type == 'clf') else 'val_mae'
+	monitor = cmd_input['optuna-monitor='] or default_monitor
 
-	print(f'study name:  {study_name}')
-	print(f'study dir:   {study_dir}')
-	print(f'study db:    {study_db_path}')
-	print()
+	optimize_min = {
+		'val_loss': True
+	}.get(monitor, False)
+	interval = (1996, 2018)
+	data_name = (f'{interval[0]}_{interval[1]}'
+		f'_{ldata_name}_{fdata_name}').replace(',', '_')
 
-	study_df = optuna.load_study(storage=study_db_path, study_name=study_name) \
-		.trials_dataframe().sort_values(by='value')
-	if (dump_csv):
-		dump_df(study_df.set_index('number'), OPTUNA_CSV_FNAME, dir_path=study_dir, \
-			data_format='csv')
-	print(df_study_stats(study_df, optimize_min))
+	for asset_name in asset_names.split(','):
+		study_dir = MODEL_DIR \
+			+sep.join(['olog', model_name, asset_name, data_name, monitor]) +sep
+		study_name = ','.join([model_name, asset_name, data_name, monitor])
+		study_db_path = f'sqlite:///{study_dir}{OPTUNA_DB_FNAME}'
+
+		logging.info(f'{asset_name=}')
+		logging.info(f'{study_name=}')
+		logging.debug(f'{study_dir=}')
+		logging.debug(f'{study_db_path=}')
+
+		study_df = optuna.load_study(storage=study_db_path, study_name=study_name) \
+			.trials_dataframe().sort_values(by='value', ascending=False)
+		if (dump_csv):
+			dump_df(study_df.set_index('number'), OPTUNA_CSV_FNAME, dir_path=study_dir, \
+				data_format='csv')
+		print(df_study_stats(study_df, optimize_min))
 
 def df_study_stats(study_df: pd.DataFrame, optimize_min: bool):
 	"""

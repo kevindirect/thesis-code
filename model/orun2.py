@@ -22,6 +22,7 @@ from common_util import MODEL_DIR, load_df, rectify_json, dump_json, benchmark, 
 from model.common import ASSETS, INTERVAL_YEARS, WIN_SIZE, OPTUNA_DB_FNAME, OPTUNA_N_TRIALS, OPTUNA_TIMEOUT_HOURS, INTRADAY_LEN
 from model.pl_xgdm import XGDataModule
 
+raise DeprecationWarning("orun2.py is deprecated")
 
 def optuna_run(argv):
 	cmd_arg_list = ['dry-run', 'trials=', 'epochs=', 'run-hours=', 'model=',

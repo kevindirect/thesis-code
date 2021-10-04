@@ -405,7 +405,7 @@ class Decoder(nn.Module):
 			# rep = torch.cat(decoder_inputs, dim=1)#.unsqueeze(1)
 			self.cat_dim = 1
 		elif (self.de_name == 'ffn'):
-			self.cat_dim = 1 # XXX cat over C(1) or S(2)??
+			self.cat_dim = 1 # XXX cat over C(1) or S(2)
 
 		self.dist_type = dist_type
 		self.dist_fn = {
@@ -509,7 +509,9 @@ class AttentiveNP(nn.Module):
 	"""
 	Attentive Neural Process Module
 	"""
-	def __init__(self, in_shape, out_size=None, label_size=1, in_name='bn2d', in_params=None,
+	def __init__(self, in_shape, out_size=None, label_size=1,
+		in_name='bn2d', in_params=None, in_split=False,
+		fn_name=None, fn_params=None, fn_split=False,
 		ft_name='stcn', ft_params=None, use_det_path=True, use_lat_path=True,
 		det_encoder_params=None, lat_encoder_params=None, decoder_params=None,
 		sample_latent_post=True, sample_latent_prior=False, use_lvar=False):
@@ -538,18 +540,32 @@ class AttentiveNP(nn.Module):
 		if (isnt(decoder_params)):
 			decoder_params = {}
 
-		self.input_norm = NORM_MAPPING.get(in_name, None)
-		self.input_norm = self.input_norm and \
-			self.input_norm(self.in_shape, **in_params)
+		self.input_norm_fn = NORM_MAPPING.get(in_name, None)
+		if (is_valid(self.input_norm_fn)):
+			self.context_input_norm = self.input_norm_fn(self.in_shape, **in_params)
+			if (in_split):
+				self.target_input_norm = self.input_norm_fn(self.in_shape, **in_params)
+			else:
+				self.target_input_norm = self.context_input_norm
 
 		# Sequence transform (TCN, RNN, etc)
-		self.feat_transform = MODEL_MAPPING.get(ft_name, None)
-		self.feat_transform = self.feat_transform and \
-			self.feat_transform(self.in_shape, **ft_params)
-		embed_size = self.feat_transform.out_shape[0]
-		enc_in_shape = self.feat_transform.out_shape \
-			if (is_valid(self.feat_transform)) else self.in_shape
+		self.feat_transform_fn = MODEL_MAPPING.get(ft_name, None)
+		if (is_valid(self.feat_transform_fn)):
+			self.feat_transform = self.feat_transform_fn(self.in_shape, **ft_params)
+			enc_in_shape = self.feat_transform.out_shape
+		else:
+			enc_in_shape = self.in_shape
+
+		embed_size = enc_in_shape[0]
 		dec_in_shape = list(enc_in_shape)
+
+		self.feat_norm_fn = NORM_MAPPING.get(fn_name, None) # normalizations don't change tensor shape, so it's safe
+		if (self.feat_norm_fn):
+			self.context_feat_norm = self.feat_norm_fn(enc_in_shape, **fn_params)
+			if (fn_split):
+				self.target_feat_norm = self.feat_norm_fn(enc_in_shape, **fn_params)
+			else:
+				self.target_feat_norm = self.context_feat_norm
 
 		self.det_encoder, self.lat_encoder = None, None
 		if (use_lat_path):
@@ -590,15 +606,20 @@ class AttentiveNP(nn.Module):
 		Returns:
 			prior, posterior, and output distribution objects
 		"""
-		if (self.input_norm):
-			context_x = self.input_norm(context_x)
-			target_x = self.input_norm(target_x)
+		if (is_valid(self.input_norm_fn)):
+			context_x = self.context_input_norm(context_x)
+			target_x = self.target_input_norm(target_x)
 
-		if (self.feat_transform):
-			context_h = self.feat_transform(context_x)
-			target_h = self.feat_transform(target_x)
-		else:
-			context_h, target_h = context_x, target_x
+		context_h, target_h = context_x, target_x
+
+		if (is_valid(self.feat_transform_fn)):
+			context_h = self.feat_transform(context_h)
+			target_h = self.feat_transform(target_h)
+
+		if (is_valid(self.feat_norm_fn)):
+			context_h = self.context_feat_norm(context_h)
+			target_h = self.target_feat_norm(target_h)
+
 		det_rep = lat_rep = prior_dist = post_dist = None
 
 		if (is_valid(self.det_encoder)):
@@ -697,7 +718,7 @@ class AttentiveNP(nn.Module):
 			stcn_ft_input_dropout = id
 			stcn_ft_global_dropout = gd
 			stcn_ft_output_dropout = od
-			use_det_path = False
+			use_det_path = True
 			use_lat_path = True
 
 			if (use_det_path or use_lat_path):
@@ -708,14 +729,14 @@ class AttentiveNP(nn.Module):
 				if (use_det_path):
 					mha_xa_num_heads = mult
 					mha_xa_dropout = gd
-					mha_xa_depth = 2
-					det_encoder_class_agg = True
+					mha_xa_depth = 1
+					det_encoder_class_agg = False
 
 				if (use_lat_path):
 					lat_encoder_latent_size = None
-					lat_encoder_cat_before_rt = False
+					lat_encoder_cat_before_rt = True
 					lat_encoder_class_agg = True
-					lat_encoder_dist_type = 'beta'
+					lat_encoder_dist_type = 'normal'
 
 			ffn_de_base = 16
 			ffn_de_depth = 2
@@ -800,6 +821,16 @@ class AttentiveNP(nn.Module):
 			'dist_type': decoder_dist_type, 'min_std': .01, 'use_lvar': False
 		}
 
+		model_type = loss_type.split('-')[0]
+		if (model_type == 'reg'):
+			label_size, out_size = 1, 1
+		elif (model_type == 'clf'):
+			label_size = num_classes-1
+			if (loss_type in ('clf-ce',)):
+				out_size = num_classes
+			else:
+				out_size = num_classes-1
+
 		params = {
 			'in_name': in_name, 'in_params': params_in,
 			'ft_name': 'stcn', 'ft_params': params_stcn_ft,
@@ -811,8 +842,9 @@ class AttentiveNP(nn.Module):
 			'sample_latent_post': sample_latent_post,
 			'sample_latent_prior': sample_latent_prior,
 			'use_lvar': False,
-			'label_size': num_classes-1 if (is_valid(num_classes)) else 1,
-			'out_size': num_classes if (loss_type in ('clf-ce',)) else 1
+			'label_size': label_size,
+			'out_size': out_size,
+			'num_classes': num_classes
 		}
 
 		return params

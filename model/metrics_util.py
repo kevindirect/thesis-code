@@ -4,120 +4,346 @@ Kevin Patel
 import sys
 import os
 import logging
+from functools import partial
 
 import numpy as np
 import pandas as pd
-import torch
+from scipy.stats import skew
+import torch as pt
 from torch.nn.functional import sigmoid
+from torchmetrics.functional import accuracy, precision, recall, fbeta
 from torchmetrics import Metric
+import matplotlib.pyplot as plt
 
-from common_util import MODEL_DIR, is_valid, isnt, is_type, pt_diff1d
-from model.common import PYTORCH_LOSS_MAPPING
+from common_util import MODEL_DIR, DT_FMT_YMD, is_valid, isnt, is_type, pt_diff1d, rectify_json, dump_json
+from model.common import PYTORCH_LOSS_MAPPING, TRADING_DAYS
+from recon.viz import plot_df_line_subplot, plot_df_scatter_subplot, plot_df_hist_subplot
 
 
 # ********** PYTORCH LIGHTNING RETURN UTILS **********
-def get_cumulative_return(asset_returns, compounded=False):
+def get_label_dist(f, l, t):
+	res = pd.Series(l, dtype=int).value_counts(normalize=True).to_dict()
+	return 'label_dist', res
+
+def get_cumulative_profit(ret, compounded=False):
 	"""
-	Convert independent period returns to cumulative returns, with optional compounding.
+	Convert independent period returns to cumulative profit, with optional compounding.
 	"""
 	if (compounded):
-		cum_returns = (asset_returns + 1.0).cumprod(dim=0) - 1.0
+		cum_profit = (ret + 1.0).cumprod(dim=0) - 1.0
 	else:
-		cum_returns = asset_returns.cumsum(dim=0)
-	return cum_returns
+		cum_profit = ret.cumsum(dim=0)
+	return cum_profit
 
-def get_sharpe_ratio(cum_returns, annualized=True):
-	ret = pt_diff1d(cum_returns)
+def get_cagr(cum_profit):
+	"""
+	Computes compund annual growth rate over daily returns.
+	"""
+	num_years = len(cum_profit) / TRADING_DAYS
+	end_balance = cum_profit[-1] + 1.0 # assume starting balance of $1
+	cagr = (end_balance**(1.0/num_years)) - 1.0
+	return cagr
+
+def get_sharpe_ratio(ret, rfr=0, annualized=True):
+	"""
+	Computes sharpe ratio over independent period returns.
+	Computes information ratio if risk free rate is zero (default).
+	"""
 	ret_std = ret.std()
 	ret_std = ret_std if (ret_std != 0) else 1
-	sr = ret.mean() / ret_std
+	sr = (ret.mean() - rfr) / ret_std
 	if (annualized):
-		sr *= np.sqrt(252).item(0)
+		sr *= np.sqrt(TRADING_DAYS).item(0)
 	return sr
+
+def get_skew(ret):
+	"""
+	Computes sample skew (third moment) of return distribution.
+	"""
+	return skew(ret)
+
+
+# ********** PLOTTING UTILS **********
+def plot_single(ret_df, profit_df, split, name, hist_bins=80):
+	fig, axes = plt.subplots(3, 1, sharex=False, figsize=(25, 25))
+
+	plot_df_line_subplot(profit_df, axes[0], title=f'{split} {name} cumulative non-compounded profit and loss (PnL)',
+		ylabel='cumulative PnL', colors='k')
+	plot_df_scatter_subplot(ret_df, axes[1], title=f'{split} {name} returns', xlabel=f'{split} examples',
+		ylabel='return', colors='k')
+	plot_df_hist_subplot(ret_df, axes[2], title=f'{split} {name} distribution', xlabel=f'{split} returns',
+		ylabel='frequency', colors='k', hist_bins=hist_bins)
+	return fig, axes
+
+def plot_three(ret_df, profit_df, split, name, hist_bins=20):
+	fig, axes = plt.subplots(3, 1, sharex=False, figsize=(25, 25))
+
+	plot_df_line_subplot(profit_df, axes[0], title=f'{split} {name} cumulative non-compounded profit and loss (PnL)',
+		ylabel='cumulative PnL', linestyles=['dashed', 'dotted', 'dashdot'])
+	plot_df_scatter_subplot(ret_df, axes[1], title=f'{split} {name} returns', xlabel=f'{split} examples',
+		ylabel='return', alpha=.5, markers=['o', 'o', '.'])
+	plot_df_hist_subplot(ret_df, axes[2], title=f'{split} {name} distribution', xlabel=f'{split} return',
+		ylabel='frequency', alpha=.5, hist_bins=hist_bins)
+	return fig, axes
 
 
 # ********** PYTORCH LIGHTNING RETURN BENCHMARKS **********
-class BuyAndHoldStrategy(Metric):
+class ReturnMetric(Metric):
 	"""
-	Buy and hold benchmark strategy.
+	Base Return torchmetrics.Metric class.
+	Default parameters will compute a long buy and hold benchmark strategy.
+	"""
+	def __init__(self, name, use_dir=False, use_conf=False, compounded=False, \
+		compute_on_step=False, dist_sync_on_step=False, process_group=None):
+		super().__init__(compute_on_step=compute_on_step, \
+			dist_sync_on_step=dist_sync_on_step, process_group=process_group)
+		self.name = name
+		self.use_dir = use_dir
+		self.use_conf = use_conf
+		self.compounded = compounded
+		if (self.compounded):
+			self.name += '_comp'
+		self.plot_go_short = True
+
+		self.add_state('actual_ret', default=[], dist_reduce_fx='cat')
+		if (self.use_dir):
+			self.add_state('pred_dir', default=[], dist_reduce_fx='cat')
+		if (self.use_conf):
+			self.add_state('bet_size', default=[], dist_reduce_fx='cat')
+
+	def update(self, actual_ret):
+		"""
+		For classes that extend ReturnMetric, this is where the magic happens.
+		"""
+		self.actual_ret.append(actual_ret)
+
+	def compute_pred_dirs(self, go_long, go_short):
+		if (self.use_dir):
+			assert go_long or go_short
+			pred_dirs = pt.cat(self.pred_dir, dim=0)
+			if (not go_long):
+				pred_dirs[pred_dirs == 1] = 0
+			if (not go_short):
+				pred_dirs[pred_dirs == -1] = 0
+		else:
+			assert go_long != go_short
+			pred_dirs = 1 if (go_long) else -1
+		return pred_dirs
+
+	def compute_bet_sizes(self):
+		if (self.use_conf):
+			bet_sizes = pt.cat(self.bet_size, dim=0)
+		else:
+			bet_sizes = 1
+		return bet_sizes
+
+	def compute_returns(self, go_long=True, go_short=True):
+		actual_rets = pt.cat(self.actual_ret, dim=0)
+		pred_dirs = self.compute_pred_dirs(go_long=go_long, go_short=go_short)
+		bet_sizes = self.compute_bet_sizes()
+		if (all(pt.isnan(ret := actual_rets * pred_dirs * bet_sizes))):
+			ret = pt.zeros_like(ret)
+		return ret
+
+	def compute(self, prefix, go_long=True, go_short=True):
+		"""
+		Compute final stats.
+		"""
+		ret = self.compute_returns(go_long=go_long, go_short=go_short)
+		profit = get_cumulative_profit(ret, self.compounded)
+		avg_bet_size = self.compute_bet_sizes().mean() if (self.use_conf) else 1
+		if (self.use_dir):
+			preds = self.compute_pred_dirs(go_long, go_short)
+			long_freq = len(preds[preds==1]) / len(preds)
+		else:
+			long_freq = 1 if (go_long) else 0
+
+		return {
+			f'{prefix}_longfreq': long_freq,
+			f'{prefix}_avgbet': avg_bet_size,
+			f'{prefix}_min': profit.min(), # max profit drawdown
+			f'{prefix}_max': profit.max(), # max account profit
+			f'{prefix}_profit': profit[-1],
+			f'{prefix}_sharpe': get_sharpe_ratio(ret),
+			f'{prefix}_skew': get_skew(ret),
+			f'{prefix}_cagr': get_cagr(get_cumulative_profit(ret, compounded=True)),
+		}
+
+	def get_result_series(self, go_long=True, go_short=True):
+		ret = {}
+		if (go_long):
+			ret['long'] = self.compute_returns(go_long=True, go_short=False)
+		if (go_short):
+			ret['short'] = self.compute_returns(go_long=False, go_short=True)
+		if (go_long and go_short):
+			ret['long+short'] = self.compute_returns(go_long=True, go_short=True)
+		profit = {k: get_cumulative_profit(r, self.compounded) for k,r in ret.items()}
+		return ret, profit
+
+	def plot_result_series(self, split, name, index):
+		ret, profit = self.get_result_series(go_long=True, go_short=self.plot_go_short)
+		ret_df = pd.DataFrame(ret, index=index)
+		profit_df = pd.DataFrame(profit, index=index)
+
+		if (ret_df.shape[-1] == 1):
+			fig, axes = plot_single(ret_df, profit_df, split, name)
+		elif (ret_df.shape[-1] <= 3):
+			fig, axes = plot_three(ret_df, profit_df, split, name)
+		fig.tight_layout()
+		return fig, axes
+
+class BenchmarkHold(ReturnMetric):
+	"""
+	Hold benchmark strategy.
 	If the return series used consists of daily open-to-close returns,
-	this will be buy and hold with no overnight risk (buy at open, sell at close daily).
+	this will be position hold with no overnight risk (open at market open, close at market close).
 	All bets are sized $1 per trade. Assumes zero transaction cost.
 	"""
 	def __init__(self, compounded=False, compute_on_step=False, dist_sync_on_step=False, process_group=None):
-		super().__init__(compute_on_step=compute_on_step, \
-			dist_sync_on_step=dist_sync_on_step, process_group=process_group)
-		self.name = 'bs'
-		self.compounded = compounded
-		if (self.compounded):
-			self.name += 'c'
-		self.add_state('returns', default=[], dist_reduce_fx='cat')
+		super().__init__('benchmark-hold', use_dir=False, use_conf=False, compounded=compounded,
+			compute_on_step=compute_on_step, dist_sync_on_step=dist_sync_on_step,
+			process_group=process_group)
+		self.plot_go_short = False
 
-	def update(self, actual_ret):
-		self.returns.append(actual_ret)
-
-	def compute_returns(self, cumulative=True):
-		returns = torch.cat(self.returns, dim=0)
-		if (cumulative):
-			returns = get_cumulative_return(returns, compounded=self.compounded)
-		return returns
-
-	def compute(self, pfx=''):
-		cr = self.compute_returns(cumulative=True)
+	def get_clf_stats(self, prefix, num_classes=2):
+		actual_dir = pt.sign(pt.cat(self.actual_ret, dim=0)).int()
+		actual_dir[actual_dir==-1] = 0
+		preds = pt.ones_like(actual_dir)
+		acc = accuracy(preds, actual_dir)
+		p = precision(preds, actual_dir, average='macro', num_classes=num_classes)
+		r = recall(preds, actual_dir, average='macro', num_classes=num_classes)
+		f1 = fbeta(preds, actual_dir, average='macro', num_classes=num_classes)
 		return {
-			f'{pfx}_{self.name}_cumret': cr[-1],
-			f'{pfx}_{self.name}_sharpe': get_sharpe_ratio(cr),
-			f'{pfx}_{self.name}_min': cr.min(),
-			f'{pfx}_{self.name}_max': cr.max()
+			f"{prefix}_clf_accuracy": acc,
+			f"{prefix}_clf_precision": p,
+			f"{prefix}_clf_recall": r,
+			f"{prefix}_clf_f1": f1,
 		}
 
+	def compute(self, prefix, go_long=True, go_short=False):
+		"""
+		Compute final stats (sets default).
+		"""
+		return super().compute(prefix, go_long=go_long, go_short=go_short)
 
-class OptimalStrategy(Metric):
+class BenchmarkOptimal(ReturnMetric):
 	"""
-	Optimal return benchmark strategy.
-	This is as if an agent makes perfect predictions over the period using
-	the maximum bet size ($1) in every trade - sum(abs(returns))
+	Optimal benchmark strategy.
+	This is an agent making bets with perfect foresight over the period with
+	the maximum bet size ($1) in every trade, simply "sum(abs(returns))"
 	All bets are sized $1 per trade. Assumes zero transaction cost.
 	"""
 	def __init__(self, compounded=False, compute_on_step=False, dist_sync_on_step=False, process_group=None):
-		super().__init__(compute_on_step=compute_on_step, \
-			dist_sync_on_step=dist_sync_on_step, process_group=process_group)
-		self.name = 'os'
-		self.compounded = compounded
-		if (self.compounded):
-			self.name += 'c'
-		self.add_state('returns', default=[], dist_reduce_fx='cat')
+		super().__init__('benchmark-optimal', use_dir=True, use_conf=False, compounded=compounded,
+			compute_on_step=compute_on_step, dist_sync_on_step=dist_sync_on_step,
+			process_group=process_group)
+
+	def get_clf_stats(self, prefix):
+		return {
+			f"{prefix}_clf_accuracy": 1,
+			f"{prefix}_clf_precision": 1,
+			f"{prefix}_clf_recall": 1,
+			f"{prefix}_clf_f1": 1,
+		}
 
 	def update(self, actual_ret):
-		self.returns.append(torch.abs(actual_ret))
+		self.actual_ret.append(actual_ret)
+		self.pred_dir.append(pt.sign(actual_ret))
 
-	def compute_returns(self, cumulative=True):
-		returns = torch.cat(self.returns, dim=0)
-		if (cumulative):
-			returns = get_cumulative_return(returns, compounded=self.compounded)
-		return returns
+class BenchmarksMixin(object):
+	"""
+	Mixin for pl.DataModule.
+	Uses data to produce benchmarks, over self.start:self.end if they exist
+	in the host data module.
+	"""
+	def __init__(self):
+		super().__init__()
+		self.bench_fns = (BenchmarkHold, BenchmarkOptimal)
+		self.stat_fns = (get_label_dist,)
 
-	def compute(self, pfx=''):
-		cr = self.compute_returns(cumulative=True)
-		return {
-			f'{pfx}_{self.name}_cumret': cr[-1],
-			f'{pfx}_{self.name}_sharpe': get_sharpe_ratio(cr),
-		}
+	def get_benchmarks_split(self, split):
+		"""
+		Return results dict for a split, strat results are not computed.
+		"""
+		results = {'stat': {}}
+		f, l, t = self.raw[split]
+		idx = self.idx and self.idx[split]
+		l = np.sum(l, axis=(1, 2), keepdims=False)
+
+		if (is_valid(idx)):
+			start = self.start and self.start[split]
+			end = self.end and self.end[split]
+			l = l[start:end]
+			t = t[start:end]
+		else:
+			idx = self.raw_idx[split]
+		t = pt.tensor(t[t!=0], dtype=pt.float32, requires_grad=False)
+
+		results['stat'][f'date_start'] = idx[0].strftime(DT_FMT_YMD)
+		results['stat'][f'date_end'] = idx[-1].strftime(DT_FMT_YMD)
+		results['stat'][f'date_len'] = len(idx)
+
+		for stat in self.stat_fns:
+			res = stat(f, l, t)
+			results['stat'][res[0]] = res[1]
+
+		for strat in self.bench_fns:
+			st = strat()
+			st.update(t)
+			results[st.name] = st
+
+		return results
+
+	def get_benchmarks(self):
+		"""
+		Return results dict for all splits, strat results are uncomputed.
+		"""
+		return {split: self.get_benchmarks_split(split) for split in self.raw.keys()}
+
+	def compute_benchmarks_results_json(self, bench):
+		"""
+		Compute results dict for all splits.
+		This function will modify the contents benchmark dictionary.
+		"""
+		for split in bench:
+			for st_name in bench[split]:
+				if (st_name == 'stat'): continue
+				st = bench[split][st_name]
+				res = st.get_clf_stats(split)
+				res.update(st.compute(split))
+				bench[split][st_name] = rectify_json(res)
+		return bench
+
+	def dump_benchmarks_results(self, bench, results_dir):
+		results_json = self.compute_benchmarks_results_json(bench)
+		for split, result in results_json.items():
+			dump_json(result, split, results_dir)
+
+	def dump_benchmarks_plots(self, bench, plot_dir):
+		"""
+		"""
+		for split in bench:
+			for st_name in bench[split]:
+				if (st_name == 'stat'): continue
+				st = bench[split][st_name]
+				fig, axes = st.plot_result_series(split, st_name, self.idx[split])
+				plt.savefig(plot_dir +f"{split}_{st_name}", bbox_inches="tight", transparent=True)
+				plt.close(fig)
 
 
 # ********** PYTORCH LIGHTNING RETURN METRICS **********
-class SimulatedReturn(Metric):
+class SimulatedReturn(ReturnMetric):
 	"""
 	Simulated Return Pytorch Lightning Metric.
 	Starting maximum bet size of $1 per trade. Assumes zero transaction cost.
 
 	Uses confidence score based betsizing if use_conf is True, this allows
-	the betsize to be less than the max.
+	the bet_size to be less than the max.
 	If compounded is true returns are compounded, otherwise the max size of each
 	return is $1.
 	If use_conf and use_kelly are True, uses even kelly criterion based betsizing.
 
-	The update method updates the class state (hit_dir, reward, and betsize).
+	The update method updates the class state (hit_dir, reward, and bet_size).
 	Each state list looks something like this:
 		[tensor(a, b, c), tensor(d, e, f), tensor(g, h, i)]
 
@@ -139,22 +365,19 @@ class SimulatedReturn(Metric):
 		pred_type ('clf'|'reg'): 'clf' expects predictions in [-1, 1],
 			'reg' expects floating point predictions
 		"""
-		super().__init__(compute_on_step=compute_on_step, \
-			dist_sync_on_step=dist_sync_on_step, process_group=process_group)
-		if (use_kelly):
-			assert use_conf, 'must set use_conf to use kelly'
 		self.use_conf = use_conf
 		self.use_kelly = use_kelly
-		self.compounded = compounded
-		self.name = {
-			not self.use_conf: 'br',			# simple binary return
-			self.use_conf and not self.use_kelly: 'cr',	# conf betsize return
-			self.use_kelly: 'kr'				# kelly betsize return
+		name = {
+			not self.use_conf: 'binary',
+			self.use_conf and not self.use_kelly: 'conf',
+			self.use_conf and self.use_kelly: 'kelly'
 		}.get(True)
-		if (self.compounded):
-			self.name += 'c'
-		self.pred_type = pred_type
+		super().__init__(name, use_dir=True, use_conf=use_conf, compounded=compounded,
+			compute_on_step=compute_on_step, dist_sync_on_step=dist_sync_on_step,
+			process_group=process_group)
 
+		self.plot_go_short = True
+		self.pred_type = pred_type
 		self.dir_thresh = (-dir_thresh, dir_thresh) if (is_type(dir_thresh, float)) \
 			else dir_thresh
 		self.conf_thresh = (-conf_thresh, conf_thresh) if (is_type(conf_thresh, float)) \
@@ -175,13 +398,6 @@ class SimulatedReturn(Metric):
 				self.name += f'_ct({ct[1]:.3f})' if (-ct[0] == ct[1]) \
 					else f'_ct({ct[0]:.3f},{ct[1]:.3f})'
 
-		self.add_state('actual_ret', default=[], dist_reduce_fx='cat')
-		self.add_state('pred_dir', default=[], dist_reduce_fx='cat')
-		if (self.use_conf):
-			self.add_state('betsize', default=[], dist_reduce_fx='cat')
-		else:
-			self.betsize = 1
-
 	def update(self, pred, actual_ret):
 		"""
 		Update simulated return state taking into account use_conf and use_kelly flags.
@@ -199,16 +415,16 @@ class SimulatedReturn(Metric):
 		self.actual_ret.append(actual_ret)
 
 		if (is_valid(dt := self.dir_thresh)):
-			pred_dir = torch.zeros_like(pred)
+			pred_dir = pt.zeros_like(pred)
 			pred_dir[pred < dt[0]] = -1
 			pred_dir[pred > dt[1]] = 1
 		else:
-			pred_dir = torch.sign(pred)
+			pred_dir = pt.sign(pred)
 		self.pred_dir.append(pred_dir)
 
 		if (self.use_conf):
 			if (is_valid(ct := self.conf_thresh)):
-				pred_conf = torch.zeros_like(pred)
+				pred_conf = pt.zeros_like(pred)
 				pred_conf[pred < ct[0]] = (pred[pred < ct[0]] - ct[0]) / (-1 - ct[0])
 				pred_conf[pred > ct[1]] = (pred[pred > ct[1]] - ct[1]) / (1 - ct[1])
 				# assert (pred_conf >= 0).all(), 'pred_conf must be in [0,1]'
@@ -218,29 +434,8 @@ class SimulatedReturn(Metric):
 				pred_conf = sigmoid(pred.abs())
 
 			if (self.use_kelly): # even money kelly
-				pred_conf = torch.clamp(2 * pred_conf - 1, min=0.0, max=1.0)
-			self.betsize.append(pred_conf)
-
-	def compute_returns(self, cumulative=True):
-		pred_dirs = torch.cat(self.pred_dir, dim=0)
-		actual_rets = torch.cat(self.actual_ret, dim=0)
-		betsizes = torch.cat(self.betsize, dim=0) if (self.use_conf) else self.betsize
-		returns = pred_dirs * actual_rets * betsizes
-		if (cumulative):
-			returns = get_cumulative_return(returns, compounded=self.compounded)
-		return returns
-
-	def compute(self, pfx=''):
-		"""
-		Compute return stats using pred_dir, actual return, and betsize.
-		Does not use the confidence score to scale return if use_conf is False.
-		TODO bull and bear only returns
-		"""
-		cr = self.compute_returns(cumulative=True)
-		return {
-			f'{pfx}_{self.name}_cumret': cr[-1],
-			f'{pfx}_{self.name}_sharpe': get_sharpe_ratio(cr),
-			f'{pfx}_{self.name}_min': cr.min(),
-			f'{pfx}_{self.name}_max': cr.max()
-		}
+				# pred_conf = pt.clamp(2 * pred_conf - 1, min=0.0, max=1.0)
+				pred_conf = (2 * pred_conf - 1).to(pt.float32)\
+					.clamp(min=0.0, max=1.0)
+			self.bet_size.append(pred_conf)
 

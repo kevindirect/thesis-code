@@ -4,20 +4,22 @@ Kevin Patel
 import sys
 import os
 import logging
+from functools import partial
 
 import numpy as np
 import pandas as pd
 import torch
+from torch.utils.data import DataLoader
 import pytorch_lightning as pl
 
-from common_util import MODEL_DIR, DT_FMT_YMD, pd_split_ternary_to_binary, rectify_json, pairwise, df_del_midx_level, df_randlike, is_valid
+from common_util import MODEL_DIR, pd_split_ternary_to_binary, pairwise, df_del_midx_level, df_randlike, is_valid
 from model.common import ASSETS, INTRADAY_LEN, INTERVAL_YEARS
 from model.xg_util import get_xg_feature_dfs, get_xg_label_target_dfs, get_hardcoded_feature_dfs, get_hardcoded_label_target_dfs, dfs_get_common_interval_data
-from model.train_util import pd_to_np_tvt, pd_tvt_idx_split, get_dataloader
-from model.metrics_util import BuyAndHoldStrategy, OptimalStrategy
+from model.train_util import pd_to_np_tvt, pd_tvt_idx_split, window_shifted, WindowBatchSampler, get_dataset
+from model.metrics_util import BenchmarksMixin
 
 
-class XGDataModule(pl.LightningDataModule):
+class XGDataModule(BenchmarksMixin, pl.LightningDataModule):
 	"""
 	Experiment Group Data Module
 	Defines the data pipeline from experiment group data on disk to
@@ -33,7 +35,7 @@ class XGDataModule(pl.LightningDataModule):
 	Can be used directly with pytorch-lightning Trainer.fit().
 
 	Args:
-		t_params (dick): training hyperparameters
+		t_params (dict): training hyperparameters
 		asset_name (str): asset name
 		fdata_name (d_rand|d_pba|d_vol|d_buzz|d_nonbuzz|h_rand|h_pba|h_vol|h_buzz):
 			feature data name
@@ -53,8 +55,7 @@ class XGDataModule(pl.LightningDataModule):
 		self.fret = fret
 		self.interval = interval
 		self.overwrite_cache = overwrite_cache
-		self.name = (f'{self.interval[0]}_{self.interval[1]}'
-			f'_{self.ldata_name}_{self.fdata_name}').replace(',', '_')
+		self.name = XGDataModule.get_name(self.interval, self.fdata_name, self.ldata_name)
 
 	def prepare_data(self):
 		"""
@@ -87,144 +88,124 @@ class XGDataModule(pl.LightningDataModule):
 				overwrite_cache=self.overwrite_cache)
 			ldata, tdata = get_hardcoded_label_target_dfs(ld, td, self.ldata_name)
 
-		self.data = dfs_get_common_interval_data((fdata, ldata, tdata),
+		self.raw_df = dfs_get_common_interval_data((fdata, ldata, tdata),
 			interval=self.interval)
 
 	def setup(self):
 		"""
-		Split the data into {train, val, test} splits and convert to numpy arrays.
+		Split the data into {train, val, test} splits and convert to numpy arrays,
+		apply window_shifted per split to get win_{split} arrays,
+		and make the TensorDatasets and samplers used to later create DataLoaders.
 		"""
-		self.train, self.val, self.test = zip(*map(pd_to_np_tvt, self.data))
-		self.train_idx, self.val_idx, self.test_idx = pd_tvt_idx_split(self.data[1])
-		self.fobs = self.get_fobs()
+		raw_train, raw_val, raw_test = zip(*map(pd_to_np_tvt, self.raw_df))
+		idx_train, idx_val, idx_test = zip(*map(pd_tvt_idx_split, self.raw_df))
 
-		for split in (self.train, self.val, self.test):
+		for split in (raw_train, raw_val, raw_test):
 			assert all(len(d)==len(split[0]) for d in split), \
 				"length of data within each split must be identical"
-
-		for train, val, test in zip(self.train, self.val, self.test):
+		for train, val, test in zip(raw_train, raw_val, raw_test):
 			assert train.shape[1:] == val.shape[1:] == test.shape[1:], \
 				"shape of f, l, t data must be identical across splits"
 
+		self.raw_idx = {
+			'train': idx_train,
+			'val': idx_val,
+			'test': idx_test
+		}
+		self.raw = {
+			'train': raw_train,
+			'val': raw_val,
+			'test': raw_test
+		}
+		self.fobs = self.get_fobs()
+
+		win_fn = partial(window_shifted,
+			loss=self.t_params['loss'],
+			window_size=self.t_params['window_size'],
+			window_overlap=True,
+			feat_dim=self.t_params['feat_dim'])
+
+		self.win = {split: win_fn(d) for split, d in self.raw.items()}
+		self.ds = {split: get_dataset(d) for split, d in self.win.items()}
+		if (is_valid(self.t_params['batch_step_size'])):
+			self.smp = {
+				split: WindowBatchSampler(ds,
+					batch_size=self.t_params['batch_size'],
+					batch_step_size=self.t_params['batch_step_size'],
+					method='trunc',
+					batch_shuffle=self.is_shuffle(split))
+				for split, ds in self.ds.items()
+			}
+			self.starts = {
+				split: (0, self.t_params['batch_step_size'])
+					for split, smp in self.smp.items()
+			}
+			self.ends = {
+				split: (smp.get_step_end(), smp.get_data_end())
+					for split, smp in self.smp.items()
+			}
+
+			# first to last target set indices:
+			self.start = {split: idxs[1] for split, idxs in self.starts.items()}
+			self.end = {split: idxs[1] for split, idxs in self.ends.items()}
+			self.idx = {split: idx[-1].droplevel(1)[self.start[split]:self.end[split]]
+				for split, idx in self.raw_idx.items()}
+		else:
+			self.smp = None
+			self.starts = None
+			self.ends = None
+			self.start = None
+			self.end = None
+			self.idx = None
+
 	def get_fobs(self):
-		fobs = list(self.train[0].shape[1:])
+		"""
+		For a time series of 24 hour days, this would be 24.
+		For 8 hour days, 8.
+		And so on.
+		"""
+		fobs = list(self.raw['train'][0].shape[1:])
 		fobs[-1] = fobs[-1] * self.t_params['window_size']
 		fobs = tuple(fobs)
 		return fobs
 
 	def update_params(self, new):
-		old_window_size = self.t_params['window_size']
-		self.t_params = new
-		if (self.t_params['window_size'] != old_window_size):
-			self.fobs = self.get_fobs()
+		if (self.t_params != new):
+			self.t_params = new
+			self.setup()
 
-	train_dataloader = lambda self: get_dataloader(
-		data=self.train,
-		loss=self.t_params['loss'],
-		window_size=self.t_params['window_size'],
-		window_overlap=True,
-		feat_dim=self.t_params['feat_dim'],
-		batch_size=self.t_params['batch_size'],
-		batch_step_size=self.t_params['batch_step_size'],
-		batch_shuffle=self.t_params['train_shuffle'],
-		num_workers=self.t_params['num_workers'],
-		pin_memory=self.t_params['pin_memory'])
-
-	val_dataloader = lambda self: get_dataloader(
-		data=self.val,
-		loss=self.t_params['loss'],
-		window_size=self.t_params['window_size'],
-		window_overlap=True,
-		feat_dim=self.t_params['feat_dim'],
-		batch_size=self.t_params['batch_size'],
-		batch_step_size=self.t_params['batch_step_size'],
-		num_workers=self.t_params['num_workers'],
-		pin_memory=self.t_params['pin_memory'])
-
-	test_dataloader = lambda self: get_dataloader(
-		data=self.test,
-		loss=self.t_params['loss'],
-		window_size=self.t_params['window_size'],
-		window_overlap=True,
-		feat_dim=self.t_params['feat_dim'],
-		batch_size=self.t_params['batch_size'],
-		batch_step_size=self.t_params['batch_step_size'],
-		num_workers=self.t_params['num_workers'],
-		pin_memory=self.t_params['pin_memory'])
-
-	def get_benchmarks(self, train_len=None, val_len=None, test_len=None):
+	def get_dataloader(self, split):
 		"""
-		Return benchmarks calculated from loaded data as a JSON serializable dict.
+		Return a torch.DataLoader
+
+		Args:
+			split (str):
+
+		Returns:
+			torch.DataLoader
 		"""
-		bench_dict = {}
-		bench_stats = (
-			lambda d, pfx: {
-				f'{pfx}_label_dist': pd.Series(d, dtype=int) \
-					.value_counts(normalize=True).to_dict()
-			},
-		)
-		bench_strats = (
-			BuyAndHoldStrategy(compounded=False),
-			# BuyAndHoldStrategy(compounded=True),
-			OptimalStrategy(compounded=False),
-			# OptimalStrategy(compounded=True)
-		)
+		dataset = self.ds[split]
+		sampler = self.smp and self.smp[split]
 
-		for pfx, flt, flt_idx, split_len in zip( \
-			('train', 'val', 'test'), \
-			(self.train, self.val, self.test), \
-			(self.train_idx, self.val_idx, self.test_idx), \
-			(train_len, val_len, test_len)):
-			l = np.sum(flt[1], axis=(1, 2), keepdims=False)
-			t = flt[2]
-			i = flt_idx.droplevel(1)
-			if (is_valid(split_len)):
-				l = l[:split_len]
-				t = t[:split_len]
-				i = i[:split_len]
-			t = torch.tensor(t[t!=0], dtype=torch.float32, requires_grad=False)
-			# t = np.sum(flt[2], axis=(1, 2), keepdims=False)
+		if (is_valid(sampler)):
+			dl = DataLoader(dataset, batch_sampler=sampler,
+				num_workers=self.t_params['num_workers'],
+				pin_memory=self.t_params['pin_memory'])
+		else:
+			# Uses one of torch.utils.data.{SequentialSampler, RandomSampler}
+			dl = DataLoader(dataset, batch_size=self.t_params['batch_size'],
+				shuffle=self.is_shuffle(split), drop_last=False,
+				num_workers=self.t_params['num_workers'],
+				pin_memory=self.t_params['pin_memory'])
+		return dl
 
-			bench_dict[f'{pfx}_date_range_start'] = i[0].strftime(DT_FMT_YMD)
-			bench_dict[f'{pfx}_date_range_end'] = i[-1].strftime(DT_FMT_YMD)
-			bench_dict[f'{pfx}_date_range_len'] = len(i)
-			for stat in bench_stats:
-				bench_dict.update(stat(l, pfx))
+	is_shuffle = lambda self, split: self.t_params['train_shuffle'] and split=='train'
+	train_dataloader = lambda self: self.get_dataloader('train')
+	val_dataloader = lambda self: self.get_dataloader('val')
+	test_dataloader = lambda self: self.get_dataloader('test')
 
-			for strat in bench_strats:
-				strat.update(t)
-				vals = strat.compute(pfx=pfx)
-				bench_dict.update(vals)
-				strat.reset()
-		return rectify_json(bench_dict)
-
-	def get_benchmark_strats(self, train_len=None, val_len=None, test_len=None):
-		"""
-		Return benchmarks objects.
-		"""
-		bench_strats = {pfx: {} for pfx in ('train', 'val', 'test')}
-
-		for pfx, flt, flt_idx, split_len in zip( \
-			('train', 'val', 'test'), \
-			(self.train, self.val, self.test), \
-			(self.train_idx, self.val_idx, self.test_idx), \
-			(train_len, val_len, test_len)):
-			strats = (
-				BuyAndHoldStrategy(compounded=False),
-				# BuyAndHoldStrategy(compounded=True),
-				OptimalStrategy(compounded=False),
-				# OptimalStrategy(compounded=True)
-			)
-			# t = np.sum(flt[2], axis=(1, 2), keepdims=False)
-			t = flt[2]
-			i = flt_idx.droplevel(1)
-			if (is_valid(split_len)):
-				t = t[:split_len]
-				i = i[:split_len]
-			t = torch.tensor(t[t!=0], dtype=torch.float32, requires_grad=False)
-			for strat in strats:
-				strat.update(t)
-				bench_strats[pfx][strat.name] = strat
-			bench_strats[pfx]['index'] = i
-		return bench_strats
+	@staticmethod
+	def get_name(interval, fdata_name, ldata_name):
+		return (f'{interval[0]}_{interval[1]}'
+			f'_{ldata_name}_{fdata_name}').replace(',', '_')
 

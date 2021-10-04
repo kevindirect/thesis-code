@@ -526,7 +526,7 @@ class TemporalConvNet(nn.Module):
 	All kernel size, dilation, and padding size parameters only affect the temporal
 	dimension of the kernel or input. For more information see TemporalLayer2d.
 
-	Note: Receptive Field Size = Number TCN Blocks * Kernel Size * Last Layer Dilation Size
+	note: nth layer receptive field, r_n = r[n-1] + (kernel_size[n] - 1) * dilation[n]
 	"""
 	def __init__(self, in_shape, block_channels=[[5, 5, 5]], num_blocks=1,
 		kernel_sizes=3, dropouts=0.0, dropout_type='2d', dilation_factor=2, global_dilation=True,
@@ -656,6 +656,18 @@ class StackedTCN(TemporalConvNet):
 			global_dilation=global_dilation, block_act=block_act, out_act=out_act,
 			block_init=block_init, out_init=out_init, pad_mode=pad_mode,
 			downsample_type=downsample_type, ob_out_shapes=ob_out_shapes, ob_params=ob_params)
+
+	@classmethod
+	def get_receptive_field(cls, depth, kernel_size, dilation_factor):
+		"""
+		note: nth layer receptive field (for constant kernel size 'k', global dilation factor 'f')
+		Keep in mind here dilation factor isn't the actual dilation but the factor by which
+		dilation grows each layer.
+			      n
+		r_n = (k-1) * ∑ (f ** i)
+			      0
+		"""
+		return (kernel_size-1) * sum(dilation_factor**i for i in range(depth))
 
 	@classmethod
 	def suggest_params(cls, trial=None, num_classes=2, add_ob=False):
@@ -908,6 +920,44 @@ class AE(nn.Module):
 	def forward(self, x):
 		return self.model(x)
 
+# ********** NORMALIZATION MODULES **********
+class InstanceNorm15d(nn.Module):
+	"""
+	Run 1D instance norm over last dimension of 2D input shaped (n, C, H, W),
+	
+	"""
+	def __init__(self, num_channels, num_features, eps=1e-05, momentum=0.1, affine=False, track_running_stats=False, to_cuda=True, **params):
+		super().__init__()
+		self.nchan = num_channels
+		self.in1d = [nn.InstanceNorm1d(num_features,
+				eps=eps, momentum=momentum, affine=affine,
+				track_running_stats=track_running_stats, **params)
+				for i in range(self.nchan)]
+		if (affine and to_cuda):
+			self.in1d = [nn.InstanceNorm1d(num_features,
+					eps=eps, momentum=momentum, affine=affine,
+					track_running_stats=track_running_stats, **params).cuda()
+					for i in range(self.nchan)]
+		else:
+			self.in1d = [nn.InstanceNorm1d(num_features,
+					eps=eps, momentum=momentum, affine=affine,
+					track_running_stats=track_running_stats, **params)
+					for i in range(self.nchan)]
+
+	def forward(self, x):
+		"""
+		Run the following operation over input:
+			(n, C, H, W) -> nn.in1d(n, H, W) for each channel -> concat over channels
+		"""
+		# print(x.shape)
+		channel_out = tuple(self.in1d[i](x[:, i, :, :]).unsqueeze(dim=1)
+			for i in range(self.nchan))
+		# print([c.shape for c in channel_out])
+		if (len(channel_out) == 1):
+			return channel_out[0]
+		else:
+			return torch.cat(channel_out, dim=1)
+
 
 MODEL_MAPPING = {
 	'ffn': FFN,
@@ -920,8 +970,12 @@ MODEL_MAPPING = {
 NORM_MAPPING = {
 	'gn': lambda in_shape, num_groups, **params: \
 		nn.GroupNorm(num_groups=num_groups, num_channels=in_shape[0], **params),
+	'ln': lambda in_shape, num_groups, **params: \
+		nn.GroupNorm(num_groups=1, num_channels=in_shape[0], **params),
 	'in1d': lambda in_shape, **params: \
 		nn.InstanceNorm1d(num_features=in_shape[0], **params),
+	'in15d': lambda in_shape, **params: \
+		InstanceNorm15d(num_channels=in_shape[0], num_features=in_shape[1], **params),
 	'in2d': lambda in_shape, **params: \
 		nn.InstanceNorm2d(num_features=in_shape[0], **params),
 	'in3d': lambda in_shape, **params: \

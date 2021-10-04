@@ -33,6 +33,8 @@ from tensorflow.nn import sparse_softmax_cross_entropy_with_logits, softmax_cros
 # PACKAGE CONSTANTS
 FR_DIR = MODEL_DIR +'fr' +sep
 XG_DIR = MODEL_DIR +'xg' +sep
+EXP_LOG_DIR = MODEL_DIR +'exp-log' +sep
+EXP_PARAMS_DIR = MODEL_DIR +'exp-params' +sep
 XG_PROCESS_DIR = MODEL_DIR +'xg-process' +sep
 XG_DATA_DIR = MODEL_DIR +'xg-data' +sep
 XG_VIZ_DIR = MODEL_DIR +'xg-graphs-viz' +sep
@@ -42,7 +44,9 @@ XG_INDEX_FNAME = '.index.json'
 EXPECTED_NUM_HOURS = 8
 INTRADAY_LEN = 8
 ASSETS = ('sp_500', 'russell_2000', 'nasdaq_100', 'dow_jones')
-INTERVAL_YEARS = (2007, 2018)
+ASSETS_STR = ','.join(ASSETS)
+INTERVAL_YEARS = (2009, 2018)
+TRADING_DAYS = 252
 WIN_SIZE = 10
 TRAIN_RATIO = .5
 # VAL_RATIO, TEST_RATIO = .2, .2

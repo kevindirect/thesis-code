@@ -8,12 +8,13 @@ from inspect import getfullargspec
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 import torch
 import torch.nn.functional as F
 import pytorch_lightning as pl # PL ver 1.2.3
 import torchmetrics as tm
 
-from common_util import load_df, dump_df, is_valid, isnt
+from common_util import load_df, dump_df, is_valid, isnt, rectify_json, dump_json
 from model.common import WIN_SIZE, PYTORCH_ACT_MAPPING, PYTORCH_LOSS_MAPPING, PYTORCH_OPT_MAPPING, PYTORCH_SCH_MAPPING
 from model.metrics_util import SimulatedReturn
 from model.model_util import OutputBlock
@@ -96,20 +97,20 @@ class GenericModel(pl.LightningModule):
 		'micro' weights by class frequency, 'macro' weights classes equally
 		"""
 		if (self.model_type == 'clf'):
-			if (self.t_params['loss'] in ('clf-ce',)):
+			if (self.t_params['loss'] in ('clf-ce', 'clf-nll')):
 				num_classes = self.m_params['label_size'] + 1
 			else:
 				num_classes = self.m_params['label_size']
 			self.epoch_metrics = {
 				epoch_type: {
-					'accuracy': tm.Accuracy(compute_on_step=False),
-					'precision': tm.Precision(num_classes=num_classes,
+					f'{self.model_type}_accuracy': tm.Accuracy(compute_on_step=False),
+					f'{self.model_type}_precision': tm.Precision(num_classes=num_classes,
 						average='macro', compute_on_step=False),
-					'recall': tm.Recall(num_classes=num_classes,
+					f'{self.model_type}_recall': tm.Recall(num_classes=num_classes,
 						average='macro', compute_on_step=False),
-					'f1.0': tm.FBeta(num_classes=num_classes, beta=1.0,
+					f'{self.model_type}_f1': tm.FBeta(num_classes=num_classes, beta=1.0,
 						average='macro', compute_on_step=False),
-					# 'f0.5': tm.FBeta(num_classes=num_classes, beta=0.5,
+					# f'{self.model_type}_f0.5': tm.FBeta(num_classes=num_classes, beta=0.5,
 					# 	average='micro', compute_on_step=False),
 				}
 				for epoch_type in epoch_metric_types
@@ -117,8 +118,8 @@ class GenericModel(pl.LightningModule):
 		elif (self.model_type == 'reg'):
 			self.epoch_metrics = {
 				epoch_type: {
-					'mae': tm.MeanAbsoluteError(compute_on_step=False),
-					'mse': tm.MeanSquaredError(compute_on_step=False),
+					f'{self.model_type}_mae': tm.MeanAbsoluteError(compute_on_step=False),
+					f'{self.model_type}_mse': tm.MeanSquaredError(compute_on_step=False),
 				}
 				for epoch_type in epoch_metric_types
 			}
@@ -127,15 +128,32 @@ class GenericModel(pl.LightningModule):
 		for epoch_type in epoch_metric_types:
 			epoch_ret = {}
 			br = SimulatedReturn(use_conf=False, compounded=False, pred_type=self.model_type)
+			br_long = SimulatedReturn(use_conf=False, compounded=False, pred_type=self.model_type)
+			br_short = SimulatedReturn(use_conf=False, compounded=False, pred_type=self.model_type)
 			epoch_ret[br.name] = br
+			epoch_ret[br_long.name+'_long'] = br_long
+			epoch_ret[br_short.name+'_short'] = br_short
 
 			for thresh in [None,]: #, .050, .125, .250, .500, .750]:
 				cr = SimulatedReturn(use_conf=True, use_kelly=False, compounded=False, \
 					pred_type=self.model_type, dir_thresh=thresh, conf_thresh=thresh)
+				cr_long = SimulatedReturn(use_conf=True, use_kelly=False, compounded=False, \
+					pred_type=self.model_type, dir_thresh=thresh, conf_thresh=thresh)
+				cr_short = SimulatedReturn(use_conf=True, use_kelly=False, compounded=False, \
+					pred_type=self.model_type, dir_thresh=thresh, conf_thresh=thresh)
 				kr = SimulatedReturn(use_conf=True, use_kelly=True, compounded=False, \
 					pred_type=self.model_type, dir_thresh=thresh, conf_thresh=thresh)
+				kr_long = SimulatedReturn(use_conf=True, use_kelly=True, compounded=False, \
+					pred_type=self.model_type, dir_thresh=thresh, conf_thresh=thresh)
+				kr_short = SimulatedReturn(use_conf=True, use_kelly=True, compounded=False, \
+					pred_type=self.model_type, dir_thresh=thresh, conf_thresh=thresh)
 				epoch_ret[cr.name] = cr
+				epoch_ret[cr_long.name+'_long'] = cr_long
+				epoch_ret[cr_short.name+'_short'] = cr_short
+
 				epoch_ret[kr.name] = kr
+				epoch_ret[kr_long.name+'_long'] = kr_long
+				epoch_ret[kr_short.name+'_short'] = kr_short
 
 			# for thresh in [.500,]:
 			# 	cr = SimulatedReturn(use_conf=True, use_kelly=False, compounded=False, \
@@ -193,9 +211,20 @@ class GenericModel(pl.LightningModule):
 		# Reshape model outputs for later loss, metrics calculations:
 		if (self.model_type == 'clf'):
 			actual = y
-			if (self.t_params['loss'] in ('clf-ce',)):
+			if (self.t_params['loss'] in ('clf-bce',)):
 				pred_t_loss = pred_t_raw
-				pred_t_smax = F.softmax(pred_t_raw.detach().clone(), dim=-1)
+				pred_t_loss = F.sigmoid(pred_t_loss, dim=-1)
+				pred_t = pred_t_loss.detach().clone()
+				pred_t_ret = (pred_t - .5) * 2
+			elif (self.t_params['loss'] in ('clf-ce',)):
+				pred_t_loss = pred_t_raw
+				if (pred_t_loss.ndim == 1):
+					preds = (pred_t_loss.unsqueeze(-1), (1-pred_t_loss).unsqueeze(-1))
+					pred_t_loss = torch.hstack(preds)
+				elif (pred_t_loss.ndim < self.m_params['num_classes']):
+					# sum the probs and take complement
+					raise NotImplementedError()
+				pred_t_smax = F.softmax(pred_t_loss.detach().clone(), dim=-1)
 				pred_t_conf, pred_t = pred_t_smax.max(dim=-1, keepdim=False)
 				pred_t_dir = pred_t.detach().clone()
 				pred_t_dir[pred_t_dir==0] = -1
@@ -266,8 +295,18 @@ class GenericModel(pl.LightningModule):
 
 		if (is_valid(self.epoch_returns)):
 			for name, ret in self.epoch_returns[epoch_type].items():
-				self.log_dict(ret.compute(pfx=epoch_type), prog_bar=False, \
-					logger=True, on_step=False, on_epoch=True)
+				if (name.endswith('long')):
+					d = ret.compute(f'{epoch_type}_{name}',
+						go_long=True, go_short=False)
+				if (name.endswith('short')):
+					d = ret.compute(f'{epoch_type}_{name}',
+						go_long=False, go_short=True)
+				else:
+					d = ret.compute(f'{epoch_type}_{name}',
+						go_long=True, go_short=True)
+
+				self.log_dict(d, prog_bar=False, logger=True,
+					on_step=False, on_epoch=True)
 
 	def reset_metrics(self, epoch_type):
 		"""
@@ -336,6 +375,50 @@ class GenericModel(pl.LightningModule):
 		"""
 		self.aggregate_log_epoch_loss(outputs, epoch_type)
 		self.compute_log_epoch_metrics(epoch_type)
+
+	def compute_results_json(self):
+		"""
+		"""
+		results_json = {}
+		for split in self.epoch_metrics:
+			split_results = {}
+			for name in self.epoch_metrics[split]:
+				em = self.epoch_metrics[split][name]
+				split_results[f"{split}_{name}"] = em.compute()
+			for name in self.epoch_returns[split]:
+				er = self.epoch_returns[split][name]
+				if (name.endswith('long')):
+					d = er.compute(f'{split}_{name}',
+						go_long=True, go_short=False)
+				if (name.endswith('short')):
+					d = er.compute(f'{split}_{name}',
+						go_long=False, go_short=True)
+				else:
+					d = er.compute(f'{split}_{name}',
+						go_long=True, go_short=True)
+				split_results.update(d)
+
+			results_json[split] = rectify_json(split_results)
+		return results_json
+
+	def dump_results(self, results_dir, model_name):
+		results_json = self.compute_results_json()
+		for split, result in results_json.items():
+			dump_json(result, split, results_dir)
+		return results_json
+
+	def dump_plots(self, plot_dir, model_name, dm):
+		"""
+		"""
+		bothdir = lambda n: not (n.endswith('long') or n.endswith('short'))
+
+		for split in self.epoch_returns:
+			for name in filter(bothdir, self.epoch_returns[split]):
+				er = self.epoch_returns[split][name]
+				plot_name = f"{model_name}-{name}"
+				fig, axes = er.plot_result_series(split, plot_name, dm.idx[split])
+				plt.savefig(plot_dir +f"{split}_{plot_name}", bbox_inches="tight", transparent=True)
+				plt.close(fig)
 
 	@classmethod
 	def fix_metrics_csv(cls, fname, dir_path):

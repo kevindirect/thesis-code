@@ -542,6 +542,20 @@ def dict_flatten(d, parent_key='', sep='_'):
 			items.append((new_key, v))
 	return dict(items)
 
+def deep_update(source, overrides):
+	"""
+	Update a nested dictionary or similar mapping.
+	Modify ``source`` in place.
+	https://stackoverflow.com/questions/3232943/update-value-of-a-nested-dictionary-of-varying-depth
+	"""
+	for key, value in overrides.items():
+		if isinstance(value, collections.Mapping) and value:
+			returned = deep_update(source.get(key, {}), value)
+			source[key] = returned
+		else:
+			source[key] = overrides[key]
+	return source
+
 def dict_combine(a, b):
 	"""
 	Combine / merge two dicts into one.
@@ -2331,7 +2345,7 @@ def pt_resample_values(pt_obj, n='max', shuffle=True):
 
 	Args:
 		pt_obj:
-		n (int>0|max|min|avg):
+		n (int>0|max|min|avg): the strategy used to resample for each value
 		shuffle:
 
 	Returns:

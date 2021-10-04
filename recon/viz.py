@@ -8,17 +8,115 @@ from collections import Mapping
 
 import numpy as np
 import pandas as pd
+import matplotlib
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import scipy
 import scipy.stats
 
-from common_util import benchmark
+from common_util import benchmark, isnt
 from recon.common import dum
 
 
+""" ********** GLOBAL SETTINGS ********** """
+font = {
+	'family' : 'inconsolata',
+	'weight' : 'normal',
+	'size'   : 28
+}
+
+matplotlib.rc('font', **font)
+
+
 """ ********** PANEL DATA VISUALIZATION ********** """
-def plot_dist(df, col_name, fit_overlay=False):
+# Line Graphs
+def plot_df_line(df, title='title', xlabel='xlab', ylabel='ylab', figsize=(25, 10),
+	colors=None, linestyles=None):
+	plt.figure(figsize=figsize)
+	plt.title(title)
+	plt.xlabel(xlabel)
+	plt.ylabel(ylabel)
+
+	for i, col_name in enumerate(df.columns):
+		color = colors[i % len(colors)] if (isinstance(colors, list)) else colors
+		linestyle = linestyles[i % len(linestyles)] if (isinstance(linestyles, list)) else linestyles
+		linewidth = None if (isnt(linestyle)) else 2
+		plt.plot(df.index, df.loc[:, col_name], color=color, linewidth=linewidth, linestyle=linestyle, label=str(col_name))
+
+	plt.legend(loc='upper left', fancybox=True, framealpha=0.75)
+
+def plot_df_line_subplot(df, ax, title=None, xlabel=None, ylabel=None,
+	colors=None, linestyles=None):
+	ax.set_title(title)
+	ax.set_xlabel(xlabel)
+	ax.set_ylabel(ylabel)
+	ax.grid()
+
+	for i, col_name in enumerate(df.columns):
+		color = colors[i % len(colors)] if (isinstance(colors, list)) else colors
+		linestyle = linestyles[i % len(linestyles)] if (isinstance(linestyles, list)) else linestyles
+		linewidth = None if (isnt(linestyle)) else 2
+		ax.plot(df.index, df.loc[:, col_name], color=color, linewidth=linewidth, linestyle=linestyle, label=str(col_name))
+
+	ax.legend(loc='upper left', fancybox=True, framealpha=0.75)
+
+# Scatterplots
+def plot_df_scatter(df, title='title', xlabel='xlab', ylabel='ylab', figsize=(25, 10),
+	colors=None, alpha=None, markers='.'):
+	plt.figure(figsize=figsize)
+	plt.title(title)
+	plt.xlabel(xlabel)
+	plt.ylabel(ylabel)
+
+	for i, col_name in enumerate(df.columns):
+		color = colors[i % len(colors)] if (isinstance(colors, list)) else colors
+		marker = markers[i % len(markers)] if (isinstance(markers, list)) else markers
+		plt.scatter(df.index, df.loc[:, col_name], color=color, alpha=alpha, marker=marker, label=str(col_name))
+
+	plt.legend(loc='upper left', fancybox=True, framealpha=0.75)
+
+def plot_df_scatter_subplot(df, ax, title=None, xlabel=None, ylabel=None,
+	colors=None, alpha=None, markers='.'):
+	ax.set_title(title)
+	ax.set_xlabel(xlabel)
+	ax.set_ylabel(ylabel)
+	ax.grid()
+
+	for i, col_name in enumerate(df.columns):
+		color = colors[i % len(colors)] if (isinstance(colors, list)) else colors
+		marker = markers[i % len(markers)] if (isinstance(markers, list)) else markers
+		ax.scatter(df.index, df.loc[:, col_name], color=color, alpha=alpha, marker=marker, label=str(col_name))
+
+	ax.legend(loc='upper left', fancybox=True, framealpha=0.75)
+
+# Histograms
+def plot_df_hist(df, title='title', xlabel='xlab', ylabel='frequency', figsize=(25, 10),
+	colors=None, alpha=None, hist_bins=10):
+	plt.figure(figsize=figsize)
+	plt.title(title)
+	plt.xlabel(xlabel)
+	plt.ylabel(ylabel)
+
+	for i, col_name in enumerate(df.columns):
+		color = colors[i % len(colors)] if (isinstance(colors, list)) else colors
+		plt.hist(df.loc[:, col_name], bins=hist_bins, color=color, alpha=alpha, label=str(col_name))
+
+	plt.legend(loc='upper left', fancybox=True, framealpha=0.75)
+
+def plot_df_hist_subplot(df, ax, title=None, xlabel=None, ylabel=None,
+	colors=None, alpha=None, hist_bins=10):
+	ax.set_title(title)
+	ax.set_xlabel(xlabel)
+	ax.set_ylabel(ylabel)
+	ax.yaxis.grid()
+    
+	for i, col_name in enumerate(df.columns):
+		color = colors[i % len(colors)] if (isinstance(colors, list)) else colors
+		ax.hist(df.loc[:, col_name], bins=hist_bins, color=color, alpha=alpha, label=str(col_name))
+
+	ax.legend(loc='upper left', fancybox=True, framealpha=0.75)
+
+def plot_df_dist(df, col_name, fit_overlay=False):
 	series = df[col_name].dropna().sort_values(inplace=False)
 	plt.figure(figsize=(4,4))
 	plt.title(col_name)
@@ -32,27 +130,26 @@ def plot_dist(df, col_name, fit_overlay=False):
 		textstr = '$n=%i$\n$\mu=%.2f$\n$\mathrm{median}=%.2f$\n$\sigma=%.2f$'%(size, mean, median, sdev)
 		fit = scipy.stats.norm.pdf(series, mean, sdev)
 
-		props = dict(boxstyle='round', facecolor='white', alpha=0.5)				# matplotlib.patch.Patch properties
+		props = dict(boxstyle='round', facecolor='white', alpha=0.5)	# matplotlib.patch.Patch properties
 		plt.axes().text(0.05, 0.95, textstr, transform=plt.axes().transAxes,
-			fontsize=14, verticalalignment='top', bbox=props)						# place a text box in upper left
+			fontsize=14, verticalalignment='top', bbox=props)	# place a text box in upper left
 		plt.plot(series, fit,'k^')
 
+# def plot_df_heatmap(df):
+# 	# plot correlation matrix
+# 	fig = plt.figure()
+# 	ax = fig.add_subplot(111)
+# 	cax = ax.matshow(df, vmin=-1, vmax=1)
+# 	fig.colorbar(cax)
+# 	ticks = np.arange(0,9,1)
+# 	ax.set_xticks(ticks)
+# 	ax.set_yticks(ticks)
+# 	ax.set_xticklabels(names)
+# 	ax.set_yticklabels(names)
+# 	plt.show()
 
-def plot_heatmap(df):
-	# plot correlation matrix
-	fig = plt.figure()
-	ax = fig.add_subplot(111)
-	cax = ax.matshow(df, vmin=-1, vmax=1)
-	fig.colorbar(cax)
-	ticks = np.arange(0,9,1)
-	ax.set_xticks(ticks)
-	ax.set_yticks(ticks)
-	ax.set_xticklabels(names)
-	ax.set_yticklabels(names)
-	plt.show()
-
-
-def df_as_heatmap(df, figsize=(10,10), cmap='cividis', aspect='auto'):
+# Heatmaps
+def plot_df_heatmap(df, figsize=(10,10), cmap='cividis', aspect='auto'):
 	"""
 	Plot a pd.DataFrame as heatmap with matplotlib.
 	"""
@@ -69,8 +166,7 @@ def df_as_heatmap(df, figsize=(10,10), cmap='cividis', aspect='auto'):
 	ax.set_yticklabels(df.index)
 	return fig
 
-
-def dfs_as_heatmaps(dfs, row_labels=None, col_labels=None, bars_for_all=False,
+def plot_dfs_heatmap(dfs, row_labels=None, col_labels=None, bars_for_all=False,
 	sharex=False, sharey=True, figsize=(20,10), cmap='cividis', aspect='auto'):
 	"""
 	Given a 2D iterable of pd.DataFrames (rows, columns), creates plots a 2D grid of heatmaps with matplotlib.
@@ -97,6 +193,8 @@ def dfs_as_heatmaps(dfs, row_labels=None, col_labels=None, bars_for_all=False,
 				fig.colorbar(im, cax=cax, orientation='vertical')
 	return fig
 
+
+## XXX EVERYTHING PAST THIS POINT IS DEPRECATED
 
 #write plot_split_hists function
 #plots histograms of the feature segmented by the label
@@ -295,12 +393,13 @@ def plot_day_ser(ser, date=None):
 	plot_ser(ser[date], title=date, xlabel='hour', ylabel='value')
 
 
-def plot_df(df, title='plot', xlabel='xlab', ylabel='ylab'):
+def plot_df(df, title='plot', xlabel='xlab', ylabel='ylab', marker='-'):
 	plt.figure(figsize=((25, 10)))
 	plt.title(title)
 	plt.xlabel(xlabel)
 	plt.ylabel(ylabel)
-	[plt.plot(df.index, df.loc[:, col_name], '^', label=str(col_name)) for col_name in df.columns]
+	[plt.plot(df.index, df.loc[:, col_name], marker, label=str(col_name))
+		for col_name in df.columns]
 	plt.legend(loc='upper left')
 	return plt
 
@@ -310,9 +409,6 @@ def plot_day_df(df, date=None):
 		date = str(np.random.choice(df.index))[:10]
 	plot_df(df[date], title=date, xlabel='hour', ylabel='value')
 
-
-def plot_hist_df(df, column=None, separate_by=None, num_bins=10, **kwargs):
-	df.hist(column=column, by=separate_by, bins=num_bins, **kwargs)
 
 #config options
 # atomic_fn_options = OrderedDict({'nothing': lambda x:x, 'round': lambda a: np.around(a, 2), 'log10':np.log10, 'sine':np.sin, 'sinh':np.sinh})
@@ -329,4 +425,5 @@ def plot_hist_df(df, column=None, separate_by=None, num_bins=10, **kwargs):
 # 			low_clip=(-1.0, 0.0, .001),
 # 			high_clip=(.0, 1.0, .001),
 # 			show_class=('all', 'up', 'down', 'sideways'));
+
 

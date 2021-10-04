@@ -29,8 +29,6 @@ class NPModel(GenericModel):
 		epochs (int): number training epochs
 		batch_size (int): batch (or batch window) size
 		batch_step_size (int): batch window step size.
-			if this is None DataLoader uses its own default sampler,
-			otherwise WindowBatchSampler is used as batch_sampler
 		train_shuffle (bool): whether or not to shuffle the order of the training batches
 		loss (str): name of loss function to use
 		opt (dict): pytorch optimizer settings
@@ -99,6 +97,8 @@ class NPModel(GenericModel):
 				self.model_type == 'clf'):
 				ctx_idx = pt_resample_values(y[:ctx], n=ts, shuffle=True) \
 					.to(y.device)
+
+				# XXX Disable train target resampling:
 				tgt_idx = pt_resample_values(y[-tgt:tend], n=ts, shuffle=True) \
 					.to(y.device)
 
@@ -108,8 +108,11 @@ class NPModel(GenericModel):
 					x[-tgt:tend].index_select(dim=0, index=tgt_idx), \
 					y[-tgt:tend].index_select(dim=0, index=tgt_idx), \
 					z[-tgt:tend].index_select(dim=0, index=tgt_idx)
+			else:
+				return x[:ctx], y[:ctx], z[:ctx], \
+					x[-tgt:tend], y[-tgt:tend], z[-tgt:tend]
 		else:
-			return x[:ctx], y[:ctx], z[:ctx], x[-tgt:], y[-tgt:], z[-tgt:],
+			return x[:ctx], y[:ctx], z[:ctx], x[-tgt:], y[-tgt:], z[-tgt:]
 
 	def forward(self, context_x, context_a, target_x, target_a=None, sample_out=False):
 		"""
@@ -192,10 +195,45 @@ class NPModel(GenericModel):
 				else:
 					pred_t = pred_t.clamp(0.0, 1.0)
 				pred_t_ret = (pred_t - .5) * 2
+			elif (self.t_params['loss'] in ('clf-bcel',)):
+				pred_t_loss = pred_t_raw
+				pred_t = pred_t_loss.detach().clone()
+				pred_t_ret = (pred_t - .5) * 2
+				pred_t_conf = pred_t_ret.abs()
+				pred_t_dir = pred_t_ret.sign()
+			elif (self.t_params['loss'] in ('clf-bce',)):
+				pred_t_loss = pred_t_raw
+				# pred_t_loss = F.sigmoid(pred_t_loss, dim=-1)
+				pred_t = pred_t_loss.detach().clone()
+				pred_t_ret = (pred_t - .5) * 2
+				pred_t_conf = pred_t_ret.abs()
+				pred_t_dir = pred_t_ret.sign()
 			elif (self.t_params['loss'] in ('clf-ce',)):
 				pred_t_loss = pred_t_raw
-				pred_t_smax = F.softmax(pred_t_raw.detach().clone(), dim=-1)
+				if (pred_t_loss.ndim == 1):
+					preds = ((1-pred_t_loss).unsqueeze(-1), pred_t_loss.unsqueeze(-1))
+					pred_t_loss = torch.hstack(preds)
+				elif (pred_t_loss.ndim < self.m_params['num_classes']):
+					# sum the probs and take complement
+					raise NotImplementedError()
+				pred_t_smax = F.softmax(pred_t_loss.detach().clone(), dim=-1)
 				pred_t_conf, pred_t = pred_t_smax.max(dim=-1, keepdim=False)
+				pred_t_dir = pred_t.detach().clone()
+				pred_t_dir[pred_t_dir==0] = -1
+				pred_t_ret = pred_t_dir * pred_t_conf
+			elif (self.t_params['loss'] in ('clf-nll',)):
+				pred_t_loss = pred_t_raw
+				if (pred_t_loss.ndim == 1):
+					preds = ((1-pred_t_loss).unsqueeze(-1), pred_t_loss.unsqueeze(-1))
+					pred_t_loss = torch.hstack(preds)
+					pred_t_prob = pred_t_loss.detach().clone()
+					pred_t_loss = pred_t_loss.log()
+				elif (pred_t_loss.ndim < self.m_params['num_classes']):
+					# sum the probs and take complement
+					raise NotImplementedError()
+				else:
+					raise ValueError()
+				pred_t_conf, pred_t = pred_t_prob.max(dim=-1, keepdim=False)
 				pred_t_dir = pred_t.detach().clone()
 				pred_t_dir[pred_t_dir==0] = -1
 				pred_t_ret = pred_t_dir * pred_t_conf
@@ -219,7 +257,9 @@ class NPModel(GenericModel):
 
 		try:
 			aim_t_loss = aim_t
-			# if (is_valid(prec := self.t_params['label_precision'])):
+			# aim_t_loss = aim_t.type_as(pred_t_loss)
+			# aim_t_loss = aim_t.to(torch.)
+			# if (is_valid(prec := self.get_precision())):
 			# 	ftype = {
 			# 		16: torch.float16,
 			# 		32: torch.float32,
@@ -231,8 +271,8 @@ class NPModel(GenericModel):
 			print("Error! pl_np.py > NPModel > forward_step() > loss()\n",
 				sys.exc_info()[0], err)
 			print(f'{self.loss=}')
-			print(f'{pred_t_loss.shape=}')
-			print(f'{aim_t.shape=}')
+			print(f'{pred_t_loss.shape=}, {pred_t_loss.dtype=}')
+			print(f'{aim_t_loss.shape=}, {aim_t_loss.dtype=}')
 			print(f'{pred_t.shape=}')
 			print(f'{pred_t_loss.shape=}')
 			print(f'{pred_t_conf.shape=}')
@@ -348,7 +388,7 @@ class NPModel(GenericModel):
 			train_target_overlap = trial.suggest_int('train_target_overlap', 0, 16, step=8)
 			sample_out = trial.suggest_categorical('sample_out', (False, True))
 		else:
-			batch_size = 64*2
+			batch_size = 64*1
 			window_size = WIN_SIZE
 			lr = 1e-4
 			train_target_overlap = batch_size//8
@@ -357,6 +397,7 @@ class NPModel(GenericModel):
 		epochs = 100
 		model_type = loss_type.split('-')[0]
 		batch_step_size = batch_size//2
+		train_resample = batch_size//4
 
 		params =  {
 			'window_size': 5*4,
@@ -365,7 +406,7 @@ class NPModel(GenericModel):
 			'epochs': epochs,
 			'batch_size': batch_size,
 			'batch_step_size': batch_step_size,
-			'train_resample': batch_size, # max, min, avg, or n
+			'train_resample': train_resample, # max, min, avg, or n
 			'train_target_overlap': train_target_overlap,
 			'train_sample_context_size': False,
 			'context_size': batch_step_size,

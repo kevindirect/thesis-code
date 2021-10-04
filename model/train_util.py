@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 import more_itertools
 import torch
-from torch.utils.data import TensorDataset, DataLoader
+from torch.utils.data import TensorDataset
 from torch.utils.tensorboard import SummaryWriter
 
 from common_util import MODEL_DIR, identity_fn, is_type, is_ser, is_valid, isnt, np_inner, get0, midx_split, pd_rows, pd_midx_to_arr, df_midx_restack, pd_to_np
@@ -201,8 +201,8 @@ def window_shifted(data, loss, window_size, window_overlap=True, feat_dim=None):
 			l_new = np.sum(l, axis=(1, 2), keepdims=False)		# Sum label matrices to scalar values
 			if (l.shape[1] > 1):
 				l_new += l.shape[1]		# Shift to range [0, C-1]
-			if (loss in ('clf-bce', 'clf-bcel') and len(l_new.shape)==1):
-				l_new = np.expand_dims(l_new, axis=-1)
+			# if (loss in ('clf-bce', 'clf-bcel') and len(l_new.shape)==1):
+			# 	l_new = np.expand_dims(l_new, axis=-1)
 			l = l_new
 		else:
 			raise NotImplementedError("code to process label with given shape not written")
@@ -216,11 +216,8 @@ def window_shifted(data, loss, window_size, window_overlap=True, feat_dim=None):
 		else:
 			raise NotImplementedError("code to process target with given shape not written")
 
-
 		return (f, l, t)
 
-
-# ***** Final Processing / Batchification *****
 class WindowBatchSampler(torch.utils.data.Sampler):
 	"""
 	Pytorch Batch Sampler for Sequential window sampling.
@@ -243,6 +240,7 @@ class WindowBatchSampler(torch.utils.data.Sampler):
 		self.batch_step_size = batch_step_size
 		self.batch_shuffle = batch_shuffle
 		self.method = method
+		assert len(self.data_source) >= self.batch_size, "must have at least one batch"
 
 	def __iter__(self):
 		if (self.method == 'ffill'):
@@ -252,8 +250,7 @@ class WindowBatchSampler(torch.utils.data.Sampler):
 			iterable = more_itertools.windowed(range(len(self.data_source)), \
 				n=self.batch_size, step=self.batch_step_size, fillvalue=None)
 		elif (self.method == 'trunc'):
-			trunc_end = ((len(self)-1)*self.batch_step_size) + self.batch_size
-			iterable = more_itertools.windowed(range(trunc_end), \
+			iterable = more_itertools.windowed(range(self.get_data_end()), \
 				n=self.batch_size, step=self.batch_step_size, fillvalue=None)
 
 		if (self.batch_shuffle):
@@ -261,80 +258,44 @@ class WindowBatchSampler(torch.utils.data.Sampler):
 
 		return iterable
 
-	def __len__(self):
+	def get_num_steps(self):
+		"""
+		Get the number of steps the iterator moves through.
+		If this is zero, the iterator only goes through one batch.
+		"""
 		num_steps = (len(self.data_source) - self.batch_size) / self.batch_step_size
-		if (self.method in ('ffill', 'nfill')):
-			return math.ceil(num_steps) + 1
-		elif (self.method == 'trunc'):
-			return math.floor(num_steps) + 1
+		num_steps = math.floor(num_steps) if (self.method in ('trunc',)) \
+			else math.ceil(num_steps)
+		return num_steps
 
-def batchify(data, loss, batch_size, shuffle=False, batch_step_size=None,
-	batch_shuffle=False, num_workers=0, pin_memory=False):
 	"""
-	Return a torch.DataLoader made from a tuple of numpy arrays.
+	Get the number of windows (batches) the iterator moves through.
+	"""
+	__len__ = get_num_windows = lambda self: self.get_num_steps() + 1
+		
+
+	"""
+	Get the first index of the last batch (ie beginning of the last step)
+	"""
+	get_step_end = lambda self: self.batch_step_size * self.get_num_steps()
+
+	"""
+	Get the last index from the last batch (ie end of the last step)
+	"""
+	get_data_end = lambda self: self.batch_size + self.get_step_end()
+
+def get_dataset(data):
+	"""
+	Return TensorDataset of (features, labels, targets)
 
 	Args:
 		data (tuple): tuple of numpy arrays, features are the first element
-		loss (str): name of loss function to use
-		batch_size (int): batch (or batch window) size
-		shuffle (bool): whether or not to shuffle the data,
-			only relevant if batch_step_size is None
-		batch_step_size (int): batch window step size.
-			if this is None DataLoader uses its own default sampler,
-			otherwise WindowBatchSampler is used as batch_sampler
-		batch_shuffle (bool): whether or not to shuffle the batch order,
-			only relevant if batch_step_size is not None
-		num_workers (int>=0): DataLoader option - number cpu workers to attach
-		pin_memory (bool): DataLoader option - whether to pin memory to gpu
 
 	Returns:
-		torch.DataLoader
+		torch.TensorDataset
 	"""
 	f = torch.tensor(data[0], dtype=torch.float32, requires_grad=False)
 	l = torch.tensor(data[1], dtype=torch.int64, requires_grad=False)
 	t = torch.tensor(data[2], dtype=torch.float32, requires_grad=False)
-	ds = TensorDataset(f, l, t)
-	if (isnt(batch_step_size)):
-		# Uses one of torch.utils.data.{SequentialSampler, RandomSampler}
-		dl = DataLoader(ds, batch_size=batch_size, shuffle=shuffle, drop_last=False,
-			num_workers=num_workers, pin_memory=pin_memory)
-	else:
-		batch_sampler = WindowBatchSampler(ds, batch_size=batch_size, \
-			batch_step_size=batch_step_size, method='trunc', \
-			batch_shuffle=batch_shuffle)
-		dl = DataLoader(ds, batch_sampler=batch_sampler, num_workers=num_workers,
-			pin_memory=pin_memory)
-	return dl
-
-def get_dataloader(data, loss, window_size, window_overlap=True, \
-	feat_dim=None, batch_size=128, shuffle=False, batch_step_size=None,
-	batch_shuffle=False, num_workers=0, pin_memory=False):
-	"""
-	Convenience function to return batches after calling window_lag on data.
-
-	Args:
-		data (tuple): tuple of numpy arrays, features are the first element
-		loss (str): name of loss function to use
-		window_size (int): window size to use (this will be the last dim of each tensor)
-		window_overlap (bool): whether to use overlapping or nonoverlapping windows
-		feat_dim (int): dimension of resulting feature tensor, if 'None' doesn't reshape
-		batch_size (int): batch (or batch window) size
-		shuffle (bool): whether or not to shuffle the data,
-			only relevant if batch_step_size is None
-		batch_step_size (int): batch window step size.
-			if this is None DataLoader uses its own default sampler,
-			otherwise WindowBatchSampler is used as batch_sampler
-		batch_shuffle (bool): whether or not to shuffle the batch order,
-			only relevant if batch_step_size is not None
-		num_workers (int>0): DataLoader option - number cpu workers to attach
-		pin_memory (bool): DataLoader option - whether to pin memory to gpu
-
-	Returns:
-		torch.DataLoader
-	"""
-	return batchify(
-		data=window_shifted(data, loss, window_size, window_overlap, feat_dim),
-		loss=loss, batch_size=batch_size, shuffle=shuffle,
-		batch_step_size=batch_step_size, batch_shuffle=batch_shuffle,
-		num_workers=num_workers, pin_memory=pin_memory)
+	return TensorDataset(f, l, t)
 
