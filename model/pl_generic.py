@@ -422,7 +422,7 @@ class GenericModel(pl.LightningModule):
 
 				with open(f'{plot_dir}{fname}.pickle', 'wb') as f:
 					pickle.dump(fig, f)
-				plt.savefig(f'{plotdir}{fname}', bbox_inches="tight",
+				plt.savefig(f'{plot_dir}{fname}', bbox_inches="tight",
 					transparent=True)
 				plt.close(fig)
 
