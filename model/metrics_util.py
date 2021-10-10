@@ -69,8 +69,8 @@ def plot_single(ret_df, profit_df, split, name, hist_bins=80):
 	fig, axes = plt.subplots(3, 1, sharex=False, figsize=(25, 25))
 
 	plot_df_line_subplot(profit_df, axes[0],
-		title=f'{split} {name} cumulative non-compounded profit and loss (PnL)'.title(),
-		ylabel='cumulative PnL', colors='k')
+		title=f'{split} {name} cumulative non-compounded profit and loss'.title().replace(' And ', ' and '),
+		ylabel='cumulative P&L', colors='k')
 	plot_df_scatter_subplot(ret_df, axes[1],
 		title=f'{split} {name} returns'.title(),
 		xlabel=f'{split} examples', ylabel='return', colors='k')
@@ -83,8 +83,8 @@ def plot_three(ret_df, profit_df, split, name, hist_bins=20):
 	fig, axes = plt.subplots(3, 1, sharex=False, figsize=(25, 25))
 
 	plot_df_line_subplot(profit_df, axes[0],
-		title=f'{split} {name} cumulative non-compounded profit and loss (PnL)'.title(),
-		ylabel='cumulative PnL', linestyles=['dashed', 'dotted', 'dashdot'])
+		title=f'{split} {name} cumulative non-compounded profit and loss'.title().replace(' And ', ' and '),
+		ylabel='cumulative P&L', linestyles=['dashed', 'dotted', 'dashdot'])
 	plot_df_scatter_subplot(ret_df, axes[1],
 		title=f'{split} {name} returns'.title(),
 		xlabel=f'{split} examples', ylabel='return', alpha=.5, markers=['o', 'o', '.'])
