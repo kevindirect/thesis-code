@@ -25,6 +25,18 @@ font = {
 	'size'   : 28
 }
 
+# font = {
+# 	'family': 'Serif',
+# 	'weight': 'medium',
+# 	'size': 28
+# }
+
+# font = {
+# 	'family' : 'Sans',
+# 	'weight' : 'medium',
+# 	'size'   : 28
+# }
+
 matplotlib.rc('font', **font)
 
 

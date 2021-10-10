@@ -4,6 +4,7 @@ Kevin Patel
 import sys
 import os
 import logging
+import pickle
 from inspect import getfullargspec
 
 import numpy as np
@@ -416,8 +417,13 @@ class GenericModel(pl.LightningModule):
 			for name in filter(bothdir, self.epoch_returns[split]):
 				er = self.epoch_returns[split][name]
 				plot_name = f"{model_name}-{name}"
+				fname = f"{split}_{plot_name}"
 				fig, axes = er.plot_result_series(split, plot_name, dm.idx[split])
-				plt.savefig(plot_dir +f"{split}_{plot_name}", bbox_inches="tight", transparent=True)
+
+				with open(f'{plot_dir}{fname}.pickle', 'wb') as f:
+					pickle.dump(fig, f)
+				plt.savefig(f'{plotdir}{fname}', bbox_inches="tight",
+					transparent=True)
 				plt.close(fig)
 
 	@classmethod

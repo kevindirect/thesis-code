@@ -5,6 +5,7 @@ import sys
 import os
 import logging
 from functools import partial
+import pickle
 
 import numpy as np
 import pandas as pd
@@ -67,23 +68,29 @@ def get_skew(ret):
 def plot_single(ret_df, profit_df, split, name, hist_bins=80):
 	fig, axes = plt.subplots(3, 1, sharex=False, figsize=(25, 25))
 
-	plot_df_line_subplot(profit_df, axes[0], title=f'{split} {name} cumulative non-compounded profit and loss (PnL)',
+	plot_df_line_subplot(profit_df, axes[0],
+		title=f'{split} {name} cumulative non-compounded profit and loss (PnL)'.title(),
 		ylabel='cumulative PnL', colors='k')
-	plot_df_scatter_subplot(ret_df, axes[1], title=f'{split} {name} returns', xlabel=f'{split} examples',
-		ylabel='return', colors='k')
-	plot_df_hist_subplot(ret_df, axes[2], title=f'{split} {name} distribution', xlabel=f'{split} returns',
-		ylabel='frequency', colors='k', hist_bins=hist_bins)
+	plot_df_scatter_subplot(ret_df, axes[1],
+		title=f'{split} {name} returns'.title(),
+		xlabel=f'{split} examples', ylabel='return', colors='k')
+	plot_df_hist_subplot(ret_df, axes[2],
+		title=f'{split} {name} distribution'.title(),
+		xlabel=f'{split} returns', ylabel='frequency', colors='k', hist_bins=hist_bins)
 	return fig, axes
 
 def plot_three(ret_df, profit_df, split, name, hist_bins=20):
 	fig, axes = plt.subplots(3, 1, sharex=False, figsize=(25, 25))
 
-	plot_df_line_subplot(profit_df, axes[0], title=f'{split} {name} cumulative non-compounded profit and loss (PnL)',
+	plot_df_line_subplot(profit_df, axes[0],
+		title=f'{split} {name} cumulative non-compounded profit and loss (PnL)'.title(),
 		ylabel='cumulative PnL', linestyles=['dashed', 'dotted', 'dashdot'])
-	plot_df_scatter_subplot(ret_df, axes[1], title=f'{split} {name} returns', xlabel=f'{split} examples',
-		ylabel='return', alpha=.5, markers=['o', 'o', '.'])
-	plot_df_hist_subplot(ret_df, axes[2], title=f'{split} {name} distribution', xlabel=f'{split} return',
-		ylabel='frequency', alpha=.5, hist_bins=hist_bins)
+	plot_df_scatter_subplot(ret_df, axes[1],
+		title=f'{split} {name} returns'.title(),
+		xlabel=f'{split} examples', ylabel='return', alpha=.5, markers=['o', 'o', '.'])
+	plot_df_hist_subplot(ret_df, axes[2],
+		title=f'{split} {name} distribution'.title(),
+		xlabel=f'{split} return', ylabel='frequency', alpha=.5, hist_bins=hist_bins)
 	return fig, axes
 
 
@@ -327,7 +334,12 @@ class BenchmarksMixin(object):
 				if (st_name == 'stat'): continue
 				st = bench[split][st_name]
 				fig, axes = st.plot_result_series(split, st_name, self.idx[split])
-				plt.savefig(plot_dir +f"{split}_{st_name}", bbox_inches="tight", transparent=True)
+				fname = f"{split}_{st_name}"
+
+				with open(f'{plot_dir}{fname}.pickle', 'wb') as f:
+					pickle.dump(fig, f)
+				plt.savefig(f'{plot_dir}{fname}', bbox_inches="tight",
+					transparent=True)
 				plt.close(fig)
 
 
