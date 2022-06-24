@@ -93,7 +93,7 @@ class GenericModel(pl.LightningModule):
 
 		self.model_type = self.t_params['loss'].split('-')[0]
 
-	def __init_loggers__(self, epoch_metric_types):
+	def __init_loggers__(self, epoch_metric_types, go_long=True, go_short=False):
 		"""
 		'micro' weights by class frequency, 'macro' weights classes equally
 		"""
@@ -109,9 +109,9 @@ class GenericModel(pl.LightningModule):
 						average='macro', compute_on_step=False),
 					f'{self.model_type}_recall': tm.Recall(num_classes=num_classes,
 						average='macro', compute_on_step=False),
-					f'{self.model_type}_f1': tm.FBeta(num_classes=num_classes, beta=1.0,
+					f'{self.model_type}_f1': tm.F1Score(num_classes=num_classes,
 						average='macro', compute_on_step=False),
-					# f'{self.model_type}_f0.5': tm.FBeta(num_classes=num_classes, beta=0.5,
+					# f'{self.model_type}_f0.5': tm.FBetaScore(num_classes=num_classes, beta=0.5,
 					# 	average='micro', compute_on_step=False),
 				}
 				for epoch_type in epoch_metric_types
@@ -128,42 +128,41 @@ class GenericModel(pl.LightningModule):
 		self.epoch_returns = {}
 		for epoch_type in epoch_metric_types:
 			epoch_ret = {}
-			br = SimulatedReturn(use_conf=False, compounded=False, pred_type=self.model_type)
-			br_long = SimulatedReturn(use_conf=False, compounded=False, pred_type=self.model_type)
-			br_short = SimulatedReturn(use_conf=False, compounded=False, pred_type=self.model_type)
-			epoch_ret[br.name] = br
-			epoch_ret[br_long.name+'_long'] = br_long
-			epoch_ret[br_short.name+'_short'] = br_short
+			if (go_long and go_short):
+				br = SimulatedReturn(use_conf=False, compounded=False,
+					pred_type=self.model_type)
+				epoch_ret[br.name] = br
+			if (go_long):
+				br_long = SimulatedReturn(use_conf=False, compounded=False,
+					pred_type=self.model_type)
+				epoch_ret[br_long.name+'_long'] = br_long
+			if (go_short):
+				br_short = SimulatedReturn(use_conf=False, compounded=False,
+					pred_type=self.model_type)
+				epoch_ret[br_short.name+'_short'] = br_short
 
 			for thresh in [None,]: #, .050, .125, .250, .500, .750]:
-				cr = SimulatedReturn(use_conf=True, use_kelly=False, compounded=False, \
-					pred_type=self.model_type, dir_thresh=thresh, conf_thresh=thresh)
-				cr_long = SimulatedReturn(use_conf=True, use_kelly=False, compounded=False, \
-					pred_type=self.model_type, dir_thresh=thresh, conf_thresh=thresh)
-				cr_short = SimulatedReturn(use_conf=True, use_kelly=False, compounded=False, \
-					pred_type=self.model_type, dir_thresh=thresh, conf_thresh=thresh)
-				kr = SimulatedReturn(use_conf=True, use_kelly=True, compounded=False, \
-					pred_type=self.model_type, dir_thresh=thresh, conf_thresh=thresh)
-				kr_long = SimulatedReturn(use_conf=True, use_kelly=True, compounded=False, \
-					pred_type=self.model_type, dir_thresh=thresh, conf_thresh=thresh)
-				kr_short = SimulatedReturn(use_conf=True, use_kelly=True, compounded=False, \
-					pred_type=self.model_type, dir_thresh=thresh, conf_thresh=thresh)
-				epoch_ret[cr.name] = cr
-				epoch_ret[cr_long.name+'_long'] = cr_long
-				epoch_ret[cr_short.name+'_short'] = cr_short
-
-				epoch_ret[kr.name] = kr
-				epoch_ret[kr_long.name+'_long'] = kr_long
-				epoch_ret[kr_short.name+'_short'] = kr_short
-
-			# for thresh in [.500,]:
-			# 	cr = SimulatedReturn(use_conf=True, use_kelly=False, compounded=False, \
-			# 		pred_type=self.model_type, dir_thresh=thresh)
-			# 	kr = SimulatedReturn(use_conf=True, use_kelly=True, compounded=False, \
-			# 		pred_type=self.model_type, dir_thresh=thresh)
-			# 	epoch_ret[cr.name] = cr
-			# 	epoch_ret[kr.name] = kr
-
+				if (go_long and go_short):
+					cr = SimulatedReturn(use_conf=True, use_kelly=False, compounded=False, \
+						pred_type=self.model_type, dir_thresh=thresh, conf_thresh=thresh)
+					kr = SimulatedReturn(use_conf=True, use_kelly=True, compounded=False, \
+						pred_type=self.model_type, dir_thresh=thresh, conf_thresh=thresh)
+					epoch_ret[cr.name] = cr
+					epoch_ret[kr.name] = kr
+				if (go_long):
+					cr_long = SimulatedReturn(use_conf=True, use_kelly=False, compounded=False, \
+						pred_type=self.model_type, dir_thresh=thresh, conf_thresh=thresh)
+					kr_long = SimulatedReturn(use_conf=True, use_kelly=True, compounded=False, \
+						pred_type=self.model_type, dir_thresh=thresh, conf_thresh=thresh)
+					epoch_ret[cr_long.name+'_long'] = cr_long
+					epoch_ret[kr_long.name+'_long'] = kr_long
+				if (go_short):
+					cr_short = SimulatedReturn(use_conf=True, use_kelly=False, compounded=False, \
+						pred_type=self.model_type, dir_thresh=thresh, conf_thresh=thresh)
+					kr_short = SimulatedReturn(use_conf=True, use_kelly=True, compounded=False, \
+						pred_type=self.model_type, dir_thresh=thresh, conf_thresh=thresh)
+					epoch_ret[cr_short.name+'_short'] = cr_short
+					epoch_ret[kr_short.name+'_short'] = kr_short
 			self.epoch_returns[epoch_type] = epoch_ret
 
 	def configure_optimizers(self):
@@ -299,7 +298,7 @@ class GenericModel(pl.LightningModule):
 				if (name.endswith('long')):
 					d = ret.compute(f'{epoch_type}_{name}',
 						go_long=True, go_short=False)
-				if (name.endswith('short')):
+				elif (name.endswith('short')):
 					d = ret.compute(f'{epoch_type}_{name}',
 						go_long=False, go_short=True)
 				else:
@@ -391,7 +390,7 @@ class GenericModel(pl.LightningModule):
 				if (name.endswith('long')):
 					d = er.compute(f'{split}_{name}',
 						go_long=True, go_short=False)
-				if (name.endswith('short')):
+				elif (name.endswith('short')):
 					d = er.compute(f'{split}_{name}',
 						go_long=False, go_short=True)
 				else:
@@ -414,11 +413,13 @@ class GenericModel(pl.LightningModule):
 		bothdir = lambda n: not (n.endswith('long') or n.endswith('short'))
 
 		for split in self.epoch_returns:
-			for name in filter(bothdir, self.epoch_returns[split]):
+			# for name in filter(bothdir, self.epoch_returns[split]):
+			for name in self.epoch_returns[split]:
 				er = self.epoch_returns[split][name]
-				plot_name = f"{model_name}-{name}"
-				fname = f"{split}_{plot_name}"
-				fig, axes = er.plot_result_series(split, plot_name, dm.idx[split])
+				plot_name = model_name.upper() +f"-{name}".title()
+				fig, axes = er.plot_result_series(split.title(),
+					plot_name, dm.idx[split])
+				fname = f"{split}_{plot_name}".lower()
 
 				with open(f'{plot_dir}{fname}.pickle', 'wb') as f:
 					pickle.dump(fig, f)

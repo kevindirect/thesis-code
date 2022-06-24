@@ -91,7 +91,7 @@ class XGDataModule(BenchmarksMixin, pl.LightningDataModule):
 		self.raw_df = dfs_get_common_interval_data((fdata, ldata, tdata),
 			interval=self.interval)
 
-	def setup(self):
+	def setup(self, stage=None):
 		"""
 		Split the data into {train, val, test} splits and convert to numpy arrays,
 		apply window_shifted per split to get win_{split} arrays,

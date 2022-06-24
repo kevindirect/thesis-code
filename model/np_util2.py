@@ -118,7 +118,7 @@ class DetEncoder(nn.Module):
 				else rt_in_shape
 			kdim, vdim = self.in_shape[0], xa_in_shape[0]
 			cross_agg_fn = MODEL_MAPPING[xa_name]
-			self.class_agg_method = 'add' # 'add' or 'cat'
+			self.class_agg_method = 'cat' # 'add' or 'cat'
 
 			for i in range(num_classes := self.label_size+1):
 				try:
@@ -275,7 +275,7 @@ class LatEncoder(nn.Module):
 			self.sig = nn.Sigmoid()
 			# self.sig = nn.LogSigmoid() if (self.use_lvar) else nn.Sigmoid() XXX
 		elif (self.dist_type in ('beta',)):
-			self.sig = nn.Sigmoid()
+			self.sig = nn.Softplus()
 		self.out_shape = (self.out_chan, self.latent_size)
 
 	def forward(self, h, y):
@@ -340,7 +340,7 @@ class Decoder(nn.Module):
 		* mean and logsig layers are linear layers
 		* decoder output is flattened to be able to send to mean and logsig layers
 	"""
-	def __init__(self, in_shape, out_size, use_det_path, use_lat_path,
+	def __init__(self, in_shape, out_size, use_raw, use_det_path, use_lat_path,
 		det_encoder, lat_encoder, de_name='ffn', de_params=None,
 		dist_type='beta', min_std=.01, use_lvar=False):
 		"""
@@ -361,6 +361,7 @@ class Decoder(nn.Module):
 		self.out_size = out_size
 		self.min_std, self.use_lvar = min_std, use_lvar
 		self.de_name = de_name
+		self.use_raw = use_raw
 		if (isnt(de_params)):
 			de_params = {}
 
@@ -369,7 +370,8 @@ class Decoder(nn.Module):
 			# assert(xt_size == det_encoder.q_size)
 
 		if (de_name.endswith('tcn')):
-			de_chan = 1
+			de_chan = 0
+			de_chan = de_chan+1 if (self.use_raw) else de_chan
 			de_chan = de_chan+1 if (use_det_path) else de_chan
 			de_chan = de_chan+1 if (use_lat_path) else de_chan
 			de_height = self.in_shape[0]
@@ -428,7 +430,7 @@ class Decoder(nn.Module):
 			self.out_shape = (self.out_size,)
 		elif (self.dist_type in ('beta',)):
 			self.beta = nn.Linear(self.out_size, self.out_size)
-			self.clamp = nn.Sigmoid()
+			self.clamp = nn.Softplus(beta=1, threshold=20)
 			self.out_shape = (self.out_size,)
 		elif (self.dist_type in ('normal', 'lognormal')):
 			self.beta = nn.Linear(self.out_size, self.out_size)
@@ -438,7 +440,7 @@ class Decoder(nn.Module):
 		elif (self.dist_type in ('mvnormal',)):
 			self.beta = nn.Linear(self.out_size, self.out_size**2)
 			self.clamp = partial(torch.clamp, min=0.0, max=1.0) if (self.use_lvar) \
-				else nn.Softplus()
+				else nn.Softplus(beta=1, threshold=20)
 			self.out_shape = (self.out_size,)
 
 	def forward(self, det_rep, lat_rep, target_h):
@@ -448,13 +450,15 @@ class Decoder(nn.Module):
 			lat_rep (torch.tensor): global latent dist realization
 			target_x (torch.tensor): target
 		"""
-		decoder_inputs = [target_h.squeeze()]
+		decoder_inputs = []
+		if (self.use_raw):
+			decoder_inputs.append(target_h.squeeze())
+		if (is_valid(det_rep)):
+			decoder_inputs.append(det_rep)
 		if (is_valid(lat_rep)):
 			noop = [1] * lat_rep.ndim
 			lat_rep = lat_rep.unsqueeze(0).repeat(target_h.shape[0], *noop)
 			decoder_inputs.append(lat_rep)
-		if (is_valid(det_rep)):
-			decoder_inputs.append(det_rep)
 
 		try:
 			rep = torch.cat(decoder_inputs, dim=self.cat_dim)
@@ -510,9 +514,9 @@ class AttentiveNP(nn.Module):
 	Attentive Neural Process Module
 	"""
 	def __init__(self, in_shape, out_size=None, label_size=1,
-		in_name='bn2d', in_params=None, in_split=False,
+		in_name='in2d', in_params=None, in_split=False,
 		fn_name=None, fn_params=None, fn_split=False,
-		ft_name='stcn', ft_params=None, use_det_path=True, use_lat_path=True,
+		ft_name='stcn', ft_params=None, use_raw=True, use_det_path=True, use_lat_path=True,
 		det_encoder_params=None, lat_encoder_params=None, decoder_params=None,
 		sample_latent_post=True, sample_latent_prior=False, use_lvar=False):
 		"""
@@ -558,6 +562,8 @@ class AttentiveNP(nn.Module):
 
 		embed_size = enc_in_shape[0]
 		dec_in_shape = list(enc_in_shape)
+		if (not use_raw):
+			dec_in_shape[0] = 0
 
 		self.feat_norm_fn = NORM_MAPPING.get(fn_name, None) # normalizations don't change tensor shape, so it's safe
 		if (self.feat_norm_fn):
@@ -585,8 +591,9 @@ class AttentiveNP(nn.Module):
 			# print(f'{self.det_encoder.in_shape=}')
 			# print(f'{self.det_encoder.out_shape=}')
 		dec_in_shape = tuple(dec_in_shape)
+		assert dec_in_shape[0] > 0, 'decoder must take in data; decoder in channels must be greater than 0'
 
-		self.decoder = Decoder(dec_in_shape, out_size or label_size,
+		self.decoder = Decoder(dec_in_shape, out_size or label_size, use_raw,
 			use_det_path, use_lat_path, self.det_encoder, self.lat_encoder,
 			**decoder_params)
 		# print(f'{self.decoder.in_shape=}')
@@ -634,7 +641,7 @@ class AttentiveNP(nn.Module):
 				lat_rep = post_dist.rsample() if (self.sample_latent_post) \
 					else post_dist.mean
 			else:
-				# At eval/test/inference time:
+				# At eval/test time:
 				post_dist, post_beta = None, None
 				lat_rep = prior_dist.rsample() if (self.sample_latent_prior) \
 					else prior_dist.mean

@@ -256,7 +256,7 @@ class MHA(nn.Module):
 		self.num_heads = num_heads
 		self.mhas = nn.ModuleList([nn.MultiheadAttention(
 			in_shape[0], self.num_heads, dropout=dropout, bias=True, add_bias_kv=False,
-			add_zero_attn=False, kdim=kdim, vdim=vdim) for _ in range(depth)])
+			add_zero_attn=False, kdim=kdim, vdim=vdim, batch_first=True) for _ in range(depth)])
 
 	def forward(self, q, k=None, v=None, key_padding_mask=None, attn_mask=None):
 		"""
@@ -279,30 +279,20 @@ class MHA(nn.Module):
 		Returns:
 			torch.tensor shaped like (Batch, Channels, Sequence)
 		"""
-		k = k if (is_valid(k)) else q
-		v = v if (is_valid(v)) else q
-		q = q.permute(2, 0, 1)
-		k = k.permute(2, 0, 1)
-		v = v.permute(2, 0, 1)
-		for i, mha in enumerate(self.mhas):
-			try:
-				q, weights = mha(q, k, v, key_padding_mask=key_padding_mask,
+		_q = q.permute(0, 2, 1).clone()
+
+		if (is_valid(k) and is_valid(v)):
+			_k = k.permute(0, 2, 1).clone()
+			_v = v.permute(0, 2, 1).clone()
+			for i, mha in enumerate(self.mhas):
+				_q, weights = mha(_q, _k, _v, key_padding_mask=key_padding_mask,
 					need_weights=True, attn_mask=attn_mask)
-			except Exception as err:
-				print("Error! model_util.py > MHA > forward() > mha()\n",
-					sys.exc_info()[0], err)
-				print(f'{i=}')
-				print(f'{q.shape=}')
-				print(f'{k.shape=}')
-				print(f'{v.shape=}')
-				if (is_valid(key_padding_mask)):
-					print(f'{key_padding_mask.shape=}')
-				if (is_valid(attn_mask)):
-					print(f'{attn_mask.shape=}')
-				if (i > 0):
-					print(f'weights[{i-1=}]: {weights}')
-				raise err
-		return q.permute(1, 2, 0).contiguous()
+		else:
+			for i, mha in enumerate(self.mhas):
+				_q, weights = mha(_q, _q, _q, key_padding_mask=key_padding_mask,
+					need_weights=True, attn_mask=attn_mask)
+
+		return _q.permute(0, 2, 1).contiguous()
 
 class LaplaceAttention(nn.Module):
 	"""
@@ -414,7 +404,8 @@ class TemporalLayer2d(nn.Module):
 			"out_height must be 1, convolution only occurs across temporal dimension"
 
 		modules = nn.ModuleList()
-		modules.append(nn.ReplicationPad2d((pad_l, pad_r, 0, 0))) # XXX Reflection or Circular Pad?
+		# modules.append(nn.ReplicationPad2D((pad_l, pad_r, 0, 0))) # XXX Reflection or Circular Pad?
+		modules.append(nn.ZeroPad2d((pad_l, pad_r, 0, 0))) # XXX Reflection or Circular Pad?
 		modules.append(
 			init_layer(
 				nn.utils.weight_norm(nn.Conv2d(self.in_shape[0], self.out_shape[0],

@@ -12,7 +12,7 @@ import pandas as pd
 from scipy.stats import skew
 import torch as pt
 from torch.nn.functional import sigmoid
-from torchmetrics.functional import accuracy, precision, recall, fbeta
+from torchmetrics.functional import accuracy, precision, recall, f1_score
 from torchmetrics import Metric
 import matplotlib.pyplot as plt
 
@@ -69,28 +69,28 @@ def plot_single(ret_df, profit_df, split, name, hist_bins=80):
 	fig, axes = plt.subplots(3, 1, sharex=False, figsize=(25, 25))
 
 	plot_df_line_subplot(profit_df, axes[0],
-		title=f'{split} {name} cumulative non-compounded profit and loss'.title().replace(' And ', ' and '),
-		ylabel='cumulative P&L', colors='k')
+		title=f'{split} {name} Cumulative Non-Compounded Profit and Loss',
+		ylabel='Cumulative P&L', colors='k')
 	plot_df_scatter_subplot(ret_df, axes[1],
-		title=f'{split} {name} returns'.title(),
-		xlabel=f'{split} examples', ylabel='return', colors='k')
+		title=f'{split} {name} Returns',
+		xlabel=f'{split} Examples', ylabel='Return', colors='k')
 	plot_df_hist_subplot(ret_df, axes[2],
-		title=f'{split} {name} distribution'.title(),
-		xlabel=f'{split} returns', ylabel='frequency', colors='k', hist_bins=hist_bins)
+		title=f'{split} {name} Distribution',
+		xlabel=f'{split} Returns', ylabel='Frequency', colors='k', hist_bins=hist_bins)
 	return fig, axes
 
 def plot_three(ret_df, profit_df, split, name, hist_bins=20):
 	fig, axes = plt.subplots(3, 1, sharex=False, figsize=(25, 25))
 
 	plot_df_line_subplot(profit_df, axes[0],
-		title=f'{split} {name} cumulative non-compounded profit and loss'.title().replace(' And ', ' and '),
-		ylabel='cumulative P&L', linestyles=['dashed', 'dotted', 'dashdot'])
+		title=f'{split} {name} Cumulative Non-Compounded Profit and Loss',
+		ylabel='Cumulative P&L', linestyles=['dashed', 'dotted', 'dashdot'])
 	plot_df_scatter_subplot(ret_df, axes[1],
-		title=f'{split} {name} returns'.title(),
-		xlabel=f'{split} examples', ylabel='return', alpha=.5, markers=['o', 'o', '.'])
+		title=f'{split} {name} Returns',
+		xlabel=f'{split} Examples', ylabel='Return', alpha=.5, markers=['o', 'o', '.'])
 	plot_df_hist_subplot(ret_df, axes[2],
-		title=f'{split} {name} distribution'.title(),
-		xlabel=f'{split} return', ylabel='frequency', alpha=.5, hist_bins=hist_bins)
+		title=f'{split} {name} Distribution',
+		xlabel=f'{split} Return', ylabel='Frequency', alpha=.5, hist_bins=hist_bins)
 	return fig, axes
 
 
@@ -110,7 +110,7 @@ class ReturnMetric(Metric):
 		self.compounded = compounded
 		if (self.compounded):
 			self.name += '_comp'
-		self.plot_go_short = True
+		self.plot_go_short = False
 
 		self.add_state('actual_ret', default=[], dist_reduce_fx='cat')
 		if (self.use_dir):
@@ -176,7 +176,7 @@ class ReturnMetric(Metric):
 			f'{prefix}_cagr': get_cagr(get_cumulative_profit(ret, compounded=True)),
 		}
 
-	def get_result_series(self, go_long=True, go_short=True):
+	def get_result_series(self, go_long=True, go_short=False):
 		ret = {}
 		if (go_long):
 			ret['long'] = self.compute_returns(go_long=True, go_short=False)
@@ -219,7 +219,7 @@ class BenchmarkHold(ReturnMetric):
 		acc = accuracy(preds, actual_dir)
 		p = precision(preds, actual_dir, average='macro', num_classes=num_classes)
 		r = recall(preds, actual_dir, average='macro', num_classes=num_classes)
-		f1 = fbeta(preds, actual_dir, average='macro', num_classes=num_classes)
+		f1 = f1_score(preds, actual_dir, average='macro', num_classes=num_classes)
 		return {
 			f"{prefix}_clf_accuracy": acc,
 			f"{prefix}_clf_precision": p,
@@ -333,7 +333,8 @@ class BenchmarksMixin(object):
 			for st_name in bench[split]:
 				if (st_name == 'stat'): continue
 				st = bench[split][st_name]
-				fig, axes = st.plot_result_series(split, st_name, self.idx[split])
+				fig, axes = st.plot_result_series(split.title(),
+					st_name.title(), self.idx[split])
 				fname = f"{split}_{st_name}"
 
 				with open(f'{plot_dir}{fname}.pickle', 'wb') as f:
@@ -388,7 +389,7 @@ class SimulatedReturn(ReturnMetric):
 			compute_on_step=compute_on_step, dist_sync_on_step=dist_sync_on_step,
 			process_group=process_group)
 
-		self.plot_go_short = True
+		self.plot_go_short = False
 		self.pred_type = pred_type
 		self.dir_thresh = (-dir_thresh, dir_thresh) if (is_type(dir_thresh, float)) \
 			else dir_thresh
