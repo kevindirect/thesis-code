@@ -152,7 +152,8 @@ def get_optmode(monitor):
 	return {
 		'val_loss': 'minimize',
 		'val_reg_mae': 'minimize',
-		'val_reg_mse': 'minimize'
+		'val_reg_mse': 'minimize',
+		'val_binary_long_sharpe': 'maximize'
 	}.get(monitor, 'maximize')
 
 def get_callbacks(trial_dir, monitor='val_clf_accuracy'):

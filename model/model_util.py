@@ -520,7 +520,7 @@ class TemporalConvNet(nn.Module):
 	note: nth layer receptive field, r_n = r[n-1] + (kernel_size[n] - 1) * dilation[n]
 	"""
 	def __init__(self, in_shape, block_channels=[[5, 5, 5]], num_blocks=1,
-		kernel_sizes=3, dropouts=0.0, dropout_type='2d', dilation_factor=2, global_dilation=True,
+		kernel_sizes=3, dropouts=0.0, dropout_type='2d', dilation_factor=2, global_dilation=False,
 		block_act='elu', out_act='relu', block_init='xavier_uniform',
 		out_init='xavier_uniform', pad_mode='same', downsample_type='conv2d',
 		ob_out_shapes=None, ob_params=None):
@@ -534,9 +534,9 @@ class TemporalConvNet(nn.Module):
 				each block consists of a tcn network and residual connection
 			kernel_sizes (int|list): list of CNN kernel sizes (across width dimension only),
 				if a list its length must be either 1 or len(block_channels)
-			dropouts (float|list): dropout probability ordered by global index
+			dropouts (float|list): dropout probability ordered by block index
 				if a single floating point value, sets dropout for first layer only
-				if a particular element is None, disables dropout at that index
+				if a particular element is None, disables dropout at that block
 			global_dilation (bool): whether to use global or block indexed dilation
 			block_act (str): activation function of each layer in each block
 			out_act (str): output activation of each block
@@ -568,13 +568,14 @@ class TemporalConvNet(nn.Module):
 			block_channel_list = block_channels[block_idx]
 			kernel_size = kernel_sizes[block_idx]
 			layer_in_shape = block_in_shape
+			dilation = dilation_factor**b
 			layers = []
 
 			for l, out_channels in enumerate(block_channel_list):
-				dilation = {
-					True: dilation_factor**i,
-					False: dilation_factor**l
-				}.get(global_dilation)
+				# dilation = {
+				# 	True: dilation_factor**i,
+				# 	False: dilation_factor**b
+				# }.get(global_dilation) # raise dilation every layer or every block
 				padding_size = get_padding(pad_mode, layer_in_shape[2], kernel_size,
 					dilation=dilation)
 				out_height = TemporalLayer2d.get_out_height(layer_in_shape[1])
@@ -583,7 +584,7 @@ class TemporalConvNet(nn.Module):
 				layer_out_shape = (out_channels, out_height, out_width)
 				layer = TemporalLayer2d(in_shape=layer_in_shape, out_shape=layer_out_shape,
 					act=block_act, kernel_size=kernel_size, padding_size=padding_size,
-					dilation=dilation, dropout=dropouts[i],
+					dilation=dilation, dropout=dropouts[b],
 					dropout_type=dropout_type, init=block_init)
 				layers.append((f'tl[{layer_in_shape}->{layer_out_shape}]_{b}_{l}', layer))
 				layer_in_shape = layer_out_shape
@@ -612,7 +613,7 @@ class StackedTCN(TemporalConvNet):
 	Creates a TCN with fixed size output channels for each convolutional layer.
 	For more information see TemporalConvNet.
 	"""
-	def __init__(self, in_shape, size=128, depth=3, kernel_sizes=3,
+	def __init__(self, in_shape, size=128, depth=1, subdepth=2, kernel_sizes=3,
 		input_dropout=None, output_dropout=None, global_dropout=None, dropout_type='2d',
 		dilation_factor=2, global_dilation=True, block_act='elu', out_act='relu',
 		block_init='xavier_uniform', out_init='xavier_uniform',
@@ -623,7 +624,9 @@ class StackedTCN(TemporalConvNet):
 			in_shape (tuple): shape of the network's input tensor,
 				expects a shape (in_channels, in_height, in_width)
 			size (int): network embedding size
-			depth (int): number of hidden layers to stack
+			depth (int): number of blocks to stack
+			subdepth (int): number of convolutions per block (convolutions between residual
+				skip connections)
 			kernel_sizes (int|list): list of CNN kernel sizes (across width dimension only),
 				if a list its length must be either 1 or len(block_channels)
 			input_dropout (float): first layer dropout
@@ -641,7 +644,7 @@ class StackedTCN(TemporalConvNet):
 		"""
 		dropouts = [global_dropout] * depth
 		dropouts[0], dropouts[-1] = input_dropout, output_dropout
-		super().__init__(in_shape, block_channels=[[size] * depth], num_blocks=1,
+		super().__init__(in_shape, block_channels=[[size] * subdepth], num_blocks=depth,
 			kernel_sizes=kernel_sizes, dropouts=dropouts, dropout_type=dropout_type,
 			dilation_factor=dilation_factor,
 			global_dilation=global_dilation, block_act=block_act, out_act=out_act,
@@ -654,9 +657,9 @@ class StackedTCN(TemporalConvNet):
 		note: nth layer receptive field (for constant kernel size 'k', global dilation factor 'f')
 		Keep in mind here dilation factor isn't the actual dilation but the factor by which
 		dilation grows each layer.
-			      n
+			          n
 		r_n = (k-1) * ∑ (f ** i)
-			      0
+			          0
 		"""
 		return (kernel_size-1) * sum(dilation_factor**i for i in range(depth))
 

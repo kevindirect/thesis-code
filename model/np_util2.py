@@ -412,6 +412,7 @@ class Decoder(nn.Module):
 		self.dist_type = dist_type
 		self.dist_fn = {
 			'bernoulli': torch.distributions.Bernoulli,
+			'cbernoulli': torch.distributions.ContinuousBernoulli,
 			'categorical': torch.distributions.Categorical,
 			'beta': torch.distributions.Beta,
 			'normal': torch.distributions.Normal,
@@ -424,7 +425,7 @@ class Decoder(nn.Module):
 		# dec_size = reduce(mul, self.decoder.out_shape)
 		# dec_chan, dec_size = self.decoder.out_shape[0], self.decoder.out_shape[-1]
 		self.alpha = nn.Linear(self.out_size, self.out_size) # primary out_dist parameter
-		if (self.dist_type in ('bernoulli', 'categorical')):
+		if (self.dist_type in ('bernoulli', 'cbernoulli', 'categorical')):
 			self.beta = None
 			self.clamp = nn.Sigmoid()
 			self.out_shape = (self.out_size,)
@@ -472,7 +473,7 @@ class Decoder(nn.Module):
 		decoded = self.decoder(rep)
 		out_dist_alpha = self.alpha(decoded)
 
-		if (self.dist_type in ('bernoulli', 'categorical')):
+		if (self.dist_type in ('bernoulli', 'cbernoulli', 'categorical')):
 			out_dist_alpha = self.clamp(out_dist_alpha.squeeze())
 			out_dist = self.dist_fn(probs=out_dist_alpha)
 		elif (self.dist_type in ('beta',)):

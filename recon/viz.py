@@ -103,7 +103,7 @@ def plot_df_scatter_subplot(df, ax, title=None, xlabel=None, ylabel=None,
 
 # Histograms
 def plot_df_hist(df, title='title', xlabel='xlab', ylabel='frequency', figsize=(25, 10),
-	colors=None, alpha=None, hist_bins=10):
+	colors=None, alpha=None, hist_bins=10, density=False):
 	plt.figure(figsize=figsize)
 	plt.title(title)
 	plt.xlabel(xlabel)
@@ -111,12 +111,13 @@ def plot_df_hist(df, title='title', xlabel='xlab', ylabel='frequency', figsize=(
 
 	for i, col_name in enumerate(df.columns):
 		color = colors[i % len(colors)] if (isinstance(colors, list)) else colors
-		plt.hist(df.loc[:, col_name], bins=hist_bins, color=color, alpha=alpha, label=str(col_name))
+		plt.hist(df.loc[:, col_name], bins=hist_bins, color=color, alpha=alpha,
+			density=density, label=str(col_name))
 
 	plt.legend(loc='upper left', fancybox=True, framealpha=0.75)
 
 def plot_df_hist_subplot(df, ax, title=None, xlabel=None, ylabel=None,
-	colors=None, alpha=None, hist_bins=10):
+	colors=None, alpha=None, hist_bins=10, density=False):
 	ax.set_title(title)
 	ax.set_xlabel(xlabel)
 	ax.set_ylabel(ylabel)
@@ -124,7 +125,8 @@ def plot_df_hist_subplot(df, ax, title=None, xlabel=None, ylabel=None,
     
 	for i, col_name in enumerate(df.columns):
 		color = colors[i % len(colors)] if (isinstance(colors, list)) else colors
-		ax.hist(df.loc[:, col_name], bins=hist_bins, color=color, alpha=alpha, label=str(col_name))
+		ax.hist(df.loc[:, col_name], bins=hist_bins, color=color, alpha=alpha,
+			density=density, label=str(col_name))
 
 	ax.legend(loc='upper left', fancybox=True, framealpha=0.75)
 

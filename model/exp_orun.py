@@ -149,12 +149,13 @@ def get_ostudy_name(study_dir, base_dir=EXP_LOG_DIR+'optuna'+sep):
 
 def get_ocallbacks(trial, trial_dir, monitor):
 	mode = get_optmode(monitor)[:3]
-	chk_callback = pl.callbacks.ModelCheckpoint(f'{trial_dir}chk{sep}',
-		monitor=monitor, mode=mode)
+	# chk_callback = pl.callbacks.ModelCheckpoint(f'{trial_dir}chk{sep}',
+	# 	monitor=monitor, mode=mode)
 	es_callback = PyTorchLightningPruningCallback(trial, monitor=monitor)
 	# ver_callbacks = (BatchNormVerificationCallback(),
 		# BatchGradientVerificationCallback())
-	callbacks = [chk_callback, es_callback]
+	# callbacks = [chk_callback, es_callback]
+	callbacks = [es_callback]
 	return callbacks
 
 def run_suggest_objective(trial, objectives, monitor, study_dir,

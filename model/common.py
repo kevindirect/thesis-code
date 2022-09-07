@@ -84,8 +84,42 @@ class DistributionNLLLoss(nn.modules.loss._Loss):
 
 		return nll
 
+class SharpeLoss(nn.modules.loss._Loss):
+	"""
+	Sharpe Ratio based loss
+	pred is a floating point bet size * direction, target is the actual return
+	"""
+	__constants__ = ['reduction']
+
+	def __init__(self, size_average=None, reduce=None, reduction: str = 'none',
+		weight=None, go_long=True, go_short=False) -> None:
+		super().__init__(size_average, reduce, reduction)
+		self.go_long = go_long
+		self.go_short = go_short
+
+	def forward(self, pred, target) -> torch.Tensor:
+		# if (type(out_dist).__name__ in ('Bernoulli', 'Beta', 'Normal', 'LogNormal')):
+		# 	ftype = {
+		# 		16: torch.float16,
+		# 		32: torch.float32,
+		# 		64: torch.float64
+		# 	}.get(cast_precision, 16)
+		# 	label_y = label_y.to(ftype)
+		if (not self.go_long):
+			pred[pred > 0.0] = 0.0
+		if (not self.go_short):
+			pred[pred < 0.0] = 0.0
+		ret = pred * target
+		sr = torch.tensor(TRADING_DAYS).sqrt() * (ret.mean() / ret.std())
+		sr_loss = torch.exp(-sr)
+
+		if (self.reduction == 'mean'):
+			sr_loss = sr_loss.mean(dim=0)
+
+		return sr_loss
+
 PYTORCH_MODELS_DIR = MODEL_DIR +'model_p' +sep
-PYTORCH_ACT1D_LIST = ('lrelu', 'celu', 'prelu', 'selu', \
+PYTORCH_ACT1D_LIST = ('lrelu', 'celu', 'prelu', 'selu', 'mish', \
 	'relu', 'elu', 'gelu', 'sig', 'tanh', 'splus', 'smax', 'logsmax')
 PYTORCH_ACT_MAPPING = {
 	'relu': nn.ReLU,
@@ -95,6 +129,7 @@ PYTORCH_ACT_MAPPING = {
 	'gelu': nn.GELU,
 	'prelu': nn.PReLU,
 	'selu': nn.SELU,
+	'mish': nn.Mish,
 	'sig': nn.Sigmoid,
 	'tanh': nn.Tanh,
 	'splus': nn.Softplus,
@@ -122,10 +157,22 @@ PYTORCH_LOSS_MAPPING = {
 	'reg-mse': nn.MSELoss,
 	'reg-sl1': nn.SmoothL1Loss,
 	'reg-dnll': DistributionNLLLoss,
+
+	# Other
+	'reg-sharpe': SharpeLoss,
 }
 PYTORCH_OPT_MAPPING = {
-	'rmsp': optim.RMSprop,
-	'adam': optim.Adam
+	'rms': optim.RMSprop,
+	'r': optim.Rprop,
+	'adadelta': optim.Adadelta,
+	'adagrad': optim.Adagrad,
+	'adam': optim.Adam,
+	'adamw': optim.AdamW,
+	'adamax': optim.Adamax,
+	'radam': optim.RAdam,
+	'nadam': optim.NAdam,
+	'sgd': optim.SGD,
+	'asgd': optim.ASGD
 }
 PYTORCH_SCH_MAPPING = {
 	'cos': optim.lr_scheduler.CosineAnnealingLR,

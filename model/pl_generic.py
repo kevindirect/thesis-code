@@ -66,12 +66,12 @@ class GenericModel(pl.LightningModule):
 		self.__init_loggers__(epoch_metric_types)
 		#self.example_input_array = torch.rand(10, *fobs, dtype=torch.float32) * 100
 
-	def __init_loss_fn__(self):
+	def __init_loss_fn__(self, reduction='none'):
 		if (is_valid(loss_fn := PYTORCH_LOSS_MAPPING.get(self.t_params['loss'], None))):
-			if (is_valid(self.t_params['class_weights'])):
-				self.loss = loss_fn(weight=self.t_params['class_weights'])
+			if (is_valid(cw := self.t_params['class_weights'])):
+				self.loss = loss_fn(reduction=reduction, weight=torch.tensor(cw))
 			else:
-				self.loss = loss_fn()
+				self.loss = loss_fn(reduction=reduction)
 		else:
 			logging.info('no loss function set in pytorch lightning')
 
@@ -117,6 +117,8 @@ class GenericModel(pl.LightningModule):
 				for epoch_type in epoch_metric_types
 			}
 		elif (self.model_type == 'reg'):
+			if (self.t_params['loss'] in ('reg-sharpe',)):
+				num_classes = self.m_params['label_size'] + 1
 			self.epoch_metrics = {
 				epoch_type: {
 					f'{self.model_type}_mae': tm.MeanAbsoluteError(compute_on_step=False),
@@ -420,12 +422,21 @@ class GenericModel(pl.LightningModule):
 				fig, axes = er.plot_result_series(split.title(),
 					plot_name, dm.idx[split])
 				fname = f"{split}_{plot_name}".lower()
-
-				with open(f'{plot_dir}{fname}.pickle', 'wb') as f:
-					pickle.dump(fig, f)
+				# with open(f'{plot_dir}{fname}.pickle', 'wb') as f:
+				# 	pickle.dump(fig, f)
 				plt.savefig(f'{plot_dir}{fname}', bbox_inches="tight",
 					transparent=True)
 				plt.close(fig)
+
+			# er = self.epoch_returns[split][name]
+			# plot_name = model_name.upper() +f"-{name}".title()
+			# fig, axes = er.plot_result_series(split.title(),
+			# 	plot_name, dm.idx[split])
+			# fname = f"{split}_{plot_name}".lower()
+			# plt.savefig(f'{plot_dir}{fname}', bbox_inches="tight",
+			# 	transparent=True)
+			# plt.close(fig)
+
 
 	@classmethod
 	def fix_metrics_csv(cls, fname, dir_path):

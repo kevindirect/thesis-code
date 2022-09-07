@@ -17,11 +17,12 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 # from verification.batch_norm import BatchNormVerificationCallback
 # from verification.batch_gradient import BatchGradientVerificationCallback
 
-from common_util import MODEL_DIR, load_df, deep_update, rectify_json, load_json, dump_json, benchmark, makedir_if_not_exists, is_type, is_valid, isnt, get_cmd_args
+from common_util import MODEL_DIR, load_df, deep_update, rectify_json, load_json, dump_json, benchmark, makedir_if_not_exists, is_type, is_valid, isnt, dt_now, get_cmd_args
 from model.common import ASSETS, INTERVAL_YEARS, WIN_SIZE, INTRADAY_LEN, EXP_LOG_DIR, EXP_PARAMS_DIR
 from model.pl_xgdm import XGDataModule
 from model.exp_run import dump_benchmarks, get_model, get_optmode, get_trainer
 
+PLSD = dt_now().timestamp()
 
 def exp_final_run(argv):
 	cmd_arg_list = ['dry-run', 'intstart=', 'assets=', 'smodel=', 'models=', 'xdata=', 'ydata=']
@@ -47,17 +48,18 @@ def exp_final_run(argv):
 	elif (sm_name == 'anp'):
 		model_names = ['base', 'cnp', 'lnp', 'np']
 
-	MAX_EPOCHS = 100
+	MAX_EPOCHS = 200
 	exp_params_dir = EXP_PARAMS_DIR +sep.join(['final', sm_name]) +sep
 	exp_dir = EXP_LOG_DIR +sep.join(['final', sm_name]) +sep
-	splits = ('train', 'val', 'test')
+	# splits = ('train', 'val', 'test')
+	splits = ('train', 'val')
 
 	logging.info(f'{int_years=}')
 	logging.info(f'{fdata_name=}')
 	logging.info(f'{ldata_name=}')
 	logging.info(f'{asset_names=}')
 	logging.info(f'model: {sm_name}->{model_names}')
-	logging.debug('cuda: {}'.format('✓' if (torch.cuda.is_available()) else '🞩'))
+	logging.info('cuda: {}'.format('✓' if (torch.cuda.is_available()) else '🞩'))
 
 	for asset_name in asset_names:
 		logging.info(f'{asset_name=}')
@@ -70,15 +72,15 @@ def exp_final_run(argv):
 				logging.info(f'{study_num=}')
 				study_path = f'{model_path}{study_num}{sep}'
 
-				for trial_num in os.listdir(study_params_dir := f'{exp_params_dir}{study_path}'):
-					trial_path = f'{study_path}{trial_num}{sep}'
+				for trial_id in sorted(os.listdir(study_params_dir := f'{exp_params_dir}{study_path}')):
+					trial_path = f'{study_path}{trial_id}{sep}'
 					trial_params_dir = f'{exp_params_dir}{trial_path}'
 					trial_dir = f'{exp_dir}{trial_path}'
 
 					logging.info('loading params...')
 					t_params = load_json('params_t.json', trial_params_dir)
 					m_params = load_json('params_m.json', trial_params_dir)
-					assert_valid_model(model_name, m_params)
+					# assert_valid_model(model_name, m_params)
 
 					logging.info('loading data...')
 					dm = XGDataModule(t_params, asset_name,
@@ -101,7 +103,7 @@ def exp_final_run(argv):
 
 					# Build and train model
 					model = get_model(sm_name, m_params, t_params, dm, splits)
-					callbacks = get_fcallbacks(trial_dir)
+					callbacks = get_fcallbacks(trial_dir, model.model_type)
 					trainer = get_ftrainer(trial_dir, callbacks,
 						t_params['epochs'], MAX_EPOCHS,
 						model.get_precision())
@@ -126,34 +128,42 @@ def assert_valid_model(model_name, m_params):
 	elif (model_name == 'np'):
 		assert m_params['use_det_path'] and m_params['use_lat_path']
 
-def get_fcallbacks(trial_dir, monitor='val_clf_accuracy'):
+def get_fcallbacks(trial_dir, model_type):
 	"""
 	load model with checkpointed weights:
 		model = MyLightingModule.load_from_checkpoint(f'{trial_dir}chk{sep}{name}')
 	"""
+	if (model_type == 'clf'):
+		# monitor = 'val_clf_f1'
+		monitor = 'val_conf_long_sharpe'
+	elif (model_type == 'reg'):
+		monitor = 'val_binary_long_sharpe'
 	mode = get_optmode(monitor)[:3]
+
 	chk_callback = ModelCheckpoint(dirpath=f'{trial_dir}chk{sep}',
 		monitor=monitor, mode=mode)
-	es_callback = EarlyStopping(monitor=monitor, min_delta=0.00, patience=0,
+	es_callback = EarlyStopping(monitor=monitor, min_delta=0.00, patience=3,
 		verbose=False, mode=mode)
+	# es_callback = EarlyStopping(monitor='train_loss', verbose=False, mode='min', patience=0)
 	# ver_callbacks = (BatchNormVerificationCallback(),
 			# BatchGradientVerificationCallback())
 	callbacks = [chk_callback, es_callback]
 	return callbacks
 
-def get_ftrainer(trial_dir, callbacks, min_epochs, max_epochs, precision, gradient_clip_val=0):
+def get_ftrainer(trial_dir, callbacks, min_epochs, max_epochs, precision, gradient_clip_val=2):
 	csv_log = pl.loggers.csv_logs.CSVLogger(trial_dir, name='', version='')
-	# tb_log = pl.loggers.tensorboard.TensorBoardLogger(trial_dir, name='',
-	# 	version='', log_graph=False)
-	loggers = [csv_log]
+	tb_log = pl.loggers.tensorboard.TensorBoardLogger(trial_dir, name='', version='', log_graph=True)
+	loggers = [csv_log, tb_log]
+	pl.utilities.seed.seed_everything(PLSD)
+	det = False
 
 	trainer = pl.Trainer(max_epochs=max_epochs, min_epochs=min_epochs,
 		logger=loggers, callbacks=callbacks, limit_val_batches=1.0,
 		gradient_clip_val=gradient_clip_val, gradient_clip_algorithm='norm',
-		stochastic_weight_avg=False, auto_lr_find=False,
-		amp_level='O1', precision=precision,
-		default_root_dir=trial_dir, weights_summary=None,
-		gpus=-1 if (torch.cuda.is_available()) else None)
+		stochastic_weight_avg=False, auto_lr_find=False, precision=precision,
+		accelerator="gpu", deterministic=det, #, amp_level='O1',
+		default_root_dir=trial_dir, enable_model_summary=False,
+		devices=-1 if (torch.cuda.is_available()) else None)
 	return trainer
 
 if __name__ == '__main__':

@@ -61,16 +61,6 @@ class NPModel(GenericModel):
 				"context and target sizes must add up to batch_size, \
 				use train_target_overlap to add a training overlap"
 
-	def __init_loss_fn__(self, reduction='none'):
-		if (is_valid(loss_fn := PYTORCH_LOSS_MAPPING.get(self.t_params['loss'], None))):
-			if (is_valid(self.t_params['class_weights'])):
-				self.loss = loss_fn(reduction=reduction, \
-					weight=self.t_params['class_weights'])
-			else:
-				self.loss = loss_fn(reduction=reduction)
-		else:
-			logging.info('no loss function set in pytorch lightning')
-
 	def get_context_target(self, batch, train_mode=False):
 		"""
 		Return context and target points.
@@ -134,11 +124,7 @@ class NPModel(GenericModel):
 			print(f'{zt.shape=}')
 			raise err
 
-		if (sample_out and out_dist.has_rsample):
-			pred_t_raw = out_dist.rsample()
-		else:
-			pred_t_raw = out_dist.mean
-
+		pred_t_raw = out_dist.mean
 		pred_t_raw = pred_t_raw.squeeze()
 		pred_t_unc_raw = out_dist.stddev.squeeze()
 		return pred_t_raw, pred_t_unc_raw
@@ -155,7 +141,7 @@ class NPModel(GenericModel):
 			aim_c, aim_t = yc, yt
 		elif (self.model_type == 'reg'):
 			aim_c, aim_t = zc, zt
-		beta_out = self.m_params['decoder_params']['dist_type'] == 'beta'
+		dist_type = self.m_params['decoder_params']['dist_type']
 
 		try:
 			prior_dist, post_dist, out_dist = self.model(xc, aim_c, xt, \
@@ -172,7 +158,7 @@ class NPModel(GenericModel):
 			print(f'{zt.shape=}')
 			raise err
 
-		if (self.t_params['sample_out'] and train_mode and out_dist.has_rsample):
+		if (self.t_params['sample_out'] and train_mode and out_dist.has_rsample and not (self.t_params['loss'] in ('clf-dnll',))):
 			pred_t_raw = out_dist.rsample()
 		else:
 			pred_t_raw = out_dist.mean
@@ -190,24 +176,23 @@ class NPModel(GenericModel):
 			if (self.t_params['loss'] in ('clf-dnll',)):
 				pred_t_loss = out_dist
 				pred_t = pred_t_raw.detach().clone()
-				if (beta_out):
-					pred_t = F.sigmoid(pred_t)
+				if (dist_type == 'beta'):
+					pred_t = torch.sigmoid(pred_t)
 				else:
 					pred_t = pred_t.clamp(0.0, 1.0)
-				pred_t_ret = (pred_t - .5) * 2
+				pred_t_bet = (pred_t - .5) * 2
 			elif (self.t_params['loss'] in ('clf-bcel',)):
-				pred_t_loss = pred_t_raw
-				pred_t = pred_t_loss.detach().clone()
-				pred_t_ret = (pred_t - .5) * 2
-				pred_t_conf = pred_t_ret.abs()
-				pred_t_dir = pred_t_ret.sign()
+				pred_t = pred_t_raw.detach().clone()[:, 1]
+				pred_t_loss = pred_t
+				pred_t_bet = (pred_t - .5) * 2
+				pred_t_conf = pred_t_bet.abs()
+				pred_t_dir = pred_t_bet.sign()
 			elif (self.t_params['loss'] in ('clf-bce',)):
-				pred_t_loss = pred_t_raw
-				# pred_t_loss = F.sigmoid(pred_t_loss, dim=-1)
-				pred_t = pred_t_loss.detach().clone()
-				pred_t_ret = (pred_t - .5) * 2
-				pred_t_conf = pred_t_ret.abs()
-				pred_t_dir = pred_t_ret.sign()
+				pred_t = pred_t_raw.detach().clone()[:, 1]
+				pred_t_loss = pred_t
+				pred_t_bet = (pred_t - .5) * 2
+				pred_t_conf = pred_t_bet.abs()
+				pred_t_dir = pred_t_bet.sign()
 			elif (self.t_params['loss'] in ('clf-ce',)):
 				pred_t_loss = pred_t_raw
 				if (pred_t_loss.ndim == 1):
@@ -220,7 +205,7 @@ class NPModel(GenericModel):
 				pred_t_conf, pred_t = pred_t_smax.max(dim=-1, keepdim=False)
 				pred_t_dir = pred_t.detach().clone()
 				pred_t_dir[pred_t_dir==0] = -1
-				pred_t_ret = pred_t_dir * pred_t_conf
+				pred_t_bet = pred_t_dir * pred_t_conf
 			elif (self.t_params['loss'] in ('clf-nll',)):
 				pred_t_loss = pred_t_raw
 				if (pred_t_loss.ndim == 1):
@@ -236,7 +221,7 @@ class NPModel(GenericModel):
 				pred_t_conf, pred_t = pred_t_prob.max(dim=-1, keepdim=False)
 				pred_t_dir = pred_t.detach().clone()
 				pred_t_dir[pred_t_dir==0] = -1
-				pred_t_ret = pred_t_dir * pred_t_conf
+				pred_t_bet = pred_t_dir * pred_t_conf
 			else:
 				pred_t_loss = pred_t_raw
 				raise NotImplementedError()
@@ -245,18 +230,34 @@ class NPModel(GenericModel):
 				pred_t_loss = out_dist
 			elif (self.t_params['loss'] in ('reg-mae', 'reg-mse')):
 				pred_t_loss = pred_t_raw
-			pred_t_ret = pred_t = pred_t_raw.detach().clone()
+			elif (self.t_params['loss'] in ('reg-sharpe',)):
+				pred_t_loss = pred_t_raw
+				if (pred_t_loss.ndim == 1):
+					preds = ((1-pred_t_loss).unsqueeze(-1), pred_t_loss.unsqueeze(-1))
+					pred_t_loss = torch.hstack(preds)
+				elif (pred_t_loss.ndim < self.m_params['num_classes']):
+					# sum the probs and take complement
+					raise NotImplementedError()
+				pred_t_smax = F.softmax(pred_t_loss, dim=-1)
+				pred_t_conf, pred_t = pred_t_smax.max(dim=-1, keepdim=False)
+				pred_t_dir = pred_t.clone()
+				pred_t_dir[pred_t_dir==0] = -1
+				pred_t_bet = pred_t_dir * pred_t_conf
+				pred_t_loss = pred_t_bet
 
 		if (is_valid(prior_dist) and is_valid(post_dist)):
 			# [C, S] -> [C, n]
 			kldiv = torch.distributions.kl_divergence(post_dist, prior_dist) \
 				.sum(dim=-1, keepdim=True).repeat(1, pred_t_raw.shape[0])
 			kldiv /= pred_t_raw.shape[0]
+			kldiv = kldiv * self.t_params['kl_weight']
 		else:
-			kldiv = 0
+			kldiv = torch.zeros(1, device=pred_t_raw.device)
 
 		try:
 			aim_t_loss = aim_t
+			if (self.t_params['loss'] in ('clf-bce', 'clf-bcel') or (self.t_params['loss'] == 'clf-dnll' and dist_type in ('bernoulli', 'cbernoulli'))):
+				aim_t_loss = aim_t_loss.float()
 			# aim_t_loss = aim_t.type_as(pred_t_loss)
 			# aim_t_loss = aim_t.to(torch.)
 			# if (is_valid(prec := self.get_precision())):
@@ -277,7 +278,7 @@ class NPModel(GenericModel):
 			print(f'{pred_t_loss.shape=}')
 			print(f'{pred_t_conf.shape=}')
 			print(f'{pred_t_dir.shape=}')
-			print(f'{pred_t_ret.shape=}')
+			print(f'{pred_t_bet.shape=}')
 			raise err
 
 		# if (train_mode):
@@ -285,12 +286,6 @@ class NPModel(GenericModel):
 		# 	print(f'{model_loss.shape=}')
 		# 	print(f'{model_loss=}')
 		# 	sys.exit()
-		# 	
-		# kl = tf.reduce_sum(
-		# tf.contrib.distributions.kl_divergence(posterior, prior), 
-		# axis=-1, keepdims=True)
-		# kl = tf.tile(kl, [1, num_targets])
-		# loss = - tf.reduce_mean(log_p - kl / tf.cast(num_targets, tf.float32))
 
 		try:
 			np_loss = (model_loss + kldiv).mean()
@@ -313,7 +308,7 @@ class NPModel(GenericModel):
 				print(f'{pred_t_loss=}')
 			print(f'{pred_t_conf.shape=}')
 			print(f'{pred_t_dir.shape=}')
-			print(f'{pred_t_ret.shape=}')
+			print(f'{pred_t_bet.shape=}')
 			raise err
 
 		for met in self.epoch_metrics[epoch_type].values():
@@ -331,7 +326,7 @@ class NPModel(GenericModel):
 					print('pred_t_loss.shape:', pred_t_loss.shape)
 				print(f'{pred_t_conf.shape=}')
 				print(f'{pred_t_dir.shape=}')
-				print(f'{pred_t_ret.shape=}')
+				print(f'{pred_t_bet.shape=}')
 				print(f'{model_loss.shape=}')
 				print(f'{kldiv.shape=}')
 				print(f'{np_loss.shape=}')
@@ -340,24 +335,43 @@ class NPModel(GenericModel):
 		if (is_valid(self.epoch_returns)):
 			for ret in self.epoch_returns[epoch_type].values():
 				try:
-					ret.update(pred_t_ret.cpu(), zt.cpu())
+					ret.update(pred_t_bet.cpu(), zt.cpu())
 				except Exception as err:
 					print("Error! pl_np.py > NPModel > forward_step() > ret.update()\n",
 						sys.exc_info()[0], err)
 					print(f'{ret=}')
-					print(f'{pred_t_ret.shape=}')
+					print(f'{pred_t_bet.shape=}')
 					print(f'{zt.shape=}')
 					print(f'{pred_t.shape=}')
 					print(f'{pred_t_loss.shape=}')
 					print(f'{pred_t_conf.shape=}')
 					print(f'{pred_t_dir.shape=}')
-					print(f'{pred_t_ret.shape=}')
+					print(f'{pred_t_bet.shape=}')
 					print(f'{model_loss.shape=}')
 					print(f'{kldiv.shape=}')
 					print(f'{np_loss.shape=}')
 					raise err
 
-		return {'loss': np_loss}
+		return {'loss': np_loss, 'kldiv': kldiv.mean()}
+
+	def aggregate_log_epoch_loss(self, outputs, epoch_type):
+		"""
+		Aggregate step losses / kldivs and log them.
+		"""
+		step_losses = [d['loss'] and d['loss'].cpu() for d in outputs]
+		step_kldivs = [d['kldiv'] and d['kldiv'].cpu() for d in outputs]
+		epoch_loss = None
+		epoch_kldiv = None
+		if (all(step_losses)):
+			epoch_loss = torch.mean(torch.stack(step_losses), dim=0)
+			epoch_kldiv = torch.mean(torch.stack(step_kldivs), dim=0)
+
+			self.log('epoch', self.trainer.current_epoch, prog_bar=False, \
+				logger=True, on_step=False, on_epoch=True)
+			self.log(f'{epoch_type}_loss', epoch_loss, prog_bar=False, \
+				logger=True, on_step=False, on_epoch=True)
+			self.log(f'{epoch_type}_kldiv', epoch_kldiv, prog_bar=False, \
+				logger=True, on_step=False, on_epoch=True)
 
 	def get_precision(self):
 		"""
