@@ -14,13 +14,6 @@ ignore*
 /data/**/*.csv
 /data/**/*.parquet
 
-# other dirs
-/other_creds/*
-/other_nbs/*
-/other_py/*
-/other_sync/*
-/ignore/*
-
 # test files
 test.py
 test.ipynb
