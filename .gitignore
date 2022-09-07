@@ -14,9 +14,6 @@ ignore*
 /data/**/*.csv
 /data/**/*.parquet
 
-# other dirs
-/ignore/*
-
 # test files
 test.py
 test.ipynb
