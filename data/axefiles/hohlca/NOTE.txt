@@ -1,4 +1,0 @@
-Currently only 'open' hourly data is available for TRMI because hourly single-observation (not ohlc+a) is the highest frequency data I have for it.
-This is why the trmi data subsets only contain hourly columns - this is not a mistake.
-Axefiles downstream of hohlca will asssume full ohlca data is available, this isn't a problem currently because my data "getting" function does not have any expected amount of data - it retrieves as much data as it can from the axefiles supplied.
-The "hohlca_full" files are there to show the difference - these are obviously not to be used until the hlca data for trmi3 is actually available or computable by the transform.

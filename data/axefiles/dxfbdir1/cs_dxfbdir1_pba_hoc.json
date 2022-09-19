@@ -1,8 +1,0 @@
-{
-	"*": null,
-	"/": {
-		"pba_hoc_hdxcret1_dxfbdir1": {
-			"exact": ["pba_oc"]
-		}
-	}
-}

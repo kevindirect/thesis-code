@@ -1,5 +1,0 @@
-{
-	"clean_dirs": ["dow_jones", "nasdaq_100", "russell_2000", "sp_500"],
-	"ext": "default",
-	"check_ext": true
-}
