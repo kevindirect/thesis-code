@@ -63,6 +63,7 @@ logging.critical('using project dir: {}'.format(CRUNCH_DIR))
 """Supported Pandas DF IO Formats"""
 FMT_EXTS = {
 	'csv': ('.csv',),
+	'arrow': ('.arrow',),
 	'feather': ('.feather',),
 	'hdf_fixed': ('.h5', '.hdf', '.he5', '.hdf5'),
 	'hdf_table': ('.h5', '.hdf', '.he5', '.hdf5'),
@@ -71,7 +72,7 @@ FMT_EXTS = {
 }
 
 """Default Pandas DF IO format"""
-DF_DATA_FMT = 'parquet'
+DF_DATA_FMT = 'arrow'
 
 """Dask Global Settings"""
 #dask.config.set(scheduler='threads')
@@ -1145,6 +1146,7 @@ def load_df(fname, dir_path=None, data_format=DF_DATA_FMT, subset=None, dti_freq
 		try:
 			df = {
 				'csv': partial(pd.read_csv, index_col=0, usecols=subset),
+				'arrow': partial(pd.read_feather),
 				'feather': partial(pd.read_feather),
 				'hdf_fixed': partial(pd.read_hdf, key=None, mode='r', columns=subset, format='fixed'),
 				'hdf_table': partial(pd.read_hdf, key=None, mode='r', columns=subset, format='table'),
@@ -1180,6 +1182,7 @@ def dump_df(df, fname, dir_path=None, data_format=DF_DATA_FMT):
 	try:
 		{
 			'csv': df.to_csv,
+			'arrow': (lambda f: df.reset_index().to_feather(f)),
 			'feather': (lambda f: df.reset_index().to_feather(f)),
 			'hdf_fixed': partial(df.to_hdf, fname, mode='w', format='fixed'),
 			'hdf_table': partial(df.to_hdf, fname, mode='w', format='table'),
