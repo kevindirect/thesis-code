@@ -1,0 +1,11 @@
+name = "Preproc"
+uuid = "395c53c0-a214-4501-af22-8bf8dc008c41"
+authors = ["kevindirect <git@kevindirect.com>"]
+version = "0.1.0"
+
+[deps]
+CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+DateTimeDataFrames = "3a59f920-758d-4040-a4e5-4283a4939310"
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+NPZ = "15e1cf62-19b3-5cfa-8e77-841668bca605"
