@@ -1,51 +1,39 @@
-Kevin Patel
+# Crunch
 
+## Overview
+### common_util
+* `common_util.py` contains functions, data structures, and classes used throughout the project. Most of the code in here is probably not used anymore
+* Most code aside from `common_util.py` is arranged in python subpackages, `<subpackage>/common.py` contains common constants, defaultsi, and utilities
+* Subpackage scripts are run by running them as modules (using the `-m` flag), see the shell scripts at the project root for examples
+* There is a Julia package that contains basic data preprocessing code
 
-## INSTRUCTIONS ##
-* add models directory (crunch/model/model/) to PYTHONPATH
-	- Add this line to your bashrc file (with <PATH_TO_CRUNCH_DIR> filled in):
-		export PYTHONPATH="${PYTHONPATH}:/<PATH_TO_CRUNCH_DIR>/model/model/"
-* modify keras source code
-	- Add 'config.gpu_options.allow_growth=True' after both config = tf.ConfigProto(...) calls in keras/backend/tensorflow_backend.py
-	- More info: https://stackoverflow.com/questions/43990046/tensorflow-blas-gemm-launch-failed
-	- TensorFlow API doc: https://www.tensorflow.org/guide/using_gpu
+### data
+* has all the raw and preprocessed data
+* preprocessing is done from Julia scripts/Pluto.jl notebooks in the Preproc package
+* preprocessed data can be loaded in Python via a PytorchLightning DataModule
 
-## CRUNCH ##
-* Crunch is a (python3) package consisting of a data pipeline for the analysis of hourly financial time series data
+### model
+* has all the model code (Pytorch models wrapped in PytorchLightning)
+* `{model, np}_util.py` contain Pytorch model classes
+* `pl_{generic, np}.py` are LightningModule classes that wrap Pytorch models for PytorchLightning
+* `exp.py` is the main experiment script.
+* the `model/exp-<proc>-<data>` directories contain completed trial results
+* hyperparameter sets are stored on disk in json files
 
-## STRUCTURE ##
-* Crunch's data pipeline consists of a series of stages; each stage is a (python3) subpackage of crunch
-* The crunch root directory contains a **common_util.py** module which contains system settings, defaults, and functions all stages can import
+### recon
+* contains some miscellaneous modules
+* most of these have been deperecated since earlier versions of the project
+* main relevant module is `recon/viz.py` which contains plotting functions
 
-### STAGES ###
-* A stage consists of (python3) modules, (json) config files for those modules, and potentially some data or artifacts
-* Most modules are runnable as one off scripts on the commandline with the _-m_ flag
-* Most of the commandline arguments for most modules are paths to json config files
-* All modules, runnable or not, can be imported and used by other modules from other stages
-* Every stage has a **common.py** whose only required job is to add crunch's parent directory to the python path
-* The common.py script can be used for setting default parameters for the stage, constants, and common code for that stage's modules
+### deprecated subpackages
+* contains lots of deprecated code/subpackages from earlier versions of the project, there is lots and lots of junk here
+* see other branches of the repo for a lot more deprecated code
 
-### PIPELINE ####
-* Stages follow a loosely linear pipeline:
-	1. raw: pull in raw data from disparate data sources and engage in some cleaning
-	2. data: attach raw data together 
-	3. recon: processing, feature engineering, and labelling
-	4. eda: exploratorty data analysis
-	5. model: ML models
-	6. report
+## TODO
+* test new data with params
+* Do some param tuning to see how model works with the new data and target
+* try out a few different rvol targets
+* output graphs with mean + sd for use with latent variable models
+* dump a simulated trading model (buy&hold with _volatility avoidance_)
+* (optional) discount rate
 
-## DESIGN PHILOSOPHY ##
-* Modularity
-* Rapid Prototyping
-* Simple
-
-## CONVENTIONS ##
-### IO ###
-* All variables or constants ending in '\_dir' must be directory strings
-* All directory strings must be delimited and terminated by os.sep
-* All path names should be absolute
-* IO functions:
-	- The first argument of any dump function must be the filename (no default)
-	- The second argument of any dump function must be the path to the file (defaults to None)
-	- Generally file extensions should be inferred by the function and not added to the filename
-	- If the IO function is only for one data format (it's in the function name), extensions must be in the filename
