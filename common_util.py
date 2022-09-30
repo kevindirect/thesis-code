@@ -1116,15 +1116,15 @@ def np_truncate_vstack_2d(arr, size):
 		3d numpy array
 
 	Example:
-		arr = np.array([[0, 1, 2, 3],
-				[4, 5, 6, 7],
-				[8, 9, 10, 11],
-				[12, 13, 14, 15]]])
-		np_truncate_vstack_2d(arr, 3) ->
-				array([[[ 0,  4,  8],
-					[ 1,  5,  9],
-					[ 2,  6, 10],
-					[ 3,  7, 11]]])
+		arr = np.array([[ 0,  1,  2,  3],
+		                [ 4,  5,  6,  7],
+		                [ 8,  9, 10, 11],
+		                [12, 13, 14, 15]])
+		np_truncate_vstack_2d(arr, 3)
+		        array([[[ 0,  4,  8],
+		                [ 1,  5,  9],
+		                [ 2,  6, 10],
+		                [ 3,  7, 11]]])
 	"""
 	swap = arr.T
 	stack = np.hstack([np_truncate_split_1d(swap[i], size) for i in range(swap.shape[0])])

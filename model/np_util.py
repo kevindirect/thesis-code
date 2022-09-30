@@ -48,12 +48,12 @@ def get_xy_cat_dim(rt_name):
 		'ffn': 3
 	}.get(rt_name, 3)
 
-def get_rt_in_shape(in_shape, label_size, cat_dim):
+def get_rt_in_shape(in_shape, out_size, cat_dim):
 	"""
 	Note: input and output shape variables do not start with a batch size
 	"""
 	rt_in_shape = list(in_shape)
-	rt_in_shape[cat_dim-1] += label_size # cat_dim-1 to account for no batch size
+	rt_in_shape[cat_dim-1] += out_size # cat_dim-1 to account for no batch size
 	rt_in_shape.remove(1)
 	return tuple(rt_in_shape)
 
@@ -71,13 +71,13 @@ class DetEncoder(nn.Module):
 	5. Run cross aggregation on Q, K, V to get final representation
 		(cross attention: get weighted V based on similarity scores of Q to K)
 	"""
-	def __init__(self, in_shape, label_size, embed_size, class_agg=False,
+	def __init__(self, in_shape, out_size, embed_size, class_agg=False,
 		rt_name='mha', rt_params=None, xa_name='mha', xa_params=None):
 		"""
 		Args:
 			in_shape (tuple): shape of the network's input tensor,
 				expects a shape (in_channels, in_height, in_width)
-			label_size (int>0): size of the label vector
+			out_size (int>0): size of the label vector
 			embed_size (int>0): query size (XXX remove param?)
 			class_agg (bool): whether to aggregate across separate classes or globally
 			rt_name (str): representation transform name
@@ -87,11 +87,11 @@ class DetEncoder(nn.Module):
 		"""
 		super().__init__()
 		self.in_shape = in_shape
-		self.label_size = label_size
+		self.out_size = out_size
 		self.class_agg = class_agg
 
 		# padding to make len(key_seq)==len(value_seq) after value label append:
-		self.key_padding = nn.ConstantPad1d((0, self.label_size), 0.0)
+		self.key_padding = nn.ConstantPad1d((0, self.out_size), 0.0)
 
 		if (isnt(rt_params)):
 			rt_params = {}
@@ -99,13 +99,13 @@ class DetEncoder(nn.Module):
 			xa_params = {}
 
 		self.cat_dim = get_xy_cat_dim(rt_name)
-		rt_in_shape = get_rt_in_shape(self.in_shape, self.label_size, self.cat_dim)
+		rt_in_shape = get_rt_in_shape(self.in_shape, self.out_size, self.cat_dim)
 		self.rep_transform = MODEL_MAPPING.get(rt_name, None)
 		try:
 			self.rep_transform = self.rep_transform and \
 				self.rep_transform(rt_in_shape, **rt_params)
 		except Exception as err:
-			print("Error! np_util2.py > DetEncoder > __init__()\n",
+			print("Error! np_util.py > DetEncoder > __init__()\n",
 				sys.exc_info()[0], err)
 			print(f'{rt_in_shape=}')
 			print(f'{rt_name=}')
@@ -120,12 +120,12 @@ class DetEncoder(nn.Module):
 			cross_agg_fn = MODEL_MAPPING[xa_name]
 			self.class_agg_method = 'cat' # 'add' or 'cat'
 
-			for i in range(num_classes := self.label_size+1):
+			for i in range(num_classes := self.out_size+1):
 				try:
 					self.cross_aggregation.append(cross_agg_fn(xa_in_shape,
 						kdim=kdim, vdim=vdim, **xa_params))
 				except Exception as err:
-					print("Error! np_util2.py > DetEncoder > __init__ > cross_agg_fn()\n",
+					print("Error! np_util.py > DetEncoder > __init__ > cross_agg_fn()\n",
 						sys.exc_info()[0], err)
 					print(f'{i=}')
 					print(f'{num_classes=}')
@@ -143,7 +143,7 @@ class DetEncoder(nn.Module):
 				self.cross_aggregation = cross_agg_fn(xa_in_shape,
 					kdim=kdim, vdim=vdim, **xa_params)
 			except Exception as err:
-				print("Error! np_util2.py > DetEncoder > __init__ > cross_agg_fn()\n",
+				print("Error! np_util.py > DetEncoder > __init__ > cross_agg_fn()\n",
 					sys.exc_info()[0], err)
 				print(f'{xa_in_shape=}')
 				print(f'{xa_name=}')
@@ -160,7 +160,7 @@ class DetEncoder(nn.Module):
 		* Include Positional Encoding?
 		"""
 		queries, keys = target_h.squeeze(), self.key_padding(context_h.squeeze())
-		reps = pt_cat_xy(context_h, context_y, self.label_size, dim=self.cat_dim) \
+		reps = pt_cat_xy(context_h, context_y, self.out_size, dim=self.cat_dim) \
 			.squeeze()
 		values = self.rep_transform(reps) if (self.rep_transform) else reps
 
@@ -210,14 +210,14 @@ class LatEncoder(nn.Module):
 	3. Use aggregate representation of enc to parameterize a distribution (latent variable)
 	* using linear layers for map_layer, alpha, and beta modules
 	"""
-	def __init__(self, in_shape, label_size, latent_size=256, cat_before_rt=True, class_agg=False,
+	def __init__(self, in_shape, out_size, latent_size=256, cat_before_rt=True, class_agg=False,
 		rt_name='mha', rt_params=None, dist_type='normal',
 		min_std=.01, use_lvar=False):
 		"""
 		Args:
 			in_shape (tuple): shape of the network's input tensor,
 				expects a shape (in_channels, in_height, in_width)
-			label_size (int>0): size of the label vector
+			out_size (int>0): size of the label vector
 			latent_size (int>0): size of latent representation
 			rt_name (str): representation transform name
 			rt_params (dict): representation transform hyperparameters
@@ -227,7 +227,7 @@ class LatEncoder(nn.Module):
 		"""
 		super().__init__()
 		self.in_shape = in_shape
-		self.label_size = label_size
+		self.out_size = out_size
 		self.min_std, self.use_lvar = min_std, use_lvar
 		self.cat_before_rt = cat_before_rt
 		self.class_agg = class_agg
@@ -235,13 +235,13 @@ class LatEncoder(nn.Module):
 			rt_params = {}
 
 		self.cat_dim = get_xy_cat_dim(rt_name)
-		rt_in_shape = get_rt_in_shape(self.in_shape, self.label_size, self.cat_dim)
+		rt_in_shape = get_rt_in_shape(self.in_shape, self.out_size, self.cat_dim)
 		self.rep_transform = MODEL_MAPPING.get(rt_name, None)
 		try:
 			self.rep_transform = self.rep_transform and \
 				self.rep_transform(rt_in_shape, **rt_params)
 		except Exception as err:
-			print("Error! np_util2.py > LatEncoder > __init__()\n",
+			print("Error! np_util.py > LatEncoder > __init__()\n",
 				sys.exc_info()[0], err)
 			print(f'{rt_in_shape=}')
 			print(f'{rt_name=}')
@@ -259,7 +259,7 @@ class LatEncoder(nn.Module):
 
 		self.out_chan = self.rep_transform.out_shape[0] if (is_valid(rt_name)) \
 			else rt_in_shape[0]
-		self.out_chan = (self.label_size+1) * self.out_chan if (self.class_agg) \
+		self.out_chan = (self.out_size+1) * self.out_chan if (self.class_agg) \
 			else self.out_chan
 		self.embed_size = self.rep_transform.out_shape[-1] if (is_valid(rt_name)) \
 			else rt_in_shape[-1]
@@ -286,12 +286,12 @@ class LatEncoder(nn.Module):
 		y is shaped (n, )
 		"""
 		if (self.cat_before_rt):
-			enc = pt_cat_xy(h, y, self.label_size, dim=self.cat_dim).squeeze()
+			enc = pt_cat_xy(h, y, self.out_size, dim=self.cat_dim).squeeze()
 			enc = self.rep_transform(enc) if (self.rep_transform) else enc
 		else:
 			enc = self.rep_transform(h.squeeze()).unsqueeze(self.cat_dim-1) \
 				if (self.rep_transform) else h
-			enc = pt_cat_xy(enc, y, self.label_size, dim=self.cat_dim).squeeze()
+			enc = pt_cat_xy(enc, y, self.out_size, dim=self.cat_dim).squeeze()
 
 		# mean representation of encoded batch:
 		if (self.class_agg):
@@ -464,7 +464,7 @@ class Decoder(nn.Module):
 		try:
 			rep = torch.cat(decoder_inputs, dim=self.cat_dim)
 		except Exception as err:
-			print("Error! np_util2.py > Decoder > forward() > torch.cat()\n",
+			print("Error! np_util.py > Decoder > forward() > torch.cat()\n",
 				sys.exc_info()[0], err)
 			print(f'{self.cat_dim=}')
 			for i in range(len(decoder_inputs)):
@@ -514,7 +514,7 @@ class AttentiveNP(nn.Module):
 	"""
 	Attentive Neural Process Module
 	"""
-	def __init__(self, in_shape, out_size=None, label_size=1,
+	def __init__(self, in_shape, out_size=1,
 		in_name='in2d', in_params=None, in_split=False,
 		fn_name=None, fn_params=None, fn_split=False,
 		ft_name='stcn', ft_params=None, use_raw=True, use_det_path=True, use_lat_path=True,
@@ -524,7 +524,7 @@ class AttentiveNP(nn.Module):
 		Args:
 			in_shape (tuple): shape of the network's input tensor,
 				expects a shape (in_channels, in_height, in_width)
-			label_size (int>0): size of the label vector
+			out_size (int>0): size of the label vector
 			det_encoder_params (dict): deterministic encoder hyperparameters
 			lat_encoder_params (dict): latent encoder hyperparameters
 			decoder_params (dict): decoder hyperparameters
@@ -532,7 +532,7 @@ class AttentiveNP(nn.Module):
 		"""
 		super().__init__()
 		self.in_shape = in_shape
-		self.label_size = label_size
+		self.out_size = out_size
 		self.sample_latent_post = sample_latent_post
 		self.sample_latent_prior = sample_latent_prior
 		self.use_lvar = use_lvar
@@ -576,7 +576,7 @@ class AttentiveNP(nn.Module):
 
 		self.det_encoder, self.lat_encoder = None, None
 		if (use_lat_path):
-			self.lat_encoder = LatEncoder(enc_in_shape, label_size,
+			self.lat_encoder = LatEncoder(enc_in_shape, out_size,
 				**lat_encoder_params)
 			if (self.lat_encoder.out_shape[-1] != dec_in_shape[-1]):
 				self.lat_downsample = nn.Linear(self.lat_encoder.out_shape[-1], dec_in_shape[-1])
@@ -586,7 +586,7 @@ class AttentiveNP(nn.Module):
 			# print(f'{self.lat_encoder.in_shape=}')
 			# print(f'{self.lat_encoder.out_shape=}')
 		if (use_det_path):
-			self.det_encoder = DetEncoder(enc_in_shape, label_size, embed_size,
+			self.det_encoder = DetEncoder(enc_in_shape, self.out_size, embed_size,
 				**det_encoder_params)
 			dec_in_shape[0] += self.det_encoder.out_shape[0]
 			# print(f'{self.det_encoder.in_shape=}')
@@ -594,7 +594,7 @@ class AttentiveNP(nn.Module):
 		dec_in_shape = tuple(dec_in_shape)
 		assert dec_in_shape[0] > 0, 'decoder must take in data; decoder in channels must be greater than 0'
 
-		self.decoder = Decoder(dec_in_shape, out_size or label_size, use_raw,
+		self.decoder = Decoder(dec_in_shape, self.out_size, use_raw,
 			use_det_path, use_lat_path, self.det_encoder, self.lat_encoder,
 			**decoder_params)
 		# print(f'{self.decoder.in_shape=}')

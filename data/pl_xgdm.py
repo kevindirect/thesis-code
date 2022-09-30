@@ -3,19 +3,18 @@ Kevin Patel
 """
 import sys
 import os
+from os.path import sep
 import logging
-from functools import partial
 
 import numpy as np
 import pandas as pd
 import torch
-from torch.utils.data import DataLoader
+from torch.utils.data import TensorDataset, DataLoader
 import pytorch_lightning as pl
 
-from common_util import MODEL_DIR, pd_split_ternary_to_binary, pairwise, df_randlike, is_valid
-from model.common import ASSETS
-# from model.xg_util import get_xg_feature_dfs, get_xg_label_target_dfs, get_hardcoded_feature_dfs, get_hardcoded_label_target_dfs, dfs_get_common_interval_data
-# from model.train_util import pd_to_np_tvt, pd_tvt_idx_split, window_shifted, WindowBatchSampler, get_dataset
+from common_util import DATA_DIR, NestedDefaultDict, load_df, isnt, is_valid, np_truncate_vstack_2d
+from data.common import PROC_NAME, DATA_NAME
+from data.window_util import overlap_win_preproc_3d, stride_win_preproc_3d, WindowBatchSampler
 from model.metrics_util import BenchmarksMixin
 
 
@@ -26,121 +25,126 @@ class XGDataModule(BenchmarksMixin, pl.LightningDataModule):
 	pytorch dataloaders which can be used for model training.
 
 	There are three steps to this process:
-		1. prepare_data: read the desired xg dataframes data from disk,
-			restructure them, and index/intersect over the desired time interval
-		2. setup: split the data into {train, val, test} and convert to numpy
-		3. {train, val, test}_dataloader: do some final processing on the numpy
-			arrays and return the data as a DataLoader of pytorch tensors
-	"""
+		1. prepare_data()
+		2. setup()
+		3. {train, val, test}_dataloader()
+"""
 
-	def __init__(self, t_params, stage_name="001", data_name="frd", asset_name="SPX",
-		target_name="minutely_r²_sum"):
+	def __init__(self, params_t, proc_name=PROC_NAME, data_name=DATA_NAME, asset_name="SPX",
+		feature_name="price,ivol", target_name="rvol_minutely_r²_sum", return_name="ret_daily_R"):
 		super().__init__()
-		self.t_params = t_params
-		self.stage_name = stage_name
+		self.params_t = params_t
+		self.proc_name = proc_name
 		self.data_name = data_name
 		self.asset_name = asset_name
+		self.feature_name = feature_name
 		self.target_name = target_name
-		self.overwrite_cache = overwrite_cache
-		self.name = f"{stage_name}_{data_name}_{asset_name}_{target_name}"
+		self.return_name = return_name
+		self.name = f"{asset_name}{sep}{target_name}{sep}{feature_name}"
+		self.ddir = f"{DATA_DIR}{self.proc_name}{sep}{self.data_name}{sep}{self.asset_name}"
+		self.target_names = None
+		self.fshape = None
+		if (self.data_name == "frd"):
+			self.day_size = 391 # number of data points per trading day
 
-	def get_raw_dfs(self):
-		ddir = f"{DATA_DIR}{self.stage_name}/{self.data_name}"
-		price = load_df(self.asset_name, f"{ddir}/price/features").set_index("datetime")
-		iv = load_df(self.asset_name, f"{ddir}/iv/features").set_index("datetime")
-		target = load_df(self.asset_name, f"{ddir}/price/targets").set_index("datetime")
-		return price, iv, target
+	def prepare_feature(self, split="train"):
+		"""
+		returns data shaped like (n, C, H, W).
+			n - observation index
+			C - channels (financial instrument)
+			H - columns (open, high, low, close, etc)
+			W - window (time sequence)
+		"""
+		dfs = [load_df(name, f"{self.ddir}/{split}/feature").set_index("datetime")
+			for name in self.feature_name.split(',')]
+		assert all((df.index == dfs[0].index).all() for df in dfs)
+		arrs = [np_truncate_vstack_2d(df.to_numpy(), self.day_size) for df in dfs]
+		assert all(arr.shape == arrs[0].shape for arr in arrs)
+		return np.stack(arrs, axis=1)
+
+	def prepare_target(self, split="train"):
+		price = load_df("price", f"{self.ddir}/{split}/target").set_index("datetime")
+		np_index = price.index.to_numpy()
+		np_return = price.loc[:, self.return_name].to_numpy()
+		np_target = price.loc[:, self.target_name].to_numpy()
+		assert np_index.shape == np_return.shape == np_target.shape
+		return np_index, np_return, np_target
 
 	def prepare_data(self):
 		"""
-		Read xg data from disk, choose the desired dataframes, restructure them,
-		and index/intersect the desired time series interval
+		Load the desired dataframes/splits, convert to numpy,
+		and reshape the features if needed.
+		Does not depend on params_t.
 		"""
-		self.price, self.iv, self.target = self.get_raw_dfs()
-		# self.raw_df = dfs_get_common_interval_data((fdata, ldata, tdata),
-		# 	interval=self.interval)
+		self.data = NestedDefaultDict()
+		for split in ["train", "val", "test"]:
+			np_feature = self.prepare_feature(split)
+			np_index, np_return, np_target = self.prepare_target(split)
+			assert np_feature.shape[0] == np_index.shape[0]
+			self.data[[split, "feature"]] = np_feature
+			self.data[[split, "index"]] = np_index
+			self.data[[split, "return"]] = np_return
+			self.data[[split, "target"]] = np_target
 
 	def setup(self, stage=None):
 		"""
-		Split the data into {train, val, test} splits and convert to numpy arrays,
-		apply window_shifted per split to get win_{split} arrays,
-		and make the TensorDatasets and samplers used to later create DataLoaders.
+		Apply moving window to the features,
+		make the TensorDatasets and samplers used to later create DataLoaders.
+		Depends on params_t.
 		"""
-		raw_train, raw_val, raw_test = zip(*map(pd_to_np_tvt, self.raw_df))
-		idx_train, idx_val, idx_test = zip(*map(pd_tvt_idx_split, self.raw_df))
+		self.dataset, self.index = {}, {}
+		for split in ["train", "val", "test"]:
+			shifted = XGDataModule.window_shift((
+				self.data[[split, "feature"]],
+				self.data[[split, "target"]],
+				self.data[[split, "return"]],
+				self.data[[split, "index"]]
+			))
+			self.dataset[split] = XGDataModule.get_dataset(shifted[:-1])
+			self.index[split] = shifted[-1]
 
-		# for split in (raw_train, raw_val, raw_test):
-		# 	assert all(len(d)==len(split[0]) for d in split), \
-		# 		"length of data within each split must be identical"
-		# for train, val, test in zip(raw_train, raw_val, raw_test):
-		# 	assert train.shape[1:] == val.shape[1:] == test.shape[1:], \
-		# 		"shape of f, l, t data must be identical across splits"
-
-		self.raw_idx = {
-			'train': idx_train,
-			'val': idx_val,
-			'test': idx_test
-		}
-		self.raw = {
-			'train': raw_train,
-			'val': raw_val,
-			'test': raw_test
-		}
-		self.fobs = self.get_fobs()
-
-		win_fn = partial(window_shifted,
-			loss=self.t_params['loss'],
-			window_size=self.t_params['window_size'],
-			window_overlap=True,
-			feat_dim=self.t_params['feat_dim'])
-
-		self.win = {split: win_fn(d) for split, d in self.raw.items()}
-		self.ds = {split: get_dataset(d) for split, d in self.win.items()}
-		if (is_valid(self.t_params['batch_step_size'])):
-			self.smp = {
+		self.sampler, self.interval = None, None
+		if (is_valid(self.params_t['batch_step_size'])):
+			self.sampler = {
 				split: WindowBatchSampler(ds,
-					batch_size=self.t_params['batch_size'],
-					batch_step_size=self.t_params['batch_step_size'],
+					batch_size=self.params_t['batch_size'],
+					batch_step_size=self.params_t['batch_step_size'],
 					method='trunc',
 					batch_shuffle=self.is_shuffle(split))
-				for split, ds in self.ds.items()
+				for split, ds in self.dataset.items()
 			}
-			self.starts = {
-				split: (0, self.t_params['batch_step_size'])
-					for split, smp in self.smp.items()
-			}
-			self.ends = {
-				split: (smp.get_step_end(), smp.get_data_end())
-					for split, smp in self.smp.items()
-			}
+
+			self.interval = NestedDefaultDict()
+			for split, samp in self.sampler.items():
+				interval_c = (0, samp.get_step_end())
+				interval_t = (self.params_t['batch_step_size'], samp.get_data_end())
+				self.interval[[split, "context"]] = interval_c
+				self.interval[[split, "target"]] = interval_t
 
 			# first to last target set indices:
-			self.start = {split: idxs[1] for split, idxs in self.starts.items()}
-			self.end = {split: idxs[1] for split, idxs in self.ends.items()}
-			self.idx = {split: idx[-1].droplevel(1)[self.start[split]:self.end[split]]
-				for split, idx in self.raw_idx.items()}
-		else:
-			self.smp = None
-			self.starts = None
-			self.ends = None
-			self.start = None
-			self.end = None
-			self.idx = None
+			# self.idx = {split: idx[-1][self.start[split]:self.end[split]]
+			# 	for split, idx in self.index.items()}
 
-	def get_fobs(self):
+	def get_fshape(self):
 		"""
-		For a time series of 24 hour days, this would be 24.
-		For 8 hour days, 8.
-		And so on.
-		"""
-		fobs = list(self.raw['train'][0].shape[1:])
-		fobs[-1] = fobs[-1] * self.t_params['window_size']
-		fobs = tuple(fobs)
-		return fobs
+		Shape of each feature observation.
+		Depends on params_t.
 
-	def update_params(self, new):
-		if (self.t_params != new):
-			self.t_params = new
+		If feature tensor is shaped (n, C, H, W) this will be (C, H, W), where:
+			* C: channel (matrix of data)
+			* H: data column (series)
+			* W: data row (time dimension)
+		"""
+		if (isnt(self.fshape)):
+			_fshape = list(self.data[["train", "feature"]][0].shape)
+			_fshape[-1] *= self.params_t["window_size"]
+			self.fshape = tuple(_fshape)
+		return self.fshape
+
+	def update(self, new):
+		if (self.params_t != new):
+			self.params_t = new
+			self.fshape = None
 			self.setup()
 
 	def get_dataloader(self, split):
@@ -153,23 +157,82 @@ class XGDataModule(BenchmarksMixin, pl.LightningDataModule):
 		Returns:
 			torch.DataLoader
 		"""
-		dataset = self.ds[split]
-		sampler = self.smp and self.smp[split]
-
-		if (is_valid(sampler)):
-			dl = DataLoader(dataset, batch_sampler=sampler,
-				num_workers=self.t_params['num_workers'],
-				pin_memory=self.t_params['pin_memory'])
+		if (is_valid(self.sampler and self.sampler[split])):
+			dl = DataLoader(self.dataset[split],
+				batch_sampler=self.sampler[split],
+				num_workers=self.params_t['num_workers'],
+				pin_memory=self.params_t['pin_memory'])
 		else:
 			# Uses one of torch.utils.data.{SequentialSampler, RandomSampler}
-			dl = DataLoader(dataset, batch_size=self.t_params['batch_size'],
+			dl = DataLoader(self.dataset[split], batch_size=self.params_t['batch_size'],
 				shuffle=self.is_shuffle(split), drop_last=False,
-				num_workers=self.t_params['num_workers'],
-				pin_memory=self.t_params['pin_memory'])
+				num_workers=self.params_t['num_workers'],
+				pin_memory=self.params_t['pin_memory'])
 		return dl
 
-	is_shuffle = lambda self, split: self.t_params['train_shuffle'] and split=='train'
+	is_shuffle = lambda self, split: self.params_t['train_shuffle'] and split=='train'
 	train_dataloader = lambda self: self.get_dataloader('train')
 	val_dataloader = lambda self: self.get_dataloader('val')
 	test_dataloader = lambda self: self.get_dataloader('test')
+
+	def get_target_names(self, split="train"):
+		if (isnt(self.target_names)):
+			price = load_df("price", f"{self.ddir}/{split}/target").set_index("datetime")
+			self.target_names = list(price.columns)
+		return self.target_names
+
+	@staticmethod
+	def rename_ohlc(df, pfx):
+		newcols = {
+			"open": f"{pfx}_open",
+			"high": f"{pfx}_high",
+			"low": f"{pfx}_low",
+			"close": f"{pfx}_close"
+		}
+		return df.rename(columns=newcols)
+
+	@staticmethod
+	def window_shift(data, window_size=1, window_overlap=True):
+		"""
+		Return passed input data reshaped into moving windows by
+		reducing the first dimension and expanding the last dimension.
+		Wrapper around temporal_preproc_3d and stride_preproc_3d.
+
+		The last dimension of the features will be multiplied in length
+		by the window_size argument, and this number of elements will be
+		truncated off the first dimension. Thus if a window size of 1 is passed
+		in, no shifting occurs. Non feature arrays are truncated so they
+		still line up with the features.
+
+		Args:
+			data (tuple): tuple of numpy arrays, features are the first element
+			window_size (int): window size to use (will be last dimension of each tensor)
+			window_overlap (bool): whether to use overlapping or nonoverlapping windows
+
+		Returns:
+			tuple of numpy arrays
+		"""
+		assert window_size >= 1
+		if (window_overlap):
+			shifted = overlap_win_preproc_3d(data, window_size=window_size, \
+				same_dims=True)
+		else:
+			shifted = stride_win_preproc_3d(data, window_size=window_size)
+		return shifted
+
+	@staticmethod
+	def get_dataset(data):
+		"""
+		Return TensorDataset of (features, targets, returns)
+
+		Args:
+			data (tuple): tuple of numpy arrays, features are the first element
+
+		Returns:
+			torch.TensorDataset
+		"""
+		f = torch.tensor(data[0], dtype=torch.float32, requires_grad=False)
+		t = torch.tensor(data[1], dtype=torch.float32, requires_grad=False)
+		r = torch.tensor(data[2], dtype=torch.float32, requires_grad=False)
+		return TensorDataset(f, t, r)
 

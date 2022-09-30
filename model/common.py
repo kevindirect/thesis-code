@@ -13,14 +13,17 @@ import sys
 from os.path import dirname, realpath
 
 sys.path.insert(0, dirname(dirname(dirname(realpath(sys.argv[0])))))
+dum = None
 
 # ********** SPECIFIC TO THIS CRUNCH PACKAGE **********
 # MODEL
 from os import sep
 from functools import partial
-from common_util import RECON_DIR, MODEL_DIR
+from common_util import MODEL_DIR
 
 # OTHER STAGE DEPENDENCIES
+from data.common import PROC_NAME, DATA_NAME
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -31,27 +34,12 @@ from tensorflow.nn import sparse_softmax_cross_entropy_with_logits, softmax_cros
 """
 
 # PACKAGE CONSTANTS
-FR_DIR = MODEL_DIR +'fr' +sep
-XG_DIR = MODEL_DIR +'xg' +sep
-EXP_LOG_DIR = MODEL_DIR +'exp-log' +sep
-EXP_PARAMS_DIR = MODEL_DIR +'exp-params' +sep
-XG_PROCESS_DIR = MODEL_DIR +'xg-process' +sep
-XG_DATA_DIR = MODEL_DIR +'xg-data' +sep
-XG_VIZ_DIR = MODEL_DIR +'xg-graphs-viz' +sep
-DATASET_DIR = RECON_DIR +'dataset' +sep
-FILTERSET_DIR = RECON_DIR +'filterset' +sep
-XG_INDEX_FNAME = '.index.json'
-EXPECTED_NUM_HOURS = 8
-INTRADAY_LEN = 8
-ASSETS = ('sp_500', 'russell_2000', 'nasdaq_100', 'dow_jones')
+EXP_DIR = MODEL_DIR +f'exp-{PROC_NAME}-{DATA_NAME}' +sep
+# EXP_LOG_DIR = MODEL_DIR +'log' +sep
+# EXP_PARAMS_DIR = MODEL_DIR +'params' +sep
+ASSETS = ('SPX', 'RUT', 'NDX', 'DJI')
 ASSETS_STR = ','.join(ASSETS)
-INTERVAL_YEARS = (2007, 2018)
 TRADING_DAYS = 252
-WIN_SIZE = 10
-TRAIN_RATIO = .5
-# VAL_RATIO, TEST_RATIO = .2, .2
-# HOPT_WORKER_BIN = 'hyperopt-mongo-worker'
-# ERROR_CODE = 999999
 
 # PyTorch
 class DistributionNLLLoss(nn.modules.loss._Loss):
@@ -118,7 +106,6 @@ class SharpeLoss(nn.modules.loss._Loss):
 
 		return sr_loss
 
-PYTORCH_MODELS_DIR = MODEL_DIR +'model_p' +sep
 PYTORCH_ACT1D_LIST = ('lrelu', 'celu', 'prelu', 'selu', 'mish', \
 	'relu', 'elu', 'gelu', 'sig', 'tanh', 'splus', 'smax', 'logsmax')
 PYTORCH_ACT_MAPPING = {
@@ -184,58 +171,9 @@ PYTORCH_SCH_MAPPING = {
 	'st': optim.lr_scheduler.StepLR
 }
 
-# Optuna
-OPTUNA_DB_FNAME = 'trials.db'
-OPTUNA_CSV_FNAME = 'trials.csv'
-OPTUNA_N_TRIALS = 100
-OPTUNA_TIMEOUT_HOURS = 12
-
-"""
-# Keras
-KERAS_MODELS_DIR = MODEL_DIR +'model_k' +sep
-KERAS_OPT_MAPPING = {
-	'SGD': SGD,
-	'RMSprop': RMSprop,
-	'Adam': Adam,
-	'Nadam': Nadam
-}
-"""
-
-"""
-# TensorFlow
-TENSORFLOW_MODELS_DIR = MODEL_DIR +'model_t' +sep
-TENSORFLOW_OPT_MAPPING = {
-	'RMSprop': RMSPropOptimizer,
-	'Adam': AdamOptimizer
-}
-TENSORFLOW_LOSS_MAPPING = {
-	'sparse_ce': sparse_softmax_cross_entropy_with_logits, 	# This version takes in a 1D series of integer labels
-	'onehot_ce': softmax_cross_entropy_with_logits_v2	    # One hot encoded version of sparse_cross_entropy
-}
-"""
-
-# PACKAGE DEFAULTS
-dum = None
-# default_ray_config = {
-# 	"init": {
-# 		"num_cpus": 8,
-# 		"num_gpus": 1,
-# 		"redirect_output": True,
-# 		"include_webui": False
-# 	}
-# }
-# default_ray_trial_resources = {"cpu": 2, "gpu": 1}
-# default_model = 'TCN'
-# default_xg = 'xg0_reteod_direod.json'
-# default_dataset = 'xg0_reteod_direod.json'
-# default_backend = 'pytorch'
-# default_trials_count = 100
-# default_filter = ["0"]
-# default_nt_filter = ["1"]
-# default_opt_filter = ["1", "2"]
-# default_target_col_idx = 0
-# default_target_idx = [0, 1, 2]
-
-
-# PACKAGE UTIL FUNCTIONS
+# # Optuna
+# OPTUNA_DB_FNAME = 'trials.db'
+# OPTUNA_CSV_FNAME = 'trials.csv'
+# OPTUNA_N_TRIALS = 100
+# OPTUNA_TIMEOUT_HOURS = 12
 

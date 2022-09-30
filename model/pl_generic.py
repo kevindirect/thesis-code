@@ -16,7 +16,7 @@ import pytorch_lightning as pl # PL ver 1.2.3
 import torchmetrics as tm
 
 from common_util import load_df, dump_df, is_valid, isnt, rectify_json, dump_json
-from model.common import WIN_SIZE, PYTORCH_ACT_MAPPING, PYTORCH_LOSS_MAPPING, PYTORCH_OPT_MAPPING, PYTORCH_SCH_MAPPING
+from model.common import PYTORCH_ACT_MAPPING, PYTORCH_LOSS_MAPPING, PYTORCH_OPT_MAPPING, PYTORCH_SCH_MAPPING
 from model.metrics_util import SimulatedReturn
 from model.model_util import OutputBlock
 
@@ -45,63 +45,63 @@ class GenericModel(pl.LightningModule):
 		num_workers (int>=0): DataLoader option - number cpu workers to attach
 		pin_memory (bool): DataLoader option - whether to pin memory to gpu
 	"""
-	def __init__(self, pt_model_fn, m_params, t_params, fobs,
+	def __init__(self, pt_model_fn, params_m, params_t, fshape,
 		epoch_metric_types=('train', 'val')):
 		"""
 		Init method
 
 		Args:
 			pt_model_fn (function): pytorch model callback
-			m_params (dict): dictionary of model hyperparameters
-			t_params (dict): dictionary of training hyperparameters
-			fobs (tuple): the shape of a single feature observation,
+			params_m (dict): dictionary of model hyperparameters
+			params_t (dict): dictionary of training hyperparameters
+			fshape (tuple): the shape of a single feature observation,
 				this is usually the model input shape
 			epoch_metric_types (tuple): which epoch types to init metric objects for
 		"""
 		super().__init__()
 		self.name = f'{self._get_name()}_{pt_model_fn.__name__}'
-		self.m_params, self.t_params = m_params, t_params
+		self.params_m, self.params_t = params_m, params_t
 		self.__init_loss_fn__()
-		self.__init_model__(pt_model_fn, fobs)
+		self.__init_model__(pt_model_fn, fshape)
 		self.__init_loggers__(epoch_metric_types)
-		#self.example_input_array = torch.rand(10, *fobs, dtype=torch.float32) * 100
+		#self.example_input_array = torch.rand(10, *fshape, dtype=torch.float32) * 100
 
 	def __init_loss_fn__(self, reduction='none'):
-		if (is_valid(loss_fn := PYTORCH_LOSS_MAPPING.get(self.t_params['loss'], None))):
-			if (is_valid(cw := self.t_params['class_weights'])):
+		if (is_valid(loss_fn := PYTORCH_LOSS_MAPPING.get(self.params_t['loss'], None))):
+			if (is_valid(cw := self.params_t['class_weights'])):
 				self.loss = loss_fn(reduction=reduction, weight=torch.tensor(cw))
 			else:
 				self.loss = loss_fn(reduction=reduction)
 		else:
 			logging.info('no loss function set in pytorch lightning')
 
-	def __init_model__(self, pt_model_fn, fobs):
+	def __init_model__(self, pt_model_fn, fshape):
 		"""
 		Args:
 			pt_model_fn (torch.nn.Module): pytorch model constructor
-			fobs (tuple): the shape of a single feature observation,
+			fshape (tuple): the shape of a single feature observation,
 				this is usually the model input shape
 		"""
-		model_params = {k: v for k, v in self.m_params.items() \
+		model_params = {k: v for k, v in self.params_m.items() \
 			if (k in getfullargspec(pt_model_fn).args)}
 
-		self.model = pt_model_fn(in_shape=fobs, **model_params)
-		if (is_valid(self.m_params.get('ob_out_shapes', None))):
-			if (isnt(self.m_params.get('ob_params', None))):
+		self.model = pt_model_fn(in_shape=fshape, **model_params)
+		if (is_valid(self.params_m.get('ob_out_shapes', None))):
+			if (isnt(self.params_m.get('ob_params', None))):
 				logging.info('using default output block params')
 			self.model = OutputBlock.wrap(self.model)
 
-		self.model_type = self.t_params['loss'].split('-')[0]
+		self.model_type = self.params_t['loss'].split('-')[0]
 
 	def __init_loggers__(self, epoch_metric_types, go_long=True, go_short=False):
 		"""
 		'micro' weights by class frequency, 'macro' weights classes equally
 		"""
 		if (self.model_type == 'clf'):
-			if (self.t_params['loss'] in ('clf-ce', 'clf-nll')):
-				num_classes = self.m_params['label_size'] + 1
+			if (self.params_t['loss'] in ('clf-ce', 'clf-nll')):
+				num_classes = self.params_m['num_classes'] or self.params_m['out_size'] + 1
 			else:
-				num_classes = self.m_params['label_size']
+				num_classes = self.params_m['num_classes'] or self.params_m['out_size']
 			self.epoch_metrics = {
 				epoch_type: {
 					f'{self.model_type}_accuracy': tm.Accuracy(compute_on_step=False),
@@ -117,8 +117,10 @@ class GenericModel(pl.LightningModule):
 				for epoch_type in epoch_metric_types
 			}
 		elif (self.model_type == 'reg'):
-			if (self.t_params['loss'] in ('reg-sharpe',)):
-				num_classes = self.m_params['label_size'] + 1
+			if (self.params_t['loss'] in ('reg-sharpe',)):
+				num_classes = self.params_m['num_classes'] or self.params_m['out_size'] + 1
+			else:
+				assert(isnt(self.params_m['num_classes']))
 			self.epoch_metrics = {
 				epoch_type: {
 					f'{self.model_type}_mae': tm.MeanAbsoluteError(compute_on_step=False),
@@ -171,11 +173,11 @@ class GenericModel(pl.LightningModule):
 		"""
 		Construct and return optimizers
 		"""
-		opt_fn = PYTORCH_OPT_MAPPING.get(self.t_params['opt']['name'])
-		opt = opt_fn(self.parameters(), **self.t_params['opt']['kwargs'])
+		opt_fn = PYTORCH_OPT_MAPPING.get(self.params_t['opt']['name'])
+		opt = opt_fn(self.parameters(), **self.params_t['opt']['kwargs'])
 		return opt
-		#sch_fn = PYTORCH_SCH_MAPPING.get(self.t_params['sch']['name'])
-		#sch = sch_fn(opt, **self.t_params['sch']['kwargs'])
+		#sch_fn = PYTORCH_SCH_MAPPING.get(self.params_t['sch']['name'])
+		#sch = sch_fn(opt, **self.params_t['sch']['kwargs'])
 		#return [opt], [sch]
 
 	def forward(self, x):
@@ -213,17 +215,17 @@ class GenericModel(pl.LightningModule):
 		# Reshape model outputs for later loss, metrics calculations:
 		if (self.model_type == 'clf'):
 			actual = y
-			if (self.t_params['loss'] in ('clf-bce',)):
+			if (self.params_t['loss'] in ('clf-bce',)):
 				pred_t_loss = pred_t_raw
 				pred_t_loss = F.sigmoid(pred_t_loss, dim=-1)
 				pred_t = pred_t_loss.detach().clone()
 				pred_t_ret = (pred_t - .5) * 2
-			elif (self.t_params['loss'] in ('clf-ce',)):
+			elif (self.params_t['loss'] in ('clf-ce',)):
 				pred_t_loss = pred_t_raw
 				if (pred_t_loss.ndim == 1):
 					preds = (pred_t_loss.unsqueeze(-1), (1-pred_t_loss).unsqueeze(-1))
 					pred_t_loss = torch.hstack(preds)
-				elif (pred_t_loss.ndim < self.m_params['num_classes']):
+				elif (pred_t_loss.ndim < self.params_m['num_classes']):
 					# sum the probs and take complement
 					raise NotImplementedError()
 				pred_t_smax = F.softmax(pred_t_loss.detach().clone(), dim=-1)
@@ -492,7 +494,7 @@ class GenericModel(pl.LightningModule):
 			}
 		else:
 			params = {
-				'window_size': WIN_SIZE,
+				'window_size': 20,
 				'feat_dim': None,
 				'train_shuffle': False,
 				'epochs': 200,

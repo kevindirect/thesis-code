@@ -14,7 +14,7 @@ import pytorch_lightning as pl
 import torchmetrics as tm
 
 from common_util import is_type, is_valid, isnt, pt_resample_values
-from model.common import WIN_SIZE, PYTORCH_LOSS_MAPPING
+from model.common import PYTORCH_LOSS_MAPPING
 from model.pl_generic import GenericModel
 from model.metrics_util import SimulatedReturn
 
@@ -25,7 +25,6 @@ class NPModel(GenericModel):
 
 	Training Hyperparameters:
 		window_size (int): number of observations in the last dimension of the input tensor
-		feat_dim (int): dimension of resulting feature tensor, if 'None' doesn't reshape
 		epochs (int): number training epochs
 		batch_size (int): batch (or batch window) size
 		batch_step_size (int): batch window step size.
@@ -41,23 +40,23 @@ class NPModel(GenericModel):
 		num_workers (int>=0): DataLoader option - number cpu workers to attach
 		pin_memory (bool): DataLoader option - whether to pin memory to gpu
 	"""
-	def __init__(self, pt_model_fn, m_params, t_params, fobs,
+	def __init__(self, pt_model_fn, params_m, params_t, fshape,
 		epoch_metric_types=('train', 'val')):
 		"""
 		Init method
 
 		Args:
 			pt_model_fn (function): neural process pytorch model callback
-			m_params (dict): dictionary of model hyperparameters
-			t_params (dict): dictionary of training hyperparameters
-			fobs (tuple): the shape of a single feature observation,
+			params_m (dict): dictionary of model hyperparameters
+			params_t (dict): dictionary of training hyperparameters
+			fshape (tuple): the shape of a single feature observation,
 				this is usually the model input shape
 			epoch_metric_types (tuple): which epoch types to init metric objects for
 		"""
-		super().__init__(pt_model_fn, m_params, t_params, fobs,
+		super().__init__(pt_model_fn, params_m, params_t, fshape,
 			epoch_metric_types=epoch_metric_types)
-		if (is_valid(cs:=self.t_params['context_size']) and is_valid(ts:=self.t_params['target_size'])):
-			assert cs+ts == self.t_params['batch_size'], \
+		if (is_valid(cs:=self.params_t['context_size']) and is_valid(ts:=self.params_t['target_size'])):
+			assert cs+ts == self.params_t['batch_size'], \
 				"context and target sizes must add up to batch_size, \
 				use train_target_overlap to add a training overlap"
 
@@ -67,23 +66,23 @@ class NPModel(GenericModel):
 		If in regressor mode, y and z are identical.
 		"""
 		x, y, z = batch
-		ctx = self.t_params['context_size'] or self.t_params['batch_size']//2
-		tgt = self.t_params['target_size'] or self.t_params['batch_size'] - ctx
+		ctx = self.params_t['context_size'] or self.params_t['batch_size']//2
+		tgt = self.params_t['target_size'] or self.params_t['batch_size'] - ctx
 
 		if (train_mode):
-			if (self.t_params['train_sample_context_size']):
-				ctx = np.random.randint(low=1, high=self.t_params['batch_size'], \
+			if (self.params_t['train_sample_context_size']):
+				ctx = np.random.randint(low=1, high=self.params_t['batch_size'], \
 					size=None, dtype=int)
-				tgt = self.t_params['batch_size'] - ctx
+				tgt = self.params_t['batch_size'] - ctx
 
-			tto = self.t_params['train_target_overlap']
+			tto = self.params_t['train_target_overlap']
 			tend = None
-			if (is_type(tto := self.t_params['train_target_overlap'], int) and tto!=0):
+			if (is_type(tto := self.params_t['train_target_overlap'], int) and tto!=0):
 				tgt += tto
 				if (tto > 0):
 					tend = -tto
 
-			if (is_valid(ts := self.t_params['train_resample']) and \
+			if (is_valid(ts := self.params_t['train_resample']) and \
 				self.model_type == 'clf'):
 				ctx_idx = pt_resample_values(y[:ctx], n=ts, shuffle=True) \
 					.to(y.device)
@@ -141,7 +140,7 @@ class NPModel(GenericModel):
 			aim_c, aim_t = yc, yt
 		elif (self.model_type == 'reg'):
 			aim_c, aim_t = zc, zt
-		dist_type = self.m_params['decoder_params']['dist_type']
+		dist_type = self.params_m['decoder_params']['dist_type']
 
 		try:
 			prior_dist, post_dist, out_dist = self.model(xc, aim_c, xt, \
@@ -158,7 +157,7 @@ class NPModel(GenericModel):
 			print(f'{zt.shape=}')
 			raise err
 
-		if (self.t_params['sample_out'] and train_mode and out_dist.has_rsample and not (self.t_params['loss'] in ('clf-dnll',))):
+		if (self.params_t['sample_out'] and train_mode and out_dist.has_rsample and not (self.params_t['loss'] in ('clf-dnll',))):
 			pred_t_raw = out_dist.rsample()
 		else:
 			pred_t_raw = out_dist.mean
@@ -173,7 +172,7 @@ class NPModel(GenericModel):
 
 		# Reshape model outputs for later loss, metrics calculations:
 		if (self.model_type == 'clf'):
-			if (self.t_params['loss'] in ('clf-dnll',)):
+			if (self.params_t['loss'] in ('clf-dnll',)):
 				pred_t_loss = out_dist
 				pred_t = pred_t_raw.detach().clone()
 				if (dist_type == 'beta'):
@@ -181,24 +180,24 @@ class NPModel(GenericModel):
 				else:
 					pred_t = pred_t.clamp(0.0, 1.0)
 				pred_t_bet = (pred_t - .5) * 2
-			elif (self.t_params['loss'] in ('clf-bcel',)):
+			elif (self.params_t['loss'] in ('clf-bcel',)):
 				pred_t = pred_t_raw.detach().clone()[:, 1]
 				pred_t_loss = pred_t
 				pred_t_bet = (pred_t - .5) * 2
 				pred_t_conf = pred_t_bet.abs()
 				pred_t_dir = pred_t_bet.sign()
-			elif (self.t_params['loss'] in ('clf-bce',)):
+			elif (self.params_t['loss'] in ('clf-bce',)):
 				pred_t = pred_t_raw.detach().clone()[:, 1]
 				pred_t_loss = pred_t
 				pred_t_bet = (pred_t - .5) * 2
 				pred_t_conf = pred_t_bet.abs()
 				pred_t_dir = pred_t_bet.sign()
-			elif (self.t_params['loss'] in ('clf-ce',)):
+			elif (self.params_t['loss'] in ('clf-ce',)):
 				pred_t_loss = pred_t_raw
 				if (pred_t_loss.ndim == 1):
 					preds = ((1-pred_t_loss).unsqueeze(-1), pred_t_loss.unsqueeze(-1))
 					pred_t_loss = torch.hstack(preds)
-				elif (pred_t_loss.ndim < self.m_params['num_classes']):
+				elif (pred_t_loss.ndim < self.params_m['num_classes']):
 					# sum the probs and take complement
 					raise NotImplementedError()
 				pred_t_smax = F.softmax(pred_t_loss.detach().clone(), dim=-1)
@@ -206,14 +205,14 @@ class NPModel(GenericModel):
 				pred_t_dir = pred_t.detach().clone()
 				pred_t_dir[pred_t_dir==0] = -1
 				pred_t_bet = pred_t_dir * pred_t_conf
-			elif (self.t_params['loss'] in ('clf-nll',)):
+			elif (self.params_t['loss'] in ('clf-nll',)):
 				pred_t_loss = pred_t_raw
 				if (pred_t_loss.ndim == 1):
 					preds = ((1-pred_t_loss).unsqueeze(-1), pred_t_loss.unsqueeze(-1))
 					pred_t_loss = torch.hstack(preds)
 					pred_t_prob = pred_t_loss.detach().clone()
 					pred_t_loss = pred_t_loss.log()
-				elif (pred_t_loss.ndim < self.m_params['num_classes']):
+				elif (pred_t_loss.ndim < self.params_m['num_classes']):
 					# sum the probs and take complement
 					raise NotImplementedError()
 				else:
@@ -226,16 +225,16 @@ class NPModel(GenericModel):
 				pred_t_loss = pred_t_raw
 				raise NotImplementedError()
 		elif (self.model_type == 'reg'):
-			if (self.t_params['loss'] in ('reg-dnll',)):
+			if (self.params_t['loss'] in ('reg-dnll',)):
 				pred_t_loss = out_dist
-			elif (self.t_params['loss'] in ('reg-mae', 'reg-mse')):
+			elif (self.params_t['loss'] in ('reg-mae', 'reg-mse')):
 				pred_t_loss = pred_t_raw
-			elif (self.t_params['loss'] in ('reg-sharpe',)):
+			elif (self.params_t['loss'] in ('reg-sharpe',)):
 				pred_t_loss = pred_t_raw
 				if (pred_t_loss.ndim == 1):
 					preds = ((1-pred_t_loss).unsqueeze(-1), pred_t_loss.unsqueeze(-1))
 					pred_t_loss = torch.hstack(preds)
-				elif (pred_t_loss.ndim < self.m_params['num_classes']):
+				elif (pred_t_loss.ndim < self.params_m['num_classes']):
 					# sum the probs and take complement
 					raise NotImplementedError()
 				pred_t_smax = F.softmax(pred_t_loss, dim=-1)
@@ -250,13 +249,13 @@ class NPModel(GenericModel):
 			kldiv = torch.distributions.kl_divergence(post_dist, prior_dist) \
 				.sum(dim=-1, keepdim=True).repeat(1, pred_t_raw.shape[0])
 			kldiv /= pred_t_raw.shape[0]
-			kldiv = kldiv * self.t_params['kl_weight']
+			kldiv = kldiv * self.params_t['kl_weight']
 		else:
 			kldiv = torch.zeros(1, device=pred_t_raw.device)
 
 		try:
 			aim_t_loss = aim_t
-			if (self.t_params['loss'] in ('clf-bce', 'clf-bcel') or (self.t_params['loss'] == 'clf-dnll' and dist_type in ('bernoulli', 'cbernoulli'))):
+			if (self.params_t['loss'] in ('clf-bce', 'clf-bcel') or (self.params_t['loss'] == 'clf-dnll' and dist_type in ('bernoulli', 'cbernoulli'))):
 				aim_t_loss = aim_t_loss.float()
 			# aim_t_loss = aim_t.type_as(pred_t_loss)
 			# aim_t_loss = aim_t.to(torch.)
@@ -302,7 +301,7 @@ class NPModel(GenericModel):
 			print(f'{out_dist=}')
 			print(f'{aim_t.shape=}')
 			print(f'{pred_t.shape=}')
-			if (self.t_params['loss'] not in ('clf-dnll', 'reg-dnll')):
+			if (self.params_t['loss'] not in ('clf-dnll', 'reg-dnll')):
 				print(f'{pred_t_loss.shape=}')
 			else:
 				print(f'{pred_t_loss=}')
@@ -322,7 +321,7 @@ class NPModel(GenericModel):
 				print(f'{aim_t.shape=}')
 				print(f'{pred_t.shape=}')
 				print(f'{pred_t_loss.shape=}')
-				if (self.t_params['loss'] not in ('clf-dnll', 'reg-dnll')):
+				if (self.params_t['loss'] not in ('clf-dnll', 'reg-dnll')):
 					print('pred_t_loss.shape:', pred_t_loss.shape)
 				print(f'{pred_t_conf.shape=}')
 				print(f'{pred_t_dir.shape=}')
@@ -378,11 +377,11 @@ class NPModel(GenericModel):
 		Workaround for pytorch Dirichlet/Beta not supporting half precision.
 		"""
 		precision = 16
-		if (self.t_params['sample_out'] and self.m_params['decoder_params']['dist_type'] == 'beta'):
+		if (self.params_t['sample_out'] and self.params_m['decoder_params']['dist_type'] == 'beta'):
 			precision = 32
-		elif (self.m_params['use_lat_path'] and \
-			(self.m_params['sample_latent_post'] or self.m_params['sample_latent_prior']) \
-			and self.m_params['lat_encoder_params']['dist_type'] == 'beta'):
+		elif (self.params_m['use_lat_path'] and \
+			(self.params_m['sample_latent_post'] or self.params_m['sample_latent_prior']) \
+			and self.params_m['lat_encoder_params']['dist_type'] == 'beta'):
 			precision = 32
 		return precision
 
@@ -403,7 +402,7 @@ class NPModel(GenericModel):
 			sample_out = trial.suggest_categorical('sample_out', (False, True))
 		else:
 			batch_size = 64*1
-			window_size = WIN_SIZE
+			window_size = 5*4
 			lr = 1e-4
 			train_target_overlap = batch_size//8
 			sample_out = False

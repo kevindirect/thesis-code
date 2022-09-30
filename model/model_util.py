@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
-from kymatio.torch import Scattering1D as pt_wavelet_scatter_1d
+# from kymatio.torch import Scattering1D as pt_wavelet_scatter_1d
 
 from common_util import is_type, is_valid, isnt, list_wrap, assert_has_all_attr, pairwise, odd_only
 from model.common import PYTORCH_ACT_MAPPING, PYTORCH_ACT1D_LIST, PYTORCH_INIT_LIST
@@ -141,29 +141,29 @@ class Chomp1d(nn.Module):
 	def forward(self, x):
 		return x[:, :, :-self.chomp_size].contiguous()
 
-class WaveletScatter1d(nn.Module):
-	"""
-	Apply One Dimensional Wavelet Scattering Transform on a vector and return the coefficients as a tuple of torch tensors.
-	Wrapper around the Kymatio library, uses analytic (complex-valued) Morlet Wavelets down to 2nd order wavelets.
-	arXiv:1812.11214
-	"""
-	def __init__(self, input_shape, max_scale_power, fo_wavelets):
-		"""
-		Args:
-			input_shape (tuple): Length of the input vector
-			max_scale_power (int): Maximum base 2 log scale of scattering transform
-			fo_wavelets (int>=1): Number of first order wavelets per octave (2nd order is fixed to 1)
-		"""
-		super().__init__()
-		self.scatter = pt_wavelet_scatter_1d(max_scale_power, input_shape, fo_wavelets)
-		#self.scatter.cuda()
-		meta = self.scatter.meta()
-		self.orders = [np.where(meta['order'] == i) for i in range(3)]
+# class WaveletScatter1d(nn.Module):
+# 	"""
+# 	Apply One Dimensional Wavelet Scattering Transform on a vector and return the coefficients as a tuple of torch tensors.
+# 	Wrapper around the Kymatio library, uses analytic (complex-valued) Morlet Wavelets down to 2nd order wavelets.
+# 	arXiv:1812.11214
+# 	"""
+# 	def __init__(self, input_shape, max_scale_power, fo_wavelets):
+# 		"""
+# 		Args:
+# 			input_shape (tuple): Length of the input vector
+# 			max_scale_power (int): Maximum base 2 log scale of scattering transform
+# 			fo_wavelets (int>=1): Number of first order wavelets per octave (2nd order is fixed to 1)
+# 		"""
+# 		super().__init__()
+# 		self.scatter = pt_wavelet_scatter_1d(max_scale_power, input_shape, fo_wavelets)
+# 		#self.scatter.cuda()
+# 		meta = self.scatter.meta()
+# 		self.orders = [np.where(meta['order'] == i) for i in range(3)]
 
-	def forward(self, x):
-		Sx = self.scatter(x)
-		coefficients = tuple(Sx[order] for order in self.orders)
-		return coefficients
+# 	def forward(self, x):
+# 		Sx = self.scatter(x)
+# 		coefficients = tuple(Sx[order] for order in self.orders)
+# 		return coefficients
 
 class Apply(nn.Module):
 	"""
@@ -690,7 +690,7 @@ class StackedTCN(TemporalConvNet):
 				'out_init': 'kaiming_uniform',
 				'pad_mode': 'full',
 				'downsample_type': 'conv2d',
-				'label_size': num_classes-1,
+				'out_size': num_classes-1,
 				'ob_out_shapes': num_classes if (add_ob) else None,
 				'ob_params': None,
 			}
@@ -718,7 +718,7 @@ class StackedTCN(TemporalConvNet):
 			# 	'pad_mode': trial.suggest_categorical('pad_mode', \
 			# 		('same', 'full')),
 			# 	'downsample_type': 'conv2d',
-			# 	'label_size': num_classes-1,
+			# 	'out_size': num_classes-1,
 			# 	'ob_out_shapes': num_classes if (add_ob) else None,
 			# 	'ob_params':
 			# }
@@ -737,7 +737,7 @@ class StackedTCN(TemporalConvNet):
 				'out_init': 'xavier_uniform',
 				'pad_mode': 'full',
 				'downsample_type': 'conv2d',
-				'label_size': num_classes-1,
+				'out_size': num_classes-1,
 				'ob_out_shapes': num_classes if (add_ob) else None,
 				'ob_params': None
 			}
@@ -869,7 +869,7 @@ class FFN(nn.Module):
 				'act_output': True,
 				'init': trial.suggest_categorical('block_init', \
 					PYTORCH_INIT_LIST[2:]),
-				'label_size': num_classes-1,
+				'out_size': num_classes-1,
 			}
 		else:
 			params = {
@@ -877,7 +877,7 @@ class FFN(nn.Module):
 				'act': 'relu',
 				'act_output': True,
 				'init': 'xavier_uniform',
-				'label_size': num_classes-1,
+				'out_size': num_classes-1,
 			}
 		return params
 
