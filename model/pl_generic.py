@@ -45,8 +45,7 @@ class GenericModel(pl.LightningModule):
 		num_workers (int>=0): DataLoader option - number cpu workers to attach
 		pin_memory (bool): DataLoader option - whether to pin memory to gpu
 	"""
-	def __init__(self, pt_model_fn, params_m, params_t, fshape,
-		epoch_metric_types=('train', 'val')):
+	def __init__(self, pt_model_fn, params_m, params_t, fshape, splits=('train', 'val')):
 		"""
 		Init method
 
@@ -56,14 +55,15 @@ class GenericModel(pl.LightningModule):
 			params_t (dict): dictionary of training hyperparameters
 			fshape (tuple): the shape of a single feature observation,
 				this is usually the model input shape
-			epoch_metric_types (tuple): which epoch types to init metric objects for
+			splits (tuple): which splits to init metric objects for
 		"""
 		super().__init__()
 		self.name = f'{self._get_name()}_{pt_model_fn.__name__}'
 		self.params_m, self.params_t = params_m, params_t
 		self.__init_loss_fn__()
 		self.__init_model__(pt_model_fn, fshape)
-		self.__init_loggers__(epoch_metric_types)
+		self.__init_loggers__(splits)
+		# self.__init_loggers_return__(splits)
 		#self.example_input_array = torch.rand(10, *fshape, dtype=torch.float32) * 100
 
 	def __init_loss_fn__(self, reduction='none'):
@@ -93,10 +93,11 @@ class GenericModel(pl.LightningModule):
 
 		self.model_type = self.params_t['loss'].split('-')[0]
 
-	def __init_loggers__(self, epoch_metric_types, go_long=True, go_short=False):
+	def __init_loggers__(self, splits):
 		"""
 		'micro' weights by class frequency, 'macro' weights classes equally
 		"""
+		self.epoch_returns = None
 		if (self.model_type == 'clf'):
 			if (self.params_t['loss'] in ('clf-ce', 'clf-nll')):
 				num_classes = self.params_m['num_classes'] or self.params_m['out_size'] + 1
@@ -114,7 +115,7 @@ class GenericModel(pl.LightningModule):
 					# f'{self.model_type}_f0.5': tm.FBetaScore(num_classes=num_classes, beta=0.5,
 					# 	average='micro', compute_on_step=False),
 				}
-				for epoch_type in epoch_metric_types
+				for epoch_type in splits
 			}
 		elif (self.model_type == 'reg'):
 			if (self.params_t['loss'] in ('reg-sharpe',)):
@@ -126,11 +127,12 @@ class GenericModel(pl.LightningModule):
 					f'{self.model_type}_mae': tm.MeanAbsoluteError(compute_on_step=False),
 					f'{self.model_type}_mse': tm.MeanSquaredError(compute_on_step=False),
 				}
-				for epoch_type in epoch_metric_types
+				for epoch_type in splits
 			}
 
+	def __init_loggers_return__(self, splits, go_long=True, go_short=False):
 		self.epoch_returns = {}
-		for epoch_type in epoch_metric_types:
+		for epoch_type in splits:
 			epoch_ret = {}
 			if (go_long and go_short):
 				br = SimulatedReturn(use_conf=False, compounded=False,
@@ -388,57 +390,55 @@ class GenericModel(pl.LightningModule):
 			split_results = {}
 			for name in self.epoch_metrics[split]:
 				em = self.epoch_metrics[split][name]
-				split_results[f"{split}_{name}"] = em.compute()
+				split_results[f'{split}_{name}'] = em.compute()
 			for name in self.epoch_returns[split]:
 				er = self.epoch_returns[split][name]
 				if (name.endswith('long')):
-					d = er.compute(f'{split}_{name}',
-						go_long=True, go_short=False)
+					d = er.compute(f'{split}_{name}', go_long=True, go_short=False)
 				elif (name.endswith('short')):
-					d = er.compute(f'{split}_{name}',
-						go_long=False, go_short=True)
+					d = er.compute(f'{split}_{name}', go_long=False, go_short=True)
 				else:
-					d = er.compute(f'{split}_{name}',
-						go_long=True, go_short=True)
+					d = er.compute(f'{split}_{name}', go_long=True, go_short=True)
 				split_results.update(d)
-
 			results_json[split] = rectify_json(split_results)
 		return results_json
 
-	def dump_results(self, results_dir, model_name):
-		results_json = self.compute_results_json()
-		for split, result in results_json.items():
-			dump_json(result, split, results_dir)
-		return results_json
+	def dump_plots_losscurve(self):
+		pass
 
-	def dump_plots(self, plot_dir, model_name, dm):
-		"""
-		"""
-		bothdir = lambda n: not (n.endswith('long') or n.endswith('short'))
+	# def dump_results(self, results_dir, model_name):
+	# 	results_json = self.compute_results_json()
+	# 	for split, result in results_json.items():
+	# 		dump_json(result, split, results_dir)
+	# 	return results_json
 
-		for split in self.epoch_returns:
-			# for name in filter(bothdir, self.epoch_returns[split]):
-			for name in self.epoch_returns[split]:
-				er = self.epoch_returns[split][name]
-				plot_name = model_name.upper() +f"-{name}".title()
-				fig, axes = er.plot_result_series(split.title(),
-					plot_name, dm.idx[split])
-				fname = f"{split}_{plot_name}".lower()
-				# with open(f'{plot_dir}{fname}.pickle', 'wb') as f:
-				# 	pickle.dump(fig, f)
-				plt.savefig(f'{plot_dir}{fname}', bbox_inches="tight",
-					transparent=True)
-				plt.close(fig)
+	# def dump_plots_return(self, plot_dir, model_name, dm):
+	# 	"""
+	# 	"""
+	# 	bothdir = lambda n: not (n.endswith('long') or n.endswith('short'))
 
-			# er = self.epoch_returns[split][name]
-			# plot_name = model_name.upper() +f"-{name}".title()
-			# fig, axes = er.plot_result_series(split.title(),
-			# 	plot_name, dm.idx[split])
-			# fname = f"{split}_{plot_name}".lower()
-			# plt.savefig(f'{plot_dir}{fname}', bbox_inches="tight",
-			# 	transparent=True)
-			# plt.close(fig)
+	# 	for split in self.epoch_returns:
+	# 		# for name in filter(bothdir, self.epoch_returns[split]):
+	# 		for name in self.epoch_returns[split]:
+	# 			er = self.epoch_returns[split][name]
+	# 			plot_name = model_name.upper() +f"-{name}".title()
+	# 			fig, axes = er.plot_result_series(split.title(),
+	# 				plot_name, dm.idx[split])
+	# 			fname = f"{split}_{plot_name}".lower()
+	# 			# with open(f'{plot_dir}{fname}.pickle', 'wb') as f:
+	# 			# 	pickle.dump(fig, f)
+	# 			plt.savefig(f'{plot_dir}{fname}', bbox_inches="tight",
+	# 				transparent=True)
+	# 			plt.close(fig)
 
+	# 		# er = self.epoch_returns[split][name]
+	# 		# plot_name = model_name.upper() +f"-{name}".title()
+	# 		# fig, axes = er.plot_result_series(split.title(),
+	# 		# 	plot_name, dm.idx[split])
+	# 		# fname = f"{split}_{plot_name}".lower()
+	# 		# plt.savefig(f'{plot_dir}{fname}', bbox_inches="tight",
+	# 		# 	transparent=True)
+	# 		# plt.close(fig)
 
 	@classmethod
 	def fix_metrics_csv(cls, fname, dir_path):
@@ -450,66 +450,4 @@ class GenericModel(pl.LightningModule):
 		csv_df = csv_df.groupby('epoch').ffill().dropna(how='any')
 		dump_df(csv_df, f'fix_{fname}', dir_path=dir_path, data_format='csv')
 		logging.debug(f'fixed {fname}')
-
-	@classmethod
-	def suggest_params(cls, trial=None, num_classes=2):
-		"""
-		suggest training hyperparameters from an optuna trial object
-		or return fixed default hyperparameters
-
-		Pytorch recommends not using num_workers > 0 to return CUDA tensors
-		because of the subtleties of CUDA multiprocessing, instead pin the
-		memory to the GPU for fast data transfer:
-		https://pytorch.org/docs/stable/data.html#single-and-multi-process-data-loading
-		"""
-		if (is_valid(trial)):
-			class_weights = torch.zeros(num_classes, dtype=torch.float32, \
-				device='cpu', requires_grad=False)
-			if (num_classes == 2):
-				class_weights[0] = trial.suggest_float(f'class_weights[0]', 0.40, 0.60, step=.01)
-				class_weights[1] = 1.0 - class_weights[0]
-			else:
-				for i in range(num_classes):
-					class_weights[i] = trial.suggest_float(f'class_weights[{i}]', \
-						0.40, 0.60, step=.01) #1e-6, 1.0, step=1e-6)
-				class_weights.div_(class_weights.sum()) # Vector class weights must sum to 1
-
-			params = {
-				'window_size': WIN_SIZE, #trial.suggest_int('window_size', 3, 30),
-				'feat_dim': None,
-				'train_shuffle': False,
-				'epochs': trial.suggest_int('epochs', 200, 600, step=100),
-				'batch_size': trial.suggest_int('batch_size', 128, 512, step=128),
-				'batch_step_size': None,
-				'loss': 'ce',
-				'class_weights': class_weights,
-				'opt': {
-					'name': 'adam',
-					'kwargs': {
-						'lr': trial.suggest_float('lr', 1e-6, 1e-2, log=True)
-					}
-				},
-				'num_workers': 0,
-				'pin_memory': True
-			}
-		else:
-			params = {
-				'window_size': 20,
-				'feat_dim': None,
-				'train_shuffle': False,
-				'epochs': 200,
-				'batch_size': 128,
-				'batch_step_size': None,
-				'loss': 'ce',
-				'class_weights': None,
-				'opt': {
-					'name': 'adam',
-					'kwargs': {
-						'lr': 1e-6
-					}
-				},
-				'num_workers': 0,
-				'pin_memory': True
-			}
-		return params
 

@@ -4,6 +4,7 @@ Kevin Patel
 import sys
 import os
 from os.path import sep, exists
+from collections import defaultdict
 import logging
 
 import numpy as np
@@ -12,13 +13,47 @@ import torch
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.callbacks import ModelCheckpoint
-from pytorch_lightning import loggers as pl_loggers
+from pytorch_lightning.utilities import rank_zero_only
+from pytorch_lightning.loggers import LightningLoggerBase
+from pytorch_lightning.loggers.base import rank_zero_experiment
 # from verification.batch_norm import BatchNormVerificationCallback
 # from verification.batch_gradient import BatchGradientVerificationCallback
 
-from common_util import MODEL_DIR, load_json, rectify_json, dump_json, str_now, benchmark, makedir_if_not_exists, is_type, is_valid, isnt, get_cmd_args
+from common_util import MODEL_DIR, NestedDefaultDict, load_json, rectify_json, dump_json, str_now, benchmark, makedir_if_not_exists, is_type, is_valid, isnt, get_cmd_args
 from model.common import EXP_DIR
 
+
+class MemLogger(LightningLoggerBase):
+	"""
+	"Logs" in memory, used to access computed metrics at runtime.
+
+	Modified from: https://stackoverflow.com/questions/69276961/how-to-extract-loss-and-accuracy-from-logger-by-each-epoch-in-pytorch-lightning
+	"""
+	def __init__(self):
+		super().__init__()
+		self.history = defaultdict(list) 
+
+	@property
+	def name(self):
+		return "MemLogger"
+
+	@property
+	def version(self):
+		return "1.0"
+
+	@property
+	@rank_zero_experiment
+	def experiment(self):
+		pass
+
+	@rank_zero_only
+	def log_metrics(self, metrics, step):
+		for name, val in metrics.items():
+			if (name != 'epoch' or (len(ep := self.history['epoch'])==0 or ep[-1]!=val)):
+				self.history[name].append(val)
+
+	def log_hyperparams(self, params):
+		pass
 
 def modify_model_params(params_m, sm_name, model_name):
 	if (sm_name == 'anp'):
@@ -119,9 +154,11 @@ def get_callbacks(trial_dir, model_type):
 	return callbacks
 
 def get_trainer(trial_dir, callbacks, min_epochs, max_epochs, precision, plseed=None, gradient_clip_val=2):
+	mem_log = MemLogger()
 	csv_log = pl.loggers.csv_logs.CSVLogger(trial_dir, name='', version='')
-	tb_log = pl.loggers.tensorboard.TensorBoardLogger(trial_dir, name='', version='', log_graph=True)
-	loggers = [csv_log, tb_log]
+	# tb_log = pl.loggers.tensorboard.TensorBoardLogger(trial_dir, name='', version='', log_graph=True)
+	loggers = [mem_log, csv_log]
+
 	if (is_valid(plseed)):
 		pl.utilities.seed.seed_everything(plseed)
 	det = False

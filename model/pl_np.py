@@ -13,7 +13,7 @@ import torch.nn.functional as F
 import pytorch_lightning as pl
 import torchmetrics as tm
 
-from common_util import is_type, is_valid, isnt, pt_resample_values
+from common_util import is_type, is_valid, pt_resample_values
 from model.common import PYTORCH_LOSS_MAPPING
 from model.pl_generic import GenericModel
 from model.metrics_util import SimulatedReturn
@@ -40,8 +40,7 @@ class NPModel(GenericModel):
 		num_workers (int>=0): DataLoader option - number cpu workers to attach
 		pin_memory (bool): DataLoader option - whether to pin memory to gpu
 	"""
-	def __init__(self, pt_model_fn, params_m, params_t, fshape,
-		epoch_metric_types=('train', 'val')):
+	def __init__(self, pt_model_fn, params_m, params_t, fshape, splits=('train', 'val')):
 		"""
 		Init method
 
@@ -51,10 +50,9 @@ class NPModel(GenericModel):
 			params_t (dict): dictionary of training hyperparameters
 			fshape (tuple): the shape of a single feature observation,
 				this is usually the model input shape
-			epoch_metric_types (tuple): which epoch types to init metric objects for
+			splits (tuple): which splits to init metric objects for
 		"""
-		super().__init__(pt_model_fn, params_m, params_t, fshape,
-			epoch_metric_types=epoch_metric_types)
+		super().__init__(pt_model_fn, params_m, params_t, fshape, splits=splits)
 		if (is_valid(cs:=self.params_t['context_size']) and is_valid(ts:=self.params_t['target_size'])):
 			assert cs+ts == self.params_t['batch_size'], \
 				"context and target sizes must add up to batch_size, \
@@ -384,53 +382,4 @@ class NPModel(GenericModel):
 			and self.params_m['lat_encoder_params']['dist_type'] == 'beta'):
 			precision = 32
 		return precision
-
-	@classmethod
-	def suggest_params(cls, trial=None, loss_type='clf-ce'):
-		"""
-		suggest training hyperparameters from an optuna trial object
-		or return fixed default hyperparameters
-		XXX - call super class method to sample most of the tparams
-		"""
-		if (is_valid(trial)):
-			batch_size = trial.suggest_int('batch_size', 64, 128, step=64)
-			# window_size = trial.suggest_int('window_size', 5*2, 5*4, step=5*2)
-			window_size = 5*4
-			# lr = trial.suggest_float('lr', 1e-6, 1e-3, log=True)
-			lr = 1e-4
-			train_target_overlap = trial.suggest_int('train_target_overlap', 0, 16, step=8)
-			sample_out = trial.suggest_categorical('sample_out', (False, True))
-		else:
-			batch_size = 64*1
-			window_size = 5*4
-			lr = 1e-4
-			train_target_overlap = batch_size//8
-			sample_out = False
-
-		epochs = 100
-		model_type = loss_type.split('-')[0]
-		batch_step_size = batch_size//2
-		train_resample = batch_size//4
-
-		params =  {
-			'window_size': 5*4,
-			'feat_dim': None,
-			'train_shuffle': False,
-			'epochs': epochs,
-			'batch_size': batch_size,
-			'batch_step_size': batch_step_size,
-			'train_resample': train_resample, # max, min, avg, or n
-			'train_target_overlap': train_target_overlap,
-			'train_sample_context_size': False,
-			'context_size': batch_step_size,
-			'target_size': batch_step_size,
-			'loss': loss_type,
-			'class_weights': None,
-			'sample_out': model_type == 'clf' and sample_out,
-			'opt': {'name': 'adam', 'kwargs': {'lr': lr}},
-			'num_workers': 0,
-			'pin_memory': True
-		}
-
-		return params
 

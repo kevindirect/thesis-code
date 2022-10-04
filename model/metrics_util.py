@@ -4,7 +4,6 @@ Kevin Patel
 import sys
 import os
 import logging
-from functools import partial
 import pickle
 
 import numpy as np
@@ -16,7 +15,7 @@ from torchmetrics.functional import accuracy, precision, recall, f1_score
 from torchmetrics import Metric
 import matplotlib.pyplot as plt
 
-from common_util import MODEL_DIR, DT_FMT_YMD, is_valid, isnt, is_type, pt_diff1d, rectify_json, dump_json
+from common_util import MODEL_DIR, DT_FMT_YMD, is_valid, isnt, is_type, rectify_json, dump_json
 from model.common import PYTORCH_LOSS_MAPPING, TRADING_DAYS
 from recon.viz import plot_df_line_subplot, plot_df_scatter_subplot, plot_df_hist_subplot
 
