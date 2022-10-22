@@ -1,0 +1,7 @@
+#!/bin/zsh
+
+export RX_START=450; # XXX
+export RX_END=$(expr $RX_START + 39); # inclusive range
+
+./runex-1;
+./runex-2;

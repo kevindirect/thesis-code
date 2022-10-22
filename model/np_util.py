@@ -519,7 +519,7 @@ class AttentiveNP(nn.Module):
 		fn_name=None, fn_params=None, fn_split=False,
 		ft_name='stcn', ft_params=None, use_raw=True, use_det_path=True, use_lat_path=True,
 		det_encoder_params=None, lat_encoder_params=None, decoder_params=None,
-		sample_latent_post=True, sample_latent_prior=False, use_lvar=False):
+		sample_latent_post=True, sample_latent_prior=False):
 		"""
 		Args:
 			in_shape (tuple): shape of the network's input tensor,
@@ -528,14 +528,12 @@ class AttentiveNP(nn.Module):
 			det_encoder_params (dict): deterministic encoder hyperparameters
 			lat_encoder_params (dict): latent encoder hyperparameters
 			decoder_params (dict): decoder hyperparameters
-			use_lvar (bool):
 		"""
 		super().__init__()
 		self.in_shape = in_shape
 		self.out_size = out_size
 		self.sample_latent_post = sample_latent_post
 		self.sample_latent_prior = sample_latent_prior
-		self.use_lvar = use_lvar
 		if (isnt(ft_params)):
 			ft_params = {}
 		if (isnt(det_encoder_params)):

@@ -19,8 +19,9 @@ from pytorch_lightning.loggers.base import rank_zero_experiment
 # from verification.batch_norm import BatchNormVerificationCallback
 # from verification.batch_gradient import BatchGradientVerificationCallback
 
-from common_util import MODEL_DIR, NestedDefaultDict, load_json, rectify_json, dump_json, str_now, benchmark, makedir_if_not_exists, is_type, is_valid, isnt, get_cmd_args
+from common_util import MODEL_DIR, NestedDefaultDict, load_json, rectify_json, dump_json, load_df, dump_df, str_now, benchmark, makedir_if_not_exists, is_type, is_valid, isnt, get_cmd_args
 from model.common import EXP_DIR
+from recon.viz import dump_fig, plot_df_line, plot_df_line_subplot, plot_df_scatter_subplot, plot_df_hist_subplot
 
 
 class MemLogger(LightningLoggerBase):
@@ -49,11 +50,15 @@ class MemLogger(LightningLoggerBase):
 	@rank_zero_only
 	def log_metrics(self, metrics, step):
 		for name, val in metrics.items():
-			if (name != 'epoch' or (len(ep := self.history['epoch'])==0 or ep[-1]!=val)):
+			if (name != "epoch" or (len(ep := self.history["epoch"])==0 or ep[-1]!=val)):
 				self.history[name].append(val)
 
 	def log_hyperparams(self, params):
 		pass
+
+	def history_df(self):
+		return pd.DataFrame.from_dict(self.history, orient="columns").set_index("epoch")
+
 
 def modify_model_params(params_m, sm_name, model_name):
 	if (sm_name == 'anp'):
@@ -140,7 +145,7 @@ def get_callbacks(trial_dir, model_type):
 		# monitor = 'val_clf_f1'
 		monitor = 'val_conf_long_sharpe'
 	elif (model_type == 'reg'):
-		monitor = 'val_binary_long_sharpe'
+		monitor = 'val_reg_mse'
 	mode = get_optmode(monitor)[:3]
 
 	chk_callback = ModelCheckpoint(dirpath=f'{trial_dir}chk{sep}',
@@ -171,4 +176,20 @@ def get_trainer(trial_dir, callbacks, min_epochs, max_epochs, precision, plseed=
 		default_root_dir=trial_dir, enable_model_summary=False,
 		devices=-1 if (torch.cuda.is_available()) else None)
 	return trainer
+
+def dump_plot_metric(df, dir_path, metric, splits, title, fname):
+	plot_df_line(df.loc[:, [f"{s}_{metric}" for s in splits]],
+		title=title, xlabel="epochs", ylabel="loss", linestyles=['solid', 'dashed', 'dotted'])
+	dump_fig(f"{dir_path}{fname}")
+
+def fix_metrics_csv(dir_path, fname="metrics"):
+	"""
+	Fix Pytorch Lightning v10 logging rows in the same epoch on
+	separate rows.
+	"""
+	csv_df = load_df(fname, dir_path=dir_path, data_format="csv")
+	csv_df = csv_df.groupby("epoch").ffill().dropna(how="any")
+	os.rename(f"{dir_path}{fname}.csv", f"{dir_path}{fname}.old.csv")
+	dump_df(csv_df, f"{fname}", dir_path=dir_path, data_format="csv")
+	logging.debug(f"fixed {fname}")
 

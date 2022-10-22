@@ -54,44 +54,6 @@ def overlap_win_preproc_3d(data, window_size, same_dims=True):
 
 	return tuple(preproc)
 
-def temporal_preproc_3d(data, window_size, apply_idx=[0], same_dims=True):
-	"""
-	Reshapes a tuple of 3+ dimensional numpy tensors by sliding windows and stacking to the last dimension.
-	The last two dimensions can be flattened to retain the original number of dimensions.
-	Only applies the transform to the chosen indices in the tuple.
-
-	Changes the array shape from (N, C, H, W) to (N-window_size-1, C, H, W*window_size)
-
-	It looks something like this (window_size = 2):
-				0 | a b c
-				1 | d e f ---> 1 | a b c d e f
-				2 | g h i      2 | d e f g h i
-				3 | j k l      3 | g h i j k l
-
-	Args:
-		data (tuple): tuple of numpy arrays
-		window_size (int): desired size of window (history length)
-		apply_idx (iterable): indexes to apply preprocessing to,
-			all other data will be truncated so that they're all the same length
-		same_dims (bool): whether to flatten the last two dimensions into one,
-			setting this maintains the original number of dimensions
-
-	Returns:
-		Tuple of reshaped data
-	"""
-	raise DeprecationWarning("use overlap_win_preproc_3d")
-	preproc = []
-
-	for i, d in enumerate(data):
-		if (i in apply_idx):
-			pp = np.array([np.stack(w, axis=-1) for w in window_iter(d, n=window_size)])
-			pp = pp.reshape(*pp.shape[:-2], np.product(pp.shape[-2:])) if (same_dims) else pp
-		else:
-			pp = d[window_size-1:] # Realign by dropping observations prior to the first step
-		preproc.append(pp)
-
-	return tuple(preproc)
-
 def stride_win_preproc_3d(data, window_size):
 	"""
 	Reshape with non-overlapping windows.

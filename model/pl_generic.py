@@ -34,7 +34,6 @@ class GenericModel(pl.LightningModule):
 			if this is None DataLoader uses its own default sampler,
 			otherwise WindowBatchSampler is used as batch_sampler
 		train_shuffle (bool): whether or not to shuffle the order of the training batches
-		loss (str): name of the loss function to use,
 		class_weights (list): loss function class weights of size C (optional)
 		opt (dict): pytorch optimizer settings
 			name (str): name of optimizer to use
@@ -67,7 +66,7 @@ class GenericModel(pl.LightningModule):
 		#self.example_input_array = torch.rand(10, *fshape, dtype=torch.float32) * 100
 
 	def __init_loss_fn__(self, reduction='none'):
-		if (is_valid(loss_fn := PYTORCH_LOSS_MAPPING.get(self.params_t['loss'], None))):
+		if (is_valid(loss_fn := PYTORCH_LOSS_MAPPING.get(self.params_m['loss'], None))):
 			if (is_valid(cw := self.params_t['class_weights'])):
 				self.loss = loss_fn(reduction=reduction, weight=torch.tensor(cw))
 			else:
@@ -91,7 +90,7 @@ class GenericModel(pl.LightningModule):
 				logging.info('using default output block params')
 			self.model = OutputBlock.wrap(self.model)
 
-		self.model_type = self.params_t['loss'].split('-')[0]
+		self.model_type = self.params_m['loss'].split('-')[0]
 
 	def __init_loggers__(self, splits):
 		"""
@@ -99,7 +98,7 @@ class GenericModel(pl.LightningModule):
 		"""
 		self.epoch_returns = None
 		if (self.model_type == 'clf'):
-			if (self.params_t['loss'] in ('clf-ce', 'clf-nll')):
+			if (self.params_m['loss'] in ('clf-ce', 'clf-nll')):
 				num_classes = self.params_m['num_classes'] or self.params_m['out_size'] + 1
 			else:
 				num_classes = self.params_m['num_classes'] or self.params_m['out_size']
@@ -118,7 +117,7 @@ class GenericModel(pl.LightningModule):
 				for epoch_type in splits
 			}
 		elif (self.model_type == 'reg'):
-			if (self.params_t['loss'] in ('reg-sharpe',)):
+			if (self.params_m['loss'] in ('reg-sharpe',)):
 				num_classes = self.params_m['num_classes'] or self.params_m['out_size'] + 1
 			else:
 				assert(isnt(self.params_m['num_classes']))
@@ -217,12 +216,12 @@ class GenericModel(pl.LightningModule):
 		# Reshape model outputs for later loss, metrics calculations:
 		if (self.model_type == 'clf'):
 			actual = y
-			if (self.params_t['loss'] in ('clf-bce',)):
+			if (self.params_m['loss'] in ('clf-bce',)):
 				pred_t_loss = pred_t_raw
 				pred_t_loss = F.sigmoid(pred_t_loss, dim=-1)
 				pred_t = pred_t_loss.detach().clone()
 				pred_t_ret = (pred_t - .5) * 2
-			elif (self.params_t['loss'] in ('clf-ce',)):
+			elif (self.params_m['loss'] in ('clf-ce',)):
 				pred_t_loss = pred_t_raw
 				if (pred_t_loss.ndim == 1):
 					preds = (pred_t_loss.unsqueeze(-1), (1-pred_t_loss).unsqueeze(-1))
@@ -382,29 +381,26 @@ class GenericModel(pl.LightningModule):
 		self.aggregate_log_epoch_loss(outputs, epoch_type)
 		self.compute_log_epoch_metrics(epoch_type)
 
-	def compute_results_json(self):
-		"""
-		"""
-		results_json = {}
-		for split in self.epoch_metrics:
-			split_results = {}
-			for name in self.epoch_metrics[split]:
-				em = self.epoch_metrics[split][name]
-				split_results[f'{split}_{name}'] = em.compute()
-			for name in self.epoch_returns[split]:
-				er = self.epoch_returns[split][name]
-				if (name.endswith('long')):
-					d = er.compute(f'{split}_{name}', go_long=True, go_short=False)
-				elif (name.endswith('short')):
-					d = er.compute(f'{split}_{name}', go_long=False, go_short=True)
-				else:
-					d = er.compute(f'{split}_{name}', go_long=True, go_short=True)
-				split_results.update(d)
-			results_json[split] = rectify_json(split_results)
-		return results_json
-
-	def dump_plots_losscurve(self):
-		pass
+	# def compute_results_json(self):
+	# 	"""
+	# 	"""
+	# 	results_json = {}
+	# 	for split in self.epoch_metrics:
+	# 		split_results = {}
+	# 		for name in self.epoch_metrics[split]:
+	# 			em = self.epoch_metrics[split][name]
+	# 			split_results[f'{split}_{name}'] = em.compute()
+	# 		for name in self.epoch_returns[split]:
+	# 			er = self.epoch_returns[split][name]
+	# 			if (name.endswith('long')):
+	# 				d = er.compute(f'{split}_{name}', go_long=True, go_short=False)
+	# 			elif (name.endswith('short')):
+	# 				d = er.compute(f'{split}_{name}', go_long=False, go_short=True)
+	# 			else:
+	# 				d = er.compute(f'{split}_{name}', go_long=True, go_short=True)
+	# 			split_results.update(d)
+	# 		results_json[split] = rectify_json(split_results)
+	# 	return results_json
 
 	# def dump_results(self, results_dir, model_name):
 	# 	results_json = self.compute_results_json()
@@ -440,14 +436,14 @@ class GenericModel(pl.LightningModule):
 	# 		# 	transparent=True)
 	# 		# plt.close(fig)
 
-	@classmethod
-	def fix_metrics_csv(cls, fname, dir_path):
-		"""
-		Fix Pytorch Lightning v10 logging rows in the same epoch on
-		separate rows.
-		"""
-		csv_df = load_df(fname, dir_path=dir_path, data_format='csv')
-		csv_df = csv_df.groupby('epoch').ffill().dropna(how='any')
-		dump_df(csv_df, f'fix_{fname}', dir_path=dir_path, data_format='csv')
-		logging.debug(f'fixed {fname}')
+	# @classmethod
+	# def fix_metrics_csv(cls, fname, dir_path):
+	# 	"""
+	# 	Fix Pytorch Lightning v10 logging rows in the same epoch on
+	# 	separate rows.
+	# 	"""
+	# 	csv_df = load_df(fname, dir_path=dir_path, data_format='csv')
+	# 	csv_df = csv_df.groupby('epoch').ffill().dropna(how='any')
+	# 	dump_df(csv_df, f'fix_{fname}', dir_path=dir_path, data_format='csv')
+	# 	logging.debug(f'fixed {fname}')
 

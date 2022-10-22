@@ -15,10 +15,10 @@ import pytorch_lightning as pl
 from common_util import DATA_DIR, NestedDefaultDict, load_df, isnt, is_valid, np_truncate_vstack_2d
 from data.common import PROC_NAME, DATA_NAME
 from data.window_util import overlap_win_preproc_3d, stride_win_preproc_3d, WindowBatchSampler
-from model.metrics_util import BenchmarksMixin
+# from model.metrics_util import BenchmarksMixin
 
 
-class XGDataModule(BenchmarksMixin, pl.LightningDataModule):
+class XGDataModule(pl.LightningDataModule):
 	"""
 	Experiment Group Data Module
 	Defines the data pipeline from experiment group data on disk to
@@ -31,7 +31,7 @@ class XGDataModule(BenchmarksMixin, pl.LightningDataModule):
 """
 
 	def __init__(self, params_t, proc_name=PROC_NAME, data_name=DATA_NAME, asset_name="SPX",
-		feature_name="price,ivol", target_name="rvol_minutely_r²_sum", return_name="ret_daily_R"):
+		feature_name="price,ivol", target_name="rvol_minutely_rms", return_name="ret_daily_R"):
 		super().__init__()
 		self.params_t = params_t
 		self.proc_name = proc_name
@@ -99,7 +99,7 @@ class XGDataModule(BenchmarksMixin, pl.LightningDataModule):
 				self.data[[split, "target"]],
 				self.data[[split, "return"]],
 				self.data[[split, "index"]]
-			))
+			), self.params_t["window_size"])
 			self.dataset[split] = XGDataModule.get_dataset(shifted[:-1])
 			self.index[split] = shifted[-1]
 
@@ -214,10 +214,9 @@ class XGDataModule(BenchmarksMixin, pl.LightningDataModule):
 		"""
 		assert window_size >= 1
 		if (window_overlap):
-			shifted = overlap_win_preproc_3d(data, window_size=window_size, \
-				same_dims=True)
+			shifted = overlap_win_preproc_3d(data, window_size, same_dims=True)
 		else:
-			shifted = stride_win_preproc_3d(data, window_size=window_size)
+			shifted = stride_win_preproc_3d(data, window_size)
 		return shifted
 
 	@staticmethod
@@ -231,7 +230,7 @@ class XGDataModule(BenchmarksMixin, pl.LightningDataModule):
 		Returns:
 			torch.TensorDataset
 		"""
-		f = torch.tensor(data[0], dtype=torch.float32, requires_grad=False)
+		f = torch.tensor(np.nan_to_num(data[0]), dtype=torch.float32, requires_grad=False)
 		t = torch.tensor(data[1], dtype=torch.float32, requires_grad=False)
 		r = torch.tensor(data[2], dtype=torch.float32, requires_grad=False)
 		return TensorDataset(f, t, r)

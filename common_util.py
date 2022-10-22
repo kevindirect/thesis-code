@@ -10,7 +10,7 @@ Kevin Patel
 """
 import sys
 from os import sep, path, makedirs, walk, listdir, rmdir
-from os.path import dirname, basename, realpath, normpath, exists, isfile, getsize, join as path_join
+from os.path import dirname, basename, realpath, normpath, exists, isfile, getsize, splitext, join as path_join
 import socket
 import json
 import yaml
@@ -947,7 +947,7 @@ def get_cmd_args(argv, arg_list, script_name='', script_pkg='', set_logging=True
 
 	help_arg_strs = ['-{s} {p}, --{l}{p}'.format(s=arg_list_short_no_sym[i], l=arg_list[i], \
 		p='<{}> '.format(arg_list[i][:-1].upper()) if (arg_list[i][-1]=='=') else '') for i in range(len(arg_list))]
-	help_fn = lambda: print('Usage: python3 -m {}{} [OPTION]...\nOptions:\n\t{}'.format(script_pkg+'.', script_name.rstrip('.py'), '\n\t'.join(help_arg_strs)))
+	help_fn = lambda: print('Usage: python3 -m {}{} [OPTION]...\nOptions:\n\t{}'.format(script_pkg+'.', splitext(script_name)[0], '\n\t'.join(help_arg_strs)))
 
 	try:
 		opts, args = getopt.getopt(argv, str('h' +arg_str), list(['help']+arg_list))

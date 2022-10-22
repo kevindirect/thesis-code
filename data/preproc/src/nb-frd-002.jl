@@ -6,8 +6,7 @@ using InteractiveUtils
 
 # ╔═╡ 664a9594-23f9-11ed-02ce-b9139e40c55f
 begin
-	using Pkg
-	Pkg.activate("..")
+	using Pkg; Pkg.activate("..");
 	using Dates
 	using DataFrames
 	using DateTimeDataFrames
@@ -37,7 +36,7 @@ begin
 	const TARGETΔ = -1 # shift index backward in time by one slot
 	const TRAIN_RATIO = .6
 
-	function gettrades(extpath; basepath=PATH_001_FRD_INDEX)
+	function gettrades001(extpath; basepath=PATH_001_FRD_INDEX)
 		DataFrame(Arrow.Table("$basepath$extpath.arrow"))
 	end
 end
@@ -67,9 +66,9 @@ end
 
 # ╔═╡ 9b98aedb-8d1f-4712-9cee-264bd9661731
 function getsplits(asset::Symbol, train_ratio=TRAIN_RATIO, target_shift=TARGETΔ; index=:datetime)
-	feature_price = gettrades("$asset/feature/price")
-	feature_ivol = gettrades("$asset/feature/ivol")
-	target_price = gettrades("$asset/target/price")
+	feature_price = gettrades001("$asset/feature/price")
+	feature_ivol = gettrades001("$asset/feature/ivol")
+	target_price = gettrades001("$asset/target/price")
 
 	train_end, val_range, test_start = getsplits_points(target_price, train_ratio; index=index)
 	feature_price_split = getsplits(feature_price, train_end, val_range, test_start)

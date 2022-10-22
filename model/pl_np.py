@@ -29,7 +29,6 @@ class NPModel(GenericModel):
 		batch_size (int): batch (or batch window) size
 		batch_step_size (int): batch window step size.
 		train_shuffle (bool): whether or not to shuffle the order of the training batches
-		loss (str): name of loss function to use
 		opt (dict): pytorch optimizer settings
 			name (str): name of optimizer to use
 			kwargs (dict): any keyword arguments to the optimizer constructor
@@ -104,7 +103,7 @@ class NPModel(GenericModel):
 	def forward(self, context_x, context_a, target_x, target_a=None, sample_out=False):
 		"""
 		Run input through model and return output.
-		Use at inference time only.
+		Use at test time only.
 		"""
 		try:
 			prior_dist, post_dist, out_dist = self.model(xc, context_a, xt, \
@@ -155,7 +154,7 @@ class NPModel(GenericModel):
 			print(f'{zt.shape=}')
 			raise err
 
-		if (self.params_t['sample_out'] and train_mode and out_dist.has_rsample and not (self.params_t['loss'] in ('clf-dnll',))):
+		if (self.params_t['sample_out'] and train_mode and out_dist.has_rsample and not (self.params_m['loss'] in ('clf-dnll',))):
 			pred_t_raw = out_dist.rsample()
 		else:
 			pred_t_raw = out_dist.mean
@@ -170,7 +169,7 @@ class NPModel(GenericModel):
 
 		# Reshape model outputs for later loss, metrics calculations:
 		if (self.model_type == 'clf'):
-			if (self.params_t['loss'] in ('clf-dnll',)):
+			if (self.params_m['loss'] in ('clf-dnll',)):
 				pred_t_loss = out_dist
 				pred_t = pred_t_raw.detach().clone()
 				if (dist_type == 'beta'):
@@ -178,19 +177,19 @@ class NPModel(GenericModel):
 				else:
 					pred_t = pred_t.clamp(0.0, 1.0)
 				pred_t_bet = (pred_t - .5) * 2
-			elif (self.params_t['loss'] in ('clf-bcel',)):
+			elif (self.params_m['loss'] in ('clf-bcel',)):
 				pred_t = pred_t_raw.detach().clone()[:, 1]
 				pred_t_loss = pred_t
 				pred_t_bet = (pred_t - .5) * 2
 				pred_t_conf = pred_t_bet.abs()
 				pred_t_dir = pred_t_bet.sign()
-			elif (self.params_t['loss'] in ('clf-bce',)):
+			elif (self.params_m['loss'] in ('clf-bce',)):
 				pred_t = pred_t_raw.detach().clone()[:, 1]
 				pred_t_loss = pred_t
 				pred_t_bet = (pred_t - .5) * 2
 				pred_t_conf = pred_t_bet.abs()
 				pred_t_dir = pred_t_bet.sign()
-			elif (self.params_t['loss'] in ('clf-ce',)):
+			elif (self.params_m['loss'] in ('clf-ce',)):
 				pred_t_loss = pred_t_raw
 				if (pred_t_loss.ndim == 1):
 					preds = ((1-pred_t_loss).unsqueeze(-1), pred_t_loss.unsqueeze(-1))
@@ -203,7 +202,7 @@ class NPModel(GenericModel):
 				pred_t_dir = pred_t.detach().clone()
 				pred_t_dir[pred_t_dir==0] = -1
 				pred_t_bet = pred_t_dir * pred_t_conf
-			elif (self.params_t['loss'] in ('clf-nll',)):
+			elif (self.params_m['loss'] in ('clf-nll',)):
 				pred_t_loss = pred_t_raw
 				if (pred_t_loss.ndim == 1):
 					preds = ((1-pred_t_loss).unsqueeze(-1), pred_t_loss.unsqueeze(-1))
@@ -223,11 +222,13 @@ class NPModel(GenericModel):
 				pred_t_loss = pred_t_raw
 				raise NotImplementedError()
 		elif (self.model_type == 'reg'):
-			if (self.params_t['loss'] in ('reg-dnll',)):
+			if (self.params_m['loss'] in ('reg-dnll',)):
 				pred_t_loss = out_dist
-			elif (self.params_t['loss'] in ('reg-mae', 'reg-mse')):
+				pred_t = pred_t_raw.detach().clone()
+			elif (self.params_m['loss'] in ('reg-mae', 'reg-mse')):
 				pred_t_loss = pred_t_raw
-			elif (self.params_t['loss'] in ('reg-sharpe',)):
+				pred_t = pred_t_raw.detach().clone()
+			elif (self.params_m['loss'] in ('reg-sharpe',)):
 				pred_t_loss = pred_t_raw
 				if (pred_t_loss.ndim == 1):
 					preds = ((1-pred_t_loss).unsqueeze(-1), pred_t_loss.unsqueeze(-1))
@@ -253,7 +254,7 @@ class NPModel(GenericModel):
 
 		try:
 			aim_t_loss = aim_t
-			if (self.params_t['loss'] in ('clf-bce', 'clf-bcel') or (self.params_t['loss'] == 'clf-dnll' and dist_type in ('bernoulli', 'cbernoulli'))):
+			if (self.params_m['loss'] in ('clf-bce', 'clf-bcel') or (self.params_m['loss'] == 'clf-dnll' and dist_type in ('bernoulli', 'cbernoulli'))):
 				aim_t_loss = aim_t_loss.float()
 			# aim_t_loss = aim_t.type_as(pred_t_loss)
 			# aim_t_loss = aim_t.to(torch.)
@@ -299,7 +300,7 @@ class NPModel(GenericModel):
 			print(f'{out_dist=}')
 			print(f'{aim_t.shape=}')
 			print(f'{pred_t.shape=}')
-			if (self.params_t['loss'] not in ('clf-dnll', 'reg-dnll')):
+			if (self.params_m['loss'] not in ('clf-dnll', 'reg-dnll')):
 				print(f'{pred_t_loss.shape=}')
 			else:
 				print(f'{pred_t_loss=}')
@@ -319,7 +320,7 @@ class NPModel(GenericModel):
 				print(f'{aim_t.shape=}')
 				print(f'{pred_t.shape=}')
 				print(f'{pred_t_loss.shape=}')
-				if (self.params_t['loss'] not in ('clf-dnll', 'reg-dnll')):
+				if (self.params_m['loss'] not in ('clf-dnll', 'reg-dnll')):
 					print('pred_t_loss.shape:', pred_t_loss.shape)
 				print(f'{pred_t_conf.shape=}')
 				print(f'{pred_t_dir.shape=}')

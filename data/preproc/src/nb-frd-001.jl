@@ -6,8 +6,7 @@ using InteractiveUtils
 
 # ╔═╡ 664a9594-23f9-11ed-02ce-b9139e40c55f
 begin
-	using Pkg
-	Pkg.activate("..")
+	using Pkg; Pkg.activate("..");
 	using CSV
 	using Dates
 	using DataFrames
@@ -36,6 +35,7 @@ md"""
 ### feature preproc
 * ffill from first valid bar to last valid bar, for each trading day ✓
 * expand index to full trading day range (9:30 to 16:00), propagate Missing ✓
+* replace Missing with 0.0 ✓
 * dump as arrow files ✓
 """
 
@@ -48,7 +48,7 @@ md"""
 begin
 	const FREQ = "1min"
 	const PATH_DATA = dirname(dirname(@__DIR__))
-	const PATH_RAW_FRD_INDEX = "$PATH_DATA/000/frd/usindex_$(FREQ)_jolhn8"
+	const PATH_000_FRD_INDEX = "$PATH_DATA/000/frd/usindex_$(FREQ)_jolhn8"
 	const EXT = ".txt"
 	const FMT = "yyyy-mm-dd HH:MM:SS"
 	const ID = :datetime
@@ -58,8 +58,8 @@ begin
 	const TDAY = Time(09, 30) => Time(16, 00)
 	const TDAYLEN = Minute(TDAY[2] - TDAY[1])
 
-	function gettrades(ticker::Symbol, drop=[:volume];
-		path=PATH_RAW_FRD_INDEX, freq=FREQ, ext=EXT, fmt=FMT)
+	function gettrades000(ticker::Symbol, drop=[:volume];
+		path=PATH_000_FRD_INDEX, freq=FREQ, ext=EXT, fmt=FMT)
 		CSV.read("$(path)/$(ticker)_$FREQ$ext",
 			DataFrame, dateformat=FMT, header=[ID, OHLC...], drop=drop)
 	end
@@ -70,10 +70,10 @@ end
 #=╠═╡
 begin
 	assets_test = Dict(
-		name=>subset(gettrades(name), t₀, t₁) for name in ASSETS
+		name=>subset(gettrades000(name), t₀, t₁) for name in ASSETS
 	);
 	ivs_test = Dict(
-		name=>subset(gettrades(name), t₀, t₁) for name in IVS
+		name=>subset(gettrades000(name), t₀, t₁) for name in IVS
 	);
 	first_asset = (df->first(df.datetime)).(values(assets_test))
 	first_iv = (df->first(df.datetime)).(values(ivs_test))
@@ -142,18 +142,18 @@ begin
 	d₀ = Date(2007, 05, 01)
 	prices, ivols = Dict(), Dict()
 	for (price, ivol) in zip(PRICES, IVOLS)
-		price_df = preproc_base(gettrades(price), d₀)
-		ivol_df = preproc_base(gettrades(ivol), d₀)
+		price_df = preproc_base(gettrades000(price), d₀)
+		ivol_df = preproc_base(gettrades000(ivol), d₀)
 		price_df, ivol_df = preproc_intersect(price_df, ivol_df)
 		assert_base(price_df, ivol_df)
 		prices[price] = price_df
 		ivols[price] = ivol_df
 	end
 	# prices = Dict(
-	# 	name=>preproc_base(gettrades(name), d₀) for name in PRICES
+	# 	name=>preproc_base(gettrades000(name), d₀) for name in PRICES
 	# );
 	# ivols = Dict(
-	# 	PRICES[i]=>preproc_base(gettrades(name), d₀) for (i, name) in enumerate(IVOLS)
+	# 	PRICES[i]=>preproc_base(gettrades000(name), d₀) for (i, name) in enumerate(IVOLS)
 	# );
 end;
 
@@ -176,6 +176,21 @@ begin
 	@inline logchange(pₜ::AbstractVector{T}, pₜ₊₁::AbstractVector{T}) where T<:Real = logchange.(pₜ, pₜ₊₁)
 end
 
+# ╔═╡ bf4eb598-f890-43d5-a19d-4f9bd4ee7951
+"""
+Realized Volatility definition from Müller's book (Dacorogna, p. 41)
+The 'nth root generalization' of the root mean square (RMS).
+
+Generally `n` is set to 2 provide a good balance of weighting the tails
+of the distribution and is generally below the tail index of the distribution
+for high frequency data (Darocgna, p.44).
+"""
+function rvol(pₜ::AbstractVector{T}, n::Integer=2) where T<:Real
+	rₜ = logchange(pₜ)
+	rₜ = n==1 ? abs.(rₜ) : rₜ
+	mean(rₜ.^n)^(1/n)
+end
+
 # ╔═╡ f0d22042-4fbe-4a22-81c0-0e511936f09d
 function preproc_targets(df::AbstractDataFrame, τ::Dates.Period=Day(1))
 	select(groupby(df, τ),
@@ -187,7 +202,9 @@ function preproc_targets(df::AbstractDataFrame, τ::Dates.Period=Day(1))
 		[:high, :low] => ((h, l) -> logchange(minimum(l), maximum(h))) => :rvol_daily_hl,
 		:close => (c -> abs(logchange(first(c), last(c)))) => :rvol_daily_r_abs,
 		:close => (c -> logchange(first(c), last(c))^2) => :rvol_daily_r²,
+		:close => rvol => :rvol_minutely_r_rms,
 		:close => (c -> std(logchange(c))) => :rvol_minutely_r_std,
+		:close => (c -> var(logchange(c))) => :rvol_minutely_r_var,
 		:close => (c -> sum(logchange(c).^2)) => :rvol_minutely_r²_sum,
 	; keepkeys=false) |> unique |> disallowmissing!
 end
@@ -218,7 +235,6 @@ end
 function assert_features(df::AbstractDataFrame, τ::Dates.Period=Day(1))
 	lasttimes = Time.(select(combine(groupby(df, τ), last; ungroup=true), ID)) |> unique
 	@assert nrow(lasttimes) == 1 && lasttimes[1, 1] == TDAY[2]
-	
 	firsttimes = Time.(select(combine(groupby(df, τ), first; ungroup=true), ID)) |> unique
 	@assert nrow(firsttimes) == 1 && firsttimes[1, 1] == TDAY[1]
 end
@@ -226,8 +242,8 @@ end
 # ╔═╡ d680e43d-636b-40e1-9e00-4d90b69f6772
 function preproc_features(df::AbstractDataFrame, τ::Dates.Period=Day(1))
 	pf = notagg(combine(groupby(df, τ), expandtday))
-	# pf = coalesce.(pf, 0.0)
-	# disallowmissing!(pf)
+	pf = coalesce.(pf, 0.0)
+	disallowmissing!(pf)
 	assert_features(pf)
 	pf
 end
@@ -265,6 +281,7 @@ end;
 # ╟─c8f57a8e-cb60-4121-87c7-a771cb38eb10
 # ╠═da1e6fd9-5f99-4241-9d39-710c3f8fbb54
 # ╠═2810cb0b-48ca-4797-9fb8-4a5c190133a7
+# ╠═bf4eb598-f890-43d5-a19d-4f9bd4ee7951
 # ╠═f0d22042-4fbe-4a22-81c0-0e511936f09d
 # ╠═9f7fee8a-713a-4bfe-b496-08f395719144
 # ╟─789c68cb-c2c2-4076-bfe4-b7d14e32547f

@@ -6,12 +6,21 @@ using InteractiveUtils
 
 # ╔═╡ 664a9594-23f9-11ed-02ce-b9139e40c55f
 begin
-	using Pkg
-	Pkg.activate("..")
+	using Pkg; Pkg.activate("..");
 	using Dates
+	using StatsBase
 	using DataFrames
 	using DateTimeDataFrames
 	using Arrow
+end
+
+# ╔═╡ 6465ad4b-c0f6-439f-860c-3688436bca70
+begin
+	using Plots
+	timenow = Time(now())
+	if timenow > Time(ENV["TIMENIGHT"]) || timenow < Time(ENV["TIMEDAY"])
+		theme(:orange)
+	end
 end
 
 # ╔═╡ a7b97057-92ff-4346-b303-9a5ffe5389ea
@@ -60,18 +69,59 @@ begin
 	end
 end
 
-# ╔═╡ c8f57a8e-cb60-4121-87c7-a771cb38eb10
+# ╔═╡ 880e9c84-818d-4ca3-b73a-4c618a9a1319
+df = gettrades("SPX/train/feature/price")
+
+# ╔═╡ 1b3d370b-135c-4ced-82e3-05ffb4e41924
+theme(:orange)
+
+# ╔═╡ 4239c9ac-0e04-4469-bf53-9b962a00f68f
+begin
+	l = log.(dropmissing(df)[!, :close])
+	plot(l)
+	hline!([mean(l)])
+end
+
+# ╔═╡ 0ce8c66c-7357-46fa-b845-095bbd949c61
+begin
+	day = Date(2010, 03, 3)
+	dmdf = dropmissing(subset(df, :∈, day))
+	fn = log
+	z = OHLC[(fn(r[1]), fn(r[2]), fn(r[3]), fn(r[4])) for r in eachrow(dmdf[:, [:open, :high, :low, :close]])]
+	#z = OHLC[(dmdf[!, :open], dmdf[!, :high], dmdf[!, :low], dmdf[!, :close])]
+	#typeof(z)
+	ohlc(z)
+	title!(string(day))
+end
+
+# ╔═╡ 156fc870-bb0e-4917-804b-e8c39f107704
 
 
-# ╔═╡ 6caf5c52-8f18-416a-b8a3-6893fef0d69a
-setdiff
+# ╔═╡ 67b7bea7-4a9d-4615-9be6-64a3eab2cc77
+begin
+	meanprices = cumsum(randn(100))
+	y = OHLC[(p+rand(),p+1,p-1,p+rand()) for p in meanprices]
+	#typeof(y)
+	ohlc(y)
+end
+
+# ╔═╡ a2352238-6456-4121-a015-50ab0e847f0d
+begin
+	#plot((l .- mean(l)) ./ std(l))
+end
 
 # ╔═╡ Cell order:
 # ╠═664a9594-23f9-11ed-02ce-b9139e40c55f
+# ╠═6465ad4b-c0f6-439f-860c-3688436bca70
 # ╟─a7b97057-92ff-4346-b303-9a5ffe5389ea
 # ╟─2438d9e5-2aa7-40db-829e-0eeb177b2b12
 # ╠═24721c0d-d09b-4370-bd69-4b7ecfbfdec0
 # ╟─1815386b-b489-4ffd-a757-6bb343f76eb2
 # ╠═28cf753c-2a5e-445c-8ea6-6e5fd7abf7aa
-# ╟─c8f57a8e-cb60-4121-87c7-a771cb38eb10
-# ╠═6caf5c52-8f18-416a-b8a3-6893fef0d69a
+# ╠═880e9c84-818d-4ca3-b73a-4c618a9a1319
+# ╠═1b3d370b-135c-4ced-82e3-05ffb4e41924
+# ╠═4239c9ac-0e04-4469-bf53-9b962a00f68f
+# ╠═0ce8c66c-7357-46fa-b845-095bbd949c61
+# ╠═156fc870-bb0e-4917-804b-e8c39f107704
+# ╠═67b7bea7-4a9d-4615-9be6-64a3eab2cc77
+# ╠═a2352238-6456-4121-a015-50ab0e847f0d

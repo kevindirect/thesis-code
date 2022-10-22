@@ -1,0 +1,8 @@
+#!/bin/zsh
+
+RX_DATA='h_pba_h,h_vol_h';
+
+for i in $(seq $RX_START $RX_END);
+	do python3 -m model.exp -p "$i" -x "$RX_DATA";
+done;
+finito "$RX_DATA studies done";

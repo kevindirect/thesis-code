@@ -445,7 +445,7 @@ class ResidualBlock(nn.Module):
 	"""
 	Residual Block Module
 	Wraps a residual connection around a network.
-                       ____________________
+	               ____________________
 	         ______|__net.forward(x)__|______
 	         |                              |
 	x -------|     ____________________     +-------> residual_block(x)
