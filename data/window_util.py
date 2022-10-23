@@ -11,7 +11,7 @@ import pandas as pd
 import more_itertools
 import torch
 
-from common_util import window_iter
+from common_util import window_iter, trunc_step_window_iter, pt_random_choice
 from data.common import dum
 
 
@@ -85,6 +85,34 @@ def stride_win_preproc_3d(data, window_size):
 
 	return tuple(preproc)
 
+def get_np_collate_fn(context_size, target_size, overlap_size=0, resample_context=False):
+	def split_ct(x):
+		"""
+		Split into context and target sets
+		"""
+		contexts, targets = [], []
+		for obs in trunc_step_window_iter(x, n=context_size+target_size, step=context_size):
+			cpoints = obs[:context_size]
+			if (resample_context):
+				cpoints = pt_random_choice(cpoints, replacement=True)
+			contexts.append(cpoints)
+			targets.append(obs[context_size-overlap_size:])
+		return torch.stack(contexts), torch.stack(targets)
+
+	def np_collate_fn(batch):
+		"""
+		Neural Process collate
+		Reshapes each series from (n, ...) to (n', o, ...), where
+			n is the batch size
+			n' is the new batch size
+			o is the observation set size (context/target size)
+		"""
+		i, x, y, z = map(torch.stack, zip(*batch))
+		bc, bt = split_ct(torch.arange(len(i)))
+		assert len(bc)==len(bt)
+		return i[bc], x[bc], y[bc], z[bc], i[bt], x[bt], y[bt], z[bt]
+
+	return np_collate_fn
 
 class WindowBatchSampler(torch.utils.data.Sampler):
 	"""
@@ -95,17 +123,17 @@ class WindowBatchSampler(torch.utils.data.Sampler):
 	Args:
 		data_source (Dataset): dataset to sample from
 		batch_size (int>=1): batch window size
-		batch_step_size (int>=1): step size (distance between adjacent batches)
+		batch_step_size (None or int>=1): step size (distance between adjacent batches)
 		batch_shuffle (bool): whether to shuffle the batch order
 		method: how to deal with remainder
 	"""
 
-	def __init__(self, data_source, batch_size=128, batch_step_size=1, \
-		method='trunc', batch_shuffle=False,):
+	def __init__(self, data_source, batch_size=128, batch_step_size=None, \
+		method='trunc', batch_shuffle=False):
 		super().__init__(data_source)
 		self.data_source = data_source
 		self.batch_size = batch_size
-		self.batch_step_size = batch_step_size
+		self.batch_step_size = batch_step_size or batch_size
 		self.batch_shuffle = batch_shuffle
 		self.method = method
 		assert len(self.data_source) >= self.batch_size, "must have at least one batch"

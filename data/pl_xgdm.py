@@ -14,7 +14,7 @@ import pytorch_lightning as pl
 
 from common_util import DATA_DIR, NestedDefaultDict, load_df, isnt, is_valid, np_truncate_vstack_2d
 from data.common import PROC_NAME, DATA_NAME
-from data.window_util import overlap_win_preproc_3d, stride_win_preproc_3d, WindowBatchSampler
+from data.window_util import overlap_win_preproc_3d, stride_win_preproc_3d, get_np_collate_fn, WindowBatchSampler
 # from model.metrics_util import BenchmarksMixin
 
 
@@ -49,7 +49,7 @@ class XGDataModule(pl.LightningDataModule):
 
 	def prepare_feature(self, split="train"):
 		"""
-		returns data shaped like (n, C, H, W).
+		outputs data shaped like (n, C, H, W).
 			n - observation index
 			C - channels (financial instrument)
 			H - columns (open, high, low, close, etc)
@@ -63,6 +63,10 @@ class XGDataModule(pl.LightningDataModule):
 		return np.stack(arrs, axis=1)
 
 	def prepare_target(self, split="train"):
+		"""
+		outputs data shaped like (n,).
+			n - observation index
+		"""
 		price = load_df("price", f"{self.ddir}/{split}/target").set_index("datetime")
 		np_index = price.index.to_numpy()
 		np_return = price.loc[:, self.return_name].to_numpy()
@@ -92,38 +96,23 @@ class XGDataModule(pl.LightningDataModule):
 		make the TensorDatasets and samplers used to later create DataLoaders.
 		Depends on params_t.
 		"""
-		self.dataset, self.index = {}, {}
+		self.index, self.dataset, self.sampler = {}, {}, {}
 		for split in ["train", "val", "test"]:
 			shifted = XGDataModule.window_shift((
+				self.data[[split, "index"]],
 				self.data[[split, "feature"]],
 				self.data[[split, "target"]],
-				self.data[[split, "return"]],
-				self.data[[split, "index"]]
+				self.data[[split, "return"]]
 			), self.params_t["window_size"])
-			self.dataset[split] = XGDataModule.get_dataset(shifted[:-1])
-			self.index[split] = shifted[-1]
-
-		self.sampler, self.interval = None, None
-		if (is_valid(self.params_t['batch_step_size'])):
-			self.sampler = {
-				split: WindowBatchSampler(ds,
-					batch_size=self.params_t['batch_size'],
-					batch_step_size=self.params_t['batch_step_size'],
-					method='trunc',
-					batch_shuffle=self.is_shuffle(split))
-				for split, ds in self.dataset.items()
-			}
-
-			self.interval = NestedDefaultDict()
-			for split, samp in self.sampler.items():
-				interval_c = (0, samp.get_step_end())
-				interval_t = (self.params_t['batch_step_size'], samp.get_data_end())
-				self.interval[[split, "context"]] = interval_c
-				self.interval[[split, "target"]] = interval_t
-
-			# first to last target set indices:
-			# self.idx = {split: idx[-1][self.start[split]:self.end[split]]
-			# 	for split, idx in self.index.items()}
+			ds = XGDataModule.get_dataset(shifted)
+			self.index[split] = shifted[0]
+			self.dataset[split] = ds
+			self.sampler[split] = WindowBatchSampler(ds,
+				batch_size=self.params_t['batch_size'],
+				batch_step_size=self.params_t['batch_step_size'],
+				method='trunc',
+				batch_shuffle=self.params_t['shuffle'] and split=='train'
+			)
 
 	def get_fshape(self):
 		"""
@@ -157,20 +146,25 @@ class XGDataModule(pl.LightningDataModule):
 		Returns:
 			torch.DataLoader
 		"""
+		collate_fn = get_np_collate_fn(self.params_t['context_size'], self.params_t['target_size'],
+			self.params_t['overlap_size'], self.params_t['resample_context'] and split=='train')
+
 		if (is_valid(self.sampler and self.sampler[split])):
 			dl = DataLoader(self.dataset[split],
 				batch_sampler=self.sampler[split],
+				collate_fn=collate_fn,
 				num_workers=self.params_t['num_workers'],
 				pin_memory=self.params_t['pin_memory'])
 		else:
 			# Uses one of torch.utils.data.{SequentialSampler, RandomSampler}
 			dl = DataLoader(self.dataset[split], batch_size=self.params_t['batch_size'],
-				shuffle=self.is_shuffle(split), drop_last=False,
+				collate_fn=collate_fn,
+				shuffle=self.params_t['shuffle'] and split=='train',
+				drop_last=False,
 				num_workers=self.params_t['num_workers'],
 				pin_memory=self.params_t['pin_memory'])
 		return dl
 
-	is_shuffle = lambda self, split: self.params_t['train_shuffle'] and split=='train'
 	train_dataloader = lambda self: self.get_dataloader('train')
 	val_dataloader = lambda self: self.get_dataloader('val')
 	test_dataloader = lambda self: self.get_dataloader('test')
@@ -230,8 +224,9 @@ class XGDataModule(pl.LightningDataModule):
 		Returns:
 			torch.TensorDataset
 		"""
-		f = torch.tensor(np.nan_to_num(data[0]), dtype=torch.float32, requires_grad=False)
-		t = torch.tensor(data[1], dtype=torch.float32, requires_grad=False)
-		r = torch.tensor(data[2], dtype=torch.float32, requires_grad=False)
-		return TensorDataset(f, t, r)
+		i = torch.arange(len(data[0]), requires_grad=False) # int index to avoid storing datetime in tensor
+		f = torch.tensor(data[1], dtype=torch.float32, requires_grad=False)
+		t = torch.tensor(data[2], dtype=torch.float32, requires_grad=False)
+		r = torch.tensor(data[3], dtype=torch.float32, requires_grad=False)
+		return TensorDataset(i, f, t, r)
 
