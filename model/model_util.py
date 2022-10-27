@@ -513,31 +513,25 @@ class TemporalConvNet(nn.Module):
 	"""
 	Temporal Convolutional Network
 
-	The network performs 2D convolutions but only over the temporal (width) dimension.
+	The network performs 2D convolutions but only over the temporal (W) dimension.
 	All kernel size, dilation, and padding size parameters only affect the temporal
 	dimension of the kernel or input. For more information see TemporalLayer2d.
 
 	note: nth layer receptive field, r_n = r[n-1] + (kernel_size[n] - 1) * dilation[n]
 	"""
-	def __init__(self, in_shape, block_channels=[[5, 5, 5]], num_blocks=1,
-		kernel_sizes=3, dropouts=0.0, dropout_type='2d', dilation_factor=2, global_dilation=False,
-		block_act='elu', out_act='relu', block_init='xavier_uniform',
+	def __init__(self, in_shape, block_channels=[[8, 8], [4, 4], [1, 1]],
+		kernel_sizes=3, dropouts=0.0, dropout_type='2d', dilation_factor=2,
+		block_act='relu', out_act='relu', block_init='xavier_uniform',
 		out_init='xavier_uniform', pad_mode='same', downsample_type='conv2d',
 		ob_out_shapes=None, ob_params=None):
 		"""
 		Args:
 			in_shape (tuple): shape of the network's input tensor,
 				expects a shape (in_channels, in_height, in_width)
-			block_channels (list * list): cnn channel sizes in each block,
-				or individual channel sizes per block in sequence
-			num_blocks (int): number of residual blocks,
-				each block consists of a tcn network and residual connection
-			kernel_sizes (int|list): list of CNN kernel sizes (across width dimension only),
-				if a list its length must be either 1 or len(block_channels)
-			dropouts (float|list): dropout probability ordered by block index
-				if a single floating point value, sets dropout for first layer only
-				if a particular element is None, disables dropout at that block
-			global_dilation (bool): whether to use global or block indexed dilation
+			block_channels (list * list): channel size topology
+			kernel_sizes (list): list of CNN kernel sizes (across width dimension only)
+			dropouts (float|list): dropout probability by block
+				if an element is None, disables dropout at that block
 			block_act (str): activation function of each layer in each block
 			out_act (str): output activation of each block
 			block_init (str): hidden layer weight initialization method
@@ -549,46 +543,27 @@ class TemporalConvNet(nn.Module):
 			"""
 		super().__init__()
 		self.in_shape = block_in_shape = in_shape
-		kernel_sizes, dropouts = list_wrap(kernel_sizes), list_wrap(dropouts)
+		assert len(block_channels) == len(kernel_sizes) == len(dropouts)
+		assert is_type(dilation_factor, int) and dilation_factor > 0
 		blocks = []
-		i = 0
 
-		assert num_blocks >= len(block_channels), \
-			'list of block shapes have to be less than or equal to the number of blocks'
-		assert num_blocks % len(block_channels) == 0, \
-			'number of block shapes must equally subdivide number of blocks'
-		assert len(kernel_sizes) == len(block_channels), \
-			'number of kernels must be the same as the number of block channels'
-		assert is_type(dilation_factor, int) and dilation_factor > 0, \
-			'dilation_factor must be a positive integer'
-
-		for b in range(num_blocks):
-			# XXX - param for residual connection from in_shape to all nodes?
-			block_idx = b % len(block_channels)
-			block_channel_list = block_channels[block_idx]
-			kernel_size = kernel_sizes[block_idx]
+		for b, block_channel in enumerate(block_channels):
 			layer_in_shape = block_in_shape
-			dilation = dilation_factor**b
+			k = kernel_sizes[b]
+			do = dropouts[b]
+			di = dilation_factor**b
 			layers = []
 
-			for l, out_channels in enumerate(block_channel_list):
-				# dilation = {
-				# 	True: dilation_factor**i,
-				# 	False: dilation_factor**b
-				# }.get(global_dilation) # raise dilation every layer or every block
-				padding_size = get_padding(pad_mode, layer_in_shape[2], kernel_size,
-					dilation=dilation)
+			for l, layer_channel in enumerate(block_channel):
+				padding_size = get_padding(pad_mode, layer_in_shape[2], k, dilation=di)
 				out_height = TemporalLayer2d.get_out_height(layer_in_shape[1])
-				out_width = TemporalLayer2d.get_out_width(layer_in_shape[2],
-					kernel_size=kernel_size, dilation=dilation, padding_size=padding_size)
-				layer_out_shape = (out_channels, out_height, out_width)
+				out_width = TemporalLayer2d.get_out_width(layer_in_shape[2], kernel_size=k, dilation=di, padding_size=padding_size)
+				layer_out_shape = (layer_channel, out_height, out_width)
 				layer = TemporalLayer2d(in_shape=layer_in_shape, out_shape=layer_out_shape,
-					act=block_act, kernel_size=kernel_size, padding_size=padding_size,
-					dilation=dilation, dropout=dropouts[b],
-					dropout_type=dropout_type, init=block_init)
+					act=block_act, kernel_size=k, padding_size=padding_size,
+					dilation=di, dropout=do, dropout_type=dropout_type, init=block_init)
 				layers.append((f'tl[{layer_in_shape}->{layer_out_shape}]_{b}_{l}', layer))
 				layer_in_shape = layer_out_shape
-				i += 1
 			block_out_shape = layer_out_shape
 			net = nn.Sequential(OrderedDict(layers))
 			net.in_shape, net.out_shape = block_in_shape, block_out_shape
@@ -600,8 +575,8 @@ class TemporalConvNet(nn.Module):
 		self.out_shape = block_out_shape
 		self.model = nn.Sequential(OrderedDict(blocks))
 
-		# GenericModel uses these params to to append an OutputBlock to the model
-		self.ob_out_shapes = ob_out_shapes	# If this is None, no OutputBlock is added
+		# if ob_* are None, GenericModel will not append an OutputBlock:
+		self.ob_out_shapes = ob_out_shapes
 		self.ob_params = ob_params
 
 	def forward(self, x):
@@ -613,9 +588,9 @@ class StackedTCN(TemporalConvNet):
 	Creates a TCN with fixed size output channels for each convolutional layer.
 	For more information see TemporalConvNet.
 	"""
-	def __init__(self, in_shape, size=128, depth=1, subdepth=2, kernel_sizes=3,
+	def __init__(self, in_shape, size=8, depth=1, subdepth=2, collapse_out=False, kernel_sizes=3,
 		input_dropout=None, output_dropout=None, global_dropout=None, dropout_type='2d',
-		dilation_factor=2, global_dilation=True, block_act='elu', out_act='relu',
+		dilation_factor=2, block_act='relu', out_act='relu',
 		block_init='xavier_uniform', out_init='xavier_uniform',
 		pad_mode='full', downsample_type='conv2d',
 		ob_out_shapes=None, ob_params=None):
@@ -624,15 +599,15 @@ class StackedTCN(TemporalConvNet):
 			in_shape (tuple): shape of the network's input tensor,
 				expects a shape (in_channels, in_height, in_width)
 			size (int): network embedding size
-			depth (int): number of blocks to stack
+			depth (int): number of blocks to stack (not including collapse_out)
 			subdepth (int): number of convolutions per block (convolutions between residual
 				skip connections)
+			collapse_out (bool): whether to add a tcn block of size `1` to the end to collapse the channels.
 			kernel_sizes (int|list): list of CNN kernel sizes (across width dimension only),
-				if a list its length must be either 1 or len(block_channels)
+				if a list its length must be depth
 			input_dropout (float): first layer dropout
 			output_dropout (float): last layer dropout
 			global_dropout (float): default dropout probability
-			global_dilation (bool): whether to use global or block indexed dilation
 			block_act (str): activation function of each layer in each block
 			out_act (str): output activation of each block
 			block_init (str): hidden layer weight initialization method
@@ -642,12 +617,20 @@ class StackedTCN(TemporalConvNet):
 			ob_out_shapes
 			ob_params
 		"""
+		block_channels = [[size] * subdepth] * depth
 		dropouts = [global_dropout] * depth
+		if (is_type(kernel_sizes, int)):
+			kernel_sizes = [kernel_sizes] * depth
+		if (collapse_out):
+			block_channels.append([1] * subdepth)
+			dropouts.append(global_dropout)
+			kernel_sizes.append(kernel_sizes[-1])
 		dropouts[0], dropouts[-1] = input_dropout, output_dropout
-		super().__init__(in_shape, block_channels=[[size] * subdepth], num_blocks=depth,
+		
+		super().__init__(in_shape, block_channels=block_channels,
 			kernel_sizes=kernel_sizes, dropouts=dropouts, dropout_type=dropout_type,
 			dilation_factor=dilation_factor,
-			global_dilation=global_dilation, block_act=block_act, out_act=out_act,
+			block_act=block_act, out_act=out_act,
 			block_init=block_init, out_init=out_init, pad_mode=pad_mode,
 			downsample_type=downsample_type, ob_out_shapes=ob_out_shapes, ob_params=ob_params)
 
@@ -694,34 +677,6 @@ class StackedTCN(TemporalConvNet):
 				'ob_out_shapes': num_classes if (add_ob) else None,
 				'ob_params': None,
 			}
-			# params = {
-			# 	'size': trial.suggest_int('size', 2**5, 2**8, step=8),
-			# 	'depth': trial.suggest_int('depth', 1, 5),
-			# 	# 'kernel_sizes': trial.suggest_int('kernel_sizes', 3, 15, step=1),
-			# 	'kernel_sizes': trial.suggest_categorical('kernel_sizes', \
-			# 		(4, 8, 16, 24)),
-			# 	'input_dropout': trial.suggest_float('input_dropout', \
-			# 		0.0, 1.0, step=1e-6),
-			# 	'output_dropout': trial.suggest_float('output_dropout', \
-			# 		0.0, 1.0, step=1e-6),
-			# 	'global_dropout': trial.suggest_float('global_dropout', \
-			# 		0.0, 1.0, step=1e-6),
-			# 	'global_dilation': True,
-			# 	'block_act': trial.suggest_categorical('block_act', \
-			# 		PYTORCH_ACT1D_LIST[4:]),
-			# 	'out_act': trial.suggest_categorical('out_act', \
-			# 		PYTORCH_ACT1D_LIST[4:]),
-			# 	'block_init': trial.suggest_categorical('block_init', \
-			# 		PYTORCH_INIT_LIST[2:]),
-			# 	'out_init': trial.suggest_categorical('out_init', \
-			# 		PYTORCH_INIT_LIST[2:]),
-			# 	'pad_mode': trial.suggest_categorical('pad_mode', \
-			# 		('same', 'full')),
-			# 	'downsample_type': 'conv2d',
-			# 	'out_size': num_classes-1,
-			# 	'ob_out_shapes': num_classes if (add_ob) else None,
-			# 	'ob_params':
-			# }
 		else:
 			params = {
 				'size': 128,
@@ -917,40 +872,80 @@ class AE(nn.Module):
 # ********** NORMALIZATION MODULES **********
 class InstanceNorm15d(nn.Module):
 	"""
-	Run 1D instance norm over last dimension of 2D input shaped (n, C, H, W),
-	
+	Run 1D instance norm over W dimension of input shaped (.., C, H, W), where
+		C -> nchan, creates a separate norm module per channel
+		H -> nser
+		W -> series dimension to normalize over
+	Valid input shapes:
+		* (n, C, H, W)
+		* (n, o, C, H, W)
 	"""
 	def __init__(self, num_channels, num_features, eps=1e-05, momentum=0.1, affine=False, track_running_stats=False, to_cuda=True, **params):
 		super().__init__()
 		self.nchan = num_channels
-		self.in1d = [nn.InstanceNorm1d(num_features,
-				eps=eps, momentum=momentum, affine=affine,
-				track_running_stats=track_running_stats, **params)
-				for i in range(self.nchan)]
-		if (affine and to_cuda):
-			self.in1d = [nn.InstanceNorm1d(num_features,
-					eps=eps, momentum=momentum, affine=affine,
-					track_running_stats=track_running_stats, **params).cuda()
-					for i in range(self.nchan)]
-		else:
-			self.in1d = [nn.InstanceNorm1d(num_features,
-					eps=eps, momentum=momentum, affine=affine,
-					track_running_stats=track_running_stats, **params)
-					for i in range(self.nchan)]
+		self.nser = num_features
+		self.norm1d = [nn.InstanceNorm1d(self.nser, eps=eps, momentum=momentum,
+			affine=affine, track_running_stats=track_running_stats, **params)
+			for i in range(self.nchan)]
+		if (to_cuda):
+			self.norm1d = [s.cuda() for s in self.norm1d]
 
 	def forward(self, x):
-		"""
-		Run the following operation over input:
-			(n, C, H, W) -> nn.in1d(n, H, W) for each channel -> concat over channels
-		"""
-		# print(x.shape)
-		channel_out = tuple(self.in1d[i](x[:, i, :, :]).unsqueeze(dim=1)
-			for i in range(self.nchan))
-		# print([c.shape for c in channel_out])
-		if (len(channel_out) == 1):
-			return channel_out[0]
-		else:
-			return torch.cat(channel_out, dim=1)
+		if (x.ndim == 4):
+			# use dim=0 as batch dimension for InstanceNorm1d operation, [n, H, W]:
+			chan_out = [self.norm1d[c](x[:, c]).unsqueeze(1) for c in range(self.nchan)]
+			out = torch.cat(chan_out, dim=1)
+		elif (x.ndim == 5):
+			batch_out = []
+			for b in range(x.shape[0]):
+				# use dim=1 as batch dimension for InstanceNorm1d operation, [o, H, W]:
+				chan_out = [self.norm1d[c](x[b, :, c]).unsqueeze(1) for c in range(self.nchan)]
+				batch_out.append(torch.cat(chan_out, dim=1).unsqueeze(0))
+			out = torch.cat(batch_out, dim=0)
+		return out
+
+class BatchNorm15d(nn.Module):
+	"""
+	Run 1D batch norm over (bdim, W) dimensions of input shaped (.., C, H, W), where
+		C -> nchan, creates a separate norm module per channel
+		H -> nser
+		W -> series dimension to normalize over
+	Valid input shapes:
+		* (n, C, H, W)
+		* (n, o, C, H, W)
+	Setting bdim determines the batch dim for batch norm (only used if ndim > 4).
+	"""
+	def __init__(self, num_channels, num_features, bdim=1, eps=1e-05, momentum=0.1, affine=False, track_running_stats=False, to_cuda=True, **params):
+		super().__init__()
+		self.nchan = num_channels
+		self.nser = num_features
+		self.bdim = bdim
+		self.norm1d = [nn.BatchNorm1d(self.nser, eps=eps, momentum=momentum,
+			affine=affine, track_running_stats=track_running_stats, **params)
+			for i in range(self.nchan)]
+		if (to_cuda):
+			self.norm1d = [s.cuda() for s in self.norm1d]
+
+	def forward(self, x):
+		raise NotImplementedError() # Need to test
+		if (x.ndim == 4):
+			# always use bdim=0 as batch dimension for InstanceNorm1d operation, [n, H, W]:
+			chan_out = [self.norm1d[c](x[:, c]).unsqueeze(1) for c in range(self.nchan)]
+			out = torch.cat(chan_out, dim=1)
+		elif (x.ndim == 5):
+			batch_out = []
+			if (self.bdim == 0):
+				for b in range(x.shape[1]):
+					# use bdim=0 as batch dimension for InstanceNorm1d operation, [n, H, W]:
+					chan_out = [self.norm1d[c](x[:, b, c]).unsqueeze(1) for c in range(self.nchan)]
+					batch_out.append(torch.cat(chan_out, dim=1).unsqueeze(self.bdim))
+			elif (self.bdim == 1):
+				for b in range(x.shape[0]):
+					# use bdim=1 as batch dimension for InstanceNorm1d operation, [o, H, W]:
+					chan_out = [self.norm1d[c](x[b, :, c]).unsqueeze(1) for c in range(self.nchan)]
+					batch_out.append(torch.cat(chan_out, dim=1).unsqueeze(self.bdim))
+			out = torch.cat(batch_out, dim=self.bdim)
+		return out
 
 
 MODEL_MAPPING = {
@@ -976,6 +971,8 @@ NORM_MAPPING = {
 		nn.InstanceNorm3d(num_features=in_shape[0], **params),
 	'bn1d': lambda in_shape, **params: \
 		nn.BatchNorm1d(num_features=in_shape[0], **params),
+	'bn15d': lambda in_shape, **params: \
+		BatchNorm15d(num_channels=in_shape[0], num_features=in_shape[1], **params),
 	'bn2d': lambda in_shape, **params: \
 		nn.BatchNorm2d(num_features=in_shape[0], **params),
 	'bn3d': lambda in_shape, **params: \
