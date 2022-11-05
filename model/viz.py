@@ -15,7 +15,7 @@ import scipy
 import scipy.stats
 
 from common_util import benchmark, isnt
-from recon.common import dum
+from model.common import dum
 
 
 """ ********** GLOBAL SETTINGS ********** """
@@ -39,8 +39,8 @@ font = {
 
 matplotlib.rc('font', **font)
 
-def dump_fig(fpath, fig=None):
-	plt.savefig(fpath, bbox_inches="tight", transparent=True)
+def dump_fig(fpath, fig=None, transparent=True):
+	plt.savefig(fpath, bbox_inches="tight", transparent=transparent)
 	plt.close(fig)
 
 
