@@ -104,14 +104,14 @@ class NPModel(GenericModel):
 			model_loss = self.loss(pred_t_loss, yt)
 			if (model_loss.ndim > 1):
 				model_loss = model_loss.mean(1)
-			kldiv = torch.distributions.kl_divergence(post_dist, prior_dist).mean(1)\
+			kldiv = torch.distributions.kl_divergence(post_dist, prior_dist).sum(-1)\
 				if (prior_dist and post_dist) else torch.zeros_like(model_loss)
 			np_loss = (model_loss + kldiv * self.params_m['kl_beta']).mean()
 		except Exception as err:
 			print("Error! pl_np.py > NPModel > forward_step() > loss()\n",
 				sys.exc_info()[0], err)
 			print(f'{self.loss=}')
-			print(f'{pred_t_loss.shape=}, {pred_t_loss.dtype=}')
+			# print(f'{pred_t_loss.shape=}, {pred_t_loss.dtype=}')
 			print(f'{yt.shape=}, {yt.dtype=}')
 			raise err
 

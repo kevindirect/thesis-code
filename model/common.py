@@ -44,7 +44,7 @@ TRADING_DAYS = 252
 # PyTorch
 class DistributionNLLLoss(nn.modules.loss._Loss):
 	"""
-	Negative Log Likelihood of getting a value from a distribution.
+	Negative Log Likelihood from a distribution.
 	"""
 	__constants__ = ['reduction']
 
@@ -52,11 +52,11 @@ class DistributionNLLLoss(nn.modules.loss._Loss):
 		super().__init__(size_average, reduce, reduction)
 
 	def forward(self, pred_dist, target) -> torch.Tensor:
-		nll = -pred_dist.log_prob(target)
+		nll = -pred_dist.log_prob(target) / target.shape[1]
 
 		# Weight loss nearer to prediction time?
 		# weight = (torch.arange(nll.shape[1]) + 1).float().to(dev)[None, :]
-		# lossprob_weighted = nll / torch.sqrt(weight)  # We want to weight nearer stuff more
+		# lossprob_weighted = nll / torch.sqrt(weight)  # We want to weight nearer points more
 		if (self.reduction == 'mean'):
 			nll = nll.mean(dim=0)
 
