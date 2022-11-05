@@ -5,7 +5,6 @@ import sys
 import os
 import logging
 import pickle
-from inspect import getfullargspec
 
 import numpy as np
 import pandas as pd
@@ -15,10 +14,9 @@ import torch.nn.functional as F
 import pytorch_lightning as pl # PL ver 1.2.3
 import torchmetrics as tm
 
-from common_util import load_df, dump_df, is_valid, isnt, rectify_json, dump_json
+from common_util import load_df, dump_df, is_valid, isnt, rectify_json, dump_json, get_fn_params
 from model.common import PYTORCH_ACT_MAPPING, PYTORCH_LOSS_MAPPING, PYTORCH_OPT_MAPPING, PYTORCH_SCH_MAPPING
 from model.metrics_util import SimulatedReturn
-from model.model_util import OutputBlock
 
 
 class GenericModel(pl.LightningModule):
@@ -59,6 +57,7 @@ class GenericModel(pl.LightningModule):
 		super().__init__()
 		self.name = f'{self._get_name()}_{pt_model_fn.__name__}'
 		self.params_m, self.params_t = params_m, params_t
+		self.model_type = self.params_m['loss'].split('-')[0]
 		self.__init_loss_fn__()
 		self.__init_model__(pt_model_fn, fshape)
 		self.__init_loggers__(splits)
@@ -67,7 +66,7 @@ class GenericModel(pl.LightningModule):
 
 	def __init_loss_fn__(self, reduction='none'):
 		if (is_valid(loss_fn := PYTORCH_LOSS_MAPPING.get(self.params_m['loss'], None))):
-			if (is_valid(cw := self.params_t['class_weights'])):
+			if (self.model_type=='clf' and is_valid(cw := self.params_t['class_weights'])):
 				self.loss = loss_fn(reduction=reduction, weight=torch.tensor(cw))
 			else:
 				self.loss = loss_fn(reduction=reduction)
@@ -81,16 +80,8 @@ class GenericModel(pl.LightningModule):
 			fshape (tuple): the shape of a single feature observation,
 				this is usually the model input shape
 		"""
-		model_params = {k: v for k, v in self.params_m.items() \
-			if (k in getfullargspec(pt_model_fn).args)}
-
+		model_params = get_fn_params(pt_model_fn, self.params_m)
 		self.model = pt_model_fn(in_shape=fshape, **model_params)
-		if (is_valid(self.params_m.get('ob_out_shapes', None))):
-			if (isnt(self.params_m.get('ob_params', None))):
-				logging.info('using default output block params')
-			self.model = OutputBlock.wrap(self.model)
-
-		self.model_type = self.params_m['loss'].split('-')[0]
 
 	def __init_loggers__(self, splits):
 		"""

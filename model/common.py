@@ -52,16 +52,6 @@ class DistributionNLLLoss(nn.modules.loss._Loss):
 		super().__init__(size_average, reduce, reduction)
 
 	def forward(self, pred_dist, target) -> torch.Tensor:
-		# if (type(out_dist).__name__ in ('Bernoulli', 'Beta', 'Normal', 'LogNormal')):
-		# 	ftype = {
-		# 		16: torch.float16,
-		# 		32: torch.float32,
-		# 		64: torch.float64
-		# 	}.get(cast_precision, 16)
-		# 	label_y = label_y.to(ftype)
-		# 	if (type(out_dist).__name__ in ('Beta',)):
-		# 		eps = 1e-3
-		# 		label_y = label_y.clamp(min=eps, max=1-eps)
 		nll = -pred_dist.log_prob(target)
 
 		# Weight loss nearer to prediction time?

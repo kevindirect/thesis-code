@@ -19,6 +19,12 @@ from model.common import PYTORCH_ACT_MAPPING, PYTORCH_ACT1D_LIST, PYTORCH_INIT_L
 
 
 # ********** HELPER FUNCTIONS **********
+def squeeze_shape(shape):
+	"""
+	Return shape tuple with 1's removed
+	"""
+	return tuple(filter(lambda x: x!=1, shape))
+
 def assert_has_shape_attr(mod):
 	assert is_type(mod, nn.Module), 'object must be a torch.nn.Module'
 	assert_has_all_attr(mod, 'in_shape', 'out_shape')
@@ -203,22 +209,21 @@ class OutputBlock(nn.Module):
 	Appends a feedforward layer or block to the end of an arbitrary embedding network.
 	Used for Classification or Regression depending on the loss function used.
 	"""
-	def __init__(self, emb, out_shapes, **ffn_kwargs):
+	def __init__(self, emb, ob_name, **ob_kwargs):
 		"""
 		Args:
 			emb (nn.Module): embedding network to add output layer to
-			out_shapes (int|list): output shape of the output block layer(s)
+			ob_name:
 		"""
 		super().__init__()
 		assert_has_shape_attr(emb)
 		self.emb = emb
-		self.out = FFN(self.emb.out_shape, out_shapes=list_wrap(out_shapes), \
-			**ffn_kwargs)
+		self.out = MODEL_MAPPING[ob_name](self.emb.out_shape, **ob_kwargs)
+		self.in_shape = self.emb.in_shape
+		self.out_shape = self.out.out_shape
 
 	def forward(self, x):
-		out_embed = self.emb(x)
-		out_score = self.out(out_embed)
-		return out_score
+		return self.out(self.emb(x))
 
 	@classmethod
 	def wrap(cls, emb):
@@ -226,43 +231,42 @@ class OutputBlock(nn.Module):
 		Wrap/append an OutputBlock to the passed embedding model
 		if ob_out_shapes is not None and return original model otherwise
 		"""
-		if (hasattr(emb, 'ob_out_shapes') and is_valid(emb.ob_out_shapes)):
-			ob_params = emb.ob_params or {}
-			model = OutputBlock(emb, out_shapes=emb.ob_out_shapes, **ob_params)
-		else:
-			model = emb
+		model = emb
+		if (hasattr(model, 'ob_name') and hasattr(model, 'ob_params') and is_valid(model.ob_name)):
+			ob_params = model.ob_params or {}
+			model = OutputBlock(model, model.ob_name, **ob_params)
 		return model
 
 class MHA(nn.Module):
 	"""
 	Stacked Multihead Attention module (uses torch.nn.MultiheadAttention)
 
-	This module inputs/outputs a tensor shaped like (N, C, S),
-	where:
-		* N: batch
-		* C: channel/embedding
-		* S: sequence
+	This module inputs/outputs a tensor(s) shaped like (n, {S, L}, E[{q,k,v}]), where:
+		* n: batch
+		* {S, L}: {source, target} set
+		* E[{q, k, v}]: {query, key, value} embedding
 	"""
 	def __init__(self, in_shape, num_heads=1, dropout=0.0, depth=1, kdim=None, vdim=None):
 		"""
 		Args:
-			in_shape (tuple): (C, S)
-			heads (int>0): num attention heads
+			in_shape (tuple): (L, E[q])
+			num_heads (int>0): num attention heads
 			dropout (float>=0): dropout
 			depth (int>0): network depth
+			kdim: E[k] (if None, assumes E[k]==E[q])
+			vdim: E[v] (if None, assumes E[v]==E[q])
 		"""
 		super().__init__()
 		self.in_shape, self.out_shape = in_shape, in_shape
+		self.embed_dim = in_shape[-1]
 		self.num_heads = num_heads
 		self.mhas = nn.ModuleList([nn.MultiheadAttention(
-			in_shape[0], self.num_heads, dropout=dropout, bias=True, add_bias_kv=False,
+			self.embed_dim, self.num_heads, dropout=dropout, bias=True, add_bias_kv=False,
 			add_zero_attn=False, kdim=kdim, vdim=vdim, batch_first=True) for _ in range(depth)])
 
 	def forward(self, q, k=None, v=None, key_padding_mask=None, attn_mask=None):
 		"""
-		Applies Pytorch Multiheaded Attention using existing MultiheadAttention object,
-		assumes q, k, v tensors are shaped (batch, channels, sequence)
-		Modified from: KurochkinAlexey/Recurrent-neural-processes
+		Applies Pytorch Multiheaded Attention
 
 		Attention(Q, K, V) = softmax(QK'/sqrt(d_k)) V
 
@@ -272,27 +276,21 @@ class MHA(nn.Module):
 
 		Args:
 			mha (torch.nn.modules.activation.MultiheadAttention): pytorch Multihead attention object
-			q (torch.tensor): query tensor, shaped like (Batch, Channels, Sequence)
-			k (torch.tensor): key tensor, shaped like (Batch, Channels, Sequence)
-			v (torch.tensor): value tensor, shaped like (Batch, Channels, Sequence)
+			q (torch.tensor): query tensor (n, L, E[q])
+			k (torch.tensor): key tensor (n, S, E[k]) (if None, k=q)
+			v (torch.tensor): value tensor (n, S, E[v]) (if None, v=q)
 
 		Returns:
-			torch.tensor shaped like (Batch, Channels, Sequence)
+			torch.tensor shaped like (n, S, E[q])
 		"""
-		_q = q.permute(0, 2, 1).clone()
+		_k = k if (is_valid(k)) else q
+		_v = v if (is_valid(v)) else q
 
-		if (is_valid(k) and is_valid(v)):
-			_k = k.permute(0, 2, 1).clone()
-			_v = v.permute(0, 2, 1).clone()
-			for i, mha in enumerate(self.mhas):
-				_q, weights = mha(_q, _k, _v, key_padding_mask=key_padding_mask,
-					need_weights=True, attn_mask=attn_mask)
-		else:
-			for i, mha in enumerate(self.mhas):
-				_q, weights = mha(_q, _q, _q, key_padding_mask=key_padding_mask,
-					need_weights=True, attn_mask=attn_mask)
+		for i, mha in enumerate(self.mhas):
+			q, _ = mha(q, _k, _v, key_padding_mask=key_padding_mask,
+				need_weights=True, attn_mask=attn_mask)
 
-		return _q.permute(0, 2, 1).contiguous()
+		return q.contiguous()
 
 class LaplaceAttention(nn.Module):
 	"""
@@ -523,7 +521,7 @@ class TemporalConvNet(nn.Module):
 		kernel_sizes=3, dropouts=0.0, dropout_type='2d', dilation_factor=2,
 		block_act='relu', out_act='relu', block_init='xavier_uniform',
 		out_init='xavier_uniform', pad_mode='same', downsample_type='conv2d',
-		ob_out_shapes=None, ob_params=None):
+		ob_name=None, ob_params=None):
 		"""
 		Args:
 			in_shape (tuple): shape of the network's input tensor,
@@ -538,7 +536,7 @@ class TemporalConvNet(nn.Module):
 			out_init (str): output layer weight initialization method
 			pad_mode('same'|'full'): padding method to use
 			downsample_type (str): method of downsampling used by residual block
-			ob_out_shapes
+			ob_name
 			ob_params
 			"""
 		super().__init__()
@@ -573,11 +571,15 @@ class TemporalConvNet(nn.Module):
 			))
 			block_in_shape = block_out_shape
 		self.out_shape = block_out_shape
-		self.model = nn.Sequential(OrderedDict(blocks))
 
-		# if ob_* are None, GenericModel will not append an OutputBlock:
-		self.ob_out_shapes = ob_out_shapes
-		self.ob_params = ob_params
+		model = nn.Sequential(OrderedDict(blocks))
+		model.in_shape = self.in_shape
+		model.out_shape = self.out_shape
+		model.ob_name = ob_name
+		model.ob_params = ob_params
+		self.model = OutputBlock.wrap(model)
+		self.in_shape = self.model.in_shape
+		self.out_shape = self.model.out_shape
 
 	def forward(self, x):
 		return self.model(x)
@@ -593,7 +595,7 @@ class StackedTCN(TemporalConvNet):
 		dilation_factor=2, block_act='relu', out_act='relu',
 		block_init='xavier_uniform', out_init='xavier_uniform',
 		pad_mode='full', downsample_type='conv2d',
-		ob_out_shapes=None, ob_params=None):
+		ob_name=None, ob_params=None):
 		"""
 		Args:
 			in_shape (tuple): shape of the network's input tensor,
@@ -614,7 +616,7 @@ class StackedTCN(TemporalConvNet):
 			out_init (str): output layer weight initialization method
 			pad_mode('same'|'full'): padding method to use
 			downsample_type (str): method of downsampling used by residual block
-			ob_out_shapes
+			ob_name
 			ob_params
 		"""
 		block_channels = [[size] * subdepth] * depth
@@ -632,7 +634,7 @@ class StackedTCN(TemporalConvNet):
 			dilation_factor=dilation_factor,
 			block_act=block_act, out_act=out_act,
 			block_init=block_init, out_init=out_init, pad_mode=pad_mode,
-			downsample_type=downsample_type, ob_out_shapes=ob_out_shapes, ob_params=ob_params)
+			downsample_type=downsample_type, ob_name=ob_name, ob_params=ob_params)
 
 	@classmethod
 	def get_receptive_field(cls, depth, kernel_size, dilation_factor):
@@ -646,58 +648,6 @@ class StackedTCN(TemporalConvNet):
 		"""
 		return (kernel_size-1) * sum(dilation_factor**i for i in range(depth))
 
-	@classmethod
-	def suggest_params(cls, trial=None, num_classes=2, add_ob=False):
-		"""
-		suggest model hyperparameters from an optuna trial object
-		or return fixed default hyperparameters
-		"""
-		if (is_valid(trial)):
-			params = {
-				'size': trial.suggest_int('size', 1, 32),
-				'depth': trial.suggest_int('depth', 2, 5),
-				'kernel_sizes': trial.suggest_categorical('kernel_sizes', \
-					(7, 9, 15, 17, 23, 25, 31, 33, 39, 41, 47, 49)),
-					# (3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 33)),
-				# 'kernel_sizes': trial.suggest_int('kernel_sizes', 3, 33, step=2),
-				'input_dropout': trial.suggest_float('input_dropout', \
-					0.0, 1.0, step=1e-2),
-				'output_dropout': trial.suggest_float('output_dropout', \
-					0.0, 1.0, step=1e-2),
-				'global_dropout': trial.suggest_float('global_dropout', \
-					0.0, 1.0, step=1e-2),
-				'global_dilation': True,
-				'block_act': 'relu', 
-				'out_act': 'relu',
-				'block_init': 'kaiming_uniform',
-				'out_init': 'kaiming_uniform',
-				'pad_mode': 'full',
-				'downsample_type': 'conv2d',
-				'out_size': num_classes-1,
-				'ob_out_shapes': num_classes if (add_ob) else None,
-				'ob_params': None,
-			}
-		else:
-			params = {
-				'size': 128,
-				'depth': 3,
-				'kernel_sizes': 8,
-				'input_dropout': 0.0,
-				'output_dropout': 0.0,
-				'global_dropout': .5,
-				'global_dilation': True,
-				'block_act': 'elu',
-				'out_act': 'relu',
-				'block_init': 'xavier_uniform',
-				'out_init': 'xavier_uniform',
-				'pad_mode': 'full',
-				'downsample_type': 'conv2d',
-				'out_size': num_classes-1,
-				'ob_out_shapes': num_classes if (add_ob) else None,
-				'ob_params': None
-			}
-		return params
-
 class TransposedTCN(nn.Module):
 	"""
 	Single block 2D TCN where dims (by default the first two) are transposed between convolutions.
@@ -707,7 +657,7 @@ class TransposedTCN(nn.Module):
 		use_dilation=True, block_act='relu', out_act='relu',
 		block_init='kaiming_uniform', out_init='kaiming_uniform',
 		pad_mode='full', tdims=(2, 1), use_residual=True, downsample_type='conv2d',
-		ob_out_shapes=None, ob_params=None):
+		ob_name=None, ob_params=None):
 		"""
 		Args:
 			in_shape (tuple): shape of the network's input tensor,
@@ -763,11 +713,15 @@ class TransposedTCN(nn.Module):
 		net = nn.Sequential(OrderedDict(layers))
 		self.out_shape = layer_out_shape
 		net.in_shape, net.out_shape = self.in_shape, self.out_shape
-		self.model = ResidualBlock(net, out_act, downsample_type=downsample_type, init=out_init, use_residual=use_residual)
 
-		# GenericModel uses these params to to append an OutputBlock to the model
-		self.ob_out_shapes = ob_out_shapes	# If this is None, no OutputBlock is added
-		self.ob_params = ob_params
+		model = ResidualBlock(net, out_act, downsample_type=downsample_type, init=out_init, use_residual=use_residual)
+		model.in_shape = self.in_shape
+		model.out_shape = self.out_shape
+		model.ob_name = ob_name
+		model.ob_params = ob_params
+		self.model = OutputBlock.wrap(model)
+		self.in_shape = self.model.in_shape
+		self.out_shape = self.model.out_shape
 
 	def forward(self, x):
 		return self.model(x)
@@ -776,27 +730,26 @@ class FFN(nn.Module):
 	"""
 	MLP Feedforward Network
 	"""
-	def __init__(self, in_shape, out_shapes=[128, 128, 128], flatten=True,
+	def __init__(self, in_shape, out_shapes=[128,],
+		flatten=False, flatten_start=1,
 		input_dropout=None, output_dropout=None, global_dropout=None,
 		act='relu', act_output=True, init='xavier_uniform'):
 		super().__init__()
-		self.in_shape = in_shape
+		self.in_shape, self.out_shape = in_shape, (out_shapes[-1],)
 		if (flatten):
-			ffn_layers = [('flatten', nn.Flatten(start_dim=1, end_dim=-1))]
-			# io_shapes = [np.product(in_shape[1:]).item(0), *out_shapes]
-			io_shapes = [np.product(in_shape).item(0), *out_shapes]
-			self.out_shape = (io_shapes[-1],)
+			ffn_layers = [('flatten', nn.Flatten(start_dim=flatten_start, end_dim=-1))]
+			ins = np.product(self.in_shape).item(0)
 		else:
 			ffn_layers = []
-			io_shapes = [in_shape[-1], *out_shapes]
-			self.out_shape = (*in_shape[:-1], io_shapes[-1],)
-
+			assert len(in_shape)==1
+			ins = self.in_shape[0]
+		io_shapes = [ins, *out_shapes]
 		dropouts = [global_dropout] * len(out_shapes)
 		dropouts[0], dropouts[-1] = input_dropout, output_dropout
 
 		for l, (i, o) in enumerate(pairwise(io_shapes)):
-			ffn_layers.append((f'ff_{l}', init_layer(nn.Linear(i, o), act=act, \
-				init_method=init)))
+			lay = init_layer(nn.Linear(i, o), act=act, init_method=init)
+			ffn_layers.append((f'ff_{l}', lay))
 			if (act not in ('linear', None) and (l < len(out_shapes)-1 or act_output)):
 				ffn_layers.append((f'af_{l}', PYTORCH_ACT_MAPPING.get(act)()))
 			if (is_valid(do := dropouts[l])):
@@ -806,35 +759,6 @@ class FFN(nn.Module):
 
 	def forward(self, x):
 		return self.model(x)
-
-	@classmethod
-	def suggest_params(cls, trial=None, num_classes=2, add_ob=False):
-		"""
-		suggest model hyperparameters from an optuna trial object
-		or return fixed default hyperparameters
-		"""
-		if (is_valid(trial)):
-			size = trial.suggest_int('size', 2**5, 2**8, step=8),
-			depth = trial.suggest_int('depth', 1, 5)
-
-			params = {
-				'out_shapes': [size] * depth,
-				'act': trial.suggest_categorical('block_act', \
-					PYTORCH_ACT1D_LIST[4:]),
-				'act_output': True,
-				'init': trial.suggest_categorical('block_init', \
-					PYTORCH_INIT_LIST[2:]),
-				'out_size': num_classes-1,
-			}
-		else:
-			params = {
-				'out_shapes': [32, 32, 32],
-				'act': 'relu',
-				'act_output': True,
-				'init': 'xavier_uniform',
-				'out_size': num_classes-1,
-			}
-		return params
 
 class AE(nn.Module):
 	"""

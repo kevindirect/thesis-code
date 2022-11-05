@@ -681,6 +681,9 @@ def get_variants(mappings, fmt='grid'):
 	}.get(fmt)(mappings)
 
 """Function"""
+def get_fn_params(fn, params):
+	return {k: v for k, v in params.items() if (k in inspect.getfullargspec(fn).args)}
+
 def compose(*fns):
 	"""
 	Perform function composition of passed functions, performed on input in the order they are passed.

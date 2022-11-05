@@ -180,7 +180,7 @@ def get_trainer(trial_dir, callbacks, min_epochs, max_epochs, precision, plseed=
 def dump_plot_metric(df, dir_path, metric, splits, title, fname):
 	plot_df_line(df.loc[:, [f"{s}_{metric}" for s in splits]],
 		title=title, xlabel="epochs", ylabel="loss", linestyles=['solid', 'dashed', 'dotted'])
-	dump_fig(f"{dir_path}{fname}")
+	dump_fig(f"{dir_path}{fname}", transparent=False)
 
 def fix_metrics_csv(dir_path, fname="metrics"):
 	"""

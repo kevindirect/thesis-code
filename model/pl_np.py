@@ -13,7 +13,7 @@ import torch.nn.functional as F
 import pytorch_lightning as pl
 import torchmetrics as tm
 
-from common_util import is_type, is_valid, pt_resample_values
+from common_util import is_type, is_valid, pt_resample_values, get_fn_params
 from model.common import PYTORCH_LOSS_MAPPING
 from model.pl_generic import GenericModel
 from model.metrics_util import SimulatedReturn
@@ -57,6 +57,20 @@ class NPModel(GenericModel):
 		"""
 		super().__init__(pt_model_fn, params_m, params_t, fshape, splits=splits)
 
+	def __init_model__(self, pt_model_fn, fshape):
+		"""
+		Args:
+			pt_model_fn (torch.nn.Module): pytorch model constructor
+			fshape (tuple): shape of a single feature observation
+		"""
+		model_params = get_fn_params(pt_model_fn, self.params_m)
+		self.model = pt_model_fn(
+			in_shape=fshape,
+			context_size=self.params_t['context_size'],
+			target_size=self.params_t['target_size'],
+			**model_params
+		)
+
 	def forward(self, batch):
 		"""
 		Run input through model and return output.
@@ -87,27 +101,26 @@ class NPModel(GenericModel):
 
 		try:
 			pred_t, pred_t_loss = self.prepare_pred(out_dist)
-			kldiv = torch.distributions.kl_divergence(post_dist, prior_dist).mean(-1)\
-				if (prir_dist and post_dist) else torch.zeros(1, device=pred_t.device)
-			model_loss = self.loss(pred_t_loss, yt).mean()
-			np_loss = model_loss + kldiv * self.params_m['kl_beta']
-			print(f'{model_loss=}')
-			print(f'{kldiv=}')
-			print(f'{np_loss=}')
+			model_loss = self.loss(pred_t_loss, yt)
+			if (model_loss.ndim > 1):
+				model_loss = model_loss.mean(1)
+			kldiv = torch.distributions.kl_divergence(post_dist, prior_dist).mean(1)\
+				if (prior_dist and post_dist) else torch.zeros_like(model_loss)
+			np_loss = (model_loss + kldiv * self.params_m['kl_beta']).mean()
 		except Exception as err:
 			print("Error! pl_np.py > NPModel > forward_step() > loss()\n",
 				sys.exc_info()[0], err)
 			print(f'{self.loss=}')
 			print(f'{pred_t_loss.shape=}, {pred_t_loss.dtype=}')
-			print(f'{yt_loss.shape=}, {yt_loss.dtype=}')
+			print(f'{yt.shape=}, {yt.dtype=}')
 			raise err
 
 		for met in self.epoch_metrics[epoch_type].values():
-			met.update(pred_t, yt)
+			met.update(pred_t.cpu(), yt.cpu())
 
 		if (is_valid(self.epoch_returns)):
 			for ret in self.epoch_returns[epoch_type].values():
-				ret.update(pred_t_bet, zt)
+				ret.update(pred_t_bet.cpu(), zt.cpu())
 
 		return {'loss': np_loss, 'kldiv': kldiv.mean()}
 
@@ -118,9 +131,9 @@ class NPModel(GenericModel):
 		"""
 		if (self.params_m['sample_out'] and train_mode and out_dist.has_rsample \
 			and not (self.params_m['loss'] in ('clf-dnll',))):
-			pred_t = out_dist.rsample().squeze()
+			pred_t = out_dist.rsample().squeeze()
 		else:
-			pred_t = out_dist.mean.squeze()
+			pred_t = out_dist.mean.squeeze()
 
 		if (self.model_type == 'clf'):
 			pred_t_loss = self.prepare_pred_clf(out_dist, pred_t)
@@ -216,10 +229,9 @@ class NPModel(GenericModel):
 		"""
 		Aggregate step losses / kldivs and log them.
 		"""
-		step_losses = [d['loss'] and d['loss'].cpu() for d in outputs]
-		step_kldivs = [d['kldiv'] and d['kldiv'].cpu() for d in outputs]
-		epoch_loss = None
-		epoch_kldiv = None
+		step_losses = [d['loss'].cpu() for d in outputs]
+		step_kldivs = [d['kldiv'].cpu() for d in outputs]
+		epoch_loss, epoch_kldiv = None, None
 		if (all(step_losses)):
 			epoch_loss = torch.mean(torch.stack(step_losses), dim=0)
 			epoch_kldiv = torch.mean(torch.stack(step_kldivs), dim=0)
