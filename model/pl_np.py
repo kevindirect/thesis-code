@@ -11,12 +11,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import pytorch_lightning as pl
-import torchmetrics as tm
 
 from common_util import is_type, is_valid, pt_resample_values, get_fn_params
 from model.common import PYTORCH_LOSS_MAPPING
 from model.pl_generic import GenericModel
-from model.metrics_util import SimulatedReturn
 
 
 class NPModel(GenericModel):
@@ -77,8 +75,37 @@ class NPModel(GenericModel):
 		Use at test time only.
 		"""
 		ic, xc, yc, zc, it, xt, yt, zt = batch
-		prior_dist, post_dist, out_dist = self.model(xc, yc, xt, target_y=yt)
-		return out_dist.mean.squeeze(), out_dist.stddev.squeeze()
+		prior, post, pred = self.model(xc, yc, xt, target_y=None)
+		return (ic, yc), (it, yt), (prior, post, pred)
+
+	def forward_eval(self, dl):
+		self.eval()
+		with torch.no_grad():
+			outs = [self.forward(b) for b in dl]
+
+		ic = torch.cat([i[0][0].flatten() for i in outs])
+		yc = torch.cat([i[0][1].flatten() for i in outs])
+		it = torch.cat([i[1][0].flatten() for i in outs])
+		yt = torch.cat([i[1][1].flatten() for i in outs])
+		prior = [i[2][0] for i in outs]
+		post = [i[2][1] for i in outs]
+		pred = [i[2][2] for i in outs]
+		return (ic, yc), (it, yt), (prior, post, pred)
+
+	def pred_df(self, dl, index):
+		outs = self.forward_eval(dl)
+		ic, yc = outs[0]
+		it, yt = outs[1]
+		prior, post, out = outs[2]
+		ic = index[ic]
+		it = index[it]
+		pred_mean = torch.cat([i.mean for i in out]).flatten()
+		pred_var = torch.cat([i.variance for i in out]).flatten()
+		assert all(len(x)==len(ic) for x in (yc, it, yt, pred_mean, pred_var))
+		return pd.DataFrame.from_dict({
+			"ic": ic, "yc": yc, "it": it, "yt": yt,
+			"pred_mean": pred_mean, "pred_var": pred_var
+		})
 
 	def forward_step(self, batch, batch_idx, epoch_type):
 		"""
@@ -117,10 +144,6 @@ class NPModel(GenericModel):
 
 		for met in self.epoch_metrics[epoch_type].values():
 			met.update(pred_t.cpu(), yt.cpu())
-
-		if (is_valid(self.epoch_returns)):
-			for ret in self.epoch_returns[epoch_type].values():
-				ret.update(pred_t_bet.cpu(), zt.cpu())
 
 		return {'loss': np_loss, 'kldiv': kldiv.mean()}
 

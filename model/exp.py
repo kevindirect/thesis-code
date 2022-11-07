@@ -40,7 +40,7 @@ def exp(argv):
 	# ret: 'ret_daily_R', 'ret_daily_r'
 	# rvol: 'rvol_daily_hl', 'rvol_daily_r_abs', 'rvol_daily_r²',
 	#       'rvol_minutely_r_rms', 'rvol_minutely_r_std', 'rvol_minutely_r_var', 'rvol_minutely_r²_sum'
-	target_name = cmd_input['ydata='] or 'rvol_minutely_r_rms'
+	target_name = cmd_input['ydata='] or 'rvol_minutely_r_std'
 
 	# model args
 	sm_name = cmd_input['smodel='] or 'anp'
@@ -52,7 +52,7 @@ def exp(argv):
 	# param args
 	logging.info('loading global training params...')
 	params_t = load_json('params_t.json', EXP_DIR +sm_name +sep)
-	param_name = cmd_input['param='] or '002'
+	param_name = cmd_input['param='] or '011'
 	param_dir = get_param_dir(sm_name, param_name)
 
 	# splits = ('train', 'val', 'test')
@@ -102,6 +102,8 @@ def exp(argv):
 
 			# Dump plots and results
 			fix_metrics_csv(trial_dir)
+			df_pred = {split: model.pred_df(dm.get_dataloader(split),
+				dm.index[split]) for split in splits}
 			df_hist = trainer.logger[0].history_df()
 			for metric in ["loss", "reg_mse", "reg_mae"]:
 				dump_plot_metric(df_hist, trial_dir, metric, splits,

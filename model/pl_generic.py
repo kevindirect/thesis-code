@@ -16,7 +16,6 @@ import torchmetrics as tm
 
 from common_util import load_df, dump_df, is_valid, isnt, rectify_json, dump_json, get_fn_params
 from model.common import PYTORCH_ACT_MAPPING, PYTORCH_LOSS_MAPPING, PYTORCH_OPT_MAPPING, PYTORCH_SCH_MAPPING
-from model.metrics_util import SimulatedReturn
 
 
 class GenericModel(pl.LightningModule):
@@ -60,8 +59,8 @@ class GenericModel(pl.LightningModule):
 		self.model_type = self.params_m['loss'].split('-')[0]
 		self.__init_loss_fn__()
 		self.__init_model__(pt_model_fn, fshape)
-		self.__init_loggers__(splits)
-		# self.__init_loggers_return__(splits)
+		self.__init_metrics__(splits)
+		self.__init_trackers__(splits)
 		#self.example_input_array = torch.rand(10, *fshape, dtype=torch.float32) * 100
 
 	def __init_loss_fn__(self, reduction='none'):
@@ -83,11 +82,10 @@ class GenericModel(pl.LightningModule):
 		model_params = get_fn_params(pt_model_fn, self.params_m)
 		self.model = pt_model_fn(in_shape=fshape, **model_params)
 
-	def __init_loggers__(self, splits):
+	def __init_metrics__(self, splits):
 		"""
 		'micro' weights by class frequency, 'macro' weights classes equally
 		"""
-		self.epoch_returns = None
 		if (self.model_type == 'clf'):
 			if (self.params_m['loss'] in ('clf-ce', 'clf-nll')):
 				num_classes = self.params_m['num_classes'] or self.params_m['out_size'] + 1
@@ -120,46 +118,8 @@ class GenericModel(pl.LightningModule):
 				for epoch_type in splits
 			}
 
-	def __init_loggers_return__(self, splits, go_long=True, go_short=False):
-		self.epoch_returns = {}
-		for epoch_type in splits:
-			epoch_ret = {}
-			if (go_long and go_short):
-				br = SimulatedReturn(use_conf=False, compounded=False,
-					pred_type=self.model_type)
-				epoch_ret[br.name] = br
-			if (go_long):
-				br_long = SimulatedReturn(use_conf=False, compounded=False,
-					pred_type=self.model_type)
-				epoch_ret[br_long.name+'_long'] = br_long
-			if (go_short):
-				br_short = SimulatedReturn(use_conf=False, compounded=False,
-					pred_type=self.model_type)
-				epoch_ret[br_short.name+'_short'] = br_short
-
-			for thresh in [None,]: #, .050, .125, .250, .500, .750]:
-				if (go_long and go_short):
-					cr = SimulatedReturn(use_conf=True, use_kelly=False, compounded=False, \
-						pred_type=self.model_type, dir_thresh=thresh, conf_thresh=thresh)
-					kr = SimulatedReturn(use_conf=True, use_kelly=True, compounded=False, \
-						pred_type=self.model_type, dir_thresh=thresh, conf_thresh=thresh)
-					epoch_ret[cr.name] = cr
-					epoch_ret[kr.name] = kr
-				if (go_long):
-					cr_long = SimulatedReturn(use_conf=True, use_kelly=False, compounded=False, \
-						pred_type=self.model_type, dir_thresh=thresh, conf_thresh=thresh)
-					kr_long = SimulatedReturn(use_conf=True, use_kelly=True, compounded=False, \
-						pred_type=self.model_type, dir_thresh=thresh, conf_thresh=thresh)
-					epoch_ret[cr_long.name+'_long'] = cr_long
-					epoch_ret[kr_long.name+'_long'] = kr_long
-				if (go_short):
-					cr_short = SimulatedReturn(use_conf=True, use_kelly=False, compounded=False, \
-						pred_type=self.model_type, dir_thresh=thresh, conf_thresh=thresh)
-					kr_short = SimulatedReturn(use_conf=True, use_kelly=True, compounded=False, \
-						pred_type=self.model_type, dir_thresh=thresh, conf_thresh=thresh)
-					epoch_ret[cr_short.name+'_short'] = cr_short
-					epoch_ret[kr_short.name+'_short'] = kr_short
-			self.epoch_returns[epoch_type] = epoch_ret
+	def __init_trackers__(self, splits):
+		self.epoch_trackers = None
 
 	def configure_optimizers(self):
 		"""
@@ -188,6 +148,12 @@ class GenericModel(pl.LightningModule):
 			print(f'{y.shape=}')
 			print(f'{z.shape=}')
 			raise err
+
+	def forward_eval(self, dl):
+		self.eval()
+		with torch.no_grad():
+			outs = [self(b) for b in dl]
+		return outs
 
 	def forward_step(self, batch, batch_idx, epoch_type):
 		"""
@@ -253,18 +219,6 @@ class GenericModel(pl.LightningModule):
 				print(f'{actual.shape=}')
 				raise err
 
-		if (is_valid(self.epoch_returns)):
-			for ret in self.epoch_returns[epoch_type].values():
-				try:
-					ret.update(pred_ret.cpu(), z.cpu())
-				except Exception as err:
-					print("Error! pl_generic.py > GenericModel > forward_step() > ret.update()\n",
-						sys.exc_info()[0], err)
-					print(f'{ret=}')
-					print(f'{pred_ret.shape=}')
-					print(f'{z.shape=}')
-					raise err
-
 		return {'loss': model_loss}
 
 	def aggregate_log_epoch_loss(self, outputs, epoch_type):
@@ -289,21 +243,6 @@ class GenericModel(pl.LightningModule):
 			self.log(f'{epoch_type}_{name}', met.compute(), prog_bar=False, \
 				logger=True, on_step=False, on_epoch=True)
 
-		if (is_valid(self.epoch_returns)):
-			for name, ret in self.epoch_returns[epoch_type].items():
-				if (name.endswith('long')):
-					d = ret.compute(f'{epoch_type}_{name}',
-						go_long=True, go_short=False)
-				elif (name.endswith('short')):
-					d = ret.compute(f'{epoch_type}_{name}',
-						go_long=False, go_short=True)
-				else:
-					d = ret.compute(f'{epoch_type}_{name}',
-						go_long=True, go_short=True)
-
-				self.log_dict(d, prog_bar=False, logger=True,
-					on_step=False, on_epoch=True)
-
 	def reset_metrics(self, epoch_type):
 		"""
 		Reset/Clear the running metrics.
@@ -311,9 +250,9 @@ class GenericModel(pl.LightningModule):
 		for name, met in self.epoch_metrics[epoch_type].items():
 			met.reset()
 
-		if (is_valid(self.epoch_returns)):
-			for name, ret in self.epoch_returns[epoch_type].items():
-				ret.reset()
+		if (is_valid(self.epoch_trackers)):
+			for split, tracker in self.epoch_trackers.items():
+				tracker.reset()
 
 	def on_train_epoch_start(self, epoch_type='train'):
 		"""
@@ -381,8 +320,8 @@ class GenericModel(pl.LightningModule):
 	# 		for name in self.epoch_metrics[split]:
 	# 			em = self.epoch_metrics[split][name]
 	# 			split_results[f'{split}_{name}'] = em.compute()
-	# 		for name in self.epoch_returns[split]:
-	# 			er = self.epoch_returns[split][name]
+	# 		for name in self.epoch_metrics_2[split]:
+	# 			er = self.epoch_metrics_2[split][name]
 	# 			if (name.endswith('long')):
 	# 				d = er.compute(f'{split}_{name}', go_long=True, go_short=False)
 	# 			elif (name.endswith('short')):
@@ -404,10 +343,10 @@ class GenericModel(pl.LightningModule):
 	# 	"""
 	# 	bothdir = lambda n: not (n.endswith('long') or n.endswith('short'))
 
-	# 	for split in self.epoch_returns:
-	# 		# for name in filter(bothdir, self.epoch_returns[split]):
-	# 		for name in self.epoch_returns[split]:
-	# 			er = self.epoch_returns[split][name]
+	# 	for split in self.epoch_metrics_2:
+	# 		# for name in filter(bothdir, self.epoch_metrics_2[split]):
+	# 		for name in self.epoch_metrics_2[split]:
+	# 			er = self.epoch_metrics_2[split][name]
 	# 			plot_name = model_name.upper() +f"-{name}".title()
 	# 			fig, axes = er.plot_result_series(split.title(),
 	# 				plot_name, dm.idx[split])
@@ -418,7 +357,7 @@ class GenericModel(pl.LightningModule):
 	# 				transparent=True)
 	# 			plt.close(fig)
 
-	# 		# er = self.epoch_returns[split][name]
+	# 		# er = self.epoch_metrics_2[split][name]
 	# 		# plot_name = model_name.upper() +f"-{name}".title()
 	# 		# fig, axes = er.plot_result_series(split.title(),
 	# 		# 	plot_name, dm.idx[split])

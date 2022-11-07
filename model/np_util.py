@@ -17,12 +17,6 @@ import torch.nn as nn
 from common_util import is_valid, isnt
 from model.common import PYTORCH_ACT1D_LIST, PYTORCH_INIT_LIST
 from model.model_util import log_prob_sigma, init_layer, get_padding, pt_multihead_attention, SwapLinear, TransposeModule, MODEL_MAPPING, NORM_MAPPING
-# Tensors are column-major, shaped as (batch, channel, height, width) unless otherwise specified
-# The in_shape and out_shape attributes of modules don't include the batch size
-# Inspired by:
-# * https://github.com/deepmind/neural-processes/blob/master/attentive_neural_process.ipynb
-# * https://github.com/3springs/attentive-neural-processes/blob/master/neural_processes/models/neural_process/model.py
-# * https://github.com/soobinseo/Attentive-Neural-Process/blob/master/module.py
 
 
 # ********** HELPER FUNCTIONS **********

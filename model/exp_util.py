@@ -21,7 +21,7 @@ from pytorch_lightning.loggers.base import rank_zero_experiment
 
 from common_util import MODEL_DIR, NestedDefaultDict, load_json, rectify_json, dump_json, load_df, dump_df, str_now, benchmark, makedir_if_not_exists, is_type, is_valid, isnt, get_cmd_args
 from model.common import EXP_DIR
-from recon.viz import dump_fig, plot_df_line, plot_df_line_subplot, plot_df_scatter_subplot, plot_df_hist_subplot
+from model.viz import dump_fig, plot_df_line, plot_df_line_subplot, plot_df_scatter_subplot, plot_df_hist_subplot
 
 
 class MemLogger(LightningLoggerBase):
