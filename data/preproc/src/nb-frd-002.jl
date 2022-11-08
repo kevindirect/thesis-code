@@ -69,11 +69,15 @@ end
 function getsplits(asset::Symbol, train_ratio=TRAIN_RATIO, target_shift=TARGETΔ; index=:datetime)
 	feature_price = gettrades001("$asset/feature/price")
 	feature_ivol = gettrades001("$asset/feature/ivol")
+	feature_logprice = gettrades001("$asset/feature/logprice")
+	feature_logivol = gettrades001("$asset/feature/logivol")
 	target_price = gettrades001("$asset/target/price")
 
 	train_end, val_range, test_start = getsplits_points(target_price, train_ratio; index=index)
 	feature_price_split = getsplits(feature_price, train_end, val_range, test_start)
 	feature_ivol_split = getsplits(feature_ivol, train_end, val_range, test_start)
+	feature_logprice_split = getsplits(feature_logprice, train_end, val_range, test_start)
+	feature_logivol_split = getsplits(feature_logivol, train_end, val_range, test_start)
 	target_price_split = getsplits(target_shift==0 ? target_price : shift(target_price, target_shift), train_end, val_range, test_start)
 	test_end = Date(target_price_split[3][end, index])
 
@@ -81,7 +85,9 @@ function getsplits(asset::Symbol, train_ratio=TRAIN_RATIO, target_shift=TARGETΔ
 		train = (
 			feature = (
 				price = feature_price_split[1],
-				ivol = feature_ivol_split[1]
+				ivol = feature_ivol_split[1],
+				logprice = feature_logprice_split[1],
+				logivol = feature_logivol_split[1]
 			),
 			target = (
 				price = target_price_split[1],
@@ -90,7 +96,9 @@ function getsplits(asset::Symbol, train_ratio=TRAIN_RATIO, target_shift=TARGETΔ
 		val = (
 			feature = (
 				price = feature_price_split[2],
-				ivol = feature_ivol_split[2]
+				ivol = feature_ivol_split[2],
+				logprice = feature_logprice_split[2],
+				logivol = feature_logivol_split[2]
 			),
 			target = (
 				price = target_price_split[2],
@@ -99,7 +107,9 @@ function getsplits(asset::Symbol, train_ratio=TRAIN_RATIO, target_shift=TARGETΔ
 		test = (
 			feature = (
 				price = subset(feature_price_split[3], :≤, test_end),
-				ivol = subset(feature_ivol_split[3], :≤, test_end)
+				ivol = subset(feature_ivol_split[3], :≤, test_end),
+				logprice = subset(feature_logprice_split[3], :≤, test_end),
+				logivol = subset(feature_logivol_split[3], :≤, test_end)
 			),
 			target = (
 				price = target_price_split[3],
@@ -121,6 +131,8 @@ for name in ASSETS
 		destt = mkpath("../../002/frd/$name/$split/target")
 		Arrow.write("$destf/price.arrow", dfs[split].feature.price)
 		Arrow.write("$destf/ivol.arrow", dfs[split].feature.ivol)
+		Arrow.write("$destf/logprice.arrow", dfs[split].feature.logprice)
+		Arrow.write("$destf/logivol.arrow", dfs[split].feature.logivol)
 		Arrow.write("$destt/price.arrow", dfs[split].target.price)
 	end
 end

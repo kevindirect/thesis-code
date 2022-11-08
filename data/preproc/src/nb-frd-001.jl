@@ -240,8 +240,11 @@ function assert_features(df::AbstractDataFrame, τ::Dates.Period=Day(1))
 end
 
 # ╔═╡ d680e43d-636b-40e1-9e00-4d90b69f6772
-function preproc_features(df::AbstractDataFrame, τ::Dates.Period=Day(1))
+function preproc_features(df::AbstractDataFrame; τ::Dates.Period=Day(1), fn=nothing)
 	pf = notagg(combine(groupby(df, τ), expandtday))
+	if !isnothing(fn)
+		pf[!, Not(ID)] = fn.(pf[!, Not(ID)])
+	end
 	pf = coalesce.(pf, 0.0)
 	disallowmissing!(pf)
 	assert_features(pf)
@@ -253,6 +256,7 @@ begin
 	for (name, df) in prices
 		dest2 = mkpath("../../001/frd/$name/feature")
 		Arrow.write("$dest2/price.arrow", preproc_features(df))
+		Arrow.write("$dest2/logprice.arrow", preproc_features(df; fn=log))
 	end
 end;
 
@@ -261,6 +265,7 @@ begin
 	for (name, df) in ivols
 		dest3 = mkpath("../../001/frd/$name/feature")
 		Arrow.write("$dest3/ivol.arrow", preproc_features(df))
+		Arrow.write("$dest3/logivol.arrow", preproc_features(df; fn=log))
 	end
 end;
 
