@@ -46,6 +46,8 @@ class XGDataModule(pl.LightningDataModule):
 		self.fshape = None
 		if (self.data_name == "frd"):
 			self.day_size = 391 # number of data points per trading day
+		if (self.params_t["forecast_delta"]==0):
+			logging.warning("Forecast delta is '0', labels will not be shifted forward in time.")
 
 	def prepare_feature(self, split="train"):
 		"""
