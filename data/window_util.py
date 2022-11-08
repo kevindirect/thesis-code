@@ -51,7 +51,7 @@ def overlap_win_preproc_3d(data, window_size, same_dims=True):
 		else:
 			pp = d[window_size-1:] # Realign by dropping observations prior to the first step
 		preproc.append(pp)
-
+	# assert all(d.shape[0]==preproc[0].shape[0] for d in preproc[1:])
 	return tuple(preproc)
 
 def stride_win_preproc_3d(data, window_size):

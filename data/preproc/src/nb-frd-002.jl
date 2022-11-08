@@ -33,7 +33,8 @@ begin
 	const ASSETS = [:SPX, :RUT, :NDX, :DJI]
 	const TDAY = Time(09, 30) => Time(16, 00)
 	const TDAYLEN = Minute(TDAY[2] - TDAY[1])
-	const TARGETΔ = -1 # shift index backward in time by one slot
+	# const TARGETΔ = -1 # shift index backward in time by one slot
+	const TARGETΔ = 0 # no shifting here
 	const TRAIN_RATIO = .6
 
 	function gettrades001(extpath; basepath=PATH_001_FRD_INDEX)
@@ -73,7 +74,7 @@ function getsplits(asset::Symbol, train_ratio=TRAIN_RATIO, target_shift=TARGETΔ
 	train_end, val_range, test_start = getsplits_points(target_price, train_ratio; index=index)
 	feature_price_split = getsplits(feature_price, train_end, val_range, test_start)
 	feature_ivol_split = getsplits(feature_ivol, train_end, val_range, test_start)
-	target_price_split = getsplits(shift(target_price, target_shift), train_end, val_range, test_start)
+	target_price_split = getsplits(target_shift==0 ? target_price : shift(target_price, target_shift), train_end, val_range, test_start)
 	test_end = Date(target_price_split[3][end, index])
 
 	(

@@ -85,8 +85,8 @@ class XGDataModule(pl.LightningDataModule):
 			np_feature = self.prepare_feature(split)
 			np_index, np_return, np_target = self.prepare_target(split)
 			assert np_feature.shape[0] == np_index.shape[0]
-			self.data[[split, "feature"]] = np_feature
 			self.data[[split, "index"]] = np_index
+			self.data[[split, "feature"]] = np_feature
 			self.data[[split, "return"]] = np_return
 			self.data[[split, "target"]] = np_target
 
@@ -98,14 +98,15 @@ class XGDataModule(pl.LightningDataModule):
 		"""
 		self.index, self.dataset, self.sampler = {}, {}, {}
 		for split in ["train", "val", "test"]:
-			shifted = XGDataModule.window_shift((
+			windowed = XGDataModule.window_shift((
 				self.data[[split, "index"]],
 				self.data[[split, "feature"]],
 				self.data[[split, "target"]],
 				self.data[[split, "return"]]
 			), self.params_t["window_size"])
-			ds = XGDataModule.get_dataset(shifted)
-			self.index[split] = shifted[0]
+			ds = XGDataModule.get_dataset(windowed,
+				delta=self.params_t["forecast_delta"])
+			self.index[split] = windowed[0]
 			self.dataset[split] = ds
 			self.sampler[split] = WindowBatchSampler(ds,
 				batch_size=self.params_t['batch_size'],
@@ -208,15 +209,16 @@ class XGDataModule(pl.LightningDataModule):
 		"""
 		assert window_size >= 1
 		if (window_overlap):
-			shifted = overlap_win_preproc_3d(data, window_size, same_dims=True)
+			windowed = overlap_win_preproc_3d(data, window_size, same_dims=True)
 		else:
-			shifted = stride_win_preproc_3d(data, window_size)
-		return shifted
+			windowed = stride_win_preproc_3d(data, window_size)
+		return windowed
 
 	@staticmethod
-	def get_dataset(data):
+	def get_dataset(data, delta=1):
 		"""
 		Return TensorDataset of (features, targets, returns)
+		Shift index, feature, target, etc appropriately by delta.
 
 		Args:
 			data (tuple): tuple of numpy arrays, features are the first element
@@ -224,9 +226,10 @@ class XGDataModule(pl.LightningDataModule):
 		Returns:
 			torch.TensorDataset
 		"""
-		i = torch.arange(len(data[0]), requires_grad=False) # int index to avoid storing datetime in tensor
-		f = torch.tensor(data[1], dtype=torch.float32, requires_grad=False)
-		t = torch.tensor(data[2], dtype=torch.float32, requires_grad=False)
-		r = torch.tensor(data[3], dtype=torch.float32, requires_grad=False)
+		i = torch.arange(len(data[0][delta:]), requires_grad=False) # int index to avoid storing datetime in tensor
+		f = torch.tensor(data[1][:data[1].shape[0]-delta], dtype=torch.float32, requires_grad=False)
+		t = torch.tensor(data[2][delta:], dtype=torch.float32, requires_grad=False)
+		r = torch.tensor(data[3][delta:], dtype=torch.float32, requires_grad=False)
+		assert all(d.shape[0]==i.shape[0] for d in [f, t, r])
 		return TensorDataset(i, f, t, r)
 
