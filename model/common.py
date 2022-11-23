@@ -4,9 +4,6 @@
 #   / / / / / / /_/ / /_/ /  __/ /
 #  /_/ /_/ /_/\____/\__,_/\___/_/
 # model stage common
-"""
-Kevin Patel
-"""
 
 # *********** COMMON TO ALL CRUNCH PACKAGES ***********
 import sys
@@ -22,7 +19,7 @@ from functools import partial
 from common_util import MODEL_DIR
 
 # OTHER STAGE DEPENDENCIES
-from data.common import PROC_NAME, DATA_NAME
+from data.common import PROC_NAME, VENDOR_NAME
 
 import torch
 import torch.nn as nn
@@ -34,12 +31,11 @@ from tensorflow.nn import sparse_softmax_cross_entropy_with_logits, softmax_cros
 """
 
 # PACKAGE CONSTANTS
-EXP_DIR = MODEL_DIR +f'exp-{PROC_NAME}-{DATA_NAME}' +sep
-# EXP_LOG_DIR = MODEL_DIR +'log' +sep
-# EXP_PARAMS_DIR = MODEL_DIR +'params' +sep
+EXP_DIR = MODEL_DIR +f'exp-{PROC_NAME}-{VENDOR_NAME}' +sep
 ASSETS = ('SPX', 'RUT', 'NDX', 'DJI')
 ASSETS_STR = ','.join(ASSETS)
 TRADING_DAYS = 252
+MAX_EPOCHS = 80
 
 # PyTorch
 class DistributionNLLLoss(nn.modules.loss._Loss):
@@ -62,42 +58,8 @@ class DistributionNLLLoss(nn.modules.loss._Loss):
 
 		return nll
 
-class SharpeLoss(nn.modules.loss._Loss):
-	"""
-	Sharpe Ratio based loss
-	pred is a floating point bet size * direction, target is the actual return
-	"""
-	__constants__ = ['reduction']
-
-	def __init__(self, size_average=None, reduce=None, reduction: str = 'none',
-		weight=None, go_long=True, go_short=False) -> None:
-		super().__init__(size_average, reduce, reduction)
-		self.go_long = go_long
-		self.go_short = go_short
-
-	def forward(self, pred, target) -> torch.Tensor:
-		# if (type(out_dist).__name__ in ('Bernoulli', 'Beta', 'Normal', 'LogNormal')):
-		# 	ftype = {
-		# 		16: torch.float16,
-		# 		32: torch.float32,
-		# 		64: torch.float64
-		# 	}.get(cast_precision, 16)
-		# 	label_y = label_y.to(ftype)
-		if (not self.go_long):
-			pred[pred > 0.0] = 0.0
-		if (not self.go_short):
-			pred[pred < 0.0] = 0.0
-		ret = pred * target
-		sr = torch.tensor(TRADING_DAYS).sqrt() * (ret.mean() / ret.std())
-		sr_loss = torch.exp(-sr)
-
-		if (self.reduction == 'mean'):
-			sr_loss = sr_loss.mean(dim=0)
-
-		return sr_loss
-
 PYTORCH_ACT1D_LIST = ('lrelu', 'celu', 'prelu', 'selu', 'mish', \
-	'relu', 'elu', 'gelu', 'sig', 'tanh', 'splus', 'smax', 'logsmax')
+	'relu', 'elu', 'gelu', 'sig', 'tanh', 'tanhshrink', 'softplus', 'softmax', 'logsoftmax')
 PYTORCH_ACT_MAPPING = {
 	'relu': nn.ReLU,
 	'lrelu': nn.LeakyReLU,
@@ -109,10 +71,11 @@ PYTORCH_ACT_MAPPING = {
 	'mish': nn.Mish,
 	'sig': nn.Sigmoid,
 	'tanh': nn.Tanh,
-	'splus': nn.Softplus,
-	'smax': partial(nn.Softmax, dim=-1),
-	'logsmax': partial(nn.LogSoftmax, dim=-1),
-	'smax2d': nn.Softmax2d
+	'tanhshrink': nn.Tanhshrink,
+	'softplus': nn.Softplus,
+	'softmax': partial(nn.Softmax, dim=-1),
+	'logsoftmax': partial(nn.LogSoftmax, dim=-1),
+	'softmax2d': nn.Softmax2d
 }
 PYTORCH_INIT_LIST = ('zeros', 'ones', 'normal', 'orthogonal', \
 	'xavier_uniform', 'xavier_normal', 'kaiming_uniform', 'kaiming_normal')
@@ -134,9 +97,6 @@ PYTORCH_LOSS_MAPPING = {
 	'reg-mse': nn.MSELoss,
 	'reg-sl1': nn.SmoothL1Loss,
 	'reg-dnll': DistributionNLLLoss,
-
-	# Other
-	'reg-sharpe': SharpeLoss,
 }
 PYTORCH_OPT_MAPPING = {
 	'rms': optim.RMSprop,
@@ -161,9 +121,8 @@ PYTORCH_SCH_MAPPING = {
 	'st': optim.lr_scheduler.StepLR
 }
 
-# # Optuna
-# OPTUNA_DB_FNAME = 'trials.db'
-# OPTUNA_CSV_FNAME = 'trials.csv'
-# OPTUNA_N_TRIALS = 100
-# OPTUNA_TIMEOUT_HOURS = 12
+# Optuna
+OPTUNA_DBNAME = 'trials'
+OPTUNA_N_TRIALS = 300
+OPTUNA_TIMEOUT_HOURS = 2
 
