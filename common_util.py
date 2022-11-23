@@ -4,10 +4,7 @@
 #  / /__/ /  / /_/ / / / / /__/ / / /
 #  \___/_/   \__,_/_/ /_/\___/_/ /_/
 # global project common utilities.
-"""
-System level settings/constants and common utilities for all crunch subpackages.
-Kevin Patel
-"""
+
 import sys
 from os import sep, path, makedirs, walk, listdir, rmdir
 from os.path import dirname, basename, realpath, normpath, exists, isfile, getsize, splitext, join as path_join

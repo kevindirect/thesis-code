@@ -1,7 +1,3 @@
-"""
-Generic model utils
-Kevin Patel
-"""
 import sys
 import os
 import logging
@@ -314,7 +310,7 @@ class LaplaceAttention(nn.Module):
 		super().__init__()
 		self.in_shape, self.out_shape = in_shape, in_shape
 		self.scale = scale
-		self.out_act = PYTORCH_ACT_MAPPING.get(act, lambda: None)()
+		self.out_act = (af := PYTORCH_ACT_MAPPING.get(act, None)) and af()
 
 	def forward(self, q, k=None, v=None):
 		if (isnt(k)):
@@ -371,7 +367,7 @@ class TemporalLayer2d(nn.Module):
 		* The kernel height is always the height of the input
 		* The kernel dilation height is one (no dilation over height)
 		* The input padding height is zero (no padding height)
-               _____________    ____________    _________________    ____________    _____________
+	       _____________    ____________    _________________    ____________    _____________
 	x -----|__padding__|----|__conv2d__|----|__weight_norm__|----|__act_fn__|----|__dropout__|-----> temporal_layer_2d(x)
 
 	This layer performs the following operations in order:
@@ -402,15 +398,16 @@ class TemporalLayer2d(nn.Module):
 			"out_height must be 1, convolution only occurs across temporal dimension"
 
 		modules = nn.ModuleList()
-		# modules.append(nn.ReplicationPad2D((pad_l, pad_r, 0, 0))) # XXX Reflection or Circular Pad?
-		modules.append(nn.ZeroPad2d((pad_l, pad_r, 0, 0))) # XXX Reflection or Circular Pad?
+		# modules.append(nn.ReplicationPad2d((pad_l, pad_r, 0, 0)))
+		modules.append(nn.ZeroPad2d((pad_l, pad_r, 0, 0)))
 		modules.append(
-			init_layer(
-				nn.utils.weight_norm(nn.Conv2d(self.in_shape[0], self.out_shape[0],
-					kernel_size=(self.in_shape[1], kernel_size), stride=1,
-					dilation=(1, dilation), groups=1, bias=True)),
-				act=act,
-				init_method=init
+				nn.utils.weight_norm(init_layer(
+					nn.Conv2d(self.in_shape[0], self.out_shape[0],
+						kernel_size=(self.in_shape[1], kernel_size), stride=1,
+						dilation=(1, dilation), groups=1, bias=True),
+					act=act,
+					init_method=init
+				),
 			)
 		)
 		if (is_valid(act_fn := PYTORCH_ACT_MAPPING.get(act, None))):
@@ -468,7 +465,7 @@ class ResidualBlock(nn.Module):
 		self.net = net
 		self.use_residual = use_residual
 		if (self.use_residual):
-			self.out_act = PYTORCH_ACT_MAPPING.get(act, lambda: None)()
+			self.out_act = (af := PYTORCH_ACT_MAPPING.get(act, None)) and af()
 			self.downsample = None
 			if (self.net.in_shape != self.net.out_shape):
 				if (downsample_type == 'linear'):
@@ -481,7 +478,9 @@ class ResidualBlock(nn.Module):
 					padding_size = max(self.net.out_shape[2] - self.net.in_shape[2], 0)
 					pad_l = padding_size//2
 					pad_r = padding_size - pad_l
-					self.padding = nn.ZeroPad2d((pad_l, pad_r, 0, 0)) # XXX Reflection or Circular Pad?
+
+					# self.padding = nn.ReplicationPad2d((pad_l, pad_r, 0, 0))
+					self.padding = nn.ZeroPad2d((pad_l, pad_r, 0, 0))
 					self.downsample = init_layer(
 						nn.Conv2d(self.net.in_shape[0], self.net.out_shape[0],
 						kernel_size=(self.net.in_shape[1], 1), bias=True),
@@ -741,8 +740,7 @@ class FFN(nn.Module):
 			ins = np.product(self.in_shape).item(0)
 		else:
 			ffn_layers = []
-			assert len(in_shape)==1
-			ins = self.in_shape[0]
+			ins = self.in_shape[-1] # treat previous dims as batch dimensions
 		io_shapes = [ins, *out_shapes]
 		dropouts = [global_dropout] * len(out_shapes)
 		dropouts[0], dropouts[-1] = input_dropout, output_dropout
@@ -802,7 +800,7 @@ class InstanceNorm15d(nn.Module):
 		W -> series dimension to normalize over
 	Valid input shapes:
 		* (n, C, H, W)
-		* (n, o, C, H, W)
+		* (n, e, C, H, W)
 	"""
 	def __init__(self, num_channels, num_features, eps=1e-05, momentum=0.1, affine=False, track_running_stats=False, to_cuda=True, **params):
 		super().__init__()
@@ -836,7 +834,7 @@ class BatchNorm15d(nn.Module):
 		W -> series dimension to normalize over
 	Valid input shapes:
 		* (n, C, H, W)
-		* (n, o, C, H, W)
+		* (n, e, C, H, W)
 	Setting bdim determines the batch dim for batch norm (only used if ndim > 4).
 	"""
 	def __init__(self, num_channels, num_features, bdim=1, eps=1e-05, momentum=0.1, affine=False, track_running_stats=False, to_cuda=True, **params):

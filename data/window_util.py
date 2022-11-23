@@ -1,6 +1,3 @@
-"""
-Kevin Patel
-"""
 import sys
 import os
 import math
@@ -85,33 +82,33 @@ def stride_win_preproc_3d(data, window_size):
 
 	return tuple(preproc)
 
-def get_np_collate_fn(context_size, target_size, overlap_size=0, resample_context=False):
-	def split_ct(x):
-		"""
-		Split into context and target sets
-		"""
-		contexts, targets = [], []
-		for obs in trunc_step_window_iter(x, n=context_size+target_size, step=context_size):
-			cpoints = obs[:context_size]
-			if (resample_context):
-				cpoints = pt_random_choice(cpoints, replacement=True)
-			contexts.append(cpoints)
-			targets.append(obs[context_size-overlap_size:])
-		return torch.stack(contexts), torch.stack(targets)
+def windowed_ctx_tgt(x, context_size, target_size, step_size=1, overlap_size=0, resample_context=False):
+	"""
+	Split into context and target sets by sliding window,
+	context is the head and target is the tail.
+	"""
+	contexts, targets = [], []
+	for obs in trunc_step_window_iter(x, n=context_size+target_size, step=step_size):
+		cpoints = obs[:context_size]
+		if (resample_context):
+			cpoints = pt_random_choice(cpoints, replacement=True)
+		contexts.append(cpoints)
+		targets.append(obs[context_size-overlap_size:])
+	return torch.stack(contexts), torch.stack(targets)
 
+def get_np_collate_fn(context_size, target_size, step_size=1, overlap_size=0, resample_context=False):
+	"""
+	Neural Process collate
+	Reshapes each series from (n, ...) to (n', o, ...), where
+		n is the batch size
+		n' is the new batch size
+		o is the observation set size (context/target size)
+	"""
 	def np_collate_fn(batch):
-		"""
-		Neural Process collate
-		Reshapes each series from (n, ...) to (n', o, ...), where
-			n is the batch size
-			n' is the new batch size
-			o is the observation set size (context/target size)
-		"""
 		i, x, y, z = map(torch.stack, zip(*batch))
-		bc, bt = split_ct(torch.arange(len(i)))
-		assert len(bc)==len(bt)
-		return i[bc], x[bc], y[bc], z[bc], i[bt], x[bt], y[bt], z[bt]
-
+		ctx, tgt = windowed_ctx_tgt(torch.arange(len(i)), context_size, target_size, step_size, overlap_size, resample_context)
+		assert len(ctx)==len(tgt)
+		return i[ctx], x[ctx], y[ctx], z[ctx], i[tgt], x[tgt], y[tgt], z[tgt]
 	return np_collate_fn
 
 class WindowBatchSampler(torch.utils.data.Sampler):
@@ -168,7 +165,6 @@ class WindowBatchSampler(torch.utils.data.Sampler):
 	Get the number of windows (batches) the iterator moves through.
 	"""
 	__len__ = get_num_windows = lambda self: self.get_num_steps() + 1
-		
 
 	"""
 	Get the first index of the last batch (ie beginning of the last step)

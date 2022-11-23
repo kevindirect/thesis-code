@@ -176,46 +176,11 @@ begin
 	@inline logchange(pₜ::AbstractVector{T}, pₜ₊₁::AbstractVector{T}) where T<:Real = logchange.(pₜ, pₜ₊₁)
 end
 
-# ╔═╡ bf4eb598-f890-43d5-a19d-4f9bd4ee7951
+# ╔═╡ afedb426-035a-46b8-8469-464806772540
 """
-Realized Volatility definition from Müller's book (Dacorogna, p. 41)
-The 'nth root generalization' of the root mean square (RMS).
-
-Generally `n` is set to 2 provide a good balance of weighting the tails
-of the distribution and is generally below the tail index of the distribution
-for high frequency data (Darocgna, p.44).
+mean absolute deviation
 """
-function rvol(pₜ::AbstractVector{T}, n::Integer=2) where T<:Real
-	rₜ = logchange(pₜ)
-	rₜ = n==1 ? abs.(rₜ) : rₜ
-	mean(rₜ.^n)^(1/n)
-end
-
-# ╔═╡ f0d22042-4fbe-4a22-81c0-0e511936f09d
-function preproc_targets(df::AbstractDataFrame, τ::Dates.Period=Day(1))
-	select(groupby(df, τ),
-		:bar=>ID,
-
-		:close => (c -> pctchange(first(c), last(c))) => :ret_daily_R,
-		:close => (c -> logchange(first(c), last(c))) => :ret_daily_r,
-
-		[:high, :low] => ((h, l) -> logchange(minimum(l), maximum(h))) => :rvol_daily_hl,
-		:close => (c -> abs(logchange(first(c), last(c)))) => :rvol_daily_r_abs,
-		:close => (c -> logchange(first(c), last(c))^2) => :rvol_daily_r²,
-		:close => rvol => :rvol_minutely_r_rms,
-		:close => (c -> std(logchange(c))) => :rvol_minutely_r_std,
-		:close => (c -> var(logchange(c))) => :rvol_minutely_r_var,
-		:close => (c -> sum(logchange(c).^2)) => :rvol_minutely_r²_sum,
-	; keepkeys=false) |> unique |> disallowmissing!
-end
-
-# ╔═╡ 9f7fee8a-713a-4bfe-b496-08f395719144
-begin
-	for (name, df) in prices
-		dest1 = mkpath("../../001/frd/$name/target")
-		Arrow.write("$dest1/price.arrow", preproc_targets(df))
-	end
-end;
+meanad(x::AbstractVector{T}) where T<:Real = mean(abs, mean(x) .- x)
 
 # ╔═╡ 789c68cb-c2c2-4076-bfe4-b7d14e32547f
 md"""
@@ -231,6 +196,67 @@ function expandtday(df::AbstractDataFrame, τ::Dates.Period=Minute(1))
 	expandout = expandindex(expandin, τ, TDAY) # expand index and propagate missing
 end
 
+# ╔═╡ 680e04c2-98c7-4a83-9297-bd41feb5dfd3
+function logchange(pₜ::AbstractVector{Union{Missing, T}}) where T<:Real
+	xpₜ = DateTimeDataFrames.bfill(DateTimeDataFrames.ffill(pₜ))
+	convert(Vector{Float64}, disallowmissing(xpₜ)) |> logchange
+end
+
+# ╔═╡ bf4eb598-f890-43d5-a19d-4f9bd4ee7951
+"""
+Root-mean-power, realized Volatility definition from Müller's book (Dacorogna, p. 41)
+The 'ρth root generalization' of the root mean square (RMS).
+
+Generally `ρ` is set to 1 or 2 provide a good balance of weighting the tails of the distribution and is generally below the tail index of the distribution for high frequency data (Dacorogna, p.44).
+"""
+function rmp(pₜ::AbstractVector{T}, ρ::Integer=1) where T<:Real
+	rₜ = logchange(pₜ)
+	mean(abs.(rₜ).^ρ)^(1/ρ)
+end
+
+# ╔═╡ f0d22042-4fbe-4a22-81c0-0e511936f09d
+function preproc_targets(df::AbstractDataFrame, τ::Dates.Period=Day(1))
+	τstr = replace(string(τ), ' '=>"")
+	select(groupby(df, τ),
+		:bar=>ID,
+
+		# low frequency return measures:
+		:close => (c -> pctchange(first(c), last(c))) => Symbol("R_$(τstr)"),
+		:close => (c -> logchange(first(c), last(c))) => Symbol("r_$(τstr)"),
+
+		# centered rvol measures:
+		:close => (c -> logchange(c) |> meanad) => Symbol("rvol_$(τstr)_r_1min_meanad"),
+		:close => (c -> logchange(c) |> std) => Symbol("rvol_$(τstr)_r_1min_std"),
+		:close => (c -> logchange(c) |> var) => Symbol("rvol_$(τstr)_r_1min_var"),
+
+		# uncentered rvol measures:
+		:close => (c-> rmp(c, 1)) => Symbol("rvol_$(τstr)_r_1min_abs"),
+		:close => (c -> rmp(c, 2)) => Symbol("rvol_$(τstr)_r_1min_rms"),
+		:close => (c -> logchange(c).^2 |> sum) => Symbol("rvol_$(τstr)_r²_1min_sum"),
+
+		# other rvol/dispersion measures:
+		:close => (c -> StatsBase.mad(logchange(c); normalize=false)) => Symbol("rvol_$(τstr)_r_1min_mad"),
+
+		# hl based rvol measures:
+		[:high, :low] => ((h, l) -> logchange(l, h) |> mean) => Symbol("rvol_$(τstr)_hl_1min_mean"),
+		[:high, :low] => ((h, l) -> logchange(l, h) |> meanad) => Symbol("rvol_$(τstr)_hl_1min_meanad"),
+		[:high, :low] => ((h, l) -> logchange(l, h) |> std) => Symbol("rvol_$(τstr)_hl_1min_std"),
+		[:high, :low] => ((h, l) -> logchange(l, h) |> var) => Symbol("rvol_$(τstr)_hl_1min_var"),
+
+		# low frequency rvol:
+		:close => (c -> abs(logchange(first(c), last(c)))) => Symbol("rvol_$(τstr)_r_$(τstr)_abs"),
+		:close => (c -> logchange(first(c), last(c))^2) => Symbol("rvol_$(τstr)_r²_$(τstr)"),
+	; keepkeys=false) |> unique |> disallowmissing!
+end
+
+# ╔═╡ 9f7fee8a-713a-4bfe-b496-08f395719144
+begin
+	for (name, df) in prices
+		dest1 = mkpath("../../001/frd/$name/target")
+		Arrow.write("$dest1/price.arrow", preproc_targets(df))
+	end
+end;
+
 # ╔═╡ 0f61c4c6-44a6-444f-b897-c5c32127d608
 function assert_features(df::AbstractDataFrame, τ::Dates.Period=Day(1))
 	lasttimes = Time.(select(combine(groupby(df, τ), last; ungroup=true), ID)) |> unique
@@ -239,12 +265,10 @@ function assert_features(df::AbstractDataFrame, τ::Dates.Period=Day(1))
 	@assert nrow(firsttimes) == 1 && firsttimes[1, 1] == TDAY[1]
 end
 
-# ╔═╡ d680e43d-636b-40e1-9e00-4d90b69f6772
-function preproc_features(df::AbstractDataFrame; τ::Dates.Period=Day(1), fn=nothing)
+# ╔═╡ fde585e5-e1d3-4907-acbb-5c4390e5c72f
+function preproc_features(df::AbstractDataFrame; τ::Dates.Period=Day(1), fn=identity)
 	pf = notagg(combine(groupby(df, τ), expandtday))
-	if !isnothing(fn)
-		pf[!, Not(ID)] = fn.(pf[!, Not(ID)])
-	end
+	pf = fn == identity ? pf : select!(pf, ID, Not(ID) .=> fn)
 	pf = coalesce.(pf, 0.0)
 	disallowmissing!(pf)
 	assert_features(pf)
@@ -256,7 +280,8 @@ begin
 	for (name, df) in prices
 		dest2 = mkpath("../../001/frd/$name/feature")
 		Arrow.write("$dest2/price.arrow", preproc_features(df))
-		Arrow.write("$dest2/logprice.arrow", preproc_features(df; fn=log))
+		Arrow.write("$dest2/logprice.arrow", preproc_features(df; fn=x->log.(x)))
+		Arrow.write("$dest2/logchangeprice.arrow", preproc_features(df; fn=x->pushfirst!(logchange(x), 0.0)))
 	end
 end;
 
@@ -265,7 +290,8 @@ begin
 	for (name, df) in ivols
 		dest3 = mkpath("../../001/frd/$name/feature")
 		Arrow.write("$dest3/ivol.arrow", preproc_features(df))
-		Arrow.write("$dest3/logivol.arrow", preproc_features(df; fn=log))
+		Arrow.write("$dest3/logivol.arrow", preproc_features(df; fn=x->log.(x)))
+		Arrow.write("$dest3/logchangeivol.arrow", preproc_features(df; fn=x->pushfirst!(logchange(x), 0.0)))
 	end
 end;
 
@@ -286,13 +312,15 @@ end;
 # ╟─c8f57a8e-cb60-4121-87c7-a771cb38eb10
 # ╠═da1e6fd9-5f99-4241-9d39-710c3f8fbb54
 # ╠═2810cb0b-48ca-4797-9fb8-4a5c190133a7
+# ╠═afedb426-035a-46b8-8469-464806772540
 # ╠═bf4eb598-f890-43d5-a19d-4f9bd4ee7951
 # ╠═f0d22042-4fbe-4a22-81c0-0e511936f09d
 # ╠═9f7fee8a-713a-4bfe-b496-08f395719144
 # ╟─789c68cb-c2c2-4076-bfe4-b7d14e32547f
 # ╠═f18aab18-59e3-45c7-a01d-1a4bfa202959
 # ╠═552318bc-c1cc-4e22-98aa-9b78c495dad7
-# ╠═d680e43d-636b-40e1-9e00-4d90b69f6772
+# ╠═fde585e5-e1d3-4907-acbb-5c4390e5c72f
+# ╠═680e04c2-98c7-4a83-9297-bd41feb5dfd3
 # ╠═0f61c4c6-44a6-444f-b897-c5c32127d608
 # ╠═737b2890-0a96-4ab5-9099-54a6aea72b48
 # ╠═75a7ec76-8396-4636-a0cd-7a4d67b2555f

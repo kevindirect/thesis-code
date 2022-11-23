@@ -15,9 +15,8 @@ ignore*
 /data/**/*.parquet
 
 # test files
-test.py
-test.ipynb
-test.json
+test*
+smoke*
 
 # byte-compiled / optimized / DLL files
 __pycache__/

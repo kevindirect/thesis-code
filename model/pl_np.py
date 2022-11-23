@@ -1,6 +1,3 @@
-"""
-Kevin Patel
-"""
 import sys
 import os
 import logging
@@ -41,19 +38,19 @@ class NPModel(GenericModel):
 		num_workers (int>=0): DataLoader option - number cpu workers to attach
 		pin_memory (bool): DataLoader option - whether to pin memory to gpu
 	"""
-	def __init__(self, pt_model_fn, params_m, params_t, fshape, splits=('train', 'val')):
+	def __init__(self, pt_model_fn, params_m, params_d, fshape, splits=('train', 'val')):
 		"""
 		Init method
 
 		Args:
 			pt_model_fn (function): neural process pytorch model callback
 			params_m (dict): dictionary of model hyperparameters
-			params_t (dict): dictionary of training hyperparameters
+			params_d (dict): dictionary of data hyperparameters
 			fshape (tuple): the shape of a single feature observation,
 				this is usually the model input shape
 			splits (tuple): which splits to init metric objects for
 		"""
-		super().__init__(pt_model_fn, params_m, params_t, fshape, splits=splits)
+		super().__init__(pt_model_fn, params_m, params_d, fshape, splits=splits)
 
 	def __init_model__(self, pt_model_fn, fshape):
 		"""
@@ -64,10 +61,11 @@ class NPModel(GenericModel):
 		model_params = get_fn_params(pt_model_fn, self.params_m)
 		self.model = pt_model_fn(
 			in_shape=fshape,
-			context_size=self.params_t['context_size'],
-			target_size=self.params_t['target_size'],
+			context_size=self.params_d['context_size'],
+			target_size=self.params_d['target_size'],
 			**model_params
 		)
+		self.precision = 32
 
 	def forward(self, batch):
 		"""
@@ -97,15 +95,18 @@ class NPModel(GenericModel):
 		ic, yc = outs[0]
 		it, yt = outs[1]
 		prior, post, out = outs[2]
-		ic = index[ic]
-		it = index[it]
+		# print(f'{it=}')
+		# print(f'{it.sort()[0]=}')
+		# print(f'{it.sort()[1]=}')
+		# print(torch.equal(it, it.sort()[0]))
+		# sys.exit()
 		pred_mean = torch.cat([i.mean for i in out]).flatten()
-		pred_var = torch.cat([i.variance for i in out]).flatten()
-		assert all(len(x)==len(ic) for x in (yc, it, yt, pred_mean, pred_var))
+		pred_std = torch.cat([i.variance for i in out]).flatten().sqrt()
+		assert all(len(x)==len(ic) for x in (yc, it, yt, pred_mean, pred_std))
 		return pd.DataFrame.from_dict({
-			"ic": ic, "yc": yc, "it": it, "yt": yt,
-			"pred_mean": pred_mean, "pred_var": pred_var
-		})
+			"it": index[it], "yt": yt, "ic": index[ic], "yc": yc,
+			"pred_mean": pred_mean, "pred_std": pred_std
+		}).drop_duplicates("it").set_index("it").sort_index()
 
 	def forward_step(self, batch, batch_idx, epoch_type):
 		"""
@@ -113,7 +114,7 @@ class NPModel(GenericModel):
 		"""
 		train_mode = epoch_type == 'train'
 		ic, xc, yc, zc, it, xt, yt, zt = batch
-		# print(f'{xc.shape[0]=} {xt.shape[0]=}')
+		# print(f'{xc.shape=} {xt.shape=}')
 		dist_type = self.params_m['decoder_params']['dist_type']
 
 		try:
@@ -127,7 +128,7 @@ class NPModel(GenericModel):
 			raise err
 
 		try:
-			pred_t, pred_t_loss = self.prepare_pred(out_dist)
+			pred_t, pred_t_loss = self.prepare_pred(out_dist, train_mode)
 			model_loss = self.loss(pred_t_loss, yt)
 			if (model_loss.ndim > 1):
 				model_loss = model_loss.mean(1)
@@ -147,7 +148,7 @@ class NPModel(GenericModel):
 
 		return {'loss': np_loss, 'kldiv': kldiv.mean()}
 
-	def prepare_pred(self, out_dist):
+	def prepare_pred(self, out_dist, train_mode):
 		"""
 		XXX
 		Reshape model outputs for later loss, metrics calculations
@@ -173,20 +174,6 @@ class NPModel(GenericModel):
 			pred_t_loss = out_dist
 		elif (self.params_m['loss'] in ('reg-mae', 'reg-mse')):
 			pred_t_loss = pred_t
-		elif (self.params_m['loss'] in ('reg-sharpe',)):
-			pred_t_loss = pred_t
-			if (pred_t_loss.ndim == 1):
-				preds = ((1-pred_t_loss).unsqueeze(-1), pred_t_loss.unsqueeze(-1))
-				pred_t_loss = torch.hstack(preds)
-			elif (pred_t_loss.ndim < self.params_m['num_classes']):
-				# sum the probs and take complement
-				raise NotImplementedError()
-			pred_t_smax = F.softmax(pred_t_loss, dim=-1)
-			pred_t_conf, pred_t = pred_t_smax.max(dim=-1, keepdim=False)
-			pred_t_dir = pred_t.clone()
-			pred_t_dir[pred_t_dir==0] = -1
-			pred_t_bet = pred_t_dir * pred_t_conf
-			pred_t_loss = pred_t_bet
 		return pred_t_loss
 
 	def prepare_pred_clf(self, out_dist, pred_t_raw):
@@ -265,17 +252,4 @@ class NPModel(GenericModel):
 				logger=True, on_step=False, on_epoch=True)
 			self.log(f'{epoch_type}_kldiv', epoch_kldiv, prog_bar=False, \
 				logger=True, on_step=False, on_epoch=True)
-
-	def get_precision(self):
-		"""
-		Workaround for pytorch Dirichlet/Beta not supporting half precision.
-		"""
-		precision = 16
-		if (self.params_m['sample_out'] and self.params_m['decoder_params']['dist_type'] == 'beta'):
-			precision = 32
-		elif (self.params_m['use_lat_path'] and \
-			(self.params_m['sample_latent_post'] or self.params_m['sample_latent_prior']) \
-			and self.params_m['lat_encoder_params']['dist_type'] == 'beta'):
-			precision = 32
-		return precision
 

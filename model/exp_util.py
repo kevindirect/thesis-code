@@ -1,6 +1,3 @@
-"""
-Kevin Patel
-"""
 import sys
 import os
 from os.path import sep, exists
@@ -10,6 +7,7 @@ import logging
 import numpy as np
 import pandas as pd
 import torch
+import matplotlib.pyplot as plt
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.callbacks import ModelCheckpoint
@@ -19,9 +17,9 @@ from pytorch_lightning.loggers.base import rank_zero_experiment
 # from verification.batch_norm import BatchNormVerificationCallback
 # from verification.batch_gradient import BatchGradientVerificationCallback
 
-from common_util import MODEL_DIR, NestedDefaultDict, load_json, rectify_json, dump_json, load_df, dump_df, str_now, benchmark, makedir_if_not_exists, is_type, is_valid, isnt, get_cmd_args
-from model.common import EXP_DIR
-from model.viz import dump_fig, plot_df_line, plot_df_line_subplot, plot_df_scatter_subplot, plot_df_hist_subplot
+from common_util import MODEL_DIR, deep_update, load_json, rectify_json, dump_json, load_df, dump_df, benchmark, dt_now, makedir_if_not_exists, is_type, is_valid, isnt
+from model.common import EXP_DIR, MAX_EPOCHS
+from model.viz import dump_fig, plot_df_line, plot_df_scatter, plot_df_line_subplot, plot_df_scatter_subplot, plot_df_hist_subplot
 
 
 class MemLogger(LightningLoggerBase):
@@ -63,7 +61,7 @@ class MemLogger(LightningLoggerBase):
 def modify_model_params(params_m, sm_name, model_name):
 	if (sm_name == 'anp'):
 		logging.info('modifying model params...')
-		# Set deterministic/latent paths on/off depending on the model type.
+		# Switch deterministic/latent paths on/off depending on the model type
 		if (model_name == 'base'):
 			params_m['use_det_path'] = False
 			params_m['use_lat_path'] = False
@@ -77,7 +75,7 @@ def modify_model_params(params_m, sm_name, model_name):
 			params_m['use_det_path'] = True
 			params_m['use_lat_path'] = True
 
-def get_model(params_m, params_t, sm_name, model_name, dm, splits):
+def get_model(params_m, params_d, sm_name, model_name, splits, dm):
 	modify_model_params(params_m, sm_name, model_name)
 	if (sm_name in ('stcn', 'StackedTCN', 'GenericModel_StackedTCN')):
 		from model.pl_generic import GenericModel
@@ -87,46 +85,29 @@ def get_model(params_m, params_t, sm_name, model_name, dm, splits):
 		from model.pl_np import NPModel
 		from model.np_util import AttentiveNP
 		pl_model_fn, pt_model_fn = NPModel, AttentiveNP
-	model = pl_model_fn(pt_model_fn, params_m, params_t, dm.get_fshape(), splits)
+	model = pl_model_fn(pt_model_fn, params_m, params_d, dm.get_fshape(), splits)
 	return model
 
-def get_param_dir(sm_name, param_name):
+def get_param_dir(sm_name, param_name, dir_path=EXP_DIR):
 	"""
 	A valid parent model and set of hyperparameters.
 	"""
-	return EXP_DIR +sep.join([sm_name, param_name]) +sep
+	return dir_path +sep.join([sm_name, param_name]) +sep
 
 def get_study_dir(param_dir, model_name, data_name):
 	"""
 	A study is defined as a combination of treatment group (model), data, and hyperparameters
-	"""
+"""
 	return param_dir +sep.join([model_name, data_name]) +sep
 
-def _get_trial_dir(study_dir, tid=None):
+def get_study_name(study_dir, dir_path=EXP_DIR):
+	return study_dir.replace(dir_path, '').rstrip(sep).replace(sep, ',')
+
+def get_trial_dir(study_dir, trial_id):
 	"""
 	A trial is a run of a study
 	"""
-	if (isnt(tid)):
-		tid = str_now().replace(' ', '_').replace(':', '-')
-	return study_dir +tid +sep
-
-def get_trial_dir(param_dir, model_name, data_name, tid=None):
-	"""
-	A trial is a run of a study
-	"""
-	return _get_trial_dir(get_study_dir(param_dir, model_name, data_name), tid=tid)
-
-# def dump_benchmarks(asset_name, dm):
-# 	bench_data_name = f'{dm.interval[0]}_{dm.interval[1]}_{dm.ldata_name}'
-# 	bench_dir = EXP_LOG_DIR +sep.join(['bench', asset_name, bench_data_name]) +sep
-# 	if (not exists(bench_dir)):
-# 		logging.info("dumping benchmarks...")
-# 		makedir_if_not_exists(bench_dir)
-# 		bench = dm.get_benchmarks()
-# 		dm.dump_benchmarks_plots(bench, bench_dir)
-# 		dm.dump_benchmarks_results(bench, bench_dir)
-# 	else:
-# 		logging.info("skipping benchmarks...")
+	return study_dir +trial_id +sep
 
 def get_optmode(monitor):
 	return {
@@ -142,8 +123,7 @@ def get_callbacks(trial_dir, model_type):
 		model = MyLightingModule.load_from_checkpoint(f'{trial_dir}chk{sep}{name}')
 	"""
 	if (model_type == 'clf'):
-		# monitor = 'val_clf_f1'
-		monitor = 'val_conf_long_sharpe'
+		monitor = 'val_clf_f1'
 	elif (model_type == 'reg'):
 		monitor = 'val_reg_mse'
 	mode = get_optmode(monitor)[:3]
@@ -153,8 +133,7 @@ def get_callbacks(trial_dir, model_type):
 	es_callback = EarlyStopping(monitor=monitor, min_delta=0.00, patience=3,
 		verbose=False, mode=mode)
 	# es_callback = EarlyStopping(monitor='train_loss', verbose=False, mode='min', patience=0)
-	# ver_callbacks = (BatchNormVerificationCallback(),
-			# BatchGradientVerificationCallback())
+	# ver_callbacks = (BatchNormVerificationCallback(), BatchGradientVerificationCallback())
 	callbacks = [chk_callback, es_callback]
 	return callbacks
 
@@ -170,16 +149,51 @@ def get_trainer(trial_dir, callbacks, min_epochs, max_epochs, precision, plseed=
 
 	trainer = pl.Trainer(max_epochs=max_epochs, min_epochs=min_epochs,
 		logger=loggers, callbacks=callbacks, limit_val_batches=1.0,
-		gradient_clip_val=gradient_clip_val, gradient_clip_algorithm='norm',
+		# gradient_clip_val=gradient_clip_val, gradient_clip_algorithm='norm',
 		stochastic_weight_avg=False, auto_lr_find=False, precision=precision,
 		accelerator="gpu", deterministic=det, #, amp_level='O1',
 		default_root_dir=trial_dir, enable_model_summary=False,
+		# track_grad_norm=2,
+		# detect_anomaly=True,
 		devices=-1 if (torch.cuda.is_available()) else None)
 	return trainer
 
-def dump_plot_metric(df, dir_path, metric, splits, title, fname):
+def dump_plot_metric(df, dir_path, metric, splits, title, fname,
+	linestyles=["solid", "dashed", "dotted"]):
 	plot_df_line(df.loc[:, [f"{s}_{metric}" for s in splits]],
-		title=title, xlabel="epochs", ylabel="loss", linestyles=['solid', 'dashed', 'dotted'])
+		title=title, xlabel="epochs", ylabel="loss", linestyles=linestyles)
+	dump_fig(f"{dir_path}{fname}", transparent=False)
+
+def dump_plot_pred(df, dir_path, ylabel, title, fname,
+	linestyles=["solid", "dashed", "dotted"]):
+	plot_df_line(df.loc[:, ["yt", "pred_mean"]],
+		title=title, xlabel="date", ylabel=ylabel,
+		linestyles=linestyles)
+	plt.fill_between(
+		df.index,
+		df["pred_mean"] - df["pred_std"],
+		df["pred_mean"] + df["pred_std"],
+		alpha=.25,
+		facecolor="orange",
+		interpolate=True,
+		label="σ",
+	)
+	plt.fill_between(
+		df.index,
+		df["pred_mean"] - df["pred_std"]*2,
+		df["pred_mean"] + df["pred_std"]*2,
+		alpha=.125,
+		facecolor="orange",
+		interpolate=True,
+		label="2σ",
+	)
+	plt.ylim([df["yt"].min(), df["yt"].max()])
+	dump_fig(f"{dir_path}{fname}", transparent=False)
+
+def dump_plot_pred_scatter(df, dir_path, ylabel, title, fname, alpha=.3):
+	plot_df_scatter(df.loc[:, ["yt", "pred_mean"]],
+		title=title, xlabel="date", ylabel=ylabel, alpha=alpha)
+	plt.errorbar(df.index, df["pred_mean"], yerr=df["pred_std"])
 	dump_fig(f"{dir_path}{fname}", transparent=False)
 
 def fix_metrics_csv(dir_path, fname="metrics"):
@@ -193,3 +207,63 @@ def fix_metrics_csv(dir_path, fname="metrics"):
 	dump_df(csv_df, f"{fname}", dir_path=dir_path, data_format="csv")
 	logging.debug(f"fixed {fname}")
 
+def run_exp(study_dir, params_m, params_d, sm_name, model_name, splits, dm, max_epochs=MAX_EPOCHS, seed=None):
+	seed = seed or dt_now().timestamp()
+	trial_dir = get_trial_dir(study_dir, str(seed))
+	makedir_if_not_exists(trial_dir)
+
+	model = get_model(params_m, params_d, sm_name, model_name, splits, dm)
+	callbacks = get_callbacks(trial_dir, model.model_type)
+	trainer = get_trainer(trial_dir, callbacks, params_m['epochs'], max_epochs,
+		model.precision, seed)
+	# logging.debug(f'gpu mem (mb): {torch.cuda.max_memory_allocated()}')
+	trainer.fit(model, datamodule=dm)
+	if ('test' in splits):
+		trainer.test(model, datamodule=dm, verbose=False)
+	return trial_dir, model, trainer
+
+def dump_exp(trial_dir, params_m, params_d, sm_name, model_name, splits, dm, model, trainer, metrics=["loss", "reg_mse", "reg_mae"]):
+	# Dump prediction plots
+	dfs_pred = {split: model.pred_df(dm.get_dataloader(split), dm.index[split]) for split in splits}
+	for split, df_pred in dfs_pred.items():
+		dump_df(df_pred, f"{split}_pred", trial_dir, "csv")
+		dump_plot_pred(df_pred, trial_dir,
+			dm.target_name,
+			f"{dm.asset_name} {sm_name}_{model_name} {split} {dm.target_name}".lower(),
+			f"plot_{split}_pred")
+
+	# Dump params, results, and metrics over train / val
+	fix_metrics_csv(trial_dir)
+	dump_json(params_d, "params_d.json", dir_path=trial_dir)
+	dump_json(params_m, "params_m.json", dir_path=trial_dir)
+	df_hist = trainer.logger[0].history_df()
+	for metric in metrics:
+		dump_plot_metric(df_hist, trial_dir, metric, splits,
+			f"{dm.asset_name} {sm_name}_{model_name} {metric}".lower(),
+			f"plot_{metric}")
+	return df_hist
+
+def run_dump_exp(study_dir, params_m, params_d, sm_name, model_name, splits, dm):
+	"""
+	Wraps around run_exp()->dump_exp() calls
+	"""
+	trial_dir, model, trainer = run_exp(study_dir, params_m, params_d,
+		sm_name, model_name, splits, dm
+	)
+	df_hist = dump_exp(trial_dir, params_m, params_d, sm_name, model_name,
+		splits, dm, model, trainer, metrics=["loss", "reg_mse", "reg_mae"]
+	)
+	return trial_dir, model, trainer, df_hist
+
+def get_objective_fn(study_dir, params_m, params_d, sm_name, model_name, splits, dm, obj, suggestor_m):
+	"""
+	Returns optuna objective function that wraps run_dump_exp() 
+	"""
+	def objective_fn(trial):
+		# trial_num = str(trial.number).zfill(6)
+		deep_update(params_m, suggestor_m(trial))
+		hist_df = run_dump_exp(study_dir, params_m, params_d, sm_name, model_name,
+			splits, dm)[-1]
+		return hist_df[obj].iloc[-1]
+
+	return objective_fn

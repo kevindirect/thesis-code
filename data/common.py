@@ -4,9 +4,7 @@
 #  / /_/ / /_/ / /_/ /_/ /
 #  \__,_/\__,_/\__/\__,_/
 # data stage common.
-"""
-Kevin Patel
-"""
+
 # *********** COMMON TO ALL CRUNCH PACKAGES ***********
 import sys
 from os.path import dirname, realpath
@@ -22,5 +20,5 @@ from common_util import DATA_DIR
 
 # PACKAGE DEFAULTS
 PROC_NAME = "002"
-DATA_NAME = "frd"
+VENDOR_NAME = "frd"
 

@@ -1,6 +1,3 @@
-"""
-Kevin Patel
-"""
 import sys
 import os
 import logging
@@ -21,41 +18,22 @@ from model.common import PYTORCH_ACT_MAPPING, PYTORCH_LOSS_MAPPING, PYTORCH_OPT_
 class GenericModel(pl.LightningModule):
 	"""
 	Generic Pytorch Lightning Wrapper.
-
-	Training Hyperparameters:
-		window_size (int): number of observations in the last dimension of the input tensor
-		feat_dim (int): dimension of resulting feature tensor, if 'None' doesn't reshape
-		epochs (int): max number of training epochs
-		batch_size (int): batch (or batch window) size
-		batch_step_size (int): batch window step size.
-			if this is None DataLoader uses its own default sampler,
-			otherwise WindowBatchSampler is used as batch_sampler
-		train_shuffle (bool): whether or not to shuffle the order of the training batches
-		class_weights (list): loss function class weights of size C (optional)
-		opt (dict): pytorch optimizer settings
-			name (str): name of optimizer to use
-			kwargs (dict): any keyword arguments to the optimizer constructor
-		sch (dict): pytorch scheduler settings
-			name (str): name of scheduler to use
-			kwargs (dict): any keyword arguments to the scheduler constructor
-		num_workers (int>=0): DataLoader option - number cpu workers to attach
-		pin_memory (bool): DataLoader option - whether to pin memory to gpu
 	"""
-	def __init__(self, pt_model_fn, params_m, params_t, fshape, splits=('train', 'val')):
+	def __init__(self, pt_model_fn, params_m, params_d, fshape, splits=('train', 'val')):
 		"""
 		Init method
 
 		Args:
 			pt_model_fn (function): pytorch model callback
 			params_m (dict): dictionary of model hyperparameters
-			params_t (dict): dictionary of training hyperparameters
+			params_d (dict): dictionary of data hyperparameters
 			fshape (tuple): the shape of a single feature observation,
 				this is usually the model input shape
 			splits (tuple): which splits to init metric objects for
 		"""
 		super().__init__()
 		self.name = f'{self._get_name()}_{pt_model_fn.__name__}'
-		self.params_m, self.params_t = params_m, params_t
+		self.params_m, self.params_d = params_m, params_d
 		self.model_type = self.params_m['loss'].split('-')[0]
 		self.__init_loss_fn__()
 		self.__init_model__(pt_model_fn, fshape)
@@ -65,7 +43,7 @@ class GenericModel(pl.LightningModule):
 
 	def __init_loss_fn__(self, reduction='none'):
 		if (is_valid(loss_fn := PYTORCH_LOSS_MAPPING.get(self.params_m['loss'], None))):
-			if (self.model_type=='clf' and is_valid(cw := self.params_t['class_weights'])):
+			if (self.model_type=='clf' and is_valid(cw := self.params_m['class_weights'])):
 				self.loss = loss_fn(reduction=reduction, weight=torch.tensor(cw))
 			else:
 				self.loss = loss_fn(reduction=reduction)
@@ -81,6 +59,7 @@ class GenericModel(pl.LightningModule):
 		"""
 		model_params = get_fn_params(pt_model_fn, self.params_m)
 		self.model = pt_model_fn(in_shape=fshape, **model_params)
+		self.precision = 32
 
 	def __init_metrics__(self, splits):
 		"""
@@ -106,10 +85,10 @@ class GenericModel(pl.LightningModule):
 				for epoch_type in splits
 			}
 		elif (self.model_type == 'reg'):
-			if (self.params_m['loss'] in ('reg-sharpe',)):
-				num_classes = self.params_m['num_classes'] or self.params_m['out_size'] + 1
-			else:
-				assert(isnt(self.params_m['num_classes']))
+			# if (self.params_m['loss'] in ('reg-sharpe',)):
+			# 	num_classes = self.params_m['num_classes'] or self.params_m['out_size'] + 1
+			# else:
+			# 	assert('num_classes' not in self.params_m or isnt(self.params_m['num_classes']))
 			self.epoch_metrics = {
 				epoch_type: {
 					f'{self.model_type}_mae': tm.MeanAbsoluteError(compute_on_step=False),
@@ -125,11 +104,11 @@ class GenericModel(pl.LightningModule):
 		"""
 		Construct and return optimizers
 		"""
-		opt_fn = PYTORCH_OPT_MAPPING.get(self.params_t['opt']['name'])
-		opt = opt_fn(self.parameters(), **self.params_t['opt']['kwargs'])
+		opt_fn = PYTORCH_OPT_MAPPING.get(self.params_m['opt']['name'])
+		opt = opt_fn(self.parameters(), **self.params_m['opt']['kwargs'])
 		return opt
-		#sch_fn = PYTORCH_SCH_MAPPING.get(self.params_t['sch']['name'])
-		#sch = sch_fn(opt, **self.params_t['sch']['kwargs'])
+		#sch_fn = PYTORCH_SCH_MAPPING.get(self.params_m['sch']['name'])
+		#sch = sch_fn(opt, **self.params_m['sch']['kwargs'])
 		#return [opt], [sch]
 
 	def forward(self, x):
@@ -310,70 +289,4 @@ class GenericModel(pl.LightningModule):
 		"""
 		self.aggregate_log_epoch_loss(outputs, epoch_type)
 		self.compute_log_epoch_metrics(epoch_type)
-
-	# def compute_results_json(self):
-	# 	"""
-	# 	"""
-	# 	results_json = {}
-	# 	for split in self.epoch_metrics:
-	# 		split_results = {}
-	# 		for name in self.epoch_metrics[split]:
-	# 			em = self.epoch_metrics[split][name]
-	# 			split_results[f'{split}_{name}'] = em.compute()
-	# 		for name in self.epoch_metrics_2[split]:
-	# 			er = self.epoch_metrics_2[split][name]
-	# 			if (name.endswith('long')):
-	# 				d = er.compute(f'{split}_{name}', go_long=True, go_short=False)
-	# 			elif (name.endswith('short')):
-	# 				d = er.compute(f'{split}_{name}', go_long=False, go_short=True)
-	# 			else:
-	# 				d = er.compute(f'{split}_{name}', go_long=True, go_short=True)
-	# 			split_results.update(d)
-	# 		results_json[split] = rectify_json(split_results)
-	# 	return results_json
-
-	# def dump_results(self, results_dir, model_name):
-	# 	results_json = self.compute_results_json()
-	# 	for split, result in results_json.items():
-	# 		dump_json(result, split, results_dir)
-	# 	return results_json
-
-	# def dump_plots_return(self, plot_dir, model_name, dm):
-	# 	"""
-	# 	"""
-	# 	bothdir = lambda n: not (n.endswith('long') or n.endswith('short'))
-
-	# 	for split in self.epoch_metrics_2:
-	# 		# for name in filter(bothdir, self.epoch_metrics_2[split]):
-	# 		for name in self.epoch_metrics_2[split]:
-	# 			er = self.epoch_metrics_2[split][name]
-	# 			plot_name = model_name.upper() +f"-{name}".title()
-	# 			fig, axes = er.plot_result_series(split.title(),
-	# 				plot_name, dm.idx[split])
-	# 			fname = f"{split}_{plot_name}".lower()
-	# 			# with open(f'{plot_dir}{fname}.pickle', 'wb') as f:
-	# 			# 	pickle.dump(fig, f)
-	# 			plt.savefig(f'{plot_dir}{fname}', bbox_inches="tight",
-	# 				transparent=True)
-	# 			plt.close(fig)
-
-	# 		# er = self.epoch_metrics_2[split][name]
-	# 		# plot_name = model_name.upper() +f"-{name}".title()
-	# 		# fig, axes = er.plot_result_series(split.title(),
-	# 		# 	plot_name, dm.idx[split])
-	# 		# fname = f"{split}_{plot_name}".lower()
-	# 		# plt.savefig(f'{plot_dir}{fname}', bbox_inches="tight",
-	# 		# 	transparent=True)
-	# 		# plt.close(fig)
-
-	# @classmethod
-	# def fix_metrics_csv(cls, fname, dir_path):
-	# 	"""
-	# 	Fix Pytorch Lightning v10 logging rows in the same epoch on
-	# 	separate rows.
-	# 	"""
-	# 	csv_df = load_df(fname, dir_path=dir_path, data_format='csv')
-	# 	csv_df = csv_df.groupby('epoch').ffill().dropna(how='any')
-	# 	dump_df(csv_df, f'fix_{fname}', dir_path=dir_path, data_format='csv')
-	# 	logging.debug(f'fixed {fname}')
 

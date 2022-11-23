@@ -1,7 +1,3 @@
-"""
-Neural Process utils
-Kevin Patel
-"""
 import sys
 import os
 import math
@@ -15,7 +11,7 @@ import torch
 import torch.nn as nn
 
 from common_util import is_valid, isnt
-from model.common import PYTORCH_ACT1D_LIST, PYTORCH_INIT_LIST
+from model.common import PYTORCH_ACT_MAPPING
 from model.model_util import log_prob_sigma, init_layer, get_padding, pt_multihead_attention, SwapLinear, TransposeModule, MODEL_MAPPING, NORM_MAPPING
 
 
@@ -154,16 +150,15 @@ class LatEncoder(nn.Module):
 		latent_size = latent_size or embed_size
 		interim_size = (embed_size + latent_size) // 2
 
-		self.interim_layer = nn.Linear(embed_size, interim_size)
-		self.alpha = nn.Linear(interim_size, latent_size)	# param 1
-		self.beta = nn.Linear(interim_size, latent_size)	# param 2
+		self.interim_layer = init_layer(nn.Linear(embed_size, interim_size))
+		self.alpha = init_layer(nn.Linear(interim_size, latent_size))
+		self.beta = init_layer(nn.Linear(interim_size, latent_size))
 
-		self.sig = None
+		self.beta_act = None
 		if (self.dist_type.endswith('normal')):
-			self.sig = nn.Sigmoid()
-			# self.sig = nn.LogSigmoid() if (self.use_lvar) else nn.Sigmoid()
+			self.beta_act = nn.LogSigmoid() if (self.use_lvar) else nn.Sigmoid()
 		# elif (self.dist_type in ('beta',)):
-		# 	self.sig = nn.Softplus()
+		# 	self.beta_act = nn.Softplus()
 		self.out_shape = (latent_size,)
 
 	def forward(self, h, y):
@@ -182,19 +177,17 @@ class LatEncoder(nn.Module):
 		if (self.dist_type.endswith('normal')):
 			if (self.use_lvar):
 				# Variance clipping in the log domain (should be more stable)
-				lat_dist_beta = self.sig(lat_dist_beta)
-				lat_dist_beta = torch.clamp(lat_dist_beta, np.log(self.min_std), \
-					-np.log(self.min_std))
+				lstd = math.log(self.min_std)
+				lat_dist_beta = self.beta_act(lat_dist_beta)
+				lat_dist_beta = torch.clamp(lat_dist_beta, lstd, -lstd)
 				lat_dist_sigma = torch.exp(0.5 * lat_dist_beta)
 			else:
 				# Simple variance clipping (from deep mind repo)
-				lat_dist_sigma = self.min_std + (1 - self.min_std) * \
-					self.sig(lat_dist_beta)
-					# self.sig(lat_dist_beta * 0.5) XXX
+				lat_dist_sigma = self.min_std + (1 - self.min_std) * self.beta_act(lat_dist_beta)
 			lat_dist_beta = lat_dist_sigma
-		elif (self.dist_type in ('beta',)):
-			lat_dist_alpha = self.sig(lat_dist_alpha)
-			lat_dist_beta = self.sig(lat_dist_beta)
+		# elif (self.dist_type in ('beta',)):
+		# 	lat_dist_alpha = self.beta_act(lat_dist_alpha)
+		# 	lat_dist_beta = self.beta_act(lat_dist_beta)
 
 		return self.dist_fn(lat_dist_alpha, lat_dist_beta)
 
@@ -207,7 +200,7 @@ class Decoder(nn.Module):
 	"""
 	def __init__(self, in_shape, target_size, out_size, use_raw, use_det_path, use_lat_path,
 		det_encoder, lat_encoder, de_name='ffn', de_params=None,
-		dist_type='mvnormal', min_std=.01, use_lvar=False):
+		act=None, dist_type='mvnormaldiag', min_std=.01, use_lvar=False):
 		"""
 		Args:
 			in_shape (tuple): shape of the network's input tensor (o, W)
@@ -242,11 +235,11 @@ class Decoder(nn.Module):
 		assert is_valid(self.dist_fn)
 
 		dec_out = self.decoder.out_shape[0]
-		self.alpha = nn.Linear(dec_out, self.out_size)
+		self.alpha = init_layer(nn.Linear(dec_out, self.out_size))
+		self.alpha_act = (af := PYTORCH_ACT_MAPPING.get(act, None)) and af()
 		if (self.dist_type in ('mvnormal', 'mvnormaldiag')):
-			self.beta = nn.Linear(dec_out, self.out_size**2)
-			self.clamp = partial(torch.clamp, min=0.0, max=1.0) if (self.use_lvar) \
-				else nn.Softplus(beta=1, threshold=20)
+			self.beta = init_layer(nn.Linear(dec_out, self.out_size))
+			self.beta_act = self.use_lvar or nn.Softplus(beta=1, threshold=20)
 			self.out_shape = (self.out_size,)
 		# elif (self.dist_type in ('beta',)):
 		# 	self.beta = nn.Linear(self.out_size, self.out_size)
@@ -278,6 +271,8 @@ class Decoder(nn.Module):
 		decoded = self.decoder(collapse_lower(rep))
 		decoded = uncollapse_lower(decoded, rep.shape[:2])
 		out_dist_alpha = self.alpha(decoded)
+		if (is_valid(self.alpha_act)):
+			out_dist_alpha = self.alpha_act(out_dist_alpha)
 
 		if (self.dist_type in ('mvnormal', 'mvnormaldiag',)):
 			out_dist_beta = self.beta(decoded) \
@@ -287,14 +282,13 @@ class Decoder(nn.Module):
 				out_dist_beta = torch.clamp(out_dist_beta, lstd, -lstd)
 				out_dist_sigma = torch.exp(out_dist_beta)
 			else:
-				out_dist_sigma = self.min_std + (1 - self.min_std) * self.clamp(out_dist_beta)
+				out_dist_sigma = self.min_std + (1 - self.min_std) * self.beta_act(out_dist_beta)
 			if (self.dist_type == 'mvnormal'):
 				raise NotImplementedError()
 				# lower triangle of covariance matrix:
 				out_dist_tril = torch.tril(out_dist_sigma)
 				out_dist = self.dist_fn(out_dist_alpha, scale_tril=out_dist_tril)
 			elif (self.dist_type == 'mvnormaldiag'):
-				# torch.cat(tuple(torch.diag(vec).unsqueeze(0) for vec in out_dist_sigma.squeeze()))
 				out_dist = self.dist_fn(out_dist_alpha.squeeze(), out_dist_sigma.squeeze())
 
 		return out_dist
