@@ -1,7 +1,0 @@
-{
-	"features": [
-		["dret", "dret_raw_pba_oc"]
-	],
-	"labels": "mvp_labels.json",
-	"targets": "mvp_targets.json"
-}

@@ -9,7 +9,7 @@ import torch
 import optuna
 
 from common_util import MODEL_DIR, rectify_json, load_json, dump_df, benchmark, makedir_if_not_exists, is_type, is_valid, isnt, get_cmd_args
-from model.common import ASSETS, EXP_DIR, OPTUNA_DBNAME, OPTUNA_N_TRIALS, OPTUNA_TIMEOUT_HOURS
+from model.common import ASSETS, EXP_DIR, OPTUNA_DBNAME, OPTUNA_N_TRIALS, OPTUNA_TIMEOUT
 from model.exp_util import get_optmode, get_param_dir, get_study_dir, get_study_name, get_objective_fn
 from data.pl_xgdm import XGDataModule
 from model.optuna_util import get_sampler, get_model_suggestor
@@ -84,7 +84,7 @@ def expo(argv):
 			if (dry_run):
 				logging.info('dry-run: skip study optimize')
 			else:
-				study.optimize(objective_fn, n_trials=OPTUNA_N_TRIALS, timeout=OPTUNA_TIMEOUT_HOURS*60*60,
+				study.optimize(objective_fn, n_trials=OPTUNA_N_TRIALS, timeout=OPTUNA_TIMEOUT*60,
 					catch=(), n_jobs=1, gc_after_trial=False, show_progress_bar=False)
 				study_df = study.trials_dataframe().sort_values(by='value', ascending=True)
 				dump_df(study_df.set_index('number'), f'{OPTUNA_DBNAME}.csv', dir_path=study_dir, data_format='csv')

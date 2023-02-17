@@ -55,7 +55,8 @@ class MemLogger(LightningLoggerBase):
 		pass
 
 	def history_df(self):
-		return pd.DataFrame.from_dict(self.history, orient="columns").set_index("epoch")
+		d = {k: v for k, v in self.history.items() if (not k.startswith('test_'))}
+		return pd.DataFrame.from_dict(d, orient="columns").set_index("epoch")
 
 
 def modify_model_params(params_m, sm_name, model_name):
@@ -187,7 +188,8 @@ def dump_plot_pred(df, dir_path, ylabel, title, fname,
 		interpolate=True,
 		label="2σ",
 	)
-	plt.ylim([df["yt"].min(), df["yt"].max()])
+	yexpand = .05 * (df["yt"].max() - df["yt"].min())
+	plt.ylim([df["yt"].min()-yexpand, df["yt"].max()+yexpand])
 	dump_fig(f"{dir_path}{fname}", transparent=False)
 
 def dump_plot_pred_scatter(df, dir_path, ylabel, title, fname, alpha=.3):
@@ -202,10 +204,14 @@ def fix_metrics_csv(dir_path, fname="metrics"):
 	separate rows.
 	"""
 	csv_df = load_df(fname, dir_path=dir_path, data_format="csv")
-	csv_df = csv_df.groupby("epoch").ffill().dropna(how="any")
+	test_cols = [col for col in csv_df.columns if col.startswith('test_')]
+	if (len(test_cols) > 0):
+		dump_df(csv_df[test_cols].dropna(how="any"), f"{fname}_test", dir_path=dir_path, data_format="csv")
+	csv_df = csv_df.loc[:, ~csv_df.columns.isin(test_cols)].groupby("epoch").ffill().dropna(how="any")
 	os.rename(f"{dir_path}{fname}.csv", f"{dir_path}{fname}.old.csv")
 	dump_df(csv_df, f"{fname}", dir_path=dir_path, data_format="csv")
 	logging.debug(f"fixed {fname}")
+	return csv_df
 
 def run_exp(study_dir, params_m, params_d, sm_name, model_name, splits, dm, max_epochs=MAX_EPOCHS, seed=None):
 	seed = seed or dt_now().timestamp()
@@ -233,22 +239,22 @@ def dump_exp(trial_dir, params_m, params_d, sm_name, model_name, splits, dm, mod
 			f"plot_{split}_pred")
 
 	# Dump params, results, and metrics over train / val
-	fix_metrics_csv(trial_dir)
+	df_hist = fix_metrics_csv(trial_dir)
 	dump_json(params_d, "params_d.json", dir_path=trial_dir)
 	dump_json(params_m, "params_m.json", dir_path=trial_dir)
-	df_hist = trainer.logger[0].history_df()
+	# df_hist = trainer.logger[0].history_df()
 	for metric in metrics:
-		dump_plot_metric(df_hist, trial_dir, metric, splits,
+		dump_plot_metric(df_hist, trial_dir, metric, tuple(filter(lambda s: s!="test", splits)),
 			f"{dm.asset_name} {sm_name}_{model_name} {metric}".lower(),
 			f"plot_{metric}")
 	return df_hist
 
-def run_dump_exp(study_dir, params_m, params_d, sm_name, model_name, splits, dm):
+def run_dump_exp(study_dir, params_m, params_d, sm_name, model_name, splits, dm, seed=None):
 	"""
 	Wraps around run_exp()->dump_exp() calls
 	"""
 	trial_dir, model, trainer = run_exp(study_dir, params_m, params_d,
-		sm_name, model_name, splits, dm
+		sm_name, model_name, splits, dm, seed=seed
 	)
 	df_hist = dump_exp(trial_dir, params_m, params_d, sm_name, model_name,
 		splits, dm, model, trainer, metrics=["loss", "reg_mse", "reg_mae"]

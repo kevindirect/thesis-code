@@ -1,7 +1,0 @@
-{
-	"features": [
-		["dma", "dma"]
-	],
-	"labels": "labels.json",
-	"targets": "targets.json"
-}

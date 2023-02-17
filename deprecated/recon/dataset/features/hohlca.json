@@ -1,7 +1,0 @@
-{
-	"features": [
-		["hohlca", "hohlca_pba_vol"],
-		["hohlca", "hohlca_trmi3_news_buzz"],
-		["hohlca", "hohlca_trmi3_social_buzz"]
-	]
-}

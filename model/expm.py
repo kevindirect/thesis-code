@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import torch
 
-from common_util import MODEL_DIR, rectify_json, load_json, dump_json, dump_df, benchmark, is_valid, isnt, get_cmd_args
+from common_util import MODEL_DIR, rectify_json, load_json, dump_json, dump_df, benchmark, is_valid, isnt, get_cmd_args, dt_now
 from model.common import ASSETS, EXP_DIR
 from model.exp_util import get_param_dir, get_study_dir, run_dump_exp
 from data.pl_xgdm import XGDataModule
@@ -17,13 +17,12 @@ def expm(argv):
 	"""
 	Manual experiment script
 	"""
-	cmd_arg_list = ['dry-run', 'assets=', 'xdata=', 'ydata=', 'smodel=', 'models=', 'param=']
+	cmd_arg_list = ['dry-run', 'assets=', 'xdata=', 'ydata=', 'smodel=', 'models=', 'param=', 'final']
 	cmd_input = get_cmd_args(argv, cmd_arg_list, script_name=basename(__file__),
 		script_pkg=basename(dirname(__file__)))
 	dry_run = cmd_input['dry-run']
 	logging.info(f'dry-run: {dry_run}')
-	splits = ('train', 'val')
-	# splits = ('train', 'val', 'test')
+	splits = ('train', 'val', 'test') if cmd_input['final'] else ('train', 'val')
 
 	# data args
 	if (is_valid(asset_names := cmd_input['assets='])):
@@ -60,6 +59,7 @@ def expm(argv):
 			feature_name=feature_name, target_name=target_name)
 		dm.prepare_data()
 		dm.setup()
+		seed = dt_now().timestamp()
 
 		for model_name in model_names:
 			logging.info(f'{model_name=}')
@@ -67,7 +67,7 @@ def expm(argv):
 				logging.info('dry-run: skip model fit')
 			else:
 				study_dir = get_study_dir(param_dir, model_name, dm.name)
-				run_dump_exp(study_dir, params_m, params_d, sm_name, model_name, splits, dm)
+				run_dump_exp(study_dir, params_m, params_d, sm_name, model_name, splits, dm, seed=seed)
 		torch.cuda.empty_cache()
 
 if __name__ == '__main__':

@@ -758,6 +758,16 @@ class FFN(nn.Module):
 	def forward(self, x):
 		return self.model(x)
 
+class StackedFFN(FFN):
+	def __init__(self, in_shape, size=128, depth=3,
+		flatten=False, flatten_start=1,
+		input_dropout=None, output_dropout=None, global_dropout=None,
+		act='relu', act_output=True, init='xavier_uniform'):
+		super().__init__(in_shape, [size]*depth,
+			flatten=flatten, flatten_start=flatten_start,
+			input_dropout=input_dropout, output_dropout=output_dropout, global_dropout=global_dropout,
+			act=act, act_output=act_output, init=init)
+
 class AE(nn.Module):
 	"""
 	MLP Autoencoder
@@ -872,6 +882,7 @@ class BatchNorm15d(nn.Module):
 
 MODEL_MAPPING = {
 	'ffn': FFN,
+	'sffn': StackedFFN,
 	'mha': MHA,
 	'la': LaplaceAttention,
 	'stcn': StackedTCN,

@@ -16,7 +16,6 @@ ignore*
 
 # test files
 test*
-smoke*
 
 # byte-compiled / optimized / DLL files
 __pycache__/

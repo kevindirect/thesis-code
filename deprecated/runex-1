@@ -1,9 +1,0 @@
-#!/bin/zsh
-
-# RX_DATA='price,ivol';
-
-for i in $(seq $RX_START $RX_END);
-	do python3 -m model.exp --dry-run
-done;
-# finito "$RX_DATA studies done";
-

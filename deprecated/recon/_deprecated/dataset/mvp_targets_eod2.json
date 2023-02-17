@@ -1,6 +1,0 @@
-{
-	"targets": [
-		["dret", "dret_raw_pba_oc"],
-		["dret2", "dret2_raw_pba_oc"]
-	]
-}

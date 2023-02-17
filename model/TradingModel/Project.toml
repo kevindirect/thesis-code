@@ -1,0 +1,13 @@
+name = "TradingModel"
+uuid = "db780e65-8d98-4bdc-bf3c-bb16688434a8"
+authors = ["kevindirect <git@kevindirect.com>"]
+version = "0.1.0"
+
+[deps]
+Arrow = "69666777-d1a9-59fb-9406-91d4454c9d45"
+CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+EvoTrees = "f6006082-12f8-11e9-0c9c-0d5d367ab1e5"
+Glob = "c27321d9-0574-5035-807b-f59d2c89b15c"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
