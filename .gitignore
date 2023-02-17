@@ -5,9 +5,6 @@ ignore*
 # *.csv
 # *.parquet
 
-# TRMI API info
-/trmi.json
-
 # data dirs
 /raw/**/*.csv
 /raw/**/*.parquet
