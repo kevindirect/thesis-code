@@ -9,7 +9,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import pytorch_lightning as pl
 
-from common_util import is_type, is_valid, pt_resample_values, get_fn_params
+from common_util import is_type, is_valid, get_fn_params
 from model.common import PYTORCH_LOSS_MAPPING
 from model.pl_generic import GenericModel
 
@@ -27,7 +27,6 @@ class NPModel(GenericModel):
 		target_size
 		overlap_size
 		shuffle (bool): whether or not to shuffle the order of the training batches
-		resample_context (bool): whether or not to resample the context set without replacement (adds duplicates / bias during training)
 		opt (dict): pytorch optimizer settings
 			name (str): name of optimizer to use
 			kwargs (dict): any keyword arguments to the optimizer constructor

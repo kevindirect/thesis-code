@@ -183,6 +183,13 @@ class XGDataModule(pl.LightningDataModule):
 		Return tuple of index, features, targets, returns tensor.
 		Shift index, feature, target, etc appropriately by delta.
 
+		Note that the index of t+delta is stored (ie the index of the label),
+		This means that predictions are indexed by the timestamp they predict for
+		and not the one they were derived from.
+		If the predictions are used as a feauture to a stacked model, the data
+		should not be shifted first. The indices just need to be joined with
+		the stacked model label.
+
 		Args:
 			data (tuple): tuple of numpy arrays, features are the first element
 
