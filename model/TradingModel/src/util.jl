@@ -25,6 +25,17 @@ function feature(asset, split, abl, feat="logchangeprice")
 	innerjoin(loadfeature.(featurepaths(asset, split, abl, feat))...; on=:date)
 end
 
+function featurebase(asset, split, feats=[:R_1day])
+	path = joinpath(DATA_DIR, PROC_NAME, VENDOR_NAME,
+		asset, split, "target", "price.arrow")
+	df = path |> Arrow.Table |> DataFrame
+	df = df[!, [:datetime, feats...]]
+	df[!, :datetime] = Date.(df[:, :datetime])
+	rename!(df, map(x->x=>Symbol(asset*"_", x), feats))
+	rename!(df, "datetime"=>:date)
+	shift(df, 1;index=:date)
+end
+
 """
 sign with threshold around (-τ, τ)
 """
@@ -35,11 +46,16 @@ sign with threshold around (τₗ, τₕ)
 """
 @inline sign(x::Number, τₗ::Number, τₕ::Number) = ifelse(x >= τₕ, 1.0, ifelse(x <= τₗ, -1.0, 0.0))
 
-function getsplit(asset, asset_f, split, abl)
+function getsplit(asset, asset_f, split, abl; addbase=false)
+	# Note that rv features are not shifted because they are already indexed by a forward-shifted index
+	# i.e. they are indexed by the timestamp they predict for, not the one they would have been computed on
 	featdf = feature(replace(asset_f, "all"=>"*"), split, replace(abl, "all"=>"*"))
+	if addbase
+		featdf = innerjoin(featurebase(asset, split), featdf; on=:date)
+	end
 	comm = innerjoin(featdf, target(asset, split); on=:date)
 	idx = comm[:, :date]
-	feat = comm[:, occursin.("_pred_", names(comm))] |> Matrix
+	feat = comm[:, names(featdf)[2:end]] |> Matrix
 	tgt = comm[:, :R_1day]
 	lbl = sign.(tgt)
 	names(featdf)[2:end], idx, feat, tgt, lbl

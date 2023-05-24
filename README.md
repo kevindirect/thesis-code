@@ -1,4 +1,7 @@
-# Crunch
+# Thesis Code
+## Thesis Details
+* Title: An Empirical Evaluation of Neural Process Meta-Learners for Financial Forecasting
+* Author: Kevin Patel
 
 ## Running
 * dump basic preprocessed data: `data/Preproc/run.sh`
@@ -10,17 +13,21 @@
 * basic smoketests: `smoke-*.sh`
 
 ## Overview
-### common_util
-* `common_util.py` contains functions, data structures, and classes used throughout the project. Most of the code in here is probably not used anymore
+* This branch, `master`/`data-frd-minutely`, has all the code submitted for the thesis
+* The branch `data-tr-hourly` is for a previous iteration of the project
+* Unfortunately raw data used to generate the results was purchased from FirstRate Data LLC, so it cannot be shared
+
+### `common_util.py`
+* `common_util.py` contains functions, data structures, and classes used throughout the project. Most of the code in here is not used anymore
 * Most code aside from `common_util.py` is arranged in python subpackages, `<subpackage>/common.py` contains common constants, defaultsi, and utilities
 * Subpackage scripts are run by running them as modules (using the `-m` flag), see the shell scripts at the project root for examples
 
-### data
+### `data/`
 * has all the raw and preprocessed data
 * preprocessing is done from Julia scripts/Pluto.jl notebooks in the Preproc package
 * preprocessed data can be loaded in Python via a PytorchLightning DataModule
 
-### model
+### `model/`
 * has all the model code (Pytorch models wrapped in PytorchLightning)
 
 #### RV Model

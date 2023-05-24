@@ -5,6 +5,7 @@ using Arrow
 using CSV
 using Dates
 using DataFrames
+using DateTimeDataFrames
 using EvoTrees
 using Glob
 using Plots
